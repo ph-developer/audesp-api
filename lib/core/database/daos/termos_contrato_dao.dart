@@ -22,6 +22,14 @@ class TermosContratoDao {
   Future<bool> updateTermo(TermosContratoCompanion entry) =>
       _db.update(_db.termosContrato).replace(entry);
 
+  Future<void> markAsSent(int id) async {
+    await (_db.update(_db.termosContrato)..where((t) => t.id.equals(id))).write(
+      TermosContratoCompanion(
+        status: const Value('sent'),
+      ),
+    );
+  }
+
   Future<int> deleteById(int id) =>
       (_db.delete(_db.termosContrato)..where((t) => t.id.equals(id))).go();
 }

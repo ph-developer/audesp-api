@@ -6,6 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
+import 'features/ajuste/pages/ajuste_form_page.dart';
+import 'features/ajuste/empenho/empenho_page.dart';
+import 'features/ajuste/empenho/empenho_form_page.dart';
+import 'features/ajuste/termo_contrato/termo_page.dart';
+import 'features/ajuste/termo_contrato/termo_form_page.dart';
 import 'features/ata/pages/ata_form_page.dart';
 import 'features/ata/pages/ata_page.dart';
 import 'features/auth/auth_providers.dart';
@@ -140,6 +145,80 @@ final _routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/ajuste',
             builder: (context, _) => const AjustePage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, _) => const AjusteFormPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  return AjusteFormPage(ajusteId: id);
+                },
+                routes: [
+                  GoRoute(
+                    path: 'empenho',
+                    builder: (context, state) {
+                      final ajusteId =
+                          int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                      return EmpenhoPage(ajusteId: ajusteId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'new',
+                        builder: (context, state) {
+                          final ajusteId =
+                              int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                          return EmpenhoFormPage(ajusteId: ajusteId);
+                        },
+                      ),
+                      GoRoute(
+                        path: ':empenhoId',
+                        builder: (context, state) {
+                          final ajusteId =
+                              int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                          final empenhoId = int.tryParse(
+                              state.pathParameters['empenhoId'] ?? '');
+                          return EmpenhoFormPage(
+                              ajusteId: ajusteId, empenhoId: empenhoId);
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'termo',
+                    builder: (context, state) {
+                      final ajusteId =
+                          int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                      return TermoPage(ajusteId: ajusteId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'new',
+                        builder: (context, state) {
+                          final ajusteId =
+                              int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                          return TermoFormPage(ajusteId: ajusteId);
+                        },
+                      ),
+                      GoRoute(
+                        path: ':termoId',
+                        builder: (context, state) {
+                          final ajusteId =
+                              int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                          final termoId = int.tryParse(
+                              state.pathParameters['termoId'] ?? '');
+                          return TermoFormPage(
+                              ajusteId: ajusteId, termoId: termoId);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/logs',

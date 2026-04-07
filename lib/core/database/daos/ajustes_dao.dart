@@ -31,6 +31,26 @@ class AjustesDao {
   Future<bool> updateAjuste(AjustesCompanion entry) =>
       _db.update(_db.ajustes).replace(entry);
 
+  Stream<List<Ajuste>> watchByStatus(String status) =>
+      (_db.select(_db.ajustes)
+            ..where((t) => t.status.equals(status))
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          .watch();
+
+  Future<List<Ajuste>> getAll() =>
+      (_db.select(_db.ajustes)
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          .get();
+
+  Future<void> markAsSent(int id) async {
+    await (_db.update(_db.ajustes)..where((t) => t.id.equals(id))).write(
+      AjustesCompanion(
+        status: const Value('sent'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<int> deleteById(int id) =>
       (_db.delete(_db.ajustes)..where((t) => t.id.equals(id))).go();
 }

@@ -22,6 +22,14 @@ class EmpenhosDao {
   Future<bool> updateEmpenho(EmpenhosCompanion entry) =>
       _db.update(_db.empenhos).replace(entry);
 
+  Future<void> markAsSent(int id) async {
+    await (_db.update(_db.empenhos)..where((t) => t.id.equals(id))).write(
+      EmpenhosCompanion(
+        status: const Value('sent'),
+      ),
+    );
+  }
+
   Future<int> deleteById(int id) =>
       (_db.delete(_db.empenhos)..where((t) => t.id.equals(id))).go();
 }
