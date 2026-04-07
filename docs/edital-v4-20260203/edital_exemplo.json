@@ -1,0 +1,70 @@
+ {
+    "descritor": {
+      "municipio": 7107,
+      "entidade": 10048,
+      "codigoEdital": "202410227000",
+      "dataDocumento": "2024-10-10",
+      "retificacao": false
+    },
+    "publicidade": {
+      "houvePublicacao": true,
+      "publicacoes": [
+        {
+          "dataPublicacao": "2023-12-05",
+          "veiculoPublicacao": 2
+        },
+        {
+          "dataPublicacao": "2024-01-01",
+          "veiculoPublicacao": 5,
+          "idContratacaoPNCP": "5029093100014010000022024"
+        }
+      ]
+    },
+    "tipoInstrumentoConvocatorioId": 1,
+    "modalidadeId": 6,
+    "modoDisputaId": 1,
+    "numeroCompra": "0001",
+    "anoCompra": 2023,
+    "numeroProcesso": "1/2023",
+    "objetoCompra": "Descricao do objeto da contratacao",
+    "informacaoComplementar": "",
+    "srp": false,
+    "dataAberturaProposta": "2023-07-21T08:00:00",
+    "dataEncerramentoProposta": "2023-07-21T17:00:00",
+    "amparoLegalId": 1,
+    "linkSistemaOrigem": "url do sistema de origem para envio de proposta/lance",
+    "itensCompra": [
+      {
+        "numeroItem": 1,
+        "materialOuServico": "S",
+        "tipoBeneficioId": 4,
+        "incentivoProdutivoBasico": false,
+        "descricao": "Item do tipo servico",
+        "quantidade": 1000,
+        "unidadeMedida": "Unidade",
+        "orcamentoSigiloso": false,
+        "valorUnitarioEstimado": 1.5001,
+        "valorTotal": 1500,
+        "criterioJulgamentoId": 1,
+        "itemCategoriaId": 3,
+        "patrimonio": "string",
+        "codigoRegistroImobiliario": "string"
+      },
+      {
+        "numeroItem": 2,
+        "materialOuServico": "M",
+        "tipoBeneficioId": 4,
+        "incentivoProdutivoBasico": false,
+        "descricao": "Item do tipo material",
+        "quantidade": 10,
+        "unidadeMedida": "Kilograma",
+        "orcamentoSigiloso": false,
+        "valorUnitarioEstimado": 100,
+        "valorTotal": 1000,
+        "criterioJulgamentoId": 1,
+        "itemCategoriaId": 3,
+        "patrimonio": "string",
+        "codigoRegistroImobiliario": "string"
+      }
+    ] 
+}

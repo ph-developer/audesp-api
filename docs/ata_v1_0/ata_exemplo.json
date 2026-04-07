@@ -1,0 +1,17 @@
+ {
+    "descritor": {
+      "municipio": 7107,
+      "entidade": 10048,
+      "codigoEdital": "202410227000",
+      "codigoAta": "123456-45SDF",
+	  "anoCompra": 2024,
+      "retificacao": false
+    },
+    "numeroItem": [3, 5, 6],
+    "numeroAtaRegistroPreco": "123A-45",
+  	"anoAta": 2024,
+    "dataAssinatura": "2024-10-10",
+    "dataVigenciaInicio": "2024-10-11",
+    "dataVigenciaFim": "2024-10-12"		
+
+}

@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Edital",
+  "description": "JSON schema para o envio de editais de licitação/compra. Ano exercício: 2023.",
+  "type": "object",
+  "required": [
+    "descritor",
+    "recursoBID",
+    "tipoNatureza",
+    "interposicaoRecurso",
+    "exigenciaGarantiaLicitantes",
+    "contratacaoConduzida",
+    "itens"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "descritor": {
+      "type": "object",
+      "properties": {
+        "municipio": {
+          "$id": "#root/descritor/municipio",
+          "title": "Municipio",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "entidade": {
+          "$id": "#root/descritor/entidade",
+          "title": "Entidade",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99999
+        },
+        "codigoEdital": {
+          "$id": "#root/descritor/codigoEdital",
+          "title": "Código único que identifica o Edital original",
+          "type": "string",
+          "maxLength": 25
+        },
+        "retificacao": {
+          "title": "Identifica se o documento é uma retificação; true - Retificação; false - Não é retificação",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "municipio",
+        "entidade",
+        "codigoEdital",
+        "retificacao"
+      ],
+      "additionalProperties": false
+    },
+    "recursoBID": {
+      "description": "Indica se recursos do Banco Interamericano de Desenvolvimento - BID - envolvidos",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "aberturaPreQualificacaoBID": {
+      "description": "Informa se houve objeção do BID ao aviso de abertura da pré-qualificação",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "editalPreQualificacaoBID": {
+      "description": "Informa se houve objeção do BID ao Edital da fase de Pré-qualificação",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "julgamentoPreQualificacaoBID": {
+      "description": "Informa se houve objeção do BID ao julgamento da fase de Pré-qualificação",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "edital2FaseBID": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "julgamentoPropostasBID": {
+      "description": "Informa se houve objeção do BID ao julgamento das propostas técnicas comerciais",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "julgamentoNegociacaoBID": {
+      "description": "Informa se houve objeção do BID ao julgamento da negociação final?",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "tipoNatureza": {
+      "description": "Tipo de natureza",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "viabilidadeContratacao": {
+      "description": "Indica se consta do procedimento parecer técnico-jurídico atestando a viabilidade da contratação",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "interposicaoRecurso": {
+      "description": "Indica se houve interposição de recurso",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "audienciaPublica": {
+      "description": "Informa se houve audiência pública relativa ao processo licitatório",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "exigenciaGarantiaLicitantes": {
+      "description": "Indica se há exigência de garantia para participação da licitação",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "percentualValor": {
+      "title": "Percentual do valor a ser usado como garantia",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "exigenciaAmostra": {
+      "description": "Indica se há exigência de amostra",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "quitacaoTributosFederais": {
+      "description": "Informa se, no edital, há exigência de prévia quitação de tributos federais pelos licitantes",
+      "type": "boolean"
+    },
+    "quitacaoTributosEstaduais": {
+      "description": "Informa se, no edital, há exigência de prévia quitação de tributos estaduais pelos licitantes",
+      "type": "boolean"
+    },
+    "quitacaoTributosMunicipais": {
+      "description": "Informa se, no edital, há exigência de prévia quitação de tributos municipais pelos licitantes",
+      "type": "boolean"
+    },
+    "exigenciaVisitaTecnica": {
+      "description": "No caso de obras e serviços de engenharia, indica se há exigência de visita ou vistoria técnica no edital",
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "exigenciaCurriculo": {
+      "description": "Indica se há exigência de apresentação de currículo dos profissionais indicados para a visita técnica",
+      "type": "boolean"
+    },
+    "exigenciaVistoCREA": {
+      "description": "Indica se há exigência de visto do CREA/SP para empresas sediadas em outros estados",
+      "type": "boolean"
+    },
+    "declaracaoRecursosContratacao": {
+      "description": "Informa se houve declaração da existência de recursos orçamentários para a contratação",
+      "type": "boolean"
+    },
+ 
+    "fonteRecursosContratacao": {
+      "title": "Lista de fontes de recursos que constam na declaração da existência de recursos orçamentários para a contratação",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "title": "item",
+        "type": "number",
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98
+        ]
+      }
+  },      
+    "contratacaoConduzida": {
+      "description": "Indica se a contratação foi conduzida por um agente, comissão de contratação ou figura similar",
+       "type": "boolean"
+    },
+    "cpfsCondutores": {
+       "title": "Lista de CPFs dos condutores da licitação",
+        "type": "array",
+        "items": {
+          "description": "CPF de condutor",
+          "type": "object",
+          "required": [
+            "cpfCondutor"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "cpfCondutor": {
+              "title": "CPF",
+              "type": "string",
+              "minLength": 11,
+              "maxLength": 11
+            }
+          }
+        }
+      },
+      "exigenciaIndicesEconomicos": {
+        "description": "Indica se há exigência de índices econômicos mínimos",
+        "type": "integer",
+        "enum": [
+          1,
+          2,
+          3
+        ]
+      },
+      "indicesEconomicos": {
+        "title": "Lista de índices econômicos",
+        "type": "array",
+        "items": {
+          "description": "Índice econômico",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tipoIndice": {
+              "title": "Tipo do índice econômico",
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ]
+            },
+            "nomeIndice": {
+              "title": "Nome do índice econômico",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 50
+            },
+            "valorIndice": {
+              "title": "Valor do índice econômico",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999999999999
+            }
+          },
+          "required": [
+            "tipoIndice",
+            "valorIndice"
+          ]
+        }
+      },
+      "itens": {
+        "title": "Lista de itens",
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "description": "Item licitado",
+          "type": "object",
+          "required": [
+            "numeroItem",
+            "tipoOrcamento",
+            "situacaoCompraItemId",
+            "dataSituacaoItem",
+            "tipoValor",
+            "tipoProposta",
+            "licitantes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "numeroItem": {
+              "title": "Número do item na contratação (único e sequencial crescente)",
+              "type": "integer"
+            },
+            "tipoOrcamento": {
+              "title": "Indica o tipo de orçamento realizado para o item",
+              "type": "number",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            },
+            "valor": {
+              "title": "Valor médio dos orçamentos",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999999999999
+            },
+            "dataOrcamento": {
+              "title": "Data em que foi realizado o primeiro orçamento ou a primeira pesquisa de preço",
+              "type": "string",
+              "format": "date"
+            },
+            "situacaoCompraItemId": {
+              "title": "Indica a situação do item",
+              "type": "number",
+              "enum": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "dataSituacaoItem": {
+              "title": "Data da situação do item",
+              "type": "string",
+              "format": "date"
+            },
+            "tipoValor": {
+              "title": "Indica o tipo do valor da proposta: M - monetário ou P - percentual ",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1
+            },
+            "tipoProposta": {
+              "title": "Informa o tipo da proposta do item",
+              "type": "number",
+              "enum": [
+                1,
+                2,
+                3
+              ]
+            },
+            "licitantes": {
+              "title": "Lista de licitantes",
+              "type": "array",
+              "items": {
+                "description": "Licitante",
+                "type": "object",
+                "required": [
+                  "tipoPessoaId",
+                  "niPessoa",
+                  "declaracaoMEouEPP",
+                  "resultadoHabilitacao"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "tipoPessoaId": {
+                    "title": "PJ-Pessoa Jurídica PF-Pessoa Física PE-Estrangeiro",
+                    "type": "string",
+                    "enum": [
+                      "PJ",
+                      "PF",
+                      "PE"
+                    ]
+                  },
+                  "niPessoa": {
+                    "title": "Número de identificação ou documento do responsável pelo orçamento",
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 30
+                  },
+                  "nomeRazaoSocial": {
+                    "title": "Nome do responsável pelo orçamento",
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50
+                  },
+                  "declaracaoMEouEPP": {
+                    "title": "Indica se é micro empresa ou empresa de pequeno porte",
+                    "type": "number",
+                    "enum": [
+                      1,
+                      2,
+                      3
+                    ]
+                  },
+                  "valor": {
+                    "title": "Valor da proposta",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999999999
+                  },
+                  "resultadoHabilitacao": {
+                    "title": "Resultado da habilitação",
+                    "type": "number",
+                    "enum": [
+                      1,
+                      2,
+                      3,
+                      4,
+                      5,
+                      6,
+                      7
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }    
+  }
+}

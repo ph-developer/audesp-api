@@ -1,0 +1,77 @@
+{
+  "descritor": {
+    "municipio": 7107,
+    "entidade": 10048,
+    "codigoEdital": "123",
+    "retificacao": false
+  },
+  "recursoBID": 1,
+  "aberturaPreQualificacaoBID": 2,
+  "editalPreQualificacaoBID": 2,
+  "julgamentoPreQualificacaoBID": 2,
+  "edital2FaseBID": 2,
+  "julgamentoPropostasBID": 2,
+  "julgamentoNegociacaoBID": 2,
+  "tipoNatureza": 5,
+  "viabilidadeContratacao": 2,
+  "interposicaoRecurso": 2,  
+  "audienciaPublica": 1,  
+  "exigenciaGarantiaLicitantes": 1,
+  "percentualValor": 45,
+  "exigenciaAmostra": 1,
+  "quitacaoTributosFederais": true,
+  "quitacaoTributosEstaduais": true,
+  "quitacaoTributosMunicipais": true,
+  "exigenciaVisitaTecnica": 1,
+  "exigenciaCurriculo": true,
+  "exigenciaVistoCREA": false,
+  "declaracaoRecursosContratacao": true, 
+  "fonteRecursosContratacao": [2,3],
+  "contratacaoConduzida": true,
+  "cpfsCondutores": [
+    {
+      "cpfCondutor": "12345678901"
+    }
+  ],
+  "exigenciaIndicesEconomicos": 1,
+  "indicesEconomicos": [
+    {
+      "tipoIndice": 8,
+      "nomeIndice": "UmOutroIndice",
+      "valorIndice": 12345
+    },
+    {
+      "tipoIndice": 4,
+      "valorIndice": 12345
+    }
+  ],
+  "itens": [
+    {
+      "numeroItem": 2,
+      "tipoOrcamento": 1,
+      "valor": 12345,		  
+      "dataOrcamento": "2023-03-25",		  
+      "situacaoCompraItemId": 2,
+      "dataSituacaoItem": "2023-02-25",
+      "tipoValor": "M",
+      "tipoProposta": 2,
+      "licitantes": [
+        {
+          "tipoPessoaId": "PJ",
+          "niPessoa": "12345678901234",
+          "declaracaoMEouEPP": 1,
+          "valor": 12345.55,
+          "resultadoHabilitacao": 1
+        },
+        {
+          "tipoPessoaId": "PE",
+          "niPessoa": "01234FG567890123",
+          "nomeRazaoSocial": "UmaOutraEmpresaEstrangeira",
+          "declaracaoMEouEPP": 2,
+          "valor": 17345.66,
+          "resultadoHabilitacao": 1
+        }		
+      ]
+    }	
+  ]
+}

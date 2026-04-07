@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Edital",
+  "description": "JSON schema para o envio de ata. Ano exercício: 2023/2024.",
+  "type": "object",
+  "properties": {
+    "descritor": {
+      "type": "object",
+      "properties": {
+        "municipio": {
+          "$id": "#root/descritor/municipio",
+          "title": "Municipio",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "entidade": {
+          "$id": "#root/descritor/entidade",
+          "title": "Entidade",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99999
+        },
+        "codigoEdital": {
+          "$id": "#root/descritor/codigoEdital",
+          "title": "Código único que identifica o Edital original",
+          "type": "string",
+          "maxLength": 30
+        },
+        "codigoAta": {
+          "$id": "#root/descritor/codigoAta",
+          "title": "Código único que identifica a ata",
+          "type": "string",
+          "maxLength": 30
+        },
+        "anoCompra": {
+          "$id": "#root/descritor/dataPublicacao",
+          "title": "Ano da contratação",
+          "type": "integer",
+          "minimum": 1950,
+          "maximum": 2100
+        },
+        "retificacao": {
+          "title": "Identifica se o documento é uma retificação; true - Retificação; false - Não é retificação",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "municipio",
+        "entidade",
+        "codigoEdital",
+        "codigoAta",
+        "anoCompra",
+        "retificacao"
+      ],
+      "additionalProperties": false
+    },
+    "numeroItem": {
+      "title": "Lista de itens da licitação aos quais a ata se refere",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "title": "item",
+        "type": "number"
+      }
+    },
+    "numeroAtaRegistroPreco": {
+      "description": "Número da ata no sistema de origem",
+      "type": "string",
+      "maxLength": 30
+    },
+    "anoAta": {
+      "title": "Ano da ata",
+      "type": "integer",
+      "minimum": 1950,
+      "maximum": 2100
+    },
+    "dataAssinatura": {
+      "title": "Informar a data de assinatura da ata",
+      "type": "string",
+      "format": "date"
+    },
+    "dataVigenciaInicio": {
+      "title": "Informar a data de início de vigência da ata",
+      "type": "string",
+      "format": "date"
+    },
+    "dataVigenciaFim": {
+      "title": "Informar a data do fim de vigência da ata",
+      "type": "string",
+      "format": "date"
+    },
+  },
+  required: [
+    "descritor",
+    "numeroItem",
+    "numeroAtaRegistroPreco",
+    "anoAta",
+    "dataAssinatura",
+    "dataVigenciaInicio",
+    "dataVigenciaFim"
+  ],
+  "additionalProperties": false  
+}
