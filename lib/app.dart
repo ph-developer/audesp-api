@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +10,7 @@ import 'features/ata/pages/ata_page.dart';
 import 'features/auth/auth_providers.dart';
 import 'features/auth/pages/login_page.dart';
 import 'features/auth/pages/profile_page.dart';
+import 'features/edital/pages/edital_form_page.dart';
 import 'features/edital/pages/edital_page.dart';
 import 'features/licitacao/pages/licitacao_page.dart';
 import 'features/logs/pages/logs_page.dart';
@@ -74,6 +76,20 @@ final _routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/edital',
             builder: (context, _) => const EditalPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, _) => const EditalFormPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  return EditalFormPage(editalId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/licitacao',
@@ -113,6 +129,13 @@ class App extends ConsumerWidget {
       theme: AppTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('pt', 'BR')],
+      locale: const Locale('pt', 'BR'),
     );
   }
 }

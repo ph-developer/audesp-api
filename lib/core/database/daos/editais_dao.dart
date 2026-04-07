@@ -36,6 +36,24 @@ class EditaisDao {
   Future<bool> updateEdital(EditaisCompanion entry) =>
       _db.update(_db.editais).replace(entry);
 
+  Future<void> markAsSent(int id) async {
+    await (_db.update(_db.editais)..where((t) => t.id.equals(id))).write(
+      EditaisCompanion(
+        status: const Value('sent'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> updateJson(int id, String json) async {
+    await (_db.update(_db.editais)..where((t) => t.id.equals(id))).write(
+      EditaisCompanion(
+        documentoJson: Value(json),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<int> deleteById(int id) =>
       (_db.delete(_db.editais)..where((t) => t.id.equals(id))).go();
 }

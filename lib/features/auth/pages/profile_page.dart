@@ -22,8 +22,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nome;
-  late TextEditingController _municipio;
-  late TextEditingController _entidade;
 
   // Seção de senha do sistema
   final _sysPwAtualCtrl = TextEditingController();
@@ -47,15 +45,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     super.initState();
     _user = ref.read(localSessionProvider);
     _nome = TextEditingController(text: _user?.nome ?? '');
-    _municipio = TextEditingController(text: _user?.municipio ?? '');
-    _entidade = TextEditingController(text: _user?.entidade ?? '');
   }
 
   @override
   void dispose() {
     _nome.dispose();
-    _municipio.dispose();
-    _entidade.dispose();
     _sysPwAtualCtrl.dispose();
     _sysPwNovaCtrl.dispose();
     _senhaAtualCtrl.dispose();
@@ -76,8 +70,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           id: Value(_user!.id),
           nome: Value(_nome.text.trim()),
           email: Value(_user!.email),
-          municipio: Value(_municipio.text.trim()),
-          entidade: Value(_entidade.text.trim()),
+          municipio: Value(_user!.municipio),
+          entidade: Value(_user!.entidade),
           isAdmin: Value(_user!.isAdmin),
         ),
       );
@@ -264,24 +258,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         TextFormField(
                           controller: _nome,
                           decoration: const InputDecoration(labelText: 'Nome'),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Obrigatório'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _municipio,
-                          decoration:
-                              const InputDecoration(labelText: 'Município'),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Obrigatório'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _entidade,
-                          decoration:
-                              const InputDecoration(labelText: 'Entidade'),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Obrigatório'
                               : null,

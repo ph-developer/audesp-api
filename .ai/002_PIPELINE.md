@@ -131,6 +131,8 @@ Definir as constantes de URL para os dois ambientes da API AUDESP.
 - Listagem de editais (draft / enviado)
 - Formulário completo baseado em edital_schema.json: campos descritores + lista de publicações + lista de itens
 - Seletor de PDF (`file_picker`)
+- Ao selecionar o PDF deve havar uma opção que será implementada posteriormente: chama a api do gemini para ler o edital e trazer alguns dados para preenchimento automático do formulário
+- Deve ser possível a importação da lista de itens de um arquivo csv (formato a definir posteriormente)
 - Salvar rascunho no SQLite
 - Envio: `multipart/form-data` com `documentoJSON` + `arquivoPDF` → POST `/recepcao-fase-4/f4/enviar-edital`
 - Gravar retorno em `api_logs`
