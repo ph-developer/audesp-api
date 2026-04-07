@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
+import 'features/ata/pages/ata_form_page.dart';
 import 'features/ata/pages/ata_page.dart';
 import 'features/auth/auth_providers.dart';
 import 'features/auth/pages/login_page.dart';
@@ -117,6 +118,24 @@ final _routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/ata',
             builder: (context, _) => const AtaPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) {
+                  final editalId =
+                      int.tryParse(state.uri.queryParameters['editalId'] ?? '');
+                  return AtaFormPage(preselectedEditalId: editalId);
+                },
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  return AtaFormPage(ataId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/ajuste',

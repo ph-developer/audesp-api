@@ -11,6 +11,12 @@ class AtasDao {
             ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
           .watch();
 
+  Stream<List<Ata>> watchByStatus(String status) =>
+      (_db.select(_db.atas)
+            ..where((t) => t.status.equals(status))
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          .watch();
+
   Stream<List<Ata>> watchByEdital(int editalId) =>
       (_db.select(_db.atas)..where((t) => t.editalId.equals(editalId)))
           .watch();
@@ -33,6 +39,15 @@ class AtasDao {
 
   Future<bool> updateAta(AtasCompanion entry) =>
       _db.update(_db.atas).replace(entry);
+
+  Future<void> markAsSent(int id) async {
+    await (_db.update(_db.atas)..where((t) => t.id.equals(id))).write(
+      AtasCompanion(
+        status: const Value('sent'),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 
   Future<int> deleteById(int id) =>
       (_db.delete(_db.atas)..where((t) => t.id.equals(id))).go();
