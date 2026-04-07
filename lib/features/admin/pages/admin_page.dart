@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/environments.dart';
 import '../../../core/database/app_database.dart';
@@ -38,6 +39,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administração'),
+        leading: BackButton(onPressed: () => context.go('/edital')),
         bottom: TabBar(
           controller: _tab,
           tabs: const [
@@ -159,8 +161,7 @@ class _UsersTab extends ConsumerWidget {
   Future<void> _openForm(BuildContext context, WidgetRef ref, User? user) =>
       showDialog(
         context: context,
-        builder: (_) =>
-            UserFormDialog(user: user, isCurrentUserAdmin: true),
+        builder: (_) => UserFormDialog(user: user),
       );
 
   Future<void> _confirmDelete(

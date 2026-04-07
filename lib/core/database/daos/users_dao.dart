@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../app_database.dart';
 
 class UsersDao {
@@ -34,5 +36,9 @@ class UsersDao {
 
   Future<int> deleteById(int id) =>
       (_db.delete(_db.users)..where((t) => t.id.equals(id))).go();
+
+  Future<void> setPasswordHash(int userId, String hash) =>
+      (_db.update(_db.users)..where((u) => u.id.equals(userId)))
+          .write(UsersCompanion(passwordHash: Value(hash)));
 }
 

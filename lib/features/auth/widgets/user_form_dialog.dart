@@ -4,20 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
-import '../../../core/services/secure_storage_service.dart';
 
-/// Diálogo para criar ou editar um perfil de usuário local.
-/// Ao confirmar, persiste no SQLite e armazena a senha no secure storage.
-///
-/// [isCurrentUserAdmin] — quando `true`, exibe o toggle de administrador.
+/// Diálogo para criar ou editar um cadastro de usuário local.
+/// Não define senha — o usuário configura as credenciais AUDESP no primeiro login.
 class UserFormDialog extends ConsumerStatefulWidget {
-  /// Se [user] for não-nulo, é edição; caso contrário, criação.
   final User? user;
 
-  /// Quando verdadeiro, mostra o campo "Administrador" no formulário.
-  final bool isCurrentUserAdmin;
-
-  const UserFormDialog({super.key, this.user, this.isCurrentUserAdmin = false});
+  const UserFormDialog({super.key, this.user});
 
   @override
   ConsumerState<UserFormDialog> createState() => _UserFormDialogState();
@@ -29,10 +22,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   late final TextEditingController _email;
   late final TextEditingController _municipio;
   late final TextEditingController _entidade;
-  late final TextEditingController _senha;
-  bool _obscure = true;
   bool _saving = false;
-  bool _isAdmin = false;
 
   bool get _isEdit => widget.user != null;
 
@@ -43,8 +33,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     _email = TextEditingController(text: widget.user?.email ?? '');
     _municipio = TextEditingController(text: widget.user?.municipio ?? '');
     _entidade = TextEditingController(text: widget.user?.entidade ?? '');
-    _senha = TextEditingController();
-    _isAdmin = widget.user?.isAdmin ?? false;
   }
 
   @override
@@ -53,7 +41,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     _email.dispose();
     _municipio.dispose();
     _entidade.dispose();
-    _senha.dispose();
     super.dispose();
   }
 
@@ -62,7 +49,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     setState(() => _saving = true);
 
     final dao = ref.read(usersDaoProvider);
-    final storage = ref.read(secureStorageServiceProvider);
 
     try {
       if (_isEdit) {
@@ -73,29 +59,18 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
             email: Value(_email.text.trim()),
             municipio: Value(_municipio.text.trim()),
             entidade: Value(_entidade.text.trim()),
-            isAdmin: Value(_isAdmin),
+            isAdmin: Value(widget.user!.isAdmin),
           ),
         );
-        // Atualiza senha apenas se preenchida
-        if (_senha.text.isNotEmpty) {
-          await storage.storePassword(
-              _email.text.trim(), _senha.text);
-        }
       } else {
-        // Primeiro usuário a ser criado sempre vira admin
-        final isFirstUser = (await dao.countUsers()) == 0;
-        final id = await dao.insertUser(
+        await dao.insertUser(
           UsersCompanion.insert(
             nome: _nome.text.trim(),
             email: _email.text.trim(),
             municipio: _municipio.text.trim(),
             entidade: _entidade.text.trim(),
-            isAdmin: Value(isFirstUser || _isAdmin),
           ),
         );
-        if (id > 0) {
-          await storage.storePassword(_email.text.trim(), _senha.text);
-        }
       }
 
       if (mounted) Navigator.of(context).pop(true);
@@ -112,7 +87,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEdit ? 'Editar perfil' : 'Novo perfil'),
+      title: Text(_isEdit ? 'Editar usuário' : 'Novo usuário'),
       content: SizedBox(
         width: 380,
         child: Form(
@@ -129,7 +104,10 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _email,
-                decoration: const InputDecoration(labelText: 'E-mail AUDESP'),
+                decoration: const InputDecoration(
+                  labelText: 'E-mail AUDESP',
+                  helperText: 'Será usado como login e nas chamadas à API',
+                ),
                 keyboardType: TextInputType.emailAddress,
                 enabled: !_isEdit,
                 validator: (v) {
@@ -152,38 +130,26 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
-              if (widget.isCurrentUserAdmin) ...[
+              if (!_isEdit) ...[
                 const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Administrador'),
-                  subtitle: const Text('Acesso ao painel de administração'),
-                  value: _isAdmin,
-                  onChanged: (v) => setState(() => _isAdmin = v),
-                ),
-              ],
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _senha,
-                obscureText: _obscure,
-                decoration: InputDecoration(
-                  labelText: _isEdit
-                      ? 'Nova senha AUDESP (deixe em branco para manter)'
-                      : 'Senha AUDESP',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'A senha AUDESP será configurada pelo próprio usuário no primeiro login.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
-                validator: (v) {
-                  if (!_isEdit && (v == null || v.isEmpty)) {
-                    return 'Obrigatório';
-                  }
-                  return null;
-                },
-              ),
+              ],
             ],
           ),
         ),
@@ -207,3 +173,8 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     );
   }
 }
+
+
+/// Diálogo para criar ou editar um perfil de usuário local.
+/// Ao confirmar, persiste no SQLite e armazena a senha no secure storage.
+///

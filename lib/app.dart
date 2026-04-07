@@ -41,6 +41,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
         return '/edital';
       }
 
+      // Admin tentando acessar o perfil de usuário → redireciona para admin
+      if (loggedIn && loc == '/profile' && user.isAdmin == true) {
+        return '/admin';
+      }
+
       return null;
     },
     routes: [

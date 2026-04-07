@@ -10,6 +10,8 @@ class Users extends Table {
   TextColumn get municipio => text()();
   TextColumn get entidade => text()();
   BoolColumn get isAdmin => boolean().withDefault(const Constant(false))();
+  /// SHA-256 da senha do sistema (null = ainda usa a senha padrão do .env).
+  TextColumn get passwordHash => text().nullable()();
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 }

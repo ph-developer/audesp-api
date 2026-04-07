@@ -77,6 +77,17 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _passwordHashMeta = const VerificationMeta(
+    'passwordHash',
+  );
+  @override
+  late final GeneratedColumn<String> passwordHash = GeneratedColumn<String>(
+    'password_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -97,6 +108,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     municipio,
     entidade,
     isAdmin,
+    passwordHash,
     createdAt,
   ];
   @override
@@ -152,6 +164,15 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         isAdmin.isAcceptableOrUnknown(data['is_admin']!, _isAdminMeta),
       );
     }
+    if (data.containsKey('password_hash')) {
+      context.handle(
+        _passwordHashMeta,
+        passwordHash.isAcceptableOrUnknown(
+          data['password_hash']!,
+          _passwordHashMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -191,6 +212,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_admin'],
       )!,
+      passwordHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}password_hash'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -211,6 +236,9 @@ class User extends DataClass implements Insertable<User> {
   final String municipio;
   final String entidade;
   final bool isAdmin;
+
+  /// SHA-256 da senha do sistema (null = ainda usa a senha padrão do .env).
+  final String? passwordHash;
   final DateTime createdAt;
   const User({
     required this.id,
@@ -219,6 +247,7 @@ class User extends DataClass implements Insertable<User> {
     required this.municipio,
     required this.entidade,
     required this.isAdmin,
+    this.passwordHash,
     required this.createdAt,
   });
   @override
@@ -230,6 +259,9 @@ class User extends DataClass implements Insertable<User> {
     map['municipio'] = Variable<String>(municipio);
     map['entidade'] = Variable<String>(entidade);
     map['is_admin'] = Variable<bool>(isAdmin);
+    if (!nullToAbsent || passwordHash != null) {
+      map['password_hash'] = Variable<String>(passwordHash);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -242,6 +274,9 @@ class User extends DataClass implements Insertable<User> {
       municipio: Value(municipio),
       entidade: Value(entidade),
       isAdmin: Value(isAdmin),
+      passwordHash: passwordHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(passwordHash),
       createdAt: Value(createdAt),
     );
   }
@@ -258,6 +293,7 @@ class User extends DataClass implements Insertable<User> {
       municipio: serializer.fromJson<String>(json['municipio']),
       entidade: serializer.fromJson<String>(json['entidade']),
       isAdmin: serializer.fromJson<bool>(json['isAdmin']),
+      passwordHash: serializer.fromJson<String?>(json['passwordHash']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -271,6 +307,7 @@ class User extends DataClass implements Insertable<User> {
       'municipio': serializer.toJson<String>(municipio),
       'entidade': serializer.toJson<String>(entidade),
       'isAdmin': serializer.toJson<bool>(isAdmin),
+      'passwordHash': serializer.toJson<String?>(passwordHash),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -282,6 +319,7 @@ class User extends DataClass implements Insertable<User> {
     String? municipio,
     String? entidade,
     bool? isAdmin,
+    Value<String?> passwordHash = const Value.absent(),
     DateTime? createdAt,
   }) => User(
     id: id ?? this.id,
@@ -290,6 +328,7 @@ class User extends DataClass implements Insertable<User> {
     municipio: municipio ?? this.municipio,
     entidade: entidade ?? this.entidade,
     isAdmin: isAdmin ?? this.isAdmin,
+    passwordHash: passwordHash.present ? passwordHash.value : this.passwordHash,
     createdAt: createdAt ?? this.createdAt,
   );
   User copyWithCompanion(UsersCompanion data) {
@@ -300,6 +339,9 @@ class User extends DataClass implements Insertable<User> {
       municipio: data.municipio.present ? data.municipio.value : this.municipio,
       entidade: data.entidade.present ? data.entidade.value : this.entidade,
       isAdmin: data.isAdmin.present ? data.isAdmin.value : this.isAdmin,
+      passwordHash: data.passwordHash.present
+          ? data.passwordHash.value
+          : this.passwordHash,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -313,14 +355,23 @@ class User extends DataClass implements Insertable<User> {
           ..write('municipio: $municipio, ')
           ..write('entidade: $entidade, ')
           ..write('isAdmin: $isAdmin, ')
+          ..write('passwordHash: $passwordHash, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, nome, email, municipio, entidade, isAdmin, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    nome,
+    email,
+    municipio,
+    entidade,
+    isAdmin,
+    passwordHash,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -331,6 +382,7 @@ class User extends DataClass implements Insertable<User> {
           other.municipio == this.municipio &&
           other.entidade == this.entidade &&
           other.isAdmin == this.isAdmin &&
+          other.passwordHash == this.passwordHash &&
           other.createdAt == this.createdAt);
 }
 
@@ -341,6 +393,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> municipio;
   final Value<String> entidade;
   final Value<bool> isAdmin;
+  final Value<String?> passwordHash;
   final Value<DateTime> createdAt;
   const UsersCompanion({
     this.id = const Value.absent(),
@@ -349,6 +402,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.municipio = const Value.absent(),
     this.entidade = const Value.absent(),
     this.isAdmin = const Value.absent(),
+    this.passwordHash = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   UsersCompanion.insert({
@@ -358,6 +412,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String municipio,
     required String entidade,
     this.isAdmin = const Value.absent(),
+    this.passwordHash = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : nome = Value(nome),
        email = Value(email),
@@ -370,6 +425,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? municipio,
     Expression<String>? entidade,
     Expression<bool>? isAdmin,
+    Expression<String>? passwordHash,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -379,6 +435,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (municipio != null) 'municipio': municipio,
       if (entidade != null) 'entidade': entidade,
       if (isAdmin != null) 'is_admin': isAdmin,
+      if (passwordHash != null) 'password_hash': passwordHash,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -390,6 +447,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Value<String>? municipio,
     Value<String>? entidade,
     Value<bool>? isAdmin,
+    Value<String?>? passwordHash,
     Value<DateTime>? createdAt,
   }) {
     return UsersCompanion(
@@ -399,6 +457,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       municipio: municipio ?? this.municipio,
       entidade: entidade ?? this.entidade,
       isAdmin: isAdmin ?? this.isAdmin,
+      passwordHash: passwordHash ?? this.passwordHash,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -424,6 +483,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (isAdmin.present) {
       map['is_admin'] = Variable<bool>(isAdmin.value);
     }
+    if (passwordHash.present) {
+      map['password_hash'] = Variable<String>(passwordHash.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -439,6 +501,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('municipio: $municipio, ')
           ..write('entidade: $entidade, ')
           ..write('isAdmin: $isAdmin, ')
+          ..write('passwordHash: $passwordHash, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4840,6 +4903,7 @@ typedef $$UsersTableCreateCompanionBuilder =
       required String municipio,
       required String entidade,
       Value<bool> isAdmin,
+      Value<String?> passwordHash,
       Value<DateTime> createdAt,
     });
 typedef $$UsersTableUpdateCompanionBuilder =
@@ -4850,6 +4914,7 @@ typedef $$UsersTableUpdateCompanionBuilder =
       Value<String> municipio,
       Value<String> entidade,
       Value<bool> isAdmin,
+      Value<String?> passwordHash,
       Value<DateTime> createdAt,
     });
 
@@ -4888,6 +4953,11 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<bool> get isAdmin => $composableBuilder(
     column: $table.isAdmin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get passwordHash => $composableBuilder(
+    column: $table.passwordHash,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4936,6 +5006,11 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get passwordHash => $composableBuilder(
+    column: $table.passwordHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4968,6 +5043,11 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<bool> get isAdmin =>
       $composableBuilder(column: $table.isAdmin, builder: (column) => column);
+
+  GeneratedColumn<String> get passwordHash => $composableBuilder(
+    column: $table.passwordHash,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5007,6 +5087,7 @@ class $$UsersTableTableManager
                 Value<String> municipio = const Value.absent(),
                 Value<String> entidade = const Value.absent(),
                 Value<bool> isAdmin = const Value.absent(),
+                Value<String?> passwordHash = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
@@ -5015,6 +5096,7 @@ class $$UsersTableTableManager
                 municipio: municipio,
                 entidade: entidade,
                 isAdmin: isAdmin,
+                passwordHash: passwordHash,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -5025,6 +5107,7 @@ class $$UsersTableTableManager
                 required String municipio,
                 required String entidade,
                 Value<bool> isAdmin = const Value.absent(),
+                Value<String?> passwordHash = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion.insert(
                 id: id,
@@ -5033,6 +5116,7 @@ class $$UsersTableTableManager
                 municipio: municipio,
                 entidade: entidade,
                 isAdmin: isAdmin,
+                passwordHash: passwordHash,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

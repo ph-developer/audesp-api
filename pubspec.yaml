@@ -32,6 +32,12 @@ dependencies:
   # Formatação de datas
   intl: ^0.20.2
 
+  # Variáveis de ambiente (.env)
+  flutter_dotenv: ^5.2.1
+
+  # Hash de senhas
+  crypto: ^3.0.5
+
   # Modelos imutáveis + serialização
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
@@ -49,3 +55,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/.env
