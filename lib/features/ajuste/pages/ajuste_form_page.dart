@@ -588,33 +588,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Sub-módulos (visíveis após salvar) ───────────────────
-              if (_loadedId != null) ...[
-                _SectionHeader(title: 'Sub-módulos'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            context.go('/ajuste/${_loadedId!}/empenho'),
-                        icon: const Icon(Icons.receipt_long_outlined),
-                        label: const Text('Empenhos de Contrato'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            context.go('/ajuste/${_loadedId!}/termo'),
-                        icon: const Icon(Icons.description_outlined),
-                        label: const Text('Termos de Contrato'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-
               // ── Vínculo com Edital ───────────────────────────────────
               _SectionHeader(title: 'Vínculo com Edital'),
               DropdownButtonFormField<int>(

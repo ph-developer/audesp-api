@@ -6,8 +6,6 @@ import '../database/daos/editais_dao.dart';
 import '../database/daos/licitacoes_dao.dart';
 import '../database/daos/atas_dao.dart';
 import '../database/daos/ajustes_dao.dart';
-import '../database/daos/empenhos_dao.dart';
-import '../database/daos/termos_contrato_dao.dart';
 import '../database/daos/api_logs_dao.dart';
 
 /// Instância única do banco de dados para toda a sessão do app.
@@ -35,14 +33,6 @@ final atasDaoProvider = Provider<AtasDao>(
 
 final ajustesDaoProvider = Provider<AjustesDao>(
   (ref) => AjustesDao(ref.watch(appDatabaseProvider)),
-);
-
-final empenhosDaoProvider = Provider<EmpenhosDao>(
-  (ref) => EmpenhosDao(ref.watch(appDatabaseProvider)),
-);
-
-final termosContratoDaoProvider = Provider<TermosContratoDao>(
-  (ref) => TermosContratoDao(ref.watch(appDatabaseProvider)),
 );
 
 final apiLogsDaoProvider = Provider<ApiLogsDao>(

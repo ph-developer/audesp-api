@@ -102,45 +102,6 @@ class Ajustes extends Table {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Empenhos — sub-módulo do Ajuste
-// ─────────────────────────────────────────────────────────────────────────────
-class Empenhos extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get ajusteId => integer().references(Ajustes, #id)();
-  TextColumn get municipio => text()();
-  TextColumn get entidade => text()();
-  TextColumn get codigoContrato => text()();
-  TextColumn get numeroEmpenho => text()();
-  IntColumn get anoEmpenho => integer()();
-  BoolColumn get retificacao =>
-      boolean().withDefault(const Constant(false))();
-  TextColumn get status => text().withDefault(const Constant('draft'))();
-  TextColumn get documentoJson =>
-      text().withDefault(const Constant('{}'))();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TermosContrato — sub-módulo do Ajuste
-// ─────────────────────────────────────────────────────────────────────────────
-class TermosContrato extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get ajusteId => integer().references(Ajustes, #id)();
-  TextColumn get municipio => text()();
-  TextColumn get entidade => text()();
-  TextColumn get codigoContrato => text()();
-  TextColumn get codigoTermoContrato => text()();
-  BoolColumn get retificacao =>
-      boolean().withDefault(const Constant(false))();
-  TextColumn get status => text().withDefault(const Constant('draft'))();
-  TextColumn get documentoJson =>
-      text().withDefault(const Constant('{}'))();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ApiLogs — histórico de todas as chamadas à API AUDESP
 // ─────────────────────────────────────────────────────────────────────────────
 class ApiLogs extends Table {

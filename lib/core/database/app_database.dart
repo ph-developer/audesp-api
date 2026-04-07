@@ -13,15 +13,13 @@ part 'app_database.g.dart';
   Licitacoes,
   Atas,
   Ajustes,
-  Empenhos,
-  TermosContrato,
   ApiLogs,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,6 +29,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await m.addColumn(users, users.passwordHash);
+      }
+      if (from < 4) {
+        await customStatement('DROP TABLE IF EXISTS termos_contrato');
+        await customStatement('DROP TABLE IF EXISTS empenhos');
       }
     },
   );
