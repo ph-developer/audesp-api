@@ -12,6 +12,7 @@ import 'features/auth/pages/login_page.dart';
 import 'features/auth/pages/profile_page.dart';
 import 'features/edital/pages/edital_form_page.dart';
 import 'features/edital/pages/edital_page.dart';
+import 'features/licitacao/pages/licitacao_form_page.dart';
 import 'features/licitacao/pages/licitacao_page.dart';
 import 'features/logs/pages/logs_page.dart';
 import 'features/shell/shell_page.dart';
@@ -94,6 +95,24 @@ final _routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/licitacao',
             builder: (context, _) => const LicitacaoPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) {
+                  final editalId =
+                      int.tryParse(state.uri.queryParameters['editalId'] ?? '');
+                  return LicitacaoFormPage(preselectedEditalId: editalId);
+                },
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  return LicitacaoFormPage(licitacaoId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/ata',
