@@ -1,16 +1,33 @@
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final logServiceProvider = Provider<LogService>((ref) => LogService());
+import '../database/database_providers.dart';
+import '../database/app_database.dart';
+import '../database/daos/api_logs_dao.dart';
+
+final logServiceProvider = Provider<LogService>(
+  (ref) => LogService(ref.watch(apiLogsDaoProvider)),
+);
 
 class LogService {
-  /// Grava uma chamada à API na tabela api_logs.
+  final ApiLogsDao _dao;
+  LogService(this._dao);
+
   Future<void> record({
     required String endpoint,
     required String request,
     required String response,
     required int statusCode,
-    required int userId,
-  }) async {
-    // TODO: implementar persistência em SQLite
-  }
+    int? userId,
+  }) =>
+      _dao.insertLog(
+        ApiLogsCompanion.insert(
+          endpoint: endpoint,
+          request: request,
+          response: Value(response),
+          statusCode: Value(statusCode),
+          userId: Value(userId),
+        ),
+      );
 }
+
