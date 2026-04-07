@@ -10,10 +10,8 @@ extension EnvironmentExtension on Environment {
       };
 
   String get baseUrl => switch (this) {
-        Environment.piloto =>
-          'https://www.tce.sp.gov.br/audesp-recepcao-piloto',
-        Environment.oficial =>
-          'https://www.tce.sp.gov.br/audesp-recepcao',
+        Environment.piloto => 'https://audesp-piloto.tce.sp.gov.br',
+        Environment.oficial => 'https://audesp.tce.sp.gov.br',
       };
 }
 

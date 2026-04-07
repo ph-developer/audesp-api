@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -9,13 +10,28 @@ class AuthService {
 
   bool get isAuthenticated => _bearerToken != null;
 
-  /// Autentica no AUDESP e armazena o Bearer token em memória (por sessão).
-  Future<void> login(String email, String password) async {
-    // TODO: implementar POST de autenticação ao AUDESP
-    _bearerToken = null;
+  /// Autentica no AUDESP via POST /login.
+  /// Header: x-authorization = "email:password"
+  /// Retorna o Bearer token e o armazena em memória (por sessão).
+  Future<String> loginAudesp({
+    required String email,
+    required String password,
+    required String baseUrl,
+  }) async {
+    final dio = Dio();
+    final response = await dio.post(
+      '$baseUrl/login',
+      options: Options(
+        headers: {'x-authorization': '$email:$password'},
+      ),
+    );
+    final token = response.data['access_token'] as String;
+    _bearerToken = token;
+    return token;
   }
 
-  void logout() {
+  void clearToken() {
     _bearerToken = null;
   }
 }
+

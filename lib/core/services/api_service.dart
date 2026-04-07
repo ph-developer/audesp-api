@@ -1,17 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
+import 'auth_service.dart';
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  final authService = ref.watch(authServiceProvider);
+  return ApiService(authService);
+});
 
 class ApiService {
-  late final Dio _dio;
+  final Dio _dio;
 
-  ApiService() {
-    _dio = Dio();
+  ApiService(AuthService authService) : _dio = Dio() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Auth token será injetado aqui
+          final token = authService.bearerToken;
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
           handler.next(options);
         },
       ),
@@ -20,3 +27,4 @@ class ApiService {
 
   Dio get dio => _dio;
 }
+
