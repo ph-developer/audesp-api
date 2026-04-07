@@ -87,7 +87,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
               children: [
                 // Tipo de pessoa
                 DropdownButtonFormField<String>(
-                  value: _tipoPessoa,
+                  initialValue: _tipoPessoa,
                   decoration: const InputDecoration(labelText: 'Tipo de Pessoa *'),
                   items: kTipoPessoa.entries
                       .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -141,7 +141,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 const SizedBox(height: 12),
                 // Declaração ME/EPP
                 DropdownButtonFormField<int>(
-                  value: _declaracaoME,
+                  initialValue: _declaracaoME,
                   decoration: const InputDecoration(labelText: 'Declaração ME/EPP *'),
                   items: kDeclaracaoMEouEPP.entries
                       .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -172,7 +172,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 const SizedBox(height: 12),
                 // Resultado de habilitação
                 DropdownButtonFormField<int>(
-                  value: _resultadoHabilitacao,
+                  initialValue: _resultadoHabilitacao,
                   decoration: const InputDecoration(labelText: 'Resultado de Habilitação *'),
                   items: kResultadoHabilitacao.entries
                       .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))

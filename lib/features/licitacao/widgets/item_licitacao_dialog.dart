@@ -184,7 +184,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     Expanded(
                       flex: 4,
                       child: DropdownButtonFormField<int>(
-                        value: _tipoOrcamento,
+                        initialValue: _tipoOrcamento,
                         decoration: const InputDecoration(labelText: 'Tipo de Orçamento *'),
                         items: kTipoOrcamento.entries
                             .map((e) =>
@@ -249,7 +249,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     Expanded(
                       flex: 3,
                       child: DropdownButtonFormField<int>(
-                        value: _situacaoCompraItemId,
+                        initialValue: _situacaoCompraItemId,
                         decoration:
                             const InputDecoration(labelText: 'Situação do Item *'),
                         items: kSituacaoCompraItem.entries
@@ -290,7 +290,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _tipoValor,
+                        initialValue: _tipoValor,
                         decoration: const InputDecoration(labelText: 'Tipo de Valor *'),
                         items: kTipoValor.entries
                             .map((e) =>
@@ -303,7 +303,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        value: _tipoProposta,
+                        initialValue: _tipoProposta,
                         decoration: const InputDecoration(labelText: 'Tipo de Proposta *'),
                         items: kTipoProposta.entries
                             .map((e) =>

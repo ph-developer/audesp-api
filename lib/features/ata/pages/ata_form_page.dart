@@ -397,7 +397,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               // ── Vínculo com Edital ───────────────────────────────────
               _SectionHeader(title: 'Vínculo com Edital'),
               DropdownButtonFormField<int>(
-                value: _editalId,
+                initialValue: _editalId,
                 decoration: const InputDecoration(
                   labelText: 'Edital *',
                   border: OutlineInputBorder(),

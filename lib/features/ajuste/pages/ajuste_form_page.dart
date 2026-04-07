@@ -591,7 +591,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               // ── Vínculo com Edital ───────────────────────────────────
               _SectionHeader(title: 'Vínculo com Edital'),
               DropdownButtonFormField<int>(
-                value: _editalId,
+                initialValue: _editalId,
                 decoration: const InputDecoration(labelText: 'Edital *'),
                 isExpanded: true,
                 items: _editais
@@ -616,7 +616,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int?>(
-                value: _ataId,
+                initialValue: _ataId,
                 decoration: const InputDecoration(
                     labelText: 'Ata (opcional — somente para SRP)'),
                 isExpanded: true,
@@ -840,7 +840,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               // ── Dados do Contrato ─────────────────────────────────────
               _SectionHeader(title: 'Dados do Contrato'),
               DropdownButtonFormField<int>(
-                value: _tipoContratoId,
+                initialValue: _tipoContratoId,
                 decoration:
                     const InputDecoration(labelText: 'Tipo de Contrato *'),
                 isExpanded: true,
@@ -900,7 +900,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _categoriaProcessoId,
+                initialValue: _categoriaProcessoId,
                 decoration:
                     const InputDecoration(labelText: 'Categoria do Processo *'),
                 isExpanded: true,
@@ -995,7 +995,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _tipoPessoaFornecedor,
+                      initialValue: _tipoPessoaFornecedor,
                       decoration: const InputDecoration(
                           labelText: 'Tipo de Pessoa *'),
                       isExpanded: true,
@@ -1043,7 +1043,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String?>(
-                      value: _tipoPessoaFornecedorSub,
+                      initialValue: _tipoPessoaFornecedorSub,
                       decoration: const InputDecoration(
                           labelText: 'Tipo de Pessoa'),
                       isExpanded: true,
@@ -1213,7 +1213,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               // ── Tipo de Objeto ────────────────────────────────────────
               _SectionHeader(title: 'Tipo de Objeto do Contrato'),
               DropdownButtonFormField<int>(
-                value: _tipoObjetoContrato,
+                initialValue: _tipoObjetoContrato,
                 decoration: const InputDecoration(
                     labelText: 'Tipo de Objeto do Contrato *'),
                 isExpanded: true,

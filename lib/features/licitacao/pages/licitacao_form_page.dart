@@ -408,7 +408,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<int>(
-                  value: tipoIndice,
+                  initialValue: tipoIndice,
                   decoration: const InputDecoration(labelText: 'Tipo *'),
                   items: kTipoIndice.entries
                       .map((e) =>
@@ -586,7 +586,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       title: 'Edital Vinculado',
       children: [
         DropdownButtonFormField<int>(
-          value: _editalId,
+          initialValue: _editalId,
           decoration: const InputDecoration(labelText: 'Edital *'),
           isExpanded: true,
           items: _editais
@@ -1223,7 +1223,7 @@ class _DropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<int>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(labelText: label),
       isExpanded: true,
       items: items.entries
