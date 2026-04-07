@@ -92,7 +92,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _amparoLegalCtrl.dispose();
     _linkSistemaCtrl.dispose();
     _justificativaCtrl.dispose();
-    _codigoUnidadeCtrl.dispose();
     super.dispose();
   }
 
