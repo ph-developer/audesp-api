@@ -3,6 +3,9 @@
 ### Fase 0 — Fundação do Projeto
 
 **0.1 Dependências (pubspec.yaml)**
+
+Adicionar ao `pubspec.yaml` todos os pacotes necessários e rodar `flutter pub get`.
+
 | Pacote | Finalidade |
 |--------|-----------|
 | `drift` + `drift_flutter` | ORM SQLite (desktop-first) |
@@ -15,7 +18,16 @@
 | `freezed` + `json_serializable` | Modelos imutáveis + serialização |
 | `build_runner` | Code generation |
 
+- [x] Editar `pubspec.yaml` com todos os pacotes listados (dependencies + dev_dependencies)
+- [x] Executar `flutter pub get`
+- [x] Verificar ausência de conflitos de versão
+
+---
+
 **0.2 Estrutura de pastas**
+
+Criar a hierarquia de diretórios e arquivos vazios (stubs) para toda a aplicação.
+
 ```
 lib/
 ├── main.dart
@@ -44,6 +56,41 @@ lib/
 └── shared/
     └── widgets/               # Form fields reutilizáveis
 ```
+
+- [x] Criar todos os diretórios acima
+- [x] Criar `app.dart` com stub mínimo (`MaterialApp` + ProviderScope placeholder)
+- [x] Atualizar `main.dart` para chamar `runApp(ProviderScope(child: App()))`
+
+---
+
+**0.3 Configuração de ambientes**
+
+Definir as constantes de URL para os dois ambientes da API AUDESP.
+
+- [x] Criar `lib/core/constants/environments.dart` com enum `Environment { piloto, oficial }` e URLs base
+- [x] Criar mecanismo de toggle (SharedPreferences ou variável global em Riverpod) para alternar ambientes em runtime
+
+---
+
+**0.4 Tema e estilos globais**
+
+- [x] Criar `lib/core/theme/app_theme.dart` com `ThemeData` base (cores, fontes, espaçamentos padrão)
+- [x] Referenciar o tema em `app.dart`
+
+---
+
+**0.5 Code generation (build_runner)**
+
+- [x] Confirmar que `analysis_options.yaml` está configurado corretamente para `freezed` / `json_serializable`
+- [x] Executar `flutter pub run build_runner build --delete-conflicting-outputs` (mesmo sem arquivos geráveis ainda, para validar o setup)
+
+---
+
+**0.6 Validação da fundação**
+
+- [x] `flutter analyze` sem erros críticos
+- [x] `flutter run -d windows` mostrando tela em branco sem crashes
+- [x] Estrutura de pastas revisada e consistente com o pipeline
 
 ---
 
