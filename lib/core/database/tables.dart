@@ -9,6 +9,7 @@ class Users extends Table {
   TextColumn get email => text().unique()();
   TextColumn get municipio => text()();
   TextColumn get entidade => text()();
+  BoolColumn get isAdmin => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 }

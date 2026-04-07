@@ -62,6 +62,21 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isAdminMeta = const VerificationMeta(
+    'isAdmin',
+  );
+  @override
+  late final GeneratedColumn<bool> isAdmin = GeneratedColumn<bool>(
+    'is_admin',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_admin" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -81,6 +96,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     email,
     municipio,
     entidade,
+    isAdmin,
     createdAt,
   ];
   @override
@@ -130,6 +146,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_entidadeMeta);
     }
+    if (data.containsKey('is_admin')) {
+      context.handle(
+        _isAdminMeta,
+        isAdmin.isAcceptableOrUnknown(data['is_admin']!, _isAdminMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -165,6 +187,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}entidade'],
       )!,
+      isAdmin: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_admin'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -184,6 +210,7 @@ class User extends DataClass implements Insertable<User> {
   final String email;
   final String municipio;
   final String entidade;
+  final bool isAdmin;
   final DateTime createdAt;
   const User({
     required this.id,
@@ -191,6 +218,7 @@ class User extends DataClass implements Insertable<User> {
     required this.email,
     required this.municipio,
     required this.entidade,
+    required this.isAdmin,
     required this.createdAt,
   });
   @override
@@ -201,6 +229,7 @@ class User extends DataClass implements Insertable<User> {
     map['email'] = Variable<String>(email);
     map['municipio'] = Variable<String>(municipio);
     map['entidade'] = Variable<String>(entidade);
+    map['is_admin'] = Variable<bool>(isAdmin);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -212,6 +241,7 @@ class User extends DataClass implements Insertable<User> {
       email: Value(email),
       municipio: Value(municipio),
       entidade: Value(entidade),
+      isAdmin: Value(isAdmin),
       createdAt: Value(createdAt),
     );
   }
@@ -227,6 +257,7 @@ class User extends DataClass implements Insertable<User> {
       email: serializer.fromJson<String>(json['email']),
       municipio: serializer.fromJson<String>(json['municipio']),
       entidade: serializer.fromJson<String>(json['entidade']),
+      isAdmin: serializer.fromJson<bool>(json['isAdmin']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -239,6 +270,7 @@ class User extends DataClass implements Insertable<User> {
       'email': serializer.toJson<String>(email),
       'municipio': serializer.toJson<String>(municipio),
       'entidade': serializer.toJson<String>(entidade),
+      'isAdmin': serializer.toJson<bool>(isAdmin),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -249,6 +281,7 @@ class User extends DataClass implements Insertable<User> {
     String? email,
     String? municipio,
     String? entidade,
+    bool? isAdmin,
     DateTime? createdAt,
   }) => User(
     id: id ?? this.id,
@@ -256,6 +289,7 @@ class User extends DataClass implements Insertable<User> {
     email: email ?? this.email,
     municipio: municipio ?? this.municipio,
     entidade: entidade ?? this.entidade,
+    isAdmin: isAdmin ?? this.isAdmin,
     createdAt: createdAt ?? this.createdAt,
   );
   User copyWithCompanion(UsersCompanion data) {
@@ -265,6 +299,7 @@ class User extends DataClass implements Insertable<User> {
       email: data.email.present ? data.email.value : this.email,
       municipio: data.municipio.present ? data.municipio.value : this.municipio,
       entidade: data.entidade.present ? data.entidade.value : this.entidade,
+      isAdmin: data.isAdmin.present ? data.isAdmin.value : this.isAdmin,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -277,6 +312,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('email: $email, ')
           ..write('municipio: $municipio, ')
           ..write('entidade: $entidade, ')
+          ..write('isAdmin: $isAdmin, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -284,7 +320,7 @@ class User extends DataClass implements Insertable<User> {
 
   @override
   int get hashCode =>
-      Object.hash(id, nome, email, municipio, entidade, createdAt);
+      Object.hash(id, nome, email, municipio, entidade, isAdmin, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -294,6 +330,7 @@ class User extends DataClass implements Insertable<User> {
           other.email == this.email &&
           other.municipio == this.municipio &&
           other.entidade == this.entidade &&
+          other.isAdmin == this.isAdmin &&
           other.createdAt == this.createdAt);
 }
 
@@ -303,6 +340,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> email;
   final Value<String> municipio;
   final Value<String> entidade;
+  final Value<bool> isAdmin;
   final Value<DateTime> createdAt;
   const UsersCompanion({
     this.id = const Value.absent(),
@@ -310,6 +348,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.email = const Value.absent(),
     this.municipio = const Value.absent(),
     this.entidade = const Value.absent(),
+    this.isAdmin = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   UsersCompanion.insert({
@@ -318,6 +357,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String email,
     required String municipio,
     required String entidade,
+    this.isAdmin = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : nome = Value(nome),
        email = Value(email),
@@ -329,6 +369,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? email,
     Expression<String>? municipio,
     Expression<String>? entidade,
+    Expression<bool>? isAdmin,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -337,6 +378,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (email != null) 'email': email,
       if (municipio != null) 'municipio': municipio,
       if (entidade != null) 'entidade': entidade,
+      if (isAdmin != null) 'is_admin': isAdmin,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -347,6 +389,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Value<String>? email,
     Value<String>? municipio,
     Value<String>? entidade,
+    Value<bool>? isAdmin,
     Value<DateTime>? createdAt,
   }) {
     return UsersCompanion(
@@ -355,6 +398,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       email: email ?? this.email,
       municipio: municipio ?? this.municipio,
       entidade: entidade ?? this.entidade,
+      isAdmin: isAdmin ?? this.isAdmin,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -377,6 +421,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (entidade.present) {
       map['entidade'] = Variable<String>(entidade.value);
     }
+    if (isAdmin.present) {
+      map['is_admin'] = Variable<bool>(isAdmin.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -391,6 +438,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('email: $email, ')
           ..write('municipio: $municipio, ')
           ..write('entidade: $entidade, ')
+          ..write('isAdmin: $isAdmin, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4791,6 +4839,7 @@ typedef $$UsersTableCreateCompanionBuilder =
       required String email,
       required String municipio,
       required String entidade,
+      Value<bool> isAdmin,
       Value<DateTime> createdAt,
     });
 typedef $$UsersTableUpdateCompanionBuilder =
@@ -4800,6 +4849,7 @@ typedef $$UsersTableUpdateCompanionBuilder =
       Value<String> email,
       Value<String> municipio,
       Value<String> entidade,
+      Value<bool> isAdmin,
       Value<DateTime> createdAt,
     });
 
@@ -4833,6 +4883,11 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get entidade => $composableBuilder(
     column: $table.entidade,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAdmin => $composableBuilder(
+    column: $table.isAdmin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4876,6 +4931,11 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isAdmin => $composableBuilder(
+    column: $table.isAdmin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4905,6 +4965,9 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get entidade =>
       $composableBuilder(column: $table.entidade, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAdmin =>
+      $composableBuilder(column: $table.isAdmin, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -4943,6 +5006,7 @@ class $$UsersTableTableManager
                 Value<String> email = const Value.absent(),
                 Value<String> municipio = const Value.absent(),
                 Value<String> entidade = const Value.absent(),
+                Value<bool> isAdmin = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
@@ -4950,6 +5014,7 @@ class $$UsersTableTableManager
                 email: email,
                 municipio: municipio,
                 entidade: entidade,
+                isAdmin: isAdmin,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -4959,6 +5024,7 @@ class $$UsersTableTableManager
                 required String email,
                 required String municipio,
                 required String entidade,
+                Value<bool> isAdmin = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion.insert(
                 id: id,
@@ -4966,6 +5032,7 @@ class $$UsersTableTableManager
                 email: email,
                 municipio: municipio,
                 entidade: entidade,
+                isAdmin: isAdmin,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

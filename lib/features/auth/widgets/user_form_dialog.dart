@@ -8,11 +8,16 @@ import '../../../core/services/secure_storage_service.dart';
 
 /// Diálogo para criar ou editar um perfil de usuário local.
 /// Ao confirmar, persiste no SQLite e armazena a senha no secure storage.
+///
+/// [isCurrentUserAdmin] — quando `true`, exibe o toggle de administrador.
 class UserFormDialog extends ConsumerStatefulWidget {
   /// Se [user] for não-nulo, é edição; caso contrário, criação.
   final User? user;
 
-  const UserFormDialog({super.key, this.user});
+  /// Quando verdadeiro, mostra o campo "Administrador" no formulário.
+  final bool isCurrentUserAdmin;
+
+  const UserFormDialog({super.key, this.user, this.isCurrentUserAdmin = false});
 
   @override
   ConsumerState<UserFormDialog> createState() => _UserFormDialogState();
@@ -27,6 +32,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   late final TextEditingController _senha;
   bool _obscure = true;
   bool _saving = false;
+  bool _isAdmin = false;
 
   bool get _isEdit => widget.user != null;
 
@@ -38,6 +44,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     _municipio = TextEditingController(text: widget.user?.municipio ?? '');
     _entidade = TextEditingController(text: widget.user?.entidade ?? '');
     _senha = TextEditingController();
+    _isAdmin = widget.user?.isAdmin ?? false;
   }
 
   @override
@@ -66,6 +73,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
             email: Value(_email.text.trim()),
             municipio: Value(_municipio.text.trim()),
             entidade: Value(_entidade.text.trim()),
+            isAdmin: Value(_isAdmin),
           ),
         );
         // Atualiza senha apenas se preenchida
@@ -74,12 +82,15 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
               _email.text.trim(), _senha.text);
         }
       } else {
+        // Primeiro usuário a ser criado sempre vira admin
+        final isFirstUser = (await dao.countUsers()) == 0;
         final id = await dao.insertUser(
           UsersCompanion.insert(
             nome: _nome.text.trim(),
             email: _email.text.trim(),
             municipio: _municipio.text.trim(),
             entidade: _entidade.text.trim(),
+            isAdmin: Value(isFirstUser || _isAdmin),
           ),
         );
         if (id > 0) {
@@ -141,6 +152,16 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
+              if (widget.isCurrentUserAdmin) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Administrador'),
+                  subtitle: const Text('Acesso ao painel de administração'),
+                  value: _isAdmin,
+                  onChanged: (v) => setState(() => _isAdmin = v),
+                ),
+              ],
               const SizedBox(height: 12),
               TextFormField(
                 controller: _senha,

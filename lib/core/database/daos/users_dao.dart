@@ -14,6 +14,18 @@ class UsersDao {
       (_db.select(_db.users)..where((t) => t.email.equals(email)))
           .getSingleOrNull();
 
+  Future<int> countUsers() async {
+    final rows = await _db.select(_db.users).get();
+    return rows.length;
+  }
+
+  Future<bool> hasAdmin() async {
+    final row = await (_db.select(_db.users)
+          ..where((u) => u.isAdmin.equals(true)))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   Future<int> insertUser(UsersCompanion entry) =>
       _db.into(_db.users).insert(entry);
 
@@ -23,3 +35,4 @@ class UsersDao {
   Future<int> deleteById(int id) =>
       (_db.delete(_db.users)..where((t) => t.id.equals(id))).go();
 }
+

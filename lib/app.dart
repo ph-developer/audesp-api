@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
 import 'features/ata/pages/ata_page.dart';
 import 'features/auth/auth_providers.dart';
 import 'features/auth/pages/login_page.dart';
-import 'features/auth/pages/users_page.dart';
+import 'features/auth/pages/profile_page.dart';
 import 'features/edital/pages/edital_page.dart';
 import 'features/licitacao/pages/licitacao_page.dart';
 import 'features/logs/pages/logs_page.dart';
@@ -24,23 +25,41 @@ final _routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/edital',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final loggedIn = ref.read(localSessionProvider) != null;
+      final user = ref.read(localSessionProvider);
+      final loggedIn = user != null;
       final loc = state.matchedLocation;
-      final isAuthRoute = loc == '/login' || loc == '/users';
+      final isAuthRoute = loc == '/login';
 
+      // Não logado → sempre para o login
       if (!loggedIn && !isAuthRoute) return '/login';
+
+      // Logado e na tela de login → módulo inicial
       if (loggedIn && loc == '/login') return '/edital';
+
+      // Não-admin tentando acessar a área de admin → redireciona
+      if (loggedIn && loc.startsWith('/admin') && user.isAdmin != true) {
+        return '/edital';
+      }
+
       return null;
     },
     routes: [
-      // Rotas de autenticação (sem shell)
+      // Rota de autenticação (sem shell)
       GoRoute(
         path: '/login',
         builder: (context, _) => const LoginPage(),
       ),
+
+      // Perfil do usuário (sem shell, acessível a todos após login)
       GoRoute(
-        path: '/users',
-        builder: (context, _) => const UsersPage(),
+        path: '/profile',
+        builder: (context, _) => const ProfilePage(),
+      ),
+
+      // Painel de administração (sem shell, admin only — guard no redirect)
+      GoRoute(
+        path: '/admin',
+        builder: (context, _) => const AdminPage(),
       ),
 
       // Shell com NavigationRail envolvendo os módulos principais
@@ -92,5 +111,4 @@ class App extends ConsumerWidget {
     );
   }
 }
-
 

@@ -88,16 +88,29 @@ class ShellPage extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Chip de ambiente
-                        _EnvironmentChip(env: env),
+                        // Chip de ambiente (somente admin pode alterar)
+                        if (user?.isAdmin == true)
+                          GestureDetector(
+                            onTap: () => showEnvironmentDialog(context, ref),
+                            child: _EnvironmentChip(env: env),
+                          )
+                        else
+                          _EnvironmentChip(env: env),
                         const SizedBox(height: 8),
-                        // Botão configurações (abre seletor de ambiente)
-                        IconButton(
-                          icon: const Icon(Icons.settings_outlined),
-                          tooltip: 'Configurações',
-                          onPressed: () =>
-                              showEnvironmentDialog(context, ref),
-                        ),
+                        // Botão de admin ou perfil, conforme papel
+                        if (user?.isAdmin == true) ...[
+                          IconButton(
+                            icon: const Icon(Icons.admin_panel_settings_outlined),
+                            tooltip: 'Administração',
+                            onPressed: () => context.go('/admin'),
+                          ),
+                        ] else ...[
+                          IconButton(
+                            icon: const Icon(Icons.manage_accounts_outlined),
+                            tooltip: 'Meu perfil',
+                            onPressed: () => context.go('/profile'),
+                          ),
+                        ],
                         const Divider(height: 16),
                         // Avatar do usuário com tooltip e logout
                         _UserAvatar(user: user, ref: ref),
