@@ -510,6 +510,31 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         leading: BackButton(onPressed: () => context.go('/licitacao')),
         title: Text(isNew ? 'Nova Licitação' : 'Editar Licitação'),
         actions: [
+          if (!_isSent) ...[
+            if (_saving)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else ...[
+              TextButton.icon(
+                onPressed: _saveDraft,
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('Salvar Rascunho'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: _enviar,
+                icon: const Icon(Icons.send),
+                label: const Text('Enviar à AUDESP'),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
           if (_isSent)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -547,18 +572,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               _buildIndicesEconomicosSection(readonly),
               const SizedBox(height: 16),
               _buildItensSection(readonly),
-              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: readonly
-          ? null
-          : _BottomBar(
-              saving: _saving,
-              onSaveDraft: _saveDraft,
-              onEnviar: _enviar,
-            ),
     );
   }
 
@@ -1214,56 +1231,6 @@ class _DropdownField extends StatelessWidget {
           .toList(),
       onChanged: onChanged,
       validator: validator,
-    );
-  }
-}
-
-class _BottomBar extends StatelessWidget {
-  final bool saving;
-  final VoidCallback onSaveDraft;
-  final VoidCallback onEnviar;
-
-  const _BottomBar({
-    required this.saving,
-    required this.onSaveDraft,
-    required this.onEnviar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (saving)
-            const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          OutlinedButton.icon(
-            onPressed: saving ? null : onSaveDraft,
-            icon: const Icon(Icons.save_outlined),
-            label: const Text('Salvar Rascunho'),
-          ),
-          const SizedBox(width: 12),
-          FilledButton.icon(
-            onPressed: saving ? null : onEnviar,
-            icon: const Icon(Icons.send),
-            label: const Text('Enviar ao AUDESP'),
-          ),
-        ],
-      ),
     );
   }
 }

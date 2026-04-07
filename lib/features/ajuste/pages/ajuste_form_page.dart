@@ -568,13 +568,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
-                label: const Text('Salvar'),
+                label: const Text('Salvar Rascunho'),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: _enviar,
                 icon: const Icon(Icons.send),
-                label: const Text('Enviar'),
+                label: const Text('Enviar à AUDESP'),
               ),
               const SizedBox(width: 8),
             ],
