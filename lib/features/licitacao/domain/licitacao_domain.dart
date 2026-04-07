@@ -12,70 +12,69 @@ const kTriState = <int, String>{
 const kRecursoBID = <int, String>{
   1: '1 – Sim',
   2: '2 – Não',
-  3: '3 – Não informado',
+  3: '3 – Não se Aplica',
 };
 
-/// `tipoNatureza` — natureza do objeto licitado.
+/// `tipoNatureza` — Domínio AUDESP: Tipo de Natureza.
 const kTipoNatureza = <int, String>{
-  1: '1 – Compras e Serviços',
-  2: '2 – Obras',
-  3: '3 – Serviços de Engenharia',
-  4: '4 – Serviço de Saúde',
-  5: '5 – Locação de Imóveis',
-  6: '6 – Concessões e Permissões',
-  7: '7 – Alienação de Bens',
-  8: '8 – Outros',
+  1: '1 – Normal',
+  2: '2 – Concessão/permissão de uso (Lei 14.133/2024)',
+  3: '3 – Concessão de serviço público ordinária (Lei 8.987/1995)',
+  4: '4 – Concessão Pública - PPP Patrocinada (Lei 11.079/2004)',
+  5: '5 – Concessão Pública - PPP Administrativa (Lei 11.079/2004)',
+  6: '6 – Permissão de serviço público (Lei 8.987/1995)',
+  7: '7 – Credenciamento (Lei 14.133/2021)',
+  8: '8 – Registro de Preços (Lei 14.133/2021)',
 };
 
-/// `fonteRecursosContratacao` — fontes de recurso (multi-select).
+/// `fonteRecursosContratacao` — Domínio AUDESP: Fonte de Recursos (multi-select).
 const kFonteRecurso = <int, String>{
-  1: '1 – Tesouro Municipal',
-  2: '2 – Transferências correntes do Estado',
-  3: '3 – Transferências correntes da União',
-  4: '4 – Operações de crédito internas',
-  5: '5 – Operações de crédito externas',
-  6: '6 – Alienação de bens',
-  7: '7 – Outras receitas',
-  8: '8 – Recursos do FUNDEB',
-  91: '91 – Convênio Estadual',
-  92: '92 – Convênio Federal',
-  93: '93 – Contrato de repasse',
-  94: '94 – Termo de parceria',
-  95: '95 – FNAS',
-  96: '96 – FMAS',
-  97: '97 – BID',
-  98: '98 – BIRD',
+  1: '1 – Tesouro',
+  2: '2 – Transferências e Convênios Estaduais - Vinculados',
+  3: '3 – Recursos Próprios de Fundos Especiais de Despesa - Vinculados',
+  4: '4 – Recursos Próprios da Administração Indireta',
+  5: '5 – Transferências e Convênios Federais - Vinculados',
+  6: '6 – Outras Fontes de Recursos',
+  7: '7 – Operações de Crédito',
+  8: '8 – Emendas Parlamentares Individuais - Legislativo Municipal',
+  91: '91 – Tesouro - Exercícios Anteriores',
+  92: '92 – Transferências e Convênios Estaduais - Vinculados - Exercícios Anteriores',
+  93: '93 – Recursos Próprios de Fundos Especiais de Despesa - Vinculados - Exercícios Anteriores',
+  94: '94 – Recursos Próprios da Administração Indireta - Exercícios Anteriores',
+  95: '95 – Transferências e Convênios Federais - Vinculados - Exercícios Anteriores',
+  96: '96 – Outras Fontes de Recursos - Exercícios Anteriores',
+  97: '97 – Operações de Crédito - Exercícios Anteriores',
+  98: '98 – Emendas Parlamentares Individuais - Exercícios Anteriores',
 };
 
-/// `tipoOrcamento` — tipo do orçamento do item.
+/// `tipoOrcamento` — Domínio AUDESP: Orçamento ou Proposta.
 const kTipoOrcamento = <int, String>{
-  0: '0 – Não informado',
-  1: '1 – Sigiloso',
-  2: '2 – Estimado',
-  3: '3 – Fixado',
+  0: '0 – Não',
+  1: '1 – Sim - Global (Total do Lote)',
+  2: '2 – Sim - Unitário',
+  3: '3 – Sim - Desconto sobre tabela de Referência',
 };
 
-/// `situacaoCompraItemId` — situação do item de compra.
+/// `situacaoCompraItemId` — Domínio PNCP: Situação do Item da Contratação.
 const kSituacaoCompraItem = <int, String>{
-  1: '1 – Aberta',
-  2: '2 – Adjudicada',
-  3: '3 – Deserta',
-  4: '4 – Fracassada',
-  5: '5 – Cancelada',
+  1: '1 – Em Andamento',
+  2: '2 – Homologado',
+  3: '3 – Anulado/Revogado/Cancelado',
+  4: '4 – Deserto',
+  5: '5 – Fracassado',
 };
 
-/// `tipoProposta` — tipo de proposta do item.
+/// `tipoProposta` — Domínio AUDESP: Orçamento ou Proposta (0 não permitido).
 const kTipoProposta = <int, String>{
-  1: '1 – Por item',
-  2: '2 – Global',
-  3: '3 – Por lote',
+  1: '1 – Sim - Global (Total do Lote)',
+  2: '2 – Sim - Unitário',
+  3: '3 – Sim - Desconto sobre tabela de Referência',
 };
 
-/// `tipoValor` — tipo de valor do item.
+/// `tipoValor` — tipo de valor da proposta (P=Percentual, M=Monetário).
 const kTipoValor = <String, String>{
-  'M': 'M – Médio',
-  'U': 'U – Unitário',
-  'G': 'G – Global',
+  'M': 'M – Monetário',
+  'P': 'P – Percentual',
 };
 
 /// `tipoPessoaId` — tipo de pessoa do licitante.
@@ -85,32 +84,32 @@ const kTipoPessoa = <String, String>{
   'PE': 'PE – Pessoa Estrangeira',
 };
 
-/// `declaracaoMEouEPP` — declaração de ME ou EPP.
+/// `declaracaoMEouEPP` — Domínio AUDESP: Declaração ME EPP.
 const kDeclaracaoMEouEPP = <int, String>{
-  1: '1 – Declara ser ME ou EPP',
-  2: '2 – Não declara',
-  3: '3 – Não se aplica',
+  1: '1 – Sim, ME',
+  2: '2 – Sim, EPP',
+  3: '3 – Não',
 };
 
-/// `resultadoHabilitacao` — resultado da habilitação do licitante.
+/// `resultadoHabilitacao` — Domínio AUDESP: Resultado Habilitação.
 const kResultadoHabilitacao = <int, String>{
-  1: '1 – Habilitado',
-  2: '2 – Inabilitado',
-  3: '3 – Pendente',
+  1: '1 – Classificado Vencedor',
+  2: '2 – Classificado',
+  3: '3 – Habilitado',
   4: '4 – Desclassificado',
-  5: '5 – Não analisado',
-  6: '6 – Vencedor',
-  7: '7 – Fracassado',
+  5: '5 – Desistiu/Não compareceu',
+  6: '6 – Proposta não Analisada',
+  7: '7 – Inabilitado',
 };
 
-/// `tipoIndice` — tipo de índice econômico.
+/// `tipoIndice` — Domínio AUDESP: Índice Econômico.
 const kTipoIndice = <int, String>{
-  1: '1 – Liquidez Corrente',
-  2: '2 – Liquidez Geral',
-  3: '3 – Liquidez Seca',
-  4: '4 – Solvência Geral',
-  5: '5 – Endividamento Total',
-  6: '6 – Endividamento de Curto Prazo',
-  7: '7 – Endividamento de Longo Prazo',
+  1: '1 – Capital Social Mínimo',
+  2: '2 – Endividamento a Curto Prazo',
+  3: '3 – Endividamento Total',
+  4: '4 – Liquidez Corrente',
+  5: '5 – Liquidez Geral',
+  6: '6 – Liquidez Imediata',
+  7: '7 – Liquidez Seca',
   8: '8 – Outro',
 };
