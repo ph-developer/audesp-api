@@ -461,7 +461,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               Row(
                 children: [
                   SizedBox(
-                    width: 180,
+                    width: 200,
                     child: TextFormField(
                       controller: _anoCompraCtrl,
                       readOnly: readOnly,

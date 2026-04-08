@@ -130,7 +130,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     TextFormField(
                       controller: _emailCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Usuário (e-mail ou admin)',
+                        labelText: 'E-mail',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       keyboardType: TextInputType.emailAddress,

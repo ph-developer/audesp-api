@@ -85,31 +85,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     }).toList();
   }
 
-  Future<void> _clearAll() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Limpar todos os logs?'),
-        content: const Text(
-            'Esta ação removerá permanentemente todo o histórico de chamadas à API.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Limpar'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true && mounted) {
-      await ref.read(apiLogsDaoProvider).clearAll();
-    }
-  }
-
   Future<void> _deleteLog(int id) async {
     await ref.read(apiLogsDaoProvider).deleteById(id);
   }
@@ -137,13 +112,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Histórico de Chamadas API'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Limpar todos',
-            onPressed: _clearAll,
-          ),
-        ],
       ),
       body: Column(
         children: [
