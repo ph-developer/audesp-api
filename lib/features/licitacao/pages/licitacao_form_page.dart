@@ -11,9 +11,11 @@ import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
+import '../widgets/portal_import_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -475,6 +477,68 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     nomeCtrl.dispose();
     valorCtrl.dispose();
+  }
+
+  // ── Importação de CSV ─────────────────────────────────────────────────
+
+  Future<void> _openPortalImportDialog() async {
+    if (_itens.isNotEmpty) {
+      final limpar = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Substituir itens?'),
+          content: const Text(
+            'Já existem itens no formulário. Deseja substituí-los pelos itens importados?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Substituir'),
+            ),
+          ],
+        ),
+      );
+      if (limpar != true) return;
+    }
+
+    if (!mounted) return;
+    final csvItens = await showPortalImportDialog(context);
+    if (csvItens == null || !mounted) return;
+
+    setState(() => _itens = csvItens.map(_csvItemToMap).toList());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Itens importados com sucesso! Verifique os enquadramentos de '
+          'ME/EPP dos licitantes, pois os portais não os diferenciam.',
+        ),
+        duration: Duration(seconds: 8),
+      ),
+    );
+  }
+
+  static Map<String, dynamic> _csvItemToMap(LicitacaoItemCsvModel item) {
+    return {
+      'numeroItem': item.numeroItem,
+      'situacaoCompraItemId': item.situacaoCompraItemId,
+      'licitantes': item.licitantes.map(_csvLicitanteToMap).toList(),
+    };
+  }
+
+  static Map<String, dynamic> _csvLicitanteToMap(LicitanteCsvModel l) {
+    final map = <String, dynamic>{
+      'tipoPessoaId': l.tipoPessoaId,
+      'niPessoa': l.niPessoa,
+      'declaracaoMEouEPP': l.declaracaoMEouEPP,
+      'resultadoHabilitacao': l.resultadoHabilitacao,
+    };
+    if (l.nomeRazaoSocial.isNotEmpty) map['nomeRazaoSocial'] = l.nomeRazaoSocial;
+    if (l.valorProposta != 0) map['valor'] = l.valorProposta;
+    return map;
   }
 
   // ── CPFs condutores ────────────────────────────────────────────────────
@@ -1104,15 +1168,23 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       title: 'Itens de Licitação *',
       children: [
         if (!readonly)
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.tonal(
-              onPressed: () async {
-                final result = await showItemLicitacaoDialog(context);
-                if (result != null) setState(() => _itens.add(result));
-              },
-              child: const Text('Adicionar Item'),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _openPortalImportDialog,
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: const Text('Importar do Portal'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: () async {
+                  final result = await showItemLicitacaoDialog(context);
+                  if (result != null) setState(() => _itens.add(result));
+                },
+                child: const Text('Adicionar Item'),
+              ),
+            ],
           ),
         const SizedBox(height: 8),
         if (_itens.isEmpty)
