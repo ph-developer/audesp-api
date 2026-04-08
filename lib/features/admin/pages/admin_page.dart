@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/environments.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/database/daos/app_settings_dao.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
@@ -25,7 +26,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -46,6 +47,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
             Tab(icon: Icon(Icons.people_outlined), text: 'Usuários'),
             Tab(icon: Icon(Icons.cloud_outlined), text: 'Ambiente'),
             Tab(icon: Icon(Icons.folder_outlined), text: 'Registros'),
+            Tab(icon: Icon(Icons.auto_fix_high_outlined), text: 'IA / Gemini'),
           ],
         ),
       ),
@@ -55,6 +57,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
           _UsersTab(),
           _EnvironmentTab(),
           _RegistrosTab(),
+          _GeminiTab(),
         ],
       ),
     );
@@ -490,6 +493,166 @@ class _RecordTile extends StatelessWidget {
               style: const TextStyle(fontSize: 11),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab 4 — Configurações IA / Gemini
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GeminiTab extends ConsumerStatefulWidget {
+  const _GeminiTab();
+
+  @override
+  ConsumerState<_GeminiTab> createState() => _GeminiTabState();
+}
+
+class _GeminiTabState extends ConsumerState<_GeminiTab> {
+  final _apiKeyCtrl = TextEditingController();
+  final _modelCtrl = TextEditingController();
+  bool _loading = true;
+  bool _saving = false;
+  bool _obscureKey = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _apiKeyCtrl.dispose();
+    _modelCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final dao = ref.read(appSettingsDaoProvider);
+    final key = await dao.get(SettingsKeys.geminiApiKey);
+    final model = await dao.get(SettingsKeys.geminiModel);
+    if (!mounted) return;
+    setState(() {
+      _apiKeyCtrl.text = key ?? '';
+      _modelCtrl.text = model ?? '';
+      _loading = false;
+    });
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final dao = ref.read(appSettingsDaoProvider);
+      final apiKey = _apiKeyCtrl.text.trim();
+      final model = _modelCtrl.text.trim();
+
+      if (apiKey.isNotEmpty) {
+        await dao.set(SettingsKeys.geminiApiKey, apiKey);
+      } else {
+        await dao.delete(SettingsKeys.geminiApiKey);
+      }
+
+      if (model.isNotEmpty) {
+        await dao.set(SettingsKeys.geminiModel, model);
+      } else {
+        await dao.delete(SettingsKeys.geminiModel);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Configurações salvas com sucesso.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Card(
+          margin: const EdgeInsets.all(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_fix_high),
+                    const SizedBox(width: 12),
+                    Text(
+                      'IA / Gemini',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                TextFormField(
+                  controller: _apiKeyCtrl,
+                  obscureText: _obscureKey,
+                  decoration: InputDecoration(
+                    labelText: 'Chave de API do Gemini',
+                    hintText: 'AIza...',
+                    helperText:
+                        'Obtenha em https://aistudio.google.com/apikey',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureKey
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      tooltip: _obscureKey ? 'Mostrar' : 'Ocultar',
+                      onPressed: () =>
+                          setState(() => _obscureKey = !_obscureKey),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _modelCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Modelo Gemini',
+                    hintText: 'gemini-2.0-flash',
+                    helperText:
+                        'Deixe em branco para usar "gemini-2.0-flash" (padrão).',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: const Text('Salvar'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

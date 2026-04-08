@@ -40,58 +40,24 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 ---
 
-### Etapa 1 — Estilo: Formulário de Ata
+### ~~Etapa 1 — Estilo: Formulário de Ata~~ ✅ CONCLUÍDA (08/04/2026)
 
-**Arquivos afetados:** `lib/features/ata/pages/ata_form_page.dart`
+**Arquivos afetados:** `lib/features/ata/pages/ata_form_page.dart`, `lib/shared/widgets/section_card.dart`
 
-**O que fazer:**
+**O que foi feito:**
 
-1. Adicionar a classe `_SectionCard` ao arquivo (copiar da implementação do edital):
-   ```dart
-   class _SectionCard extends StatelessWidget {
-     final String title;
-     final List<Widget> children;
-     const _SectionCard({required this.title, required this.children});
-     @override Widget build(BuildContext context) { ... }
-   }
-   ```
-2. Remover a classe `_SectionHeader`.
-3. Converter cada bloco de seção para retornar um `_SectionCard(...)`, agrupando os campos filhos.
-4. Remover `border: OutlineInputBorder()` explícito de todos os `TextFormField` e `DropdownButtonFormField` (deixar cair para o tema).
-5. Manter o `_DateField` (já está implementado no arquivo, é reutilizável).
-6. O layout do corpo passa de `SingleChildScrollView > Column` (flat) para `SingleChildScrollView > Column > _SectionCard` (idêntico ao edital).
-
-**Seções da Ata a converter:**
-- Vínculo com Edital
-- Descritor
-- Dados da Ata
-- Itens da Licitação Referenciados
-
-**Estimativa de tokens:** ~18 k (arquivo médio)
+1. Widget `SectionCard` extraído para `lib/shared/widgets/section_card.dart` (Sugestão 1).
+2. Cla­sse `_SectionHeader` removida do arquivo de Ata.
+3. Todas as seções (Vínculo com Edital, Descritor, Dados da Ata, Itens da Licitação Referenciados) convertidas para `SectionCard`.
+4. `border: OutlineInputBorder()` explícito removido de todos os campos (cai para o tema).
 
 ---
 
-### Etapa 2 — Estilo: Formulário de Ajuste
+### ~~Etapa 2 — Estilo: Formulário de Ajuste~~ ✅ CONCLUÍDA (08/04/2026)
 
 **Arquivos afetados:** `lib/features/ajuste/pages/ajuste_form_page.dart`
 
-**O que fazer:** idêntico à Etapa 1, mas para o formulário de Ajuste — que é o maior do projeto.
-
-**Seções do Ajuste a converter:**
-- Vínculo com Edital
-- Vínculo com Ata
-- Descritor
-- Fontes de Recurso
-- Itens Contratados
-- Dados do Contrato
-- Classificações de Despesa
-- Fornecedor
-- Subcontratado (opcional)
-- Objeto e Valores
-- Datas
-- Tipo de Objeto do Contrato
-
-**Estimativa de tokens:** ~35 k (arquivo extenso)
+**O que foi feito:** idêntico à Etapa 1 — todas as 12 seções do Ajuste convertidas para `SectionCard`; `_SectionHeader` removida; bordas explícitas removidas.
 
 ---
 
@@ -120,46 +86,29 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 ---
 
-### Etapa 4 — Importação PDF + Gemini no Edital
+### ~~Etapa 4 — Importação PDF + Gemini no Edital~~ ✅ CONCLUÍDA (08/04/2026)
 
-**Arquivos novos/afetados:**
-- `pubspec.yaml` (nova dependência)
-- `lib/core/services/gemini_service.dart` (novo)
-- `lib/features/edital/widgets/gemini_import_dialog.dart` (novo)
-- `lib/features/edital/pages/edital_form_page.dart` (botão + integração)
+**Arquivos criados/afetados:**
+- `pubspec.yaml` — adicionado `google_generative_ai: ^0.4.6`
+- `lib/core/database/tables.dart` — nova tabela `AppSettings` (chave/valor)
+- `lib/core/database/daos/app_settings_dao.dart` — novo DAO com `get`, `set`, `delete`; constantes `SettingsKeys.geminiApiKey` e `SettingsKeys.geminiModel`
+- `lib/core/database/app_database.dart` — versão do schema elevada para 5, migração cria `app_settings`
+- `lib/core/database/database_providers.dart` — providers `appSettingsDaoProvider` e `geminiServiceProvider`
+- `lib/core/services/gemini_service.dart` — novo (Sugestão 2: serviço genérico, agnóstico de formulário)
+- `lib/features/edital/widgets/gemini_import_dialog.dart` — novo (dialog em 2 etapas: loading com `LinearProgressIndicator` + revisão por campo)
+- `lib/features/edital/pages/edital_form_page.dart` — botão "Importar do PDF" adicionado à `AppBar` à esquerda de "Salvar Rascunho"; método `_importFromPdf()`
+- `lib/features/admin/pages/admin_page.dart` — 4ª aba "IA / Gemini" para configurar chave de API e nome do modelo
 
-**O que fazer:**
+**O que foi feito:**
 
-1. **Dependência:** adicionar `google_generative_ai` ao `pubspec.yaml`.
-
-   > **Pergunta 1:** A chave de API do Gemini deve ser armazenada no arquivo `.env` já existente (em `assets/.env`, lida via `flutter_dotenv`) ou em configuração acessível pelo usuário nas telas de administração?
-   > **Resposta 1**: A chave da API deve ser alterável pelo admin na tela de administração. 
-
-2. **`GeminiService`:** serviço que recebe o path do PDF, lê os bytes, envia à API Gemini com instruções e retorna `Map<String, dynamic>` com os campos identificados.
-
-   > **Pergunta 2:** Qual modelo Gemini usar? Sugestão: `gemini-2.0-flash` (suporte nativo a PDF, boa relação custo/velocidade).
-   > **Resposta 2:** O nome do modelo deve ser digitável pelo admin na tela de administração.
-
-3. **Prompt Gemini (a definir):**
-   O prompt instruirá o modelo a extrair do PDF os seguintes campos do edital:
-   `codigoEdital`, `dataDocumento`, `tipoInstrumentoConvocatorioId`, `modalidadeId`, `modoDisputaId`, `numeroCompra`, `anoCompra`, `numeroProcesso`, `objetoCompra`, `srp`, `amparoLegalId`, `dataAberturaProposta`, `dataEncerramentoProposta`.
-
-   > **Pergunta 3:** Confirmar lista de campos que o Gemini deve tentar preencher. Há campos adicionais ou que devem ser excluídos?
-
-   > **Pergunta 4:** O Gemini deve tentar extrair também os **itens de compra** (lista)? Isso aumenta a complexidade do prompt e do dialog de revisão.
-   > **Resposta 4:** Não.
-
-4. **`GeminiImportDialog`:** dialog `AlertDialog` que mostra uma tabela com:
-   - Nome do campo
-   - Valor atual no formulário (pode ser vazio)
-   - Valor sugerido pelo Gemini
-   - Checkbox para o usuário aceitar/rejeitar cada campo individualmente
-
-5. **Botão no EditalFormPage:** posicionado à **esquerda** do botão "Salvar Rascunho" na `AppBar`, com ícone de "auto_fix_high" ou "psychology" e label "Importar do PDF".
-   - Ao clicar: abre `FilePicker` (PDF) → chama `GeminiService` → exibe `GeminiImportDialog`
-   - Se o usuário confirmar seleção: popula os campos aceitos no formulário
-
-**Estimativa de tokens:** ~40 k (novo serviço + novo dialog + edição do form)
+1. **`google_generative_ai`** adicionado ao `pubspec.yaml`.
+2. **Tabela `AppSettings`** criada no banco (chave/valor genérico), com schema migration v5.
+3. **`GeminiService`** (Sugestão 2): serviço genérico reutilizável — recebe PDF + lista de `GeminiField`, lê a chave/modelo das `AppSettings`, constrói o prompt e retorna `GeminiExtractionResult`. Pode ser reutilizado em qualquer módulo futuro.
+4. **`GeminiImportDialog`** com dois estágios:
+   - **Stage 1** (`_GeminiLoadingDialog`): `LinearProgressIndicator` + mensagem "Analisando PDF..." enquanto a API responde (Sugestão 4); exibe erro inline se a chamada falhar.
+   - **Stage 2** (`_GeminiReviewDialog`): tabela com 4 colunas (campo, valor atual, sugestão Gemini, checkbox); botões "Selecionar tudo" / "Desmarcar tudo"; campos sem sugestão ficam desabilitados.
+5. **Botão "Importar do PDF"** na `AppBar` do `EditalFormPage`, à esquerda de "Salvar Rascunho", com ícone `auto_fix_high`; fica desabilitado durante a chamada exibindo um `CircularProgressIndicator` inline.
+6. **Aba "IA / Gemini"** no `AdminPage`: campos para chave de API (com toggle mostrar/ocultar) e nome do modelo (padrão `gemini-2.0-flash` quando em branco).
 
 ---
 
@@ -271,12 +220,7 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 ## Perguntas em Aberto (aguardando respostas do usuário)
 
-### Gemini
-
-- **Pergunta 1:** A chave de API do Gemini deve ficar no `.env` (já existente) ou em tela de configuração acessível pelo usuário?
-- **Pergunta 2:** Modelo Gemini a usar? Sugestão: `gemini-2.0-flash`.
-- **Pergunta 3:** Confirmar lista de campos que o Gemini deve tentar extrair do PDF do edital.
-- **Pergunta 4:** O Gemini deve tentar extrair também a **lista de itens de compra** do PDF?
+### ~~Gemini~~ — ✅ Todas respondidas e implementadas
 
 ### CSV — Itens de Compra (Edital)
 
@@ -291,13 +235,13 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 ## Sugestões
 
-1. **Widget `_SectionCard` compartilhado:** Como `_SectionCard` será idêntico em todos os formulários após as Etapas 1 e 2, considerar extraí-lo para `lib/shared/widgets/section_card.dart` para evitar duplicação. Pode ser feito junto a qualquer etapa ou como tarefa separada de limpeza.
+1. ~~**Widget `_SectionCard` compartilhado:** Como `_SectionCard` será idêntico em todos os formulários após as Etapas 1 e 2, considerar extraí-lo para `lib/shared/widgets/section_card.dart` para evitar duplicação.~~ ✅ CONCLUÍDA (08/04/2026) — `SectionCard` extraído em `lib/shared/widgets/section_card.dart`; todos os formulários o importam.
 
-2. **Serviço Gemini genérico:** O `GeminiService` pode ser construído de forma agnóstica ao formulário e reutilizado futuramente em outros módulos (ex.: importar um contrato de ajuste via PDF).
+2. ~~**Serviço Gemini genérico:** O `GeminiService` pode ser construído de forma agnóstica ao formulário e reutilizado futuramente em outros módulos (ex.: importar um contrato de ajuste via PDF).~~ ✅ CONCLUÍDA (08/04/2026) — `GeminiService` (em `lib/core/services/gemini_service.dart`) recebe `List<GeminiField>` arbitrária e é totalmente agnóstico ao formulário.
 
 3. **Preview CSV com DataTable:** Usar `DataTable` do Flutter (com scroll horizontal via `SingleChildScrollView`) para exibir o preview das linhas importadas — solução nativa, sem dependência extra.
 
-4. **Feedback de progresso no Gemini:** A chamada ao Gemini pode levar alguns segundos. Exibir um `LinearProgressIndicator` ou `CircularProgressIndicator` com mensagem "Analisando PDF..." durante a chamada.
+4. ~~**Feedback de progresso no Gemini:** A chamada ao Gemini pode levar alguns segundos. Exibir um `LinearProgressIndicator` ou `CircularProgressIndicator` com mensagem "Analisando PDF..." durante a chamada.~~ ✅ CONCLUÍDA (08/04/2026) — `_GeminiLoadingDialog` exibe `LinearProgressIndicator` + mensagem "Analisando PDF..." enquanto a chamada está em andamento.
 
 5. **Formato de datas no CSV:** Definir explicitamente o formato esperado (sugestão: `dd/MM/yyyy`) e exibir mensagem de erro clara se o parse falhar.
 
@@ -308,8 +252,8 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 ## Ordem de Execução Recomendada
 
 ```
-Etapa 1  →  Etapa 2  →  Etapa 3 ✅ →  Etapa 4  →  Etapa 5  →  Etapa 6
- (Ata)     (Ajuste)    (Draft)      (Gemini)    (CSV Edital) (CSV Licit.)
+Etapa 1 ✅  →  Etapa 2 ✅  →  Etapa 3 ✅  →  Etapa 4 ✅  →  Etapa 5  →  Etapa 6
+  (Ata)        (Ajuste)       (Draft)        (Gemini)     (CSV Edital) (CSV Licit.)
 ```
 
-As Etapas 1 e 2 são independentes entre si e podem ser executadas em qualquer ordem. A Etapa 3 está concluída. As Etapas 5 e 6 dependem da instalação do pacote `csv` (instalado na Etapa 5; a Etapa 6 reutiliza). A Etapa 4 é independente das demais.
+As Etapas 1–4 estão concluídas. As Etapas 5 e 6 dependem da instalação do pacote `csv` (instalado na Etapa 5; a Etapa 6 reutiliza).

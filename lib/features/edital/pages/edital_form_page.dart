@@ -15,6 +15,7 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
+import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/publicacao_dialog.dart';
 
@@ -36,6 +37,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
+  bool _importingGemini = false;
   int? _loadedId;
 
   // ── Descritor ────────────────────────────────────────────────────────────
@@ -324,6 +326,101 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
   }
 
+  // ── Importação via Gemini ─────────────────────────────────────────────────
+
+  Future<void> _importFromPdf() async {
+    // Seleciona o PDF para análise
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result == null || result.files.single.path == null) return;
+    if (!mounted) return;
+
+    setState(() => _importingGemini = true);
+    try {
+      final currentValues = <String, String>{
+        'codigoEdital': _codigoEditalCtrl.text.trim(),
+        'dataDocumento': _dataDocCtrl.text.trim(),
+        'tipoInstrumentoConvocatorioId': _tipoInstrumento?.toString() ?? '',
+        'modalidadeId': _modalidade?.toString() ?? '',
+        'modoDisputaId': _modoDisputa?.toString() ?? '',
+        'numeroCompra': _numeroCompraCtrl.text.trim(),
+        'anoCompra': _anoCompraCtrl.text.trim(),
+        'numeroProcesso': _numeroProcessoCtrl.text.trim(),
+        'objetoCompra': _objetoCompraCtrl.text.trim(),
+        'srp': _srp.toString(),
+        'amparoLegalId': _amparoLegalCtrl.text.trim(),
+        'dataAberturaProposta': _dataAberturaCtrl.text.trim(),
+        'dataEncerramentoProposta': _dataEncerramentoCtrl.text.trim(),
+      };
+
+      final accepted = await showGeminiImportDialog(
+        context: context,
+        ref: ref,
+        pdfPath: result.files.single.path!,
+        currentValues: currentValues,
+      );
+
+      if (!mounted || accepted == null || accepted.isEmpty) return;
+
+      setState(() {
+        if (accepted.containsKey('codigoEdital')) {
+          _codigoEditalCtrl.text = accepted['codigoEdital']!;
+        }
+        if (accepted.containsKey('dataDocumento')) {
+          _dataDocCtrl.text = accepted['dataDocumento']!;
+        }
+        if (accepted.containsKey('tipoInstrumentoConvocatorioId')) {
+          _tipoInstrumento =
+              int.tryParse(accepted['tipoInstrumentoConvocatorioId']!);
+        }
+        if (accepted.containsKey('modalidadeId')) {
+          _modalidade = int.tryParse(accepted['modalidadeId']!);
+        }
+        if (accepted.containsKey('modoDisputaId')) {
+          _modoDisputa = int.tryParse(accepted['modoDisputaId']!);
+        }
+        if (accepted.containsKey('numeroCompra')) {
+          _numeroCompraCtrl.text = accepted['numeroCompra']!;
+        }
+        if (accepted.containsKey('anoCompra')) {
+          _anoCompraCtrl.text = accepted['anoCompra']!;
+        }
+        if (accepted.containsKey('numeroProcesso')) {
+          _numeroProcessoCtrl.text = accepted['numeroProcesso']!;
+        }
+        if (accepted.containsKey('objetoCompra')) {
+          _objetoCompraCtrl.text = accepted['objetoCompra']!;
+        }
+        if (accepted.containsKey('srp')) {
+          _srp = accepted['srp']?.toLowerCase() == 'true';
+        }
+        if (accepted.containsKey('amparoLegalId')) {
+          _amparoLegalCtrl.text = accepted['amparoLegalId']!;
+        }
+        if (accepted.containsKey('dataAberturaProposta')) {
+          _dataAberturaCtrl.text = accepted['dataAberturaProposta']!;
+        }
+        if (accepted.containsKey('dataEncerramentoProposta')) {
+          _dataEncerramentoCtrl.text = accepted['dataEncerramentoProposta']!;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _importingGemini = false);
+    }
+  }
+
   // ── Date/datetime helpers ─────────────────────────────────────────────────
 
   /// `yyyy-MM-dd` → `dd/MM/yyyy` (para exibição ao usuário).
@@ -434,6 +531,18 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 ),
               )
             else ...[
+              TextButton.icon(
+                onPressed: _importingGemini ? null : _importFromPdf,
+                icon: _importingGemini
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.auto_fix_high),
+                label: const Text('Importar do PDF'),
+              ),
+              const SizedBox(width: 4),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),

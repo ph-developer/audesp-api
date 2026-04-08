@@ -7,6 +7,8 @@ import '../database/daos/licitacoes_dao.dart';
 import '../database/daos/atas_dao.dart';
 import '../database/daos/ajustes_dao.dart';
 import '../database/daos/api_logs_dao.dart';
+import '../database/daos/app_settings_dao.dart';
+import '../services/gemini_service.dart';
 
 /// Instância única do banco de dados para toda a sessão do app.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -37,4 +39,12 @@ final ajustesDaoProvider = Provider<AjustesDao>(
 
 final apiLogsDaoProvider = Provider<ApiLogsDao>(
   (ref) => ApiLogsDao(ref.watch(appDatabaseProvider)),
+);
+
+final appSettingsDaoProvider = Provider<AppSettingsDao>(
+  (ref) => AppSettingsDao(ref.watch(appDatabaseProvider)),
+);
+
+final geminiServiceProvider = Provider<GeminiService>(
+  (ref) => GeminiService(ref.watch(appSettingsDaoProvider)),
 );

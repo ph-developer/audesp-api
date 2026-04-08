@@ -102,6 +102,17 @@ class Ajustes extends Table {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AppSettings — configurações globais do aplicativo (chave + valor)
+// ─────────────────────────────────────────────────────────────────────────────
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ApiLogs — histórico de todas as chamadas à API AUDESP
 // ─────────────────────────────────────────────────────────────────────────────
 class ApiLogs extends Table {

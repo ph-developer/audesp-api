@@ -40,6 +40,9 @@ dependencies:
   # Hash de senhas
   crypto: ^3.0.5
 
+  # Integração com Google Gemini (importação de PDF via IA)
+  google_generative_ai: ^0.4.6
+
   # Modelos imutáveis + serialização
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
