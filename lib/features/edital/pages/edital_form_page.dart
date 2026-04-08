@@ -12,6 +12,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
 import '../widgets/item_compra_dialog.dart';
@@ -206,12 +207,20 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Salvar rascunho ───────────────────────────────────────────────────────
 
-  Future<void> _saveDraft() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_itens.isEmpty) {
-      _showError('Adicione pelo menos um item de compra.');
-      return;
+  bool _validateDraft() {
+    if (_codigoEditalCtrl.text.trim().isEmpty) {
+      _showError('Informe o Código do Edital para salvar o rascunho.');
+      return false;
     }
+    if (_dataDocCtrl.text.trim().isEmpty) {
+      _showError('Informe a Data do Documento para salvar o rascunho.');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _saveDraft() async {
+    if (!_validateDraft()) return;
     setState(() => _saving = true);
     try {
       final doc = _buildJson();
@@ -486,7 +495,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Widget _buildDescritorSection(bool readonly) {
     final sessionUser = ref.read(localSessionProvider);
-    return _SectionCard(
+    return SectionCard(
       title: 'Descritor',
       children: [
         // Município e entidade são definidos pelo administrador e preenchidos
@@ -550,7 +559,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Seção: Publicidade ────────────────────────────────────────────────────
 
   Widget _buildPublicidadeSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Publicidade',
       children: [
         SwitchListTile(
@@ -641,7 +650,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Seção: Dados Gerais ───────────────────────────────────────────────────
 
   Widget _buildDadosGeraisSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Dados Gerais',
       children: [
         // Código da Unidade Compradora (facultativo)
@@ -856,7 +865,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
   Widget _buildItensSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Itens de Compra',
       children: [
         if (_itens.isEmpty)
@@ -952,7 +961,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Seção: PDF ────────────────────────────────────────────────────────────
 
   Widget _buildPdfSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Arquivo PDF',
       children: [
         if (_pdfPath != null)
@@ -1002,39 +1011,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 }
 
 // ── Widgets auxiliares ─────────────────────────────────────────────────────
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _SectionCard({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const Divider(height: 16),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// Campo de autocomplete para Amparo Legal (100+ valores).
 class _AmparoLegalField extends StatelessWidget {

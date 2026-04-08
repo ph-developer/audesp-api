@@ -10,6 +10,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/section_card.dart';
 import '../domain/licitacao_domain.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
@@ -271,16 +272,20 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   // ── Salvar rascunho ───────────────────────────────────────────────────
 
-  Future<void> _saveDraft() async {
+  bool _validateDraft() {
     if (_editalId == null) {
-      _showError('Selecione o Edital vinculado.');
-      return;
+      _showError('Selecione o Edital vinculado para salvar o rascunho.');
+      return false;
     }
-    if (!_formKey.currentState!.validate()) return;
-    if (_itens.isEmpty) {
-      _showError('Adicione pelo menos um item.');
-      return;
+    if (_codigoEditalCtrl.text.trim().isEmpty) {
+      _showError('Informe o Código do Edital para salvar o rascunho.');
+      return false;
     }
+    return true;
+  }
+
+  Future<void> _saveDraft() async {
+    if (!_validateDraft()) return;
 
     setState(() => _saving = true);
     try {
@@ -582,7 +587,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   // ── Seções ─────────────────────────────────────────────────────────────
 
   Widget _buildEditalSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Edital Vinculado',
       children: [
         DropdownButtonFormField<int>(
@@ -614,7 +619,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   Widget _buildDescritorSection(bool readonly) {
     final sessionUser = ref.read(localSessionProvider);
-    return _SectionCard(
+    return SectionCard(
       title: 'Descritor',
       children: [
         if (sessionUser != null)
@@ -658,7 +663,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildBidSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Recursos BID',
       children: [
         _DropdownField(
@@ -750,7 +755,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildDadosGeraisSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Dados Gerais',
       children: [
         Row(children: [
@@ -865,7 +870,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildGarantiaSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Garantia de Licitantes',
       children: [
         Row(children: [
@@ -909,7 +914,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildQuitacaoSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Quitação de Tributos',
       children: [
         Row(children: [
@@ -949,7 +954,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildFontesRecursoSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Fontes de Recurso',
       children: [
         Wrap(
@@ -977,7 +982,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildContratacaoConduzidaSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Contratação Conduzida',
       children: [
         SwitchListTile(
@@ -1032,7 +1037,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildIndicesEconomicosSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Índices Econômicos',
       children: [
         _DropdownField(
@@ -1096,7 +1101,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildItensSection(bool readonly) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Itens de Licitação *',
       children: [
         if (!readonly)
@@ -1181,29 +1186,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 }
 
 // ── Widgets auxiliares ─────────────────────────────────────────────────────
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  const _SectionCard({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _DropdownField extends StatelessWidget {
   final String label;

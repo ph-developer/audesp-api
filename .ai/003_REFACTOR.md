@@ -95,7 +95,7 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 ---
 
-### Etapa 3 — Rascunho Parcial (sem validação completa)
+### ~~Etapa 3 — Rascunho Parcial (sem validação completa)~~ ✅ CONCLUÍDA (08/04/2026)
 
 **Arquivos afetados:**
 - `lib/features/edital/pages/edital_form_page.dart`
@@ -103,9 +103,9 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 - `lib/features/ata/pages/ata_form_page.dart`
 - `lib/features/ajuste/pages/ajuste_form_page.dart`
 
-**O que fazer:**
+**O que foi feito:**
 
-1. Adicionar método `_validateDraft()` em cada formulário que valida apenas os campos mínimos:
+1. Adicionado método `_validateDraft()` em cada formulário validando apenas os campos mínimos:
 
    | Formulário | Campos obrigatórios para rascunho |
    |---|---|
@@ -114,11 +114,9 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
    | Ata | `editalId` (vínculo), `codigoEdital`, `codigoAta` |
    | Ajuste | `editalId` (vínculo), `codigoEdital`, `codigoContrato` |
 
-2. Modificar `_saveDraft()` para chamar `_validateDraft()` no lugar de `_formKey.currentState!.validate()`.
-3. Manter `_enviar()` chamando `_formKey.currentState!.validate()` (validação completa).
-4. O banco de dados já aceita colunas opcionais como null; apenas garantir que os campos estruturados (usados como chave) não sejam vazios.
-
-**Estimativa de tokens:** ~25 k (4 arquivos lidos + editados)
+2. `_saveDraft()` agora chama `_validateDraft()` — sem `_formKey.currentState!.validate()`, sem exigência de itens/datas.
+3. `_enviar()` mantém validação completa (`_formKey.currentState!.validate()` + checagens de itens/datas).
+4. Banco já aceita colunas opcionais como null — nenhuma alteração no schema.
 
 ---
 
@@ -303,15 +301,15 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 
 5. **Formato de datas no CSV:** Definir explicitamente o formato esperado (sugestão: `dd/MM/yyyy`) e exibir mensagem de erro clara se o parse falhar.
 
-6. **Modo draft antes da API:** O botão "Importar do PDF" não deve exigir que o usuário já tenha salvo um rascunho — deve funcionar em formulário novo.
+6. ~~**Modo draft antes da API:** O botão "Importar do PDF" não deve exigir que o usuário já tenha salvo um rascunho — deve funcionar em formulário novo.~~ ✅ Contemplado pela Etapa 3: `_saveDraft` agora é acionável com campos mínimos, sem exigir estado anterior salvo.
 
 ---
 
 ## Ordem de Execução Recomendada
 
 ```
-Etapa 1  →  Etapa 2  →  Etapa 3  →  Etapa 4  →  Etapa 5  →  Etapa 6
- (Ata)     (Ajuste)   (Draft)    (Gemini)    (CSV Edital) (CSV Licit.)
+Etapa 1  →  Etapa 2  →  Etapa 3 ✅ →  Etapa 4  →  Etapa 5  →  Etapa 6
+ (Ata)     (Ajuste)    (Draft)      (Gemini)    (CSV Edital) (CSV Licit.)
 ```
 
-As Etapas 1 e 2 são independentes entre si e podem ser executadas em qualquer ordem. A Etapa 3 é independente de todas. As Etapas 5 e 6 dependem da instalação do pacote `csv` (instalado na Etapa 5; a Etapa 6 reutiliza). A Etapa 4 é independente das demais.
+As Etapas 1 e 2 são independentes entre si e podem ser executadas em qualquer ordem. A Etapa 3 está concluída. As Etapas 5 e 6 dependem da instalação do pacote `csv` (instalado na Etapa 5; a Etapa 6 reutiliza). A Etapa 4 é independente das demais.

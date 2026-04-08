@@ -11,6 +11,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/section_card.dart';
 import '../services/ata_service.dart';
 
 /// Formulário de criação/edição de Ata (Fase 6 – Módulo 3).
@@ -180,22 +181,24 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   // ── Salvar rascunho ───────────────────────────────────────────────────
 
-  Future<void> _saveDraft() async {
+  bool _validateDraft() {
     if (_editalId == null) {
-      _showError('Selecione o Edital vinculado.');
-      return;
+      _showError('Selecione o Edital vinculado para salvar o rascunho.');
+      return false;
     }
-    if (!_formKey.currentState!.validate()) return;
-    if (_numerosItem.isEmpty) {
-      _showError('Informe pelo menos um número de item.');
-      return;
+    if (_codigoEditalCtrl.text.trim().isEmpty) {
+      _showError('Informe o Código do Edital para salvar o rascunho.');
+      return false;
     }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
-      return;
+    if (_codigoAtaCtrl.text.trim().isEmpty) {
+      _showError('Informe o Código da Ata para salvar o rascunho.');
+      return false;
     }
+    return true;
+  }
+
+  Future<void> _saveDraft() async {
+    if (!_validateDraft()) return;
 
     setState(() => _saving = true);
     try {
@@ -395,254 +398,262 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Vínculo com Edital ───────────────────────────────────
-              _SectionHeader(title: 'Vínculo com Edital'),
-              DropdownButtonFormField<int>(
-                initialValue: _editalId,
-                decoration: const InputDecoration(
-                  labelText: 'Edital *',
-                  border: OutlineInputBorder(),
-                ),
-                items: _editais
-                    .map((e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(
-                            '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: readOnly
-                    ? null
-                    : (v) {
-                        setState(() => _editalId = v);
-                        _fillEditalDescriptor();
-                      },
-                validator: (v) =>
-                    v == null ? 'Selecione o edital vinculado' : null,
+              SectionCard(
+                title: 'Vínculo com Edital',
+                children: [
+                  DropdownButtonFormField<int>(
+                    initialValue: _editalId,
+                    decoration: const InputDecoration(
+                      labelText: 'Edital *',
+                    ),
+                    items: _editais
+                        .map((e) => DropdownMenuItem(
+                              value: e.id,
+                              child: Text(
+                                '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: readOnly
+                        ? null
+                        : (v) {
+                            setState(() => _editalId = v);
+                            _fillEditalDescriptor();
+                          },
+                    validator: (v) =>
+                        v == null ? 'Selecione o edital vinculado' : null,
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // ── Descritor ────────────────────────────────────────────
-              _SectionHeader(title: 'Descritor'),
-              Row(
+              SectionCard(
+                title: 'Descritor',
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _codigoEditalCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Código do Edital *',
-                        border: OutlineInputBorder(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _codigoEditalCtrl,
+                          readOnly: readOnly,
+                          decoration: const InputDecoration(
+                            labelText: 'Código do Edital *',
+                          ),
+                          maxLength: 30,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Informe o código do edital'
+                              : null,
+                        ),
                       ),
-                      maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o código do edital'
-                          : null,
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _codigoAtaCtrl,
+                          readOnly: readOnly,
+                          decoration: const InputDecoration(
+                            labelText: 'Código da Ata *',
+                          ),
+                          maxLength: 30,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Informe o código da ata'
+                              : null,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _codigoAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Código da Ata *',
-                        border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 200,
+                        child: TextFormField(
+                          controller: _anoCompraCtrl,
+                          readOnly: readOnly,
+                          decoration: const InputDecoration(
+                            labelText: 'Ano da Contratação *',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(4),
+                          ],
+                          validator: (v) {
+                            final y = int.tryParse(v ?? '');
+                            if (y == null || y < 1950 || y > 2100) {
+                              return 'Ano inválido (1950–2100)';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o código da ata'
-                          : null,
-                    ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: SwitchListTile(
+                          title: const Text('Retificação'),
+                          subtitle: const Text('Marque se este documento retifica outro'),
+                          value: _retificacao,
+                          onChanged:
+                              readOnly ? null : (v) => setState(() => _retificacao = v),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 200,
-                    child: TextFormField(
-                      controller: _anoCompraCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Ano da Contratação *',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                      ],
-                      validator: (v) {
-                        final y = int.tryParse(v ?? '');
-                        if (y == null || y < 1950 || y > 2100) {
-                          return 'Ano inválido (1950–2100)';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: SwitchListTile(
-                      title: const Text('Retificação'),
-                      subtitle: const Text('Marque se este documento retifica outro'),
-                      value: _retificacao,
-                      onChanged:
-                          readOnly ? null : (v) => setState(() => _retificacao = v),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
 
               // ── Dados da Ata ─────────────────────────────────────────
-              _SectionHeader(title: 'Dados da Ata'),
-              Row(
+              SectionCard(
+                title: 'Dados da Ata',
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _numeroAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Número da Ata no Sistema de Origem *',
-                        border: OutlineInputBorder(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _numeroAtaCtrl,
+                          readOnly: readOnly,
+                          decoration: const InputDecoration(
+                            labelText: 'Número da Ata no Sistema de Origem *',
+                          ),
+                          maxLength: 30,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Informe o número da ata'
+                              : null,
+                        ),
                       ),
-                      maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o número da ata'
-                          : null,
-                    ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 180,
+                        child: TextFormField(
+                          controller: _anoAtaCtrl,
+                          readOnly: readOnly,
+                          decoration: const InputDecoration(
+                            labelText: 'Ano da Ata *',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(4),
+                          ],
+                          validator: (v) {
+                            final y = int.tryParse(v ?? '');
+                            if (y == null || y < 1950 || y > 2100) {
+                              return 'Ano inválido (1950–2100)';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 180,
-                    child: TextFormField(
-                      controller: _anoAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Ano da Ata *',
-                        border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  // ── Datas ──────────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DateField(
+                          label: 'Data de Assinatura *',
+                          value: _dataAssinatura,
+                          readOnly: readOnly,
+                          formatter: _dateFmt,
+                          onTap: () async {
+                            final d = await _pickDate(_dataAssinatura);
+                            if (d != null) setState(() => _dataAssinatura = d);
+                          },
+                        ),
                       ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                      ],
-                      validator: (v) {
-                        final y = int.tryParse(v ?? '');
-                        if (y == null || y < 1950 || y > 2100) {
-                          return 'Ano inválido (1950–2100)';
-                        }
-                        return null;
-                      },
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _DateField(
+                          label: 'Início de Vigência *',
+                          value: _dataVigenciaInicio,
+                          readOnly: readOnly,
+                          formatter: _dateFmt,
+                          onTap: () async {
+                            final d = await _pickDate(_dataVigenciaInicio);
+                            if (d != null) setState(() => _dataVigenciaInicio = d);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _DateField(
+                          label: 'Fim de Vigência *',
+                          value: _dataVigenciaFim,
+                          readOnly: readOnly,
+                          formatter: _dateFmt,
+                          onTap: () async {
+                            final d = await _pickDate(_dataVigenciaFim);
+                            if (d != null) setState(() => _dataVigenciaFim = d);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
               const SizedBox(height: 16),
 
-              // ── Datas ────────────────────────────────────────────────
-              Row(
+              // ── Itens ────────────────────────────────────────────────
+              SectionCard(
+                title: 'Itens da Licitação Referenciados',
                 children: [
-                  Expanded(
-                    child: _DateField(
-                      label: 'Data de Assinatura *',
-                      value: _dataAssinatura,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataAssinatura);
-                        if (d != null) setState(() => _dataAssinatura = d);
-                      },
+                  if (!readOnly)
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          child: TextFormField(
+                            controller: _itemCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'N.º do Item',
+                              hintText: 'ex: 3',
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            onFieldSubmitted: (_) => _addItem(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        FilledButton.tonalIcon(
+                          onPressed: _addItem,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Adicionar Item'),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DateField(
-                      label: 'Início de Vigência *',
-                      value: _dataVigenciaInicio,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataVigenciaInicio);
-                        if (d != null) setState(() => _dataVigenciaInicio = d);
-                      },
+                  const SizedBox(height: 12),
+                  if (_numerosItem.isEmpty)
+                    Text(
+                      'Nenhum item adicionado.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _numerosItem
+                          .map(
+                            (n) => Chip(
+                              label: Text('Item $n'),
+                              deleteIcon: readOnly
+                                  ? null
+                                  : const Icon(Icons.close, size: 16),
+                              onDeleted: readOnly ? null : () => _removeItem(n),
+                            ),
+                          )
+                          .toList(),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DateField(
-                      label: 'Fim de Vigência *',
-                      value: _dataVigenciaFim,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataVigenciaFim);
-                        if (d != null) setState(() => _dataVigenciaFim = d);
-                      },
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // ── Itens ────────────────────────────────────────────────
-              _SectionHeader(title: 'Itens da Licitação Referenciados'),
-              if (!readOnly)
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 160,
-                      child: TextFormField(
-                        controller: _itemCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'N.º do Item',
-                          border: OutlineInputBorder(),
-                          hintText: 'ex: 3',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onFieldSubmitted: (_) => _addItem(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton.tonalIcon(
-                      onPressed: _addItem,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Adicionar Item'),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 12),
-              if (_numerosItem.isEmpty)
-                Text(
-                  'Nenhum item adicionado.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _numerosItem
-                      .map(
-                        (n) => Chip(
-                          label: Text('Item $n'),
-                          deleteIcon: readOnly
-                              ? null
-                              : const Icon(Icons.close, size: 16),
-                          onDeleted: readOnly ? null : () => _removeItem(n),
-                        ),
-                      )
-                      .toList(),
-                ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -652,31 +663,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const Divider(),
-        ],
-      ),
-    );
-  }
-}
 
 class _DateField extends StatelessWidget {
   final String label;
