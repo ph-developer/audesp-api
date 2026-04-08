@@ -136,6 +136,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
+                      autofocus: true,
                       onChanged: (_) => setState(() => _error = null),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,

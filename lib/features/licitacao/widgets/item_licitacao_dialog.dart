@@ -158,7 +158,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
     return AlertDialog(
       title: Text(widget.initial == null ? 'Adicionar Item' : 'Editar Item'),
       content: SizedBox(
-        width: 560,
+        width: 680,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -247,7 +247,6 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                 Row(
                   children: [
                     Expanded(
-                      flex: 3,
                       child: DropdownButtonFormField<int>(
                         initialValue: _situacaoCompraItemId,
                         decoration:
@@ -262,7 +261,6 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      flex: 2,
                       child: TextFormField(
                         controller: _dataSituacaoCtrl,
                         decoration: const InputDecoration(
@@ -289,6 +287,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                 Row(
                   children: [
                     Expanded(
+                      flex: 2,
                       child: DropdownButtonFormField<String>(
                         initialValue: _tipoValor,
                         decoration: const InputDecoration(labelText: 'Tipo de Valor *'),
@@ -302,6 +301,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      flex: 4,
                       child: DropdownButtonFormField<int>(
                         initialValue: _tipoProposta,
                         decoration: const InputDecoration(labelText: 'Tipo de Proposta *'),
