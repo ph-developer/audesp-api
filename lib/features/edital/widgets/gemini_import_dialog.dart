@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../core/services/gemini_service.dart';
+import '../domain/edital_domain.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Campos extraídos pelo Gemini para o Edital
@@ -77,6 +78,34 @@ const _kEditalFields = <GeminiField>[
     hint: 'formato dd/MM/yyyy HH:mm',
   ),
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper — converte valor bruto em descrição legível para a tabela de revisão
+// ─────────────────────────────────────────────────────────────────────────────
+
+String _displayValue(String key, String raw) {
+  if (raw.isEmpty) return raw;
+  switch (key) {
+    case 'srp':
+      if (raw.toLowerCase() == 'true') return 'Sim';
+      if (raw.toLowerCase() == 'false') return 'Não';
+      return raw;
+    case 'tipoInstrumentoConvocatorioId':
+      final id = int.tryParse(raw);
+      return id != null ? (kTipoInstrumento[id] ?? raw) : raw;
+    case 'modalidadeId':
+      final id = int.tryParse(raw);
+      return id != null ? (kModalidades[id] ?? raw) : raw;
+    case 'modoDisputaId':
+      final id = int.tryParse(raw);
+      return id != null ? (kModoDisputa[id] ?? raw) : raw;
+    case 'amparoLegalId':
+      final id = int.tryParse(raw);
+      return id != null ? (kAmparosLegais[id] ?? raw) : raw;
+    default:
+      return raw;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Função pública de entrada
@@ -385,7 +414,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(
-            current.isEmpty ? '—' : current,
+            current.isEmpty ? '—' : _displayValue(field.key, current),
             style: TextStyle(
               fontSize: 12,
               color: current.isEmpty ? colorScheme.outline : null,
@@ -395,7 +424,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(
-            hasValue ? suggested : '—',
+            hasValue ? _displayValue(field.key, suggested) : '—',
             style: TextStyle(
               fontSize: 12,
               color: hasValue ? colorScheme.primary : colorScheme.outline,
