@@ -7,9 +7,6 @@ class Users extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get nome => text()();
   TextColumn get email => text().unique()();
-  TextColumn get municipio => text()();
-  TextColumn get entidade => text()();
-  BoolColumn get isAdmin => boolean().withDefault(const Constant(false))();
   /// SHA-256 da senha do sistema (null = ainda usa a senha padrão do .env).
   TextColumn get passwordHash => text().nullable()();
   DateTimeColumn get createdAt =>

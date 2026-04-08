@@ -20,8 +20,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nome;
   late final TextEditingController _email;
-  late final TextEditingController _municipio;
-  late final TextEditingController _entidade;
   bool _saving = false;
 
   bool get _isEdit => widget.user != null;
@@ -31,16 +29,12 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     super.initState();
     _nome = TextEditingController(text: widget.user?.nome ?? '');
     _email = TextEditingController(text: widget.user?.email ?? '');
-    _municipio = TextEditingController(text: widget.user?.municipio ?? '');
-    _entidade = TextEditingController(text: widget.user?.entidade ?? '');
   }
 
   @override
   void dispose() {
     _nome.dispose();
     _email.dispose();
-    _municipio.dispose();
-    _entidade.dispose();
     super.dispose();
   }
 
@@ -57,9 +51,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
             id: Value(widget.user!.id),
             nome: Value(_nome.text.trim()),
             email: Value(_email.text.trim()),
-            municipio: Value(_municipio.text.trim()),
-            entidade: Value(_entidade.text.trim()),
-            isAdmin: Value(widget.user!.isAdmin),
           ),
         );
       } else {
@@ -67,8 +58,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
           UsersCompanion.insert(
             nome: _nome.text.trim(),
             email: _email.text.trim(),
-            municipio: _municipio.text.trim(),
-            entidade: _entidade.text.trim(),
           ),
         );
       }
@@ -115,20 +104,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                   if (!v.contains('@')) return 'E-mail inválido';
                   return null;
                 },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _municipio,
-                decoration: const InputDecoration(labelText: 'Município'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _entidade,
-                decoration: const InputDecoration(labelText: 'Entidade'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
               if (!_isEdit) ...[
                 const SizedBox(height: 12),

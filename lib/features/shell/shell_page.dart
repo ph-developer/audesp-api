@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/environments.dart';
+import '../../core/database/database_providers.dart';
 import '../../features/auth/auth_providers.dart';
 import 'widgets/environment_dialog.dart';
 
@@ -89,7 +90,7 @@ class ShellPage extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Chip de ambiente (somente admin pode alterar)
-                        if (user?.isAdmin == true)
+                        if (user?.id == -1)
                           GestureDetector(
                             onTap: () => showEnvironmentDialog(context, ref),
                             child: _EnvironmentChip(env: env),
@@ -98,7 +99,7 @@ class ShellPage extends ConsumerWidget {
                           _EnvironmentChip(env: env),
                         const SizedBox(height: 8),
                         // Botão de admin ou perfil, conforme papel
-                        if (user?.isAdmin == true) ...[
+                        if (user?.id == -1) ...[
                           IconButton(
                             icon: const Icon(Icons.admin_panel_settings_outlined),
                             tooltip: 'Administração',
@@ -193,7 +194,7 @@ class _UserAvatar extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
               Text(
-                '${user?.entidade ?? ''} — ${user?.municipio ?? ''}',
+                '${ref.watch(codigoMunicipioProvider)} — ${ref.watch(codigoEntidadeProvider)}',
                 style: const TextStyle(fontSize: 12),
               ),
             ],

@@ -21,13 +21,6 @@ class UsersDao {
     return rows.length;
   }
 
-  Future<bool> hasAdmin() async {
-    final row = await (_db.select(_db.users)
-          ..where((u) => u.isAdmin.equals(true)))
-        .getSingleOrNull();
-    return row != null;
-  }
-
   Future<int> insertUser(UsersCompanion entry) =>
       _db.into(_db.users).insert(entry);
 

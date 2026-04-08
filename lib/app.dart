@@ -42,12 +42,12 @@ final _routerProvider = Provider<GoRouter>((ref) {
       if (loggedIn && loc == '/login') return '/edital';
 
       // Não-admin tentando acessar a área de admin → redireciona
-      if (loggedIn && loc.startsWith('/admin') && user.isAdmin != true) {
+      if (loggedIn && loc.startsWith('/admin') && user.id != -1) {
         return '/edital';
       }
 
       // Admin tentando acessar o perfil de usuário → redireciona para admin
-      if (loggedIn && loc == '/profile' && user.isAdmin == true) {
+      if (loggedIn && loc == '/profile' && user.id == -1) {
         return '/admin';
       }
 

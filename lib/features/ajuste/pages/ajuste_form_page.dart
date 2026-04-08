@@ -253,9 +253,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── JSON builder ──────────────────────────────────────────────────────
 
   Map<String, dynamic> _buildJson() {
-    final sessionUser = ref.read(localSessionProvider);
-    final municipio = int.tryParse(sessionUser?.municipio ?? '') ?? 0;
-    final entidade = int.tryParse(sessionUser?.entidade ?? '') ?? 0;
+    final municipio = int.tryParse(ref.read(codigoMunicipioProvider)) ?? 0;
+    final entidade = int.tryParse(ref.read(codigoEntidadeProvider)) ?? 0;
     final isoFmt = DateFormat('yyyy-MM-dd');
 
     final descritor = <String, dynamic>{
@@ -379,9 +378,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(ajustesDaoProvider);
-      final sessionUser = ref.read(localSessionProvider);
-      final municipio = sessionUser?.municipio ?? '';
-      final entidade = sessionUser?.entidade ?? '';
+      final municipio = ref.read(codigoMunicipioProvider);
+      final entidade = ref.read(codigoEntidadeProvider);
 
       if (_loadedId == null) {
         final id = await dao.insertAjuste(

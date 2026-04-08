@@ -44,8 +44,7 @@ class UsersPage extends ConsumerWidget {
                     child: Text(u.nome[0].toUpperCase()),
                   ),
                   title: Text(u.nome),
-                  subtitle: Text('${u.email}\n${u.entidade} — ${u.municipio}'),
-                  isThreeLine: true,
+                  subtitle: Text(u.email),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

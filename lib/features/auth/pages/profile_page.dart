@@ -70,9 +70,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           id: Value(_user!.id),
           nome: Value(_nome.text.trim()),
           email: Value(_user!.email),
-          municipio: Value(_user!.municipio),
-          entidade: Value(_user!.entidade),
-          isAdmin: Value(_user!.isAdmin),
         ),
       );
 

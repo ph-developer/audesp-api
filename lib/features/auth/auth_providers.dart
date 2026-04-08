@@ -12,9 +12,6 @@ User buildAdminUser() => User(
       id: -1,
       nome: 'Administrador',
       email: 'admin',
-      municipio: '',
-      entidade: '',
-      isAdmin: true,
       createdAt: DateTime.now(),
     );
 

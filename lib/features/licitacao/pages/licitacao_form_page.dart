@@ -199,9 +199,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   // ── JSON builder ──────────────────────────────────────────────────────
 
   Map<String, dynamic> _buildJson() {
-    final sessionUser = ref.read(localSessionProvider);
-    final municipio = int.tryParse(sessionUser?.municipio ?? '') ?? 0;
-    final entidade = int.tryParse(sessionUser?.entidade ?? '') ?? 0;
+    final municipio = int.tryParse(ref.read(codigoMunicipioProvider)) ?? 0;
+    final entidade = int.tryParse(ref.read(codigoEntidadeProvider)) ?? 0;
 
     final map = <String, dynamic>{
       'descritor': {
@@ -292,9 +291,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(licitacoesDaoProvider);
-      final sessionUser = ref.read(localSessionProvider);
-      final municipio = sessionUser?.municipio ?? '';
-      final entidade = sessionUser?.entidade ?? '';
+      final municipio = ref.read(codigoMunicipioProvider);
+      final entidade = ref.read(codigoEntidadeProvider);
 
       if (_loadedId == null) {
         final id = await dao.insertLicitacao(
@@ -618,15 +616,16 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Widget _buildDescritorSection(bool readonly) {
-    final sessionUser = ref.read(localSessionProvider);
+    final municipio = ref.watch(codigoMunicipioProvider);
+    final entidade = ref.watch(codigoEntidadeProvider);
     return SectionCard(
       title: 'Descritor',
       children: [
-        if (sessionUser != null)
+        if (municipio.isNotEmpty || entidade.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'Município: ${sessionUser.municipio}   |   Entidade: ${sessionUser.entidade}',
+              'Município: $municipio   |   Entidade: $entidade',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

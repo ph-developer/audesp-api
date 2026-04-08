@@ -6,6 +6,9 @@ import '../app_database.dart';
 abstract class SettingsKeys {
   static const geminiApiKey = 'gemini_api_key';
   static const geminiModel = 'gemini_model';
+  static const codigoMunicipio = 'codigo_municipio';
+  static const codigoEntidade = 'codigo_entidade';
+  static const environment = 'environment';
 }
 
 class AppSettingsDao {

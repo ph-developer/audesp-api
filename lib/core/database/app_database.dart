@@ -20,26 +20,10 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 1;
 
   @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        await m.addColumn(users, users.isAdmin);
-      }
-      if (from < 3) {
-        await m.addColumn(users, users.passwordHash);
-      }
-      if (from < 4) {
-        await customStatement('DROP TABLE IF EXISTS termos_contrato');
-        await customStatement('DROP TABLE IF EXISTS empenhos');
-      }
-      if (from < 5) {
-        await m.createTable(appSettings);
-      }
-    },
-  );
+  MigrationStrategy get migration => MigrationStrategy();
 
   static QueryExecutor _openConnection() {
     return driftDatabase(name: 'audesp_api');

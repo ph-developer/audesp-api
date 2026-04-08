@@ -48,3 +48,47 @@ final appSettingsDaoProvider = Provider<AppSettingsDao>(
 final geminiServiceProvider = Provider<GeminiService>(
   (ref) => GeminiService(ref.watch(appSettingsDaoProvider)),
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Configurações globais de texto (municipio, entidade)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Notifier genérico para configurações de texto persistidas em [AppSettings].
+class StringSettingNotifier extends StateNotifier<String> {
+  final AppSettingsDao _dao;
+  final String _key;
+
+  StringSettingNotifier(this._dao, this._key) : super('') {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final v = await _dao.get(_key);
+    if (v != null && mounted) state = v;
+  }
+
+  Future<void> setValue(String v) async {
+    if (v.isEmpty) {
+      await _dao.delete(_key);
+    } else {
+      await _dao.set(_key, v);
+    }
+    state = v;
+  }
+}
+
+final codigoMunicipioProvider =
+    StateNotifierProvider<StringSettingNotifier, String>(
+  (ref) => StringSettingNotifier(
+    ref.watch(appSettingsDaoProvider),
+    SettingsKeys.codigoMunicipio,
+  ),
+);
+
+final codigoEntidadeProvider =
+    StateNotifierProvider<StringSettingNotifier, String>(
+  (ref) => StringSettingNotifier(
+    ref.watch(appSettingsDaoProvider),
+    SettingsKeys.codigoEntidade,
+  ),
+);

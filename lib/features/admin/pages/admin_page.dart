@@ -98,33 +98,10 @@ class _UsersTab extends ConsumerWidget {
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: u.isAdmin
-                          ? Theme.of(ctx).colorScheme.primary
-                          : null,
-                      foregroundColor: u.isAdmin
-                          ? Theme.of(ctx).colorScheme.onPrimary
-                          : null,
                       child: Text(u.nome[0].toUpperCase()),
                     ),
-                    title: Row(
-                      children: [
-                        Text(u.nome),
-                        if (u.isAdmin) ...[
-                          const SizedBox(width: 8),
-                          Chip(
-                            label: const Text('Admin'),
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            labelStyle: const TextStyle(fontSize: 11),
-                            backgroundColor:
-                                Theme.of(ctx).colorScheme.primaryContainer,
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle: Text('${u.email}\n${u.entidade} — ${u.municipio}'),
-                    isThreeLine: true,
+                    title: Text(u.nome),
+                    subtitle: Text(u.email),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -206,90 +183,217 @@ class _UsersTab extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tab 2 — Seleção de ambiente
+// Tab 2 — Configurações AUDESP (ambiente + códigos de município e entidade)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _EnvironmentTab extends ConsumerWidget {
+class _EnvironmentTab extends ConsumerStatefulWidget {
   const _EnvironmentTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final current = ref.watch(environmentProvider);
+  ConsumerState<_EnvironmentTab> createState() => _EnvironmentTabState();
+}
+
+class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
+  final _municipioCtrl = TextEditingController();
+  final _entidadeCtrl = TextEditingController();
+  bool _loading = true, _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _municipioCtrl.dispose();
+    _entidadeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final dao = ref.read(appSettingsDaoProvider);
+    final m = await dao.get(SettingsKeys.codigoMunicipio);
+    final e = await dao.get(SettingsKeys.codigoEntidade);
+    if (!mounted) return;
+    setState(() {
+      _municipioCtrl.text = m ?? '';
+      _entidadeCtrl.text = e ?? '';
+      _loading = false;
+    });
+  }
+
+  Future<void> _saveCodes() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(codigoMunicipioProvider.notifier)
+          .setValue(_municipioCtrl.text.trim());
+      await ref
+          .read(codigoEntidadeProvider.notifier)
+          .setValue(_entidadeCtrl.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Configurações salvas com sucesso.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+
+    final currentEnv = ref.watch(environmentProvider);
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Card(
-          margin: const EdgeInsets.all(24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: RadioGroup<Environment>(
-              groupValue: current,
-              onChanged: (v) {
-                if (v != null) {
-                  ref
-                      .read(environmentProvider.notifier)
-                      .setEnvironment(v);
-                }
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Ambiente da API AUDESP',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const Divider(),
-                  ...Environment.values.map(
-                    (env) => RadioListTile<Environment>(
-                      value: env,
-                      title: Text(env.label),
-                      subtitle: Text(env.baseUrl),
-                      secondary: env == Environment.piloto
-                          ? Chip(
-                              label: const Text('Teste'),
-                              backgroundColor:
-                                  Colors.orange.shade100,
-                            )
-                          : Chip(
-                              label: const Text('Produção'),
-                              backgroundColor: Colors.green.shade100,
-                            ),
-                    ),
-                  ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Ambiente ──
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: RadioGroup<Environment>(
+                    groupValue: currentEnv,
+                    onChanged: (v) {
+                      if (v != null) {
+                        ref
+                            .read(environmentProvider.notifier)
+                            .setEnvironment(v);
+                      }
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A seleção de ambiente aplica-se a todas as chamadas API da sessão.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  Theme.of(context).colorScheme.outline,
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Ambiente da API AUDESP',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
+                          ),
+                        ),
+                        const Divider(),
+                        ...Environment.values.map(
+                          (env) => RadioListTile<Environment>(
+                            value: env,
+                            title: Text(env.label),
+                            subtitle: Text(env.baseUrl),
+                            secondary: env == Environment.piloto
+                                ? Chip(
+                                    label: const Text('Teste'),
+                                    backgroundColor: Colors.orange.shade100,
+                                  )
+                                : Chip(
+                                    label: const Text('Produção'),
+                                    backgroundColor: Colors.green.shade100,
+                                  ),
+                          ),
+                        ),
+                        const Divider(),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'A seleção de ambiente é persistida e aplica-se a todas as chamadas API.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              // ── Códigos de Município e Entidade ──
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_city_outlined),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Códigos AUDESP',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      TextFormField(
+                        controller: _municipioCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Código do Município',
+                          hintText: 'Ex.: 3550308',
+                          helperText:
+                              'Código numérico do município conforme cadastro AUDESP.',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _entidadeCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Código da Entidade',
+                          hintText: 'Ex.: 1',
+                          helperText:
+                              'Código numérico da entidade conforme cadastro AUDESP.',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: _saving ? null : _saveCodes,
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: const Text('Salvar'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
