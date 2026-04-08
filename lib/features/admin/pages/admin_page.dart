@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,43 +19,40 @@ class AdminPage extends ConsumerStatefulWidget {
   ConsumerState<AdminPage> createState() => _AdminPageState();
 }
 
-class _AdminPageState extends ConsumerState<AdminPage>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tab;
-
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tab.dispose();
-    super.dispose();
-  }
+class _AdminPageState extends ConsumerState<AdminPage> {
+  int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
         title: const Text('Administração'),
-        leading: BackButton(onPressed: () => context.go('/edital')),
-        bottom: TabBar(
-          controller: _tab,
-          tabs: const [
-            Tab(icon: Icon(Icons.people_outlined), text: 'Usuários'),
-            Tab(icon: Icon(Icons.cloud_outlined), text: 'Ambiente'),
-            Tab(icon: Icon(Icons.folder_outlined), text: 'Registros'),
-          ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => context.go('/edital'),
         ),
       ),
-      body: TabBarView(
-        controller: _tab,
-        children: const [
-          _UsersTab(),
-          _EnvironmentTab(),
-          _RegistrosTab(),
+      content: TabView(
+        currentIndex: _tabIndex,
+        onChanged: (i) => setState(() => _tabIndex = i),
+        closeButtonVisibility: CloseButtonVisibilityMode.never,
+        tabs: [
+          Tab(
+            icon: const Icon(Icons.people_outlined),
+            text: const Text('Usuários'),
+            body: const _UsersTab(),
+          ),
+          Tab(
+            icon: const Icon(Icons.cloud_outlined),
+            text: const Text('Ambiente'),
+            body: const _EnvironmentTab(),
+          ),
+          Tab(
+            icon: const Icon(Icons.folder_outlined),
+            text: const Text('Registros'),
+            body: const _RegistrosTab(),
+          ),
         ],
       ),
     );
@@ -78,13 +76,11 @@ class _UsersTab extends ConsumerWidget {
           stream: usersStream,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: ProgressRing());
             }
             final users = snapshot.data!;
             if (users.isEmpty) {
-              return const Center(
-                child: Text('Nenhum usuário cadastrado.'),
-              );
+              return const Center(child: Text('Nenhum usuário cadastrado.'));
             }
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -94,46 +90,64 @@ class _UsersTab extends ConsumerWidget {
                 final u = users[i];
                 return Card(
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: u.isAdmin
-                          ? Theme.of(ctx).colorScheme.primary
-                          : null,
-                      foregroundColor: u.isAdmin
-                          ? Theme.of(ctx).colorScheme.onPrimary
-                          : null,
-                      child: Text(u.nome[0].toUpperCase()),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: u.isAdmin
+                            ? FluentTheme.of(ctx).accentColor
+                            : FluentTheme.of(ctx)
+                                .resources
+                                .controlFillColorDefault,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        u.nome[0].toUpperCase(),
+                        style: TextStyle(
+                          color: u.isAdmin ? Colors.white : null,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     title: Row(
                       children: [
                         Text(u.nome),
                         if (u.isAdmin) ...[
                           const SizedBox(width: 8),
-                          Chip(
-                            label: const Text('Admin'),
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            labelStyle: const TextStyle(fontSize: 11),
-                            backgroundColor:
-                                Theme.of(ctx).colorScheme.primaryContainer,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: FluentTheme.of(ctx)
+                                  .accentColor
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Admin',
+                              style: TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ],
                       ],
                     ),
-                    subtitle: Text('${u.email}\n${u.entidade} — ${u.municipio}'),
-                    isThreeLine: true,
+                    subtitle:
+                        Text('${u.email}\n${u.entidade} — ${u.municipio}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar',
+                          icon: const Icon(Icons.edit_outlined, size: 18),
                           onPressed: () => _openForm(ctx, ref, u),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Excluir',
-                          color: Theme.of(ctx).colorScheme.error,
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          style: const ButtonStyle(
+                            foregroundColor:
+                                WidgetStatePropertyAll(Color(0xFFB00020)),
+                          ),
                           onPressed: () => _confirmDelete(ctx, ref, u),
                         ),
                       ],
@@ -147,11 +161,16 @@ class _UsersTab extends ConsumerWidget {
         Positioned(
           right: 16,
           bottom: 16,
-          child: FloatingActionButton.extended(
-            heroTag: 'admin_users_fab',
+          child: FilledButton(
             onPressed: () => _openForm(context, ref, null),
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Novo usuário'),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.person_add_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('Novo usuário'),
+              ],
+            ),
           ),
         ),
       ],
@@ -168,26 +187,27 @@ class _UsersTab extends ConsumerWidget {
       BuildContext context, WidgetRef ref, User user) async {
     final session = ref.read(localSessionProvider);
     if (session?.id == user.id) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Não é possível excluir o usuário logado.')),
-      );
+      displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+        title: Text('Não é possível excluir o usuário logado.'),
+        severity: InfoBarSeverity.warning,
+      ));
       return;
     }
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => ContentDialog(
         title: const Text('Excluir usuário'),
-        content:
-            Text('Deseja excluir o perfil de "${user.nome}"? Esta ação não pode ser desfeita.'),
+        content: Text(
+            'Deseja excluir o perfil de "${user.nome}"? Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(
+          Button(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
+            style: const ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(Color(0xFFB00020)),
+              foregroundColor: WidgetStatePropertyAll(Colors.white),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Excluir'),
@@ -219,73 +239,85 @@ class _EnvironmentTab extends ConsumerWidget {
         child: Card(
           margin: const EdgeInsets.all(24),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: RadioGroup<Environment>(
-              groupValue: current,
-              onChanged: (v) {
-                if (v != null) {
-                  ref
-                      .read(environmentProvider.notifier)
-                      .setEnvironment(v);
-                }
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Ambiente da API AUDESP',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const Divider(),
-                  ...Environment.values.map(
-                    (env) => RadioListTile<Environment>(
-                      value: env,
-                      title: Text(env.label),
-                      subtitle: Text(env.baseUrl),
-                      secondary: env == Environment.piloto
-                          ? Chip(
-                              label: const Text('Teste'),
-                              backgroundColor:
-                                  Colors.orange.shade100,
-                            )
-                          : Chip(
-                              label: const Text('Produção'),
-                              backgroundColor: Colors.green.shade100,
-                            ),
-                    ),
-                  ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A seleção de ambiente aplica-se a todas as chamadas API da sessão.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  Theme.of(context).colorScheme.outline,
-                            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Ambiente da API AUDESP',
+                  style: FluentTheme.of(context).typography.bodyStrong,
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
+                RadioGroup<Environment>(
+                  groupValue: current,
+                  onChanged: (v) {
+                    if (v != null) {
+                      ref
+                          .read(environmentProvider.notifier)
+                          .setEnvironment(v);
+                    }
+                  },
+                  child: Column(
+                    children: Environment.values.map((env) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: RadioButton<Environment>(
+                          value: env,
+                          content: Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(env.label,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                  Text(env.baseUrl,
+                                      style: const TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: env == Environment.piloto
+                                      ? const Color(0xFFFFE0B2)
+                                      : const Color(0xFFC8E6C9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  env == Environment.piloto
+                                      ? 'Teste'
+                                      : 'Produção',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    }).toList(),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'A seleção de ambiente aplica-se a todas as chamadas API da sessão.',
+                        style: FluentTheme.of(context).typography.caption,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -315,20 +347,22 @@ class _RegistrosTabState extends ConsumerState<_RegistrosTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Filtro de módulo
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: SegmentedButton<int>(
-            segments: List.generate(
-              _moduleLabels.length,
-              (i) => ButtonSegment(
-                value: i,
-                label: Text(_moduleLabels[i]),
-              ),
-            ),
-            selected: {_selectedModule},
-            onSelectionChanged: (s) =>
-                setState(() => _selectedModule = s.first),
+          child: Wrap(
+            spacing: 8,
+            children: List.generate(_moduleLabels.length, (i) {
+              final selected = _selectedModule == i;
+              return selected
+                  ? FilledButton(
+                      onPressed: () => setState(() => _selectedModule = i),
+                      child: Text(_moduleLabels[i]),
+                    )
+                  : Button(
+                      onPressed: () => setState(() => _selectedModule = i),
+                      child: Text(_moduleLabels[i]),
+                    );
+            }),
           ),
         ),
         const SizedBox(height: 12),
@@ -431,7 +465,7 @@ class _RecordsListView<T> extends StatelessWidget {
       stream: stream,
       builder: (ctx, snap) {
         if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: ProgressRing());
         }
         final items = snap.data!;
         if (items.isEmpty) {
@@ -474,14 +508,19 @@ class _RecordTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Chip(
-              label: Text(isSent ? 'Enviado' : 'Rascunho'),
-              padding: EdgeInsets.zero,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              labelStyle: const TextStyle(fontSize: 11),
-              backgroundColor: isSent
-                  ? Colors.green.shade100
-                  : Colors.orange.shade100,
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSent
+                    ? const Color(0xFFC8E6C9)
+                    : const Color(0xFFFFE0B2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                isSent ? 'Enviado' : 'Rascunho',
+                style: const TextStyle(fontSize: 11),
+              ),
             ),
             Text(
               '${date.day.toString().padLeft(2, '0')}/'

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,34 +8,48 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../edital_providers.dart';
 
-class EditalPage extends ConsumerWidget {
+class EditalPage extends ConsumerStatefulWidget {
   const EditalPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Editais'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Rascunhos'),
-              Tab(text: 'Enviados'),
+  ConsumerState<EditalPage> createState() => _EditalPageState();
+}
+
+class _EditalPageState extends ConsumerState<EditalPage> {
+  int _tabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        title: const Text('Editais'),
+        commandBar: FilledButton(
+          onPressed: () => context.go('/edital/new'),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 18),
+              SizedBox(width: 6),
+              Text('Novo Edital'),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/edital/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('Novo Edital'),
-        ),
-        body: const TabBarView(
-          children: [
-            _EditalList(status: 'draft'),
-            _EditalList(status: 'sent'),
-          ],
-        ),
+      ),
+      content: TabView(
+        currentIndex: _tabIndex,
+        onChanged: (i) => setState(() => _tabIndex = i),
+        closeButtonVisibility: CloseButtonVisibilityMode.never,
+        tabs: [
+          Tab(
+            text: const Text('Rascunhos'),
+            body: const _EditalList(status: 'draft'),
+          ),
+          Tab(
+            text: const Text('Enviados'),
+            body: const _EditalList(status: 'sent'),
+          ),
+        ],
       ),
     );
   }
@@ -51,7 +66,7 @@ class _EditalList extends ConsumerWidget {
         : ref.watch(editaisEnviadosProvider);
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: ProgressRing()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (editais) {
         if (editais.isEmpty) {
@@ -64,14 +79,14 @@ class _EditalList extends ConsumerWidget {
                       ? Icons.description_outlined
                       : Icons.check_circle_outline,
                   size: 64,
-                  color: Theme.of(context).colorScheme.outlineVariant,
+                  color: FluentTheme.of(context).inactiveColor,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   status == 'draft'
                       ? 'Nenhum rascunho de edital'
                       : 'Nenhum edital enviado',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: FluentTheme.of(context).typography.body,
                 ),
               ],
             ),
@@ -94,68 +109,83 @@ class _EditalCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isSent = edital.status == 'sent';
     final fmt = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: isSent
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          child: Icon(
-            isSent ? Icons.check : Icons.edit_outlined,
-            color: isSent
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
-          ),
-        ),
-        title: Text(
-          edital.codigoEdital,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
-            Text(
-              'Município: ${edital.municipio}  |  Entidade: ${edital.entidade}',
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSent
+                    ? FluentTheme.of(context).accentColor.withValues(alpha: 0.15)
+                    : FluentTheme.of(context).resources.controlFillColorDefault,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                isSent ? Icons.check : Icons.edit_outlined,
+                size: 20,
+                color: isSent ? FluentTheme.of(context).accentColor : null,
+              ),
             ),
-            Text(
-              'Atualizado: ${fmt.format(edital.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go('/edital/${edital.id}'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      edital.codigoEdital,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Município: ${edital.municipio}  |  Entidade: ${edital.entidade}',
+                    ),
+                    Text(
+                      'Atualizado: ${fmt.format(edital.updatedAt)}',
+                      style: FluentTheme.of(context).typography.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (edital.retificacao)
+                  Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8DEF8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Retificação',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                  ),
+                if (!isSent)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(context, ref),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onPressed: () => context.go('/edital/${edital.id}'),
+                ),
+              ],
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (edital.retificacao)
-              Chip(
-                label: const Text('Retificação'),
-                backgroundColor: colorScheme.tertiaryContainer,
-                labelStyle:
-                    TextStyle(color: colorScheme.onTertiaryContainer),
-                padding: EdgeInsets.zero,
-              ),
-            const SizedBox(width: 4),
-            if (!isSent)
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Excluir',
-                onPressed: () => _confirmDelete(context, ref),
-              ),
-            IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, size: 16),
-              tooltip: 'Abrir',
-              onPressed: () => context.go('/edital/${edital.id}'),
-            ),
-          ],
-        ),
-        onTap: () => context.go('/edital/${edital.id}'),
       ),
     );
   }
@@ -163,18 +193,19 @@ class _EditalCard extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => ContentDialog(
         title: const Text('Excluir Edital'),
         content: Text(
             'Deseja excluir o edital "${edital.codigoEdital}"? Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(
+          Button(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+            style: const ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(Color(0xFFB00020)),
+              foregroundColor: WidgetStatePropertyAll(Colors.white),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Excluir'),

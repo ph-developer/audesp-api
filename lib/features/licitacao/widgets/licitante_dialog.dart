@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/licitacao_domain.dart';
@@ -25,8 +25,6 @@ class _LicitanteDialog extends StatefulWidget {
 }
 
 class _LicitanteDialogState extends State<_LicitanteDialog> {
-  final _formKey = GlobalKey<FormState>();
-
   String _tipoPessoa = 'PJ';
   final _niCtrl = TextEditingController();
   final _nomeCtrl = TextEditingController();
@@ -56,8 +54,36 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
     super.dispose();
   }
 
+  String? _validateForm() {
+    final ni = _niCtrl.text.trim();
+    if (ni.isEmpty || ni.length < 3) return 'NI obrigatório (mínimo 3 caracteres)';
+    if (_tipoPessoa == 'PE' && _nomeCtrl.text.trim().length < 3) {
+      return 'Nome/Razão Social obrigatório para pessoa estrangeira (mín. 3 caracteres)';
+    }
+    if (_declaracaoME == null) return 'Declaração ME/EPP obrigatória';
+    if (_resultadoHabilitacao == null) return 'Resultado de Habilitação obrigatório';
+    final v = _valorCtrl.text.trim();
+    if (v.isNotEmpty && double.tryParse(v.replaceAll(',', '.')) == null) {
+      return 'Valor inválido';
+    }
+    return null;
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    displayInfoBar(context,
+        builder: (ctx, close) => InfoBar(
+              title: Text(msg),
+              severity: InfoBarSeverity.error,
+            ));
+  }
+
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
     final map = <String, dynamic>{
       'tipoPessoaId': _tipoPessoa,
       'niPessoa': _niCtrl.text.trim(),
@@ -74,119 +100,97 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    final niLabel = _tipoPessoa == 'PJ'
+        ? 'CNPJ *'
+        : _tipoPessoa == 'PF'
+            ? 'CPF *'
+            : 'Identificação Estrangeira *';
+
+    return ContentDialog(
+      constraints: const BoxConstraints(maxWidth: 500),
       title: Text(widget.initial == null ? 'Adicionar Licitante' : 'Editar Licitante'),
-      content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Tipo de pessoa
-                DropdownButtonFormField<String>(
-                  initialValue: _tipoPessoa,
-                  decoration: const InputDecoration(labelText: 'Tipo de Pessoa *'),
-                  items: kTipoPessoa.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _tipoPessoa = v!),
-                  validator: (v) => v == null ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 12),
-                // NI (CPF/CNPJ/identificação estrangeira)
-                TextFormField(
-                  controller: _niCtrl,
-                  decoration: InputDecoration(
-                    labelText: _tipoPessoa == 'PJ'
-                        ? 'CNPJ *'
-                        : _tipoPessoa == 'PF'
-                            ? 'CPF *'
-                            : 'Identificação Estrangeira *',
-                    hintText: '3 a 30 caracteres',
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                  ],
-                  maxLength: 30,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                    if (v.trim().length < 3) return 'Mínimo 3 caracteres';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                // Nome/Razão Social (opcional para PJ/PF; obrigatório para PE)
-                TextFormField(
-                  controller: _nomeCtrl,
-                  decoration: InputDecoration(
-                    labelText: _tipoPessoa == 'PE'
-                        ? 'Nome/Razão Social *'
-                        : 'Nome/Razão Social',
-                    hintText: '3 a 50 caracteres',
-                  ),
-                  maxLength: 50,
-                  validator: (v) {
-                    if (_tipoPessoa == 'PE' && (v == null || v.trim().length < 3)) {
-                      return 'Obrigatório para pessoa estrangeira (mín. 3 caracteres)';
-                    }
-                    if (v != null && v.trim().isNotEmpty && v.trim().length < 3) {
-                      return 'Mínimo 3 caracteres';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                // Declaração ME/EPP
-                DropdownButtonFormField<int>(
-                  initialValue: _declaracaoME,
-                  decoration: const InputDecoration(labelText: 'Declaração ME/EPP *'),
-                  items: kDeclaracaoMEouEPP.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _declaracaoME = v),
-                  validator: (v) => v == null ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 12),
-                // Valor proposto (opcional)
-                TextFormField(
-                  controller: _valorCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Valor Proposto (R\$)',
-                    hintText: 'Ex.: 12345.55',
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                  ],
-                  validator: (v) {
-                    if (v != null && v.trim().isNotEmpty) {
-                      final parsed = double.tryParse(v.trim().replaceAll(',', '.'));
-                      if (parsed == null) return 'Valor inválido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                // Resultado de habilitação
-                DropdownButtonFormField<int>(
-                  initialValue: _resultadoHabilitacao,
-                  decoration: const InputDecoration(labelText: 'Resultado de Habilitação *'),
-                  items: kResultadoHabilitacao.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _resultadoHabilitacao = v),
-                  validator: (v) => v == null ? 'Obrigatório' : null,
-                ),
-              ],
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InfoLabel(
+              label: 'Tipo de Pessoa *',
+              child: ComboBox<String>(
+                value: _tipoPessoa,
+                isExpanded: true,
+                items: kTipoPessoa.entries
+                    .map((e) => ComboBoxItem(value: e.key, child: Text(e.value)))
+                    .toList(),
+                onChanged: (v) => setState(() => _tipoPessoa = v!),
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: niLabel,
+              child: TextBox(
+                controller: _niCtrl,
+                placeholder: '3 a 30 caracteres',
+                maxLength: 30,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: _tipoPessoa == 'PE'
+                  ? 'Nome/Razão Social *'
+                  : 'Nome/Razão Social',
+              child: TextBox(
+                controller: _nomeCtrl,
+                placeholder: '3 a 50 caracteres',
+                maxLength: 50,
+              ),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'Declaração ME/EPP *',
+              child: ComboBox<int>(
+                value: _declaracaoME,
+                isExpanded: true,
+                placeholder: const Text('Selecione'),
+                items: kDeclaracaoMEouEPP.entries
+                    .map((e) => ComboBoxItem(value: e.key, child: Text(e.value)))
+                    .toList(),
+                onChanged: (v) => setState(() => _declaracaoME = v),
+              ),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'Valor Proposto (R\$)',
+              child: TextBox(
+                controller: _valorCtrl,
+                placeholder: 'Ex.: 12345.55',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'Resultado de Habilitação *',
+              child: ComboBox<int>(
+                value: _resultadoHabilitacao,
+                isExpanded: true,
+                placeholder: const Text('Selecione'),
+                items: kResultadoHabilitacao.entries
+                    .map((e) => ComboBoxItem(value: e.key, child: Text(e.value)))
+                    .toList(),
+                onChanged: (v) => setState(() => _resultadoHabilitacao = v),
+              ),
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -177,7 +177,7 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(_routerProvider);
 
-    return MaterialApp.router(
+    return FluentApp.router(
       title: 'AUDESP API',
       theme: AppTheme.light,
       routerConfig: router,

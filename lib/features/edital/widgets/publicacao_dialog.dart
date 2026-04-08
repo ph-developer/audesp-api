@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:intl/intl.dart';
 
 import '../domain/edital_domain.dart';
@@ -26,8 +26,7 @@ class _PublicacaoDialog extends StatefulWidget {
 }
 
 class _PublicacaoDialogState extends State<_PublicacaoDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _dateCtrl = TextEditingController();
+  DateTime? _dataPublicacao;
   final _pncpCtrl = TextEditingController();
   final _outrosCtrl = TextEditingController();
 
@@ -38,12 +37,12 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
     super.initState();
     final ini = widget.initial;
     if (ini != null) {
-      // Converte yyyy-MM-dd armazenado no JSON para dd/MM/yyyy (exibição).
       final raw = ini['dataPublicacao'] as String? ?? '';
-      _dateCtrl.text = raw.isEmpty
-          ? ''
-          : DateFormat('dd/MM/yyyy')
-              .format(DateFormat('yyyy-MM-dd').parse(raw));
+      if (raw.isNotEmpty) {
+        try {
+          _dataPublicacao = DateFormat('yyyy-MM-dd').parse(raw);
+        } catch (_) {}
+      }
       _veiculo = ini['veiculoPublicacao'] as int?;
       _pncpCtrl.text = ini['idContratacaoPNCP'] as String? ?? '';
       _outrosCtrl.text = ini['veiculoPublicacaoNome'] as String? ?? '';
@@ -52,35 +51,52 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
 
   @override
   void dispose() {
-    _dateCtrl.dispose();
     _pncpCtrl.dispose();
     _outrosCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
-    );
-    if (picked != null) {
-      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
-  }
-
   void _confirm() {
-    if (!_formKey.currentState!.validate()) return;
-    // Converte dd/MM/yyyy de volta para yyyy-MM-dd antes de retornar.
-    String apiDate = '';
-    try {
-      final d = DateFormat('dd/MM/yyyy').parse(_dateCtrl.text.trim());
-      apiDate = DateFormat('yyyy-MM-dd').format(d);
-    } catch (_) {
-      apiDate = _dateCtrl.text.trim();
+    if (_dataPublicacao == null) {
+      displayInfoBar(context,
+          builder: (ctx, close) => const InfoBar(
+              title: Text('Data de Publicação é obrigatória.'),
+              severity: InfoBarSeverity.error));
+      return;
     }
+    if (_veiculo == null) {
+      displayInfoBar(context,
+          builder: (ctx, close) => const InfoBar(
+              title: Text('Veículo de Publicação é obrigatório.'),
+              severity: InfoBarSeverity.error));
+      return;
+    }
+    if (_veiculo == 5) {
+      final pncp = _pncpCtrl.text.trim();
+      if (pncp.isEmpty) {
+        displayInfoBar(context,
+            builder: (ctx, close) => const InfoBar(
+                title: Text('ID Contratação PNCP é obrigatório.'),
+                severity: InfoBarSeverity.error));
+        return;
+      }
+      if (!RegExp(r'^[0-9]{25}$').hasMatch(pncp)) {
+        displayInfoBar(context,
+            builder: (ctx, close) => const InfoBar(
+                title: Text(
+                    'ID PNCP deve ter exatamente 25 dígitos numéricos.'),
+                severity: InfoBarSeverity.error));
+        return;
+      }
+    }
+    if (_veiculo == 10 && _outrosCtrl.text.trim().isEmpty) {
+      displayInfoBar(context,
+          builder: (ctx, close) => const InfoBar(
+              title: Text('Nome do Veículo é obrigatório.'),
+              severity: InfoBarSeverity.error));
+      return;
+    }
+    final apiDate = DateFormat('yyyy-MM-dd').format(_dataPublicacao!);
     final result = <String, dynamic>{
       'dataPublicacao': apiDate,
       'veiculoPublicacao': _veiculo,
@@ -96,85 +112,63 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title:
-          Text(widget.initial == null ? 'Adicionar Publicação' : 'Editar Publicação'),
-      content: SizedBox(
-        width: 460,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Data de publicação
-              TextFormField(
-                controller: _dateCtrl,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Data de Publicação *',
-                  hintText: 'dd/MM/yyyy',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                onTap: _pickDate,
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Obrigatório' : null,
+    return ContentDialog(
+      title: Text(widget.initial == null
+          ? 'Adicionar Publicação'
+          : 'Editar Publicação'),
+      constraints: const BoxConstraints(maxWidth: 500),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InfoLabel(
+              label: 'Data de Publicação *',
+              child: DatePicker(
+                selected: _dataPublicacao,
+                onChanged: (v) => setState(() => _dataPublicacao = v),
               ),
-              const SizedBox(height: 12),
-              // Veículo de publicação
-              DropdownButtonFormField<int>(
-                key: ValueKey('veic_$_veiculo'),
-                initialValue: _veiculo,
-                decoration: const InputDecoration(
-                    labelText: 'Veículo de Publicação *'),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'Veículo de Publicação *',
+              child: ComboBox<int>(
+                value: _veiculo,
+                placeholder: const Text('Selecione...'),
+                isExpanded: true,
                 items: kVeiculosPublicacao.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
+                    .map((e) =>
+                        ComboBoxItem(value: e.key, child: Text(e.value)))
                     .toList(),
                 onChanged: (v) => setState(() => _veiculo = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              // PNCP id (se veiculo = 5)
-              if (_veiculo == 5) ...[
-                const SizedBox(height: 12),
-                TextFormField(
+            ),
+            if (_veiculo == 5) ...[
+              const SizedBox(height: 12),
+              InfoLabel(
+                label: 'ID Contratação PNCP *',
+                child: TextBox(
                   controller: _pncpCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'ID Contratação PNCP *',
-                    hintText: '25 dígitos numéricos',
-                    counterText: '',
-                  ),
+                  placeholder: '25 dígitos numéricos',
                   maxLength: 25,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obrigatório';
-                    if (!RegExp(r'^[0-9]{25}$').hasMatch(v)) {
-                      return 'Deve ter exatamente 25 dígitos numéricos';
-                    }
-                    return null;
-                  },
                 ),
-              ],
-              // Nome do veículo (se veiculo = 10)
-              if (_veiculo == 10) ...[
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _outrosCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome do Veículo *',
-                    counterText: '',
-                  ),
-                  maxLength: 100,
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                ),
-              ],
+              ),
             ],
-          ),
+            if (_veiculo == 10) ...[
+              const SizedBox(height: 12),
+              InfoLabel(
+                label: 'Nome do Veículo *',
+                child: TextBox(
+                  controller: _outrosCtrl,
+                  maxLength: 100,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),

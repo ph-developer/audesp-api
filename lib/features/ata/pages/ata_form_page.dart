@@ -1,13 +1,15 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../shared/widgets/widgets.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
@@ -26,8 +28,6 @@ class AtaFormPage extends ConsumerStatefulWidget {
 }
 
 class _AtaFormPageState extends ConsumerState<AtaFormPage> {
-  final _formKey = GlobalKey<FormState>();
-
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
@@ -53,9 +53,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Itens (números dos itens da licitação) ────────────────────────────
   List<int> _numerosItem = [];
   final _itemCtrl = TextEditingController();
-
-  // ── Date formatters ────────────────────────────────────────────────────
-  final _dateFmt = DateFormat('dd/MM/yyyy');
 
   @override
   void initState() {
@@ -178,22 +175,34 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     };
   }
 
-  // ── Salvar rascunho ───────────────────────────────────────────────────
+  // ── Validation ────────────────────────────────────────────────
+
+  String? _validateForm() {
+    if (_editalId == null) return 'Selecione o Edital vinculado.';
+    if (_codigoEditalCtrl.text.trim().isEmpty) return 'Informe o código do edital.';
+    if (_codigoAtaCtrl.text.trim().isEmpty) return 'Informe o código da ata.';
+    final ano = int.tryParse(_anoCompraCtrl.text.trim());
+    if (ano == null || ano < 1950 || ano > 2100) {
+      return 'Ano da contratação inválido (1950–2100).';
+    }
+    if (_numeroAtaCtrl.text.trim().isEmpty) return 'Informe o número da ata.';
+    final anoAta = int.tryParse(_anoAtaCtrl.text.trim());
+    if (anoAta == null || anoAta < 1950 || anoAta > 2100) {
+      return 'Ano da ata inválido (1950–2100).';
+    }
+    if (_numerosItem.isEmpty) return 'Informe pelo menos um número de item.';
+    if (_dataAssinatura == null) return 'Data de Assinatura obrigatória.';
+    if (_dataVigenciaInicio == null) return 'Início de Vigência obrigatório.';
+    if (_dataVigenciaFim == null) return 'Fim de Vigência obrigatório.';
+    return null;
+  }
+
+  // ── Salvar rascunho ───────────────────────────────────────────────
 
   Future<void> _saveDraft() async {
-    if (_editalId == null) {
-      _showError('Selecione o Edital vinculado.');
-      return;
-    }
-    if (!_formKey.currentState!.validate()) return;
-    if (_numerosItem.isEmpty) {
-      _showError('Informe pelo menos um número de item.');
-      return;
-    }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
+    final err = _validateForm();
+    if (err != null) {
+      _showError(err);
       return;
     }
 
@@ -238,9 +247,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        displayInfoBar(context,
+            builder: (ctx, close) => InfoBar(
+                  title: const Text('Rascunho salvo com sucesso.'),
+                  severity: InfoBarSeverity.success,
+                ));
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -252,19 +263,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Enviar para o AUDESP ──────────────────────────────────────────────
 
   Future<void> _enviar() async {
-    if (_editalId == null) {
-      _showError('Selecione o Edital vinculado.');
-      return;
-    }
-    if (!_formKey.currentState!.validate()) return;
-    if (_numerosItem.isEmpty) {
-      _showError('Informe pelo menos um número de item.');
-      return;
-    }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
+    final err = _validateForm();
+    if (err != null) {
+      _showError(err);
       return;
     }
 
@@ -289,9 +290,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          displayInfoBar(context,
+              builder: (ctx, close) => InfoBar(
+                    title: Text(msg),
+                    severity: InfoBarSeverity.success,
+                  ));
           context.go('/ata');
         }
       },
@@ -300,20 +303,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
-  }
-
-  // ── Seletor de data ───────────────────────────────────────────────────
-
-  Future<DateTime?> _pickDate(DateTime? initial) async {
-    return showDatePicker(
-      context: context,
-      initialDate: initial ?? DateTime.now(),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(2100),
-    );
+    displayInfoBar(context,
+        builder: (ctx, close) => InfoBar(
+              title: Text(msg),
+              severity: InfoBarSeverity.error,
+            ));
   }
 
   // ── Itens ─────────────────────────────────────────────────────────────
@@ -345,13 +339,19 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const ScaffoldPage(
+          content: Center(child: ProgressRing()));
     }
 
     final readOnly = _isSent;
 
-    return Scaffold(
-      appBar: AppBar(
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        leading: IconButton(
+          icon: const Icon(FluentIcons.back),
+          onPressed: () => context.go('/ata'),
+        ),
         title: Text(
           _loadedId == null
               ? 'Nova Ata'
@@ -359,51 +359,58 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   ? 'Ata (Enviada)'
                   : 'Editar Ata',
         ),
-        actions: [
-          if (!readOnly) ...[
-            if (_saving)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else ...[
-              TextButton.icon(
-                onPressed: _saveDraft,
-                icon: const Icon(Icons.save_outlined),
-                label: const Text('Salvar Rascunho'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _enviar,
-                icon: const Icon(Icons.send),
-                label: const Text('Enviar à AUDESP'),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ],
-        ],
+        commandBar: readOnly
+            ? null
+            : _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: ProgressRing(strokeWidth: 2),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Button(
+                        onPressed: _saveDraft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(FluentIcons.save, size: 16),
+                            SizedBox(width: 6),
+                            Text('Salvar Rascunho'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: _enviar,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.send, size: 16),
+                            SizedBox(width: 6),
+                            Text('Enviar à AUDESP'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Vínculo com Edital ───────────────────────────────────
-              _SectionHeader(title: 'Vínculo com Edital'),
-              DropdownButtonFormField<int>(
-                initialValue: _editalId,
-                decoration: const InputDecoration(
-                  labelText: 'Edital *',
-                  border: OutlineInputBorder(),
-                ),
+      content: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Vínculo com Edital ───────────────────────────────────
+            SectionHeader(title: 'Vínculo com Edital'),
+            InfoLabel(
+              label: 'Edital *',
+              child: ComboBox<int>(
+                value: _editalId,
+                placeholder: const Text('Selecione o Edital'),
+                isExpanded: true,
                 items: _editais
-                    .map((e) => DropdownMenuItem(
+                    .map((e) => ComboBoxItem(
                           value: e.id,
                           child: Text(
                             '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
@@ -417,234 +424,217 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                         setState(() => _editalId = v);
                         _fillEditalDescriptor();
                       },
-                validator: (v) =>
-                    v == null ? 'Selecione o edital vinculado' : null,
               ),
-              const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 24),
 
-              // ── Descritor ────────────────────────────────────────────
-              _SectionHeader(title: 'Descritor'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
+            // ── Descritor ────────────────────────────────────────────
+            SectionHeader(title: 'Descritor'),
+            Row(
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Código do Edital *',
+                    child: TextBox(
                       controller: _codigoEditalCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Código do Edital *',
-                        border: OutlineInputBorder(),
-                      ),
+                      enabled: !readOnly,
                       maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o código do edital'
-                          : null,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Código da Ata *',
+                    child: TextBox(
                       controller: _codigoAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Código da Ata *',
-                        border: OutlineInputBorder(),
-                      ),
+                      enabled: !readOnly,
                       maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o código da ata'
-                          : null,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 180,
-                    child: TextFormField(
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                SizedBox(
+                  width: 180,
+                  child: InfoLabel(
+                    label: 'Ano da Contratação *',
+                    child: TextBox(
                       controller: _anoCompraCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Ano da Contratação *',
-                        border: OutlineInputBorder(),
-                      ),
+                      enabled: !readOnly,
+                      maxLength: 4,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(4),
                       ],
-                      validator: (v) {
-                        final y = int.tryParse(v ?? '');
-                        if (y == null || y < 1950 || y > 2100) {
-                          return 'Ano inválido (1950–2100)';
-                        }
-                        return null;
-                      },
                     ),
                   ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: SwitchListTile(
-                      title: const Text('Retificação'),
-                      subtitle: const Text('Marque se este documento retifica outro'),
-                      value: _retificacao,
-                      onChanged:
-                          readOnly ? null : (v) => setState(() => _retificacao = v),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                ),
+                const SizedBox(width: 24),
+                ToggleSwitch(
+                  checked: _retificacao,
+                  onChanged:
+                      readOnly ? null : (v) => setState(() => _retificacao = v),
+                  content: const Text('Retificação'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-              // ── Dados da Ata ─────────────────────────────────────────
-              _SectionHeader(title: 'Dados da Ata'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
+            // ── Dados da Ata ─────────────────────────────────────────
+            SectionHeader(title: 'Dados da Ata'),
+            Row(
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Número da Ata no Sistema de Origem *',
+                    child: TextBox(
                       controller: _numeroAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Número da Ata no Sistema de Origem *',
-                        border: OutlineInputBorder(),
-                      ),
+                      enabled: !readOnly,
                       maxLength: 30,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Informe o número da ata'
-                          : null,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 180,
-                    child: TextFormField(
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 180,
+                  child: InfoLabel(
+                    label: 'Ano da Ata *',
+                    child: TextBox(
                       controller: _anoAtaCtrl,
-                      readOnly: readOnly,
-                      decoration: const InputDecoration(
-                        labelText: 'Ano da Ata *',
-                        border: OutlineInputBorder(),
-                      ),
+                      enabled: !readOnly,
+                      maxLength: 4,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(4),
                       ],
-                      validator: (v) {
-                        final y = int.tryParse(v ?? '');
-                        if (y == null || y < 1950 || y > 2100) {
-                          return 'Ano inválido (1950–2100)';
-                        }
-                        return null;
-                      },
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
-              // ── Datas ────────────────────────────────────────────────
+            // ── Datas ────────────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Data de Assinatura *',
+                    child: DatePicker(
+                      selected: _dataAssinatura,
+                      onChanged: readOnly
+                          ? null
+                          : (d) => setState(() => _dataAssinatura = d),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Início de Vigência *',
+                    child: DatePicker(
+                      selected: _dataVigenciaInicio,
+                      onChanged: readOnly
+                          ? null
+                          : (d) => setState(() => _dataVigenciaInicio = d),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Fim de Vigência *',
+                    child: DatePicker(
+                      selected: _dataVigenciaFim,
+                      onChanged: readOnly
+                          ? null
+                          : (d) => setState(() => _dataVigenciaFim = d),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Itens ────────────────────────────────────────────────
+            SectionHeader(title: 'Itens da Licitação Referenciados'),
+            if (!readOnly)
               Row(
                 children: [
-                  Expanded(
-                    child: _DateField(
-                      label: 'Data de Assinatura *',
-                      value: _dataAssinatura,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataAssinatura);
-                        if (d != null) setState(() => _dataAssinatura = d);
-                      },
+                  SizedBox(
+                    width: 160,
+                    child: TextBox(
+                      controller: _itemCtrl,
+                      placeholder: 'ex: 3',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      onSubmitted: (_) => _addItem(),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DateField(
-                      label: 'Início de Vigência *',
-                      value: _dataVigenciaInicio,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataVigenciaInicio);
-                        if (d != null) setState(() => _dataVigenciaInicio = d);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DateField(
-                      label: 'Fim de Vigência *',
-                      value: _dataVigenciaFim,
-                      readOnly: readOnly,
-                      formatter: _dateFmt,
-                      onTap: () async {
-                        final d = await _pickDate(_dataVigenciaFim);
-                        if (d != null) setState(() => _dataVigenciaFim = d);
-                      },
+                  const SizedBox(width: 12),
+                  Button(
+                    onPressed: _addItem,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(FluentIcons.add, size: 16),
+                        SizedBox(width: 6),
+                        Text('Adicionar Item'),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // ── Itens ────────────────────────────────────────────────
-              _SectionHeader(title: 'Itens da Licitação Referenciados'),
-              if (!readOnly)
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 160,
-                      child: TextFormField(
-                        controller: _itemCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'N.º do Item',
-                          border: OutlineInputBorder(),
-                          hintText: 'ex: 3',
+            const SizedBox(height: 12),
+            if (_numerosItem.isEmpty)
+              Text(
+                'Nenhum item adicionado.',
+                style: TextStyle(
+                  color: FluentTheme.of(context).inactiveColor,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _numerosItem
+                    .map(
+                      (n) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: FluentTheme.of(context).accentColor.lightest,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onFieldSubmitted: (_) => _addItem(),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Item $n'),
+                            if (!readOnly) ...[
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: () => _removeItem(n),
+                                child: const Icon(FluentIcons.cancel,
+                                    size: 10),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton.tonalIcon(
-                      onPressed: _addItem,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Adicionar Item'),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 12),
-              if (_numerosItem.isEmpty)
-                Text(
-                  'Nenhum item adicionado.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _numerosItem
-                      .map(
-                        (n) => Chip(
-                          label: Text('Item $n'),
-                          deleteIcon: readOnly
-                              ? null
-                              : const Icon(Icons.close, size: 16),
-                          onDeleted: readOnly ? null : () => _removeItem(n),
-                        ),
-                      )
-                      .toList(),
-                ),
-              const SizedBox(height: 32),
-            ],
-          ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );
@@ -653,66 +643,5 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
+// SectionHeader → lib/shared/widgets/section_header.dart
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const Divider(),
-        ],
-      ),
-    );
-  }
-}
-
-class _DateField extends StatelessWidget {
-  final String label;
-  final DateTime? value;
-  final bool readOnly;
-  final DateFormat formatter;
-  final VoidCallback onTap;
-
-  const _DateField({
-    required this.label,
-    required this.value,
-    required this.readOnly,
-    required this.formatter,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: readOnly ? null : onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: readOnly
-              ? null
-              : const Icon(Icons.calendar_today_outlined, size: 18),
-        ),
-        child: Text(
-          value != null ? formatter.format(value!) : '—',
-          style: value == null
-              ? TextStyle(color: Theme.of(context).colorScheme.outline)
-              : null,
-        ),
-      ),
-    );
-  }
-}

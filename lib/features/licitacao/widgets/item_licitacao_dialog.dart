@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -27,14 +27,12 @@ class _ItemLicitacaoDialog extends StatefulWidget {
 }
 
 class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
-  final _formKey = GlobalKey<FormState>();
-
   final _numeroItemCtrl = TextEditingController();
   int? _tipoOrcamento;
   final _valorCtrl = TextEditingController();
-  final _dataOrcamentoCtrl = TextEditingController();
+  DateTime? _dataOrcamento;
   int? _situacaoCompraItemId;
-  final _dataSituacaoCtrl = TextEditingController();
+  DateTime? _dataSituacao;
   String? _tipoValor;
   int? _tipoProposta;
 
@@ -48,13 +46,21 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       _numeroItemCtrl.text = d['numeroItem']?.toString() ?? '';
       _tipoOrcamento = d['tipoOrcamento'] as int?;
       _valorCtrl.text = d['valor']?.toString() ?? '';
-      _dataOrcamentoCtrl.text =
-          _apiToDisplay(d['dataOrcamento'] as String? ?? '');
+      final dataOrca = d['dataOrcamento'] as String?;
+      if (dataOrca != null && dataOrca.isNotEmpty) {
+        try {
+          _dataOrcamento = DateFormat('yyyy-MM-dd').parse(dataOrca);
+        } catch (_) {}
+      }
       _situacaoCompraItemId = d['situacaoCompraItemId'] != null
           ? (d['situacaoCompraItemId'] as num).toInt()
           : null;
-      _dataSituacaoCtrl.text =
-          _apiToDisplay(d['dataSituacaoItem'] as String? ?? '');
+      final dataSit = d['dataSituacaoItem'] as String?;
+      if (dataSit != null && dataSit.isNotEmpty) {
+        try {
+          _dataSituacao = DateFormat('yyyy-MM-dd').parse(dataSit);
+        } catch (_) {}
+      }
       _tipoValor = d['tipoValor'] as String?;
       _tipoProposta = d['tipoProposta'] != null
           ? (d['tipoProposta'] as num).toInt()
@@ -70,41 +76,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
   void dispose() {
     _numeroItemCtrl.dispose();
     _valorCtrl.dispose();
-    _dataOrcamentoCtrl.dispose();
-    _dataSituacaoCtrl.dispose();
     super.dispose();
-  }
-
-  // ── Date helpers ─────────────────────────────────────────────────────────
-
-  static String _apiToDisplay(String api) {
-    if (api.isEmpty) return '';
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(api));
-    } catch (_) {
-      return api;
-    }
-  }
-
-  static String _displayToApi(String display) {
-    if (display.isEmpty) return '';
-    try {
-      return DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(display));
-    } catch (_) {
-      return display;
-    }
-  }
-
-  Future<void> _pickDate(TextEditingController ctrl) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
-    );
-    if (picked != null) {
-      ctrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
   }
 
   // ── Licitantes ────────────────────────────────────────────────────────────
@@ -127,264 +99,301 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
     setState(() => _licitantes.removeAt(index));
   }
 
+  // ── Validation ───────────────────────────────────────────────────────────
+
+  String? _validateForm() {
+    if (_numeroItemCtrl.text.trim().isEmpty) return 'Nº do Item obrigatório';
+    if (_tipoOrcamento == null) return 'Tipo de Orçamento obrigatório';
+    if (_situacaoCompraItemId == null) return 'Situação do Item obrigatória';
+    if (_dataSituacao == null) return 'Data da Situação obrigatória';
+    if (_tipoValor == null) return 'Tipo de Valor obrigatório';
+    if (_tipoProposta == null) return 'Tipo de Proposta obrigatório';
+    final v = _valorCtrl.text.trim();
+    if (v.isNotEmpty && double.tryParse(v.replaceAll(',', '.')) == null) {
+      return 'Valor inválido';
+    }
+    return null;
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    displayInfoBar(context,
+        builder: (ctx, close) => InfoBar(
+              title: Text(msg),
+              severity: InfoBarSeverity.error,
+            ));
+  }
+
   // ── Submit ────────────────────────────────────────────────────────────────
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
     if (_licitantes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos um licitante.')),
-      );
+      _showError('Adicione pelo menos um licitante.');
       return;
     }
     final map = <String, dynamic>{
       'numeroItem': int.parse(_numeroItemCtrl.text.trim()),
       'tipoOrcamento': _tipoOrcamento!,
       'situacaoCompraItemId': _situacaoCompraItemId!,
-      'dataSituacaoItem': _displayToApi(_dataSituacaoCtrl.text.trim()),
+      'dataSituacaoItem': DateFormat('yyyy-MM-dd').format(_dataSituacao!),
       'tipoValor': _tipoValor!,
       'tipoProposta': _tipoProposta!,
       'licitantes': _licitantes,
     };
     final valor = double.tryParse(_valorCtrl.text.trim().replaceAll(',', '.'));
     if (valor != null) map['valor'] = valor;
-    final dataOrca = _displayToApi(_dataOrcamentoCtrl.text.trim());
-    if (dataOrca.isNotEmpty) map['dataOrcamento'] = dataOrca;
+    if (_dataOrcamento != null) {
+      map['dataOrcamento'] = DateFormat('yyyy-MM-dd').format(_dataOrcamento!);
+    }
     Navigator.of(context).pop(map);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    final theme = FluentTheme.of(context);
+
+    return ContentDialog(
+      constraints: const BoxConstraints(maxWidth: 600),
       title: Text(widget.initial == null ? 'Adicionar Item' : 'Editar Item'),
-      content: SizedBox(
-        width: 560,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Dados do item ────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // ── Dados do item ────────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: _numeroItemCtrl,
-                        decoration: const InputDecoration(labelText: 'Nº do Item *'),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-                      ),
+                Expanded(
+                  flex: 2,
+                  child: InfoLabel(
+                    label: 'Nº do Item *',
+                    child: TextBox(
+                      controller: _numeroItemCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 4,
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _tipoOrcamento,
-                        decoration: const InputDecoration(labelText: 'Tipo de Orçamento *'),
-                        items: kTipoOrcamento.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _tipoOrcamento = v),
-                        validator: (v) => v == null ? 'Obrigatório' : null,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _valorCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Valor (R\$)', hintText: 'Ex.: 12345.00'),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                        ],
-                        validator: (v) {
-                          if (v != null && v.trim().isNotEmpty) {
-                            if (double.tryParse(v.trim().replaceAll(',', '.')) ==
-                                null) return 'Valor inválido';
-                          }
-                          return null;
-                        },
-                      ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 4,
+                  child: InfoLabel(
+                    label: 'Tipo de Orçamento *',
+                    child: ComboBox<int>(
+                      value: _tipoOrcamento,
+                      isExpanded: true,
+                      placeholder: const Text('Selecione'),
+                      items: kTipoOrcamento.entries
+                          .map((e) =>
+                              ComboBoxItem(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _tipoOrcamento = v),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _dataOrcamentoCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Data do Orçamento',
-                          hintText: 'dd/MM/yyyy',
-                          suffixIcon: Icon(Icons.calendar_today, size: 16),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Valor (R\$)',
+                    child: TextBox(
+                      controller: _valorCtrl,
+                      placeholder: 'Ex.: 12345.00',
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Data do Orçamento',
+                    child: DatePicker(
+                      selected: _dataOrcamento,
+                      onChanged: (v) => setState(() => _dataOrcamento = v),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: InfoLabel(
+                    label: 'Situação do Item *',
+                    child: ComboBox<int>(
+                      value: _situacaoCompraItemId,
+                      isExpanded: true,
+                      placeholder: const Text('Selecione'),
+                      items: kSituacaoCompraItem.entries
+                          .map((e) =>
+                              ComboBoxItem(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _situacaoCompraItemId = v),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: InfoLabel(
+                    label: 'Data da Situação *',
+                    child: DatePicker(
+                      selected: _dataSituacao,
+                      onChanged: (v) => setState(() => _dataSituacao = v),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Tipo de Valor *',
+                    child: ComboBox<String>(
+                      value: _tipoValor,
+                      isExpanded: true,
+                      placeholder: const Text('Selecione'),
+                      items: kTipoValor.entries
+                          .map((e) =>
+                              ComboBoxItem(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _tipoValor = v),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Tipo de Proposta *',
+                    child: ComboBox<int>(
+                      value: _tipoProposta,
+                      isExpanded: true,
+                      placeholder: const Text('Selecione'),
+                      items: kTipoProposta.entries
+                          .map((e) =>
+                              ComboBoxItem(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _tipoProposta = v),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // ── Licitantes ────────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Licitantes (${_licitantes.length})',
+                  style: theme.typography.bodyStrong,
+                ),
+                Button(
+                  onPressed: _addLicitante,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.add, size: 12),
+                      SizedBox(width: 6),
+                      Text('Adicionar'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_licitantes.isNotEmpty)
+              ...List.generate(_licitantes.length, (i) {
+                final l = _licitantes[i];
+                final tipo = l['tipoPessoaId'] as String? ?? '';
+                final ni = l['niPessoa'] as String? ?? '';
+                final nome = l['nomeRazaoSocial'] as String? ?? '';
+                final resultado = l['resultadoHabilitacao'] as int?;
+                return Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.resources.controlFillColorDefault,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.accentColor.lighter,
                         ),
-                        readOnly: true,
-                        onTap: () => _pickDate(_dataOrcamentoCtrl),
-                        validator: (v) {
-                          if (v != null && v.trim().isNotEmpty) {
-                            try {
-                              DateFormat('dd/MM/yyyy').parseStrict(v.trim());
-                            } catch (_) {
-                              return 'Data inválida';
-                            }
-                          }
-                          return null;
-                        },
+                        alignment: Alignment.center,
+                        child: Text(tipo,
+                            style: const TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.bold)),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _situacaoCompraItemId,
-                        decoration:
-                            const InputDecoration(labelText: 'Situação do Item *'),
-                        items: kSituacaoCompraItem.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _situacaoCompraItemId = v),
-                        validator: (v) => v == null ? 'Obrigatório' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: _dataSituacaoCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Data da Situação *',
-                          hintText: 'dd/MM/yyyy',
-                          suffixIcon: Icon(Icons.calendar_today, size: 16),
-                        ),
-                        readOnly: true,
-                        onTap: () => _pickDate(_dataSituacaoCtrl),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                          try {
-                            DateFormat('dd/MM/yyyy').parseStrict(v.trim());
-                          } catch (_) {
-                            return 'Data inválida';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _tipoValor,
-                        decoration: const InputDecoration(labelText: 'Tipo de Valor *'),
-                        items: kTipoValor.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _tipoValor = v),
-                        validator: (v) => v == null ? 'Obrigatório' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _tipoProposta,
-                        decoration: const InputDecoration(labelText: 'Tipo de Proposta *'),
-                        items: kTipoProposta.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _tipoProposta = v),
-                        validator: (v) => v == null ? 'Obrigatório' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // ── Licitantes ────────────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Licitantes (${_licitantes.length})',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Adicionar'),
-                      onPressed: _addLicitante,
-                    ),
-                  ],
-                ),
-                if (_licitantes.isNotEmpty)
-                  ...List.generate(_licitantes.length, (i) {
-                    final l = _licitantes[i];
-                    final tipo = l['tipoPessoaId'] as String? ?? '';
-                    final ni = l['niPessoa'] as String? ?? '';
-                    final nome = l['nomeRazaoSocial'] as String? ?? '';
-                    final resultado = l['resultadoHabilitacao'] as int?;
-                    return Card(
-                      margin: const EdgeInsets.only(top: 4),
-                      child: ListTile(
-                        dense: true,
-                        leading: CircleAvatar(
-                          radius: 14,
-                          child: Text(tipo, style: const TextStyle(fontSize: 9)),
-                        ),
-                        title: Text(nome.isNotEmpty ? nome : ni),
-                        subtitle: Text(
-                          '${tipo != 'PE' ? ni : ''}  ${resultado != null ? kResultadoHabilitacao[resultado] ?? '' : ''}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 16),
-                              onPressed: () => _editLicitante(i),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 16),
-                              onPressed: () => _removeLicitante(i),
+                            Text(nome.isNotEmpty ? nome : ni,
+                                style: const TextStyle(fontWeight: FontWeight.w500)),
+                            Text(
+                              '${tipo != 'PE' ? ni : ''}  ${resultado != null ? kResultadoHabilitacao[resultado] ?? '' : ''}'
+                                  .trim(),
+                              style: theme.typography.caption,
                             ),
                           ],
                         ),
                       ),
-                    );
-                  })
-                else
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Nenhum licitante adicionado.',
-                      textAlign: TextAlign.center,
-                    ),
+                      IconButton(
+                        icon: const Icon(FluentIcons.edit, size: 14),
+                        onPressed: () => _editLicitante(i),
+                      ),
+                      IconButton(
+                        icon: const Icon(FluentIcons.delete, size: 14),
+                        onPressed: () => _removeLicitante(i),
+                      ),
+                    ],
                   ),
-              ],
-            ),
-          ),
+                );
+              })
+            else
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.resources.controlFillColorDefault,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Nenhum licitante adicionado.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_env.dart';
@@ -14,7 +15,6 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
@@ -29,18 +29,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _doLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    final username = _emailCtrl.text.trim().toLowerCase();
+    final password = _passwordCtrl.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Preencha o usu\u00e1rio e a senha.');
+      return;
+    }
 
     setState(() {
       _error = null;
       _loading = true;
     });
 
-    final username = _emailCtrl.text.trim().toLowerCase();
-    final password = _passwordCtrl.text;
-
     try {
-      // ── Administrador ────────────────────────────────────────────────────
       if (username == 'admin') {
         if (password == AppEnv.adminPassword) {
           ref.read(localSessionProvider.notifier).login(buildAdminUser());
@@ -50,27 +52,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
 
-      // ── Usuário comum ────────────────────────────────────────────────────
       final dao = ref.read(usersDaoProvider);
 
       final user = await dao.findByEmail(username);
       if (user == null) {
-        setState(() => _error = 'Usuário não encontrado.');
+        setState(() => _error = 'Usu\u00e1rio n\u00e3o encontrado.');
         return;
       }
 
       if (user.passwordHash == null) {
-        // Primeiro acesso: aceitar senha padrão e salvar hash no banco
         if (password == AppEnv.defaultUserPassword) {
           final hash = PasswordHasher.hash(username, password);
           await dao.setPasswordHash(user.id, hash);
           ref.read(localSessionProvider.notifier).login(user);
         } else {
           setState(() => _error =
-              'Senha incorreta. Use a senha padrão fornecida pelo administrador.');
+              'Senha incorreta. Use a senha padr\u00e3o fornecida pelo administrador.');
         }
       } else {
-        // Acesso normal: verificar hash do banco
         if (PasswordHasher.verify(username, password, user.passwordHash!)) {
           ref.read(localSessionProvider.notifier).login(user);
         } else {
@@ -84,101 +83,93 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      body: Center(
+    return ColoredBox(
+      color: FluentTheme.of(context).scaffoldBackgroundColor,
+      child: Center(
         child: SizedBox(
           width: 420,
           child: Card(
-            elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ── Header ──────────────────────────────────────────
-                    Icon(
-                      Icons.account_balance_outlined,
-                      size: 48,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'AUDESP API',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Sistema de Prestação de Dados — TCE-SP',
-                      style: Theme.of(context).textTheme.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // ── Formulário ──────────────────────────────────────
-                    TextFormField(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.account_balance_outlined,
+                    size: 48,
+                    color: FluentTheme.of(context).accentColor,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'AUDESP API',
+                    style: FluentTheme.of(context)
+                        .typography
+                        .titleLarge
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: FluentTheme.of(context).accentColor,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Sistema de Presta\u00e7\u00e3o de Dados \u2014 TCE-SP',
+                    style: FluentTheme.of(context).typography.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  InfoLabel(
+                    label: 'Usu\u00e1rio (e-mail ou admin)',
+                    child: TextBox(
                       controller: _emailCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Usuário (e-mail ou admin)',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
+                      placeholder: 'exemplo@municipio.sp.gov.br',
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       onChanged: (_) => setState(() => _error = null),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                  ),
+                  const SizedBox(height: 16),
+                  InfoLabel(
+                    label: 'Senha',
+                    child: TextBox(
                       controller: _passwordCtrl,
+                      placeholder: 'Senha',
                       obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                      suffix: IconButton(
+                        icon: Icon(
+                          _obscure
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 18,
                         ),
-                        errorText: _error,
+                        onPressed: () =>
+                            setState(() => _obscure = !_obscure),
                       ),
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _doLogin(),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                      onSubmitted: (_) => _doLogin(),
                     ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _loading ? null : _doLogin,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Entrar'),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    InfoBar(
+                      title: Text(_error!),
+                      severity: InfoBarSeverity.error,
+                      isLong: false,
                     ),
                   ],
-                ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: _loading ? null : _doLogin,
+                    child: _loading
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: ProgressRing(strokeWidth: 2),
+                          )
+                        : const Text('Entrar'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -187,3 +178,4 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 }
+

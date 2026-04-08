@@ -1,40 +1,55 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/widgets.dart';
 import '../ata_providers.dart';
 
-class AtaPage extends ConsumerWidget {
+class AtaPage extends ConsumerStatefulWidget {
   const AtaPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Atas de Registro de Preço'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Rascunhos'),
-              Tab(text: 'Enviadas'),
+  ConsumerState<AtaPage> createState() => _AtaPageState();
+}
+
+class _AtaPageState extends ConsumerState<AtaPage> {
+  int _tabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        title: const Text('Atas de Registro de Preço'),
+        commandBar: FilledButton(
+          onPressed: () => context.go('/ata/new'),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(FluentIcons.add, size: 16),
+              SizedBox(width: 6),
+              Text('Nova Ata'),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/ata/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('Nova Ata'),
-        ),
-        body: const TabBarView(
-          children: [
-            _AtaList(status: 'draft'),
-            _AtaList(status: 'sent'),
-          ],
-        ),
+      ),
+      content: TabView(
+        currentIndex: _tabIndex,
+        onChanged: (i) => setState(() => _tabIndex = i),
+        closeButtonVisibility: CloseButtonVisibilityMode.never,
+        tabs: [
+          Tab(
+            text: const Text('Rascunhos'),
+            body: const _AtaList(status: 'draft'),
+          ),
+          Tab(
+            text: const Text('Enviadas'),
+            body: const _AtaList(status: 'sent'),
+          ),
+        ],
       ),
     );
   }
@@ -51,7 +66,7 @@ class _AtaList extends ConsumerWidget {
         : ref.watch(atasEnviadasProvider);
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: ProgressRing()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (atas) {
         if (atas.isEmpty) {
@@ -61,17 +76,17 @@ class _AtaList extends ConsumerWidget {
               children: [
                 Icon(
                   status == 'draft'
-                      ? Icons.assignment_outlined
-                      : Icons.assignment_turned_in_outlined,
+                      ? FluentIcons.task_list
+                      : FluentIcons.task_add,
                   size: 64,
-                  color: Theme.of(context).colorScheme.outlineVariant,
+                  color: FluentTheme.of(context).inactiveColor,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   status == 'draft'
                       ? 'Nenhum rascunho de ata'
                       : 'Nenhuma ata enviada',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: FluentTheme.of(context).typography.body,
                 ),
               ],
             ),
@@ -93,7 +108,7 @@ class _AtaCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = FluentTheme.of(context);
     final isSent = ata.status == 'sent';
     final fmt = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -102,15 +117,19 @@ class _AtaCard extends ConsumerWidget {
       child: ListTile(
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: isSent
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          child: Icon(
-            isSent ? Icons.check : Icons.edit_outlined,
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
             color: isSent
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
+                ? theme.accentColor.lighter
+                : theme.resources.cardStrokeColorDefault,
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            isSent ? FluentIcons.accept : FluentIcons.edit,
+            color: isSent ? theme.accentColor : theme.inactiveColor,
           ),
         ),
         title: Text(
@@ -126,7 +145,7 @@ class _AtaCard extends ConsumerWidget {
             ),
             Text(
               'Atualizado: ${fmt.format(ata.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: theme.typography.caption,
             ),
           ],
         ),
@@ -134,28 +153,20 @@ class _AtaCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (ata.retificacao)
-              Chip(
-                label: const Text('Retificação'),
-                backgroundColor: colorScheme.tertiaryContainer,
-                labelStyle:
-                    TextStyle(color: colorScheme.onTertiaryContainer),
-                padding: EdgeInsets.zero,
-              ),
+              const StatusBadge(status: AppStatus.retificacao),
             const SizedBox(width: 4),
             if (!isSent)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Excluir',
+                icon: const Icon(FluentIcons.delete, size: 16),
                 onPressed: () => _confirmDelete(context, ref),
               ),
             IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, size: 16),
-              tooltip: 'Abrir',
+              icon: const Icon(FluentIcons.caret_right, size: 16),
               onPressed: () => context.go('/ata/${ata.id}'),
             ),
           ],
         ),
-        onTap: () => context.go('/ata/${ata.id}'),
+        onPressed: () => context.go('/ata/${ata.id}'),
       ),
     );
   }
@@ -163,18 +174,20 @@ class _AtaCard extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => ContentDialog(
         title: const Text('Excluir Ata'),
         content: Text(
             'Deseja excluir a ata "${ata.codigoAta}"? Esta ação não pode ser desfeita.'),
+        constraints: const BoxConstraints(maxWidth: 400),
         actions: [
-          TextButton(
+          Button(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+            style: ButtonStyle(
+              backgroundColor:
+                  WidgetStatePropertyAll(Color(0xFFB00020)),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Excluir'),

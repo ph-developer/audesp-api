@@ -1,6 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,14 +9,14 @@ import 'package:intl/intl.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const _kEndpointLabels = <String, String>{
   '/login': 'Login',
   'enviar-edital': 'Edital',
-  'enviar-licitacao': 'Licitação',
+  'enviar-licitacao': 'LicitaÃ§Ã£o',
   'enviar-ata': 'Ata',
   'enviar-ajuste': 'Ajuste',
   'enviar-empenho-contrato': 'Empenho de Contrato',
@@ -31,9 +32,9 @@ String _labelFor(String endpoint) {
 
 enum _StatusFilter { todos, sucesso, erro }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Page
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class LogsPage extends ConsumerStatefulWidget {
   const LogsPage({super.key});
@@ -43,25 +44,22 @@ class LogsPage extends ConsumerStatefulWidget {
 }
 
 class _LogsPageState extends ConsumerState<LogsPage> {
-  // ── Filtros ───────────────────────────────────────────────────────────
-  String? _endpointFilter;       // null → todos
+  // â”€â”€ Filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  String? _endpointFilter;
   _StatusFilter _statusFilter = _StatusFilter.todos;
   DateTime? _dateFrom;
   DateTime? _dateTo;
 
-  final _dateFmt = DateFormat('dd/MM/yyyy');
   final _timeFmt = DateFormat('dd/MM/yy HH:mm:ss');
 
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   List<ApiLog> _applyFilters(List<ApiLog> all) {
     return all.where((log) {
-      // endpoint
       if (_endpointFilter != null &&
           !log.endpoint.contains(_endpointFilter!)) {
         return false;
       }
-      // status
       final code = log.statusCode;
       if (_statusFilter == _StatusFilter.sucesso &&
           (code == null || code < 200 || code >= 300)) {
@@ -71,11 +69,9 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           (code == null || code < 300)) {
         return false;
       }
-      // date from
       if (_dateFrom != null && log.timestamp.isBefore(_dateFrom!)) {
         return false;
       }
-      // date to — include the full day
       if (_dateTo != null) {
         final endOfDay =
             DateTime(_dateTo!.year, _dateTo!.month, _dateTo!.day, 23, 59, 59);
@@ -88,18 +84,21 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   Future<void> _clearAll() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => ContentDialog(
         title: const Text('Limpar todos os logs?'),
         content: const Text(
-            'Esta ação removerá permanentemente todo o histórico de chamadas à API.'),
+            'Esta aÃ§Ã£o removerÃ¡ permanentemente todo o histÃ³rico de chamadas Ã  API.'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
+          Button(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: ButtonStyle(
+              backgroundColor:
+                  WidgetStatePropertyAll(const Color(0xFFD32F2F)),
+            ),
             child: const Text('Limpar'),
           ),
         ],
@@ -114,13 +113,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     await ref.read(apiLogsDaoProvider).deleteById(id);
   }
 
-  Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
-        context: context,
-        initialDate: initial ?? DateTime.now(),
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2099),
-      );
-
   void _openDetail(ApiLog log) {
     showDialog(
       context: context,
@@ -128,42 +120,33 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Widget build(BuildContext context) {
     final stream = ref.watch(apiLogsDaoProvider).watchAll();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Histórico de Chamadas API'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Limpar todos',
-            onPressed: _clearAll,
-          ),
-        ],
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        title: const Text('HistÃ³rico de Chamadas API'),
+        commandBar: IconButton(
+          icon: const Icon(FluentIcons.delete),
+          onPressed: _clearAll,
+        ),
       ),
-      body: Column(
+      content: Column(
         children: [
-          // ── Barra de filtros ──────────────────────────────────────────
+          // â”€â”€ Barra de filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           _FilterBar(
             endpointFilter: _endpointFilter,
             statusFilter: _statusFilter,
             dateFrom: _dateFrom,
             dateTo: _dateTo,
-            dateFmt: _dateFmt,
             onEndpointChanged: (v) => setState(() => _endpointFilter = v),
             onStatusChanged: (v) => setState(() => _statusFilter = v),
-            onDateFromTap: () async {
-              final d = await _pickDate(_dateFrom);
-              if (d != null) setState(() => _dateFrom = d);
-            },
-            onDateToTap: () async {
-              final d = await _pickDate(_dateTo);
-              if (d != null) setState(() => _dateTo = d);
-            },
+            onDateFromChanged: (d) => setState(() => _dateFrom = d),
+            onDateToChanged: (d) => setState(() => _dateTo = d),
             onClearFilters: () => setState(() {
               _endpointFilter = null;
               _statusFilter = _StatusFilter.todos;
@@ -172,13 +155,13 @@ class _LogsPageState extends ConsumerState<LogsPage> {
             }),
           ),
 
-          // ── Lista ─────────────────────────────────────────────────────
+          // â”€â”€ Lista â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Expanded(
             child: StreamBuilder<List<ApiLog>>(
               stream: stream,
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: ProgressRing());
                 }
                 final all = snap.data ?? [];
                 final filtered = _applyFilters(all);
@@ -189,7 +172,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 }
                 if (filtered.isEmpty) {
                   return const Center(
-                      child: Text('Nenhum resultado para os filtros selecionados.'));
+                      child: Text(
+                          'Nenhum resultado para os filtros selecionados.'));
                 }
 
                 return ListView.builder(
@@ -211,20 +195,19 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Filter bar
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _FilterBar extends StatelessWidget {
   final String? endpointFilter;
   final _StatusFilter statusFilter;
   final DateTime? dateFrom;
   final DateTime? dateTo;
-  final DateFormat dateFmt;
   final ValueChanged<String?> onEndpointChanged;
   final ValueChanged<_StatusFilter> onStatusChanged;
-  final VoidCallback onDateFromTap;
-  final VoidCallback onDateToTap;
+  final ValueChanged<DateTime?> onDateFromChanged;
+  final ValueChanged<DateTime?> onDateToChanged;
   final VoidCallback onClearFilters;
 
   const _FilterBar({
@@ -232,11 +215,10 @@ class _FilterBar extends StatelessWidget {
     required this.statusFilter,
     required this.dateFrom,
     required this.dateTo,
-    required this.dateFmt,
     required this.onEndpointChanged,
     required this.onStatusChanged,
-    required this.onDateFromTap,
-    required this.onDateToTap,
+    required this.onDateFromChanged,
+    required this.onDateToChanged,
     required this.onClearFilters,
   });
 
@@ -249,30 +231,29 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      color: FluentTheme.of(context).cardColor,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Wrap(
         spacing: 10,
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          // Módulo
-          DropdownButton<String?>(
+          // MÃ³dulo
+          ComboBox<String?>(
             value: endpointFilter,
-            hint: const Text('Módulo'),
-            underline: const SizedBox(),
+            placeholder: const Text('Todos os mÃ³dulos'),
             items: [
-              const DropdownMenuItem<String?>(
-                  value: null, child: Text('Todos os módulos')),
+              const ComboBoxItem<String?>(
+                  value: null, child: Text('Todos os mÃ³dulos')),
               ...const {
                 'enviar-edital': 'Edital',
-                'enviar-licitacao': 'Licitação',
+                'enviar-licitacao': 'LicitaÃ§Ã£o',
                 'enviar-ata': 'Ata',
                 'enviar-ajuste': 'Ajuste',
                 'enviar-empenho-contrato': 'Empenho de Contrato',
                 'enviar-termo-contrato': 'Termo de Contrato',
                 '/login': 'Login',
-              }.entries.map((e) => DropdownMenuItem<String?>(
+              }.entries.map((e) => ComboBoxItem<String?>(
                     value: e.key,
                     child: Text(e.value),
                   )),
@@ -281,16 +262,16 @@ class _FilterBar extends StatelessWidget {
           ),
 
           // Status
-          DropdownButton<_StatusFilter>(
+          ComboBox<_StatusFilter>(
             value: statusFilter,
-            underline: const SizedBox(),
             items: const [
-              DropdownMenuItem(
+              ComboBoxItem(
                   value: _StatusFilter.todos, child: Text('Todos os status')),
-              DropdownMenuItem(
-                  value: _StatusFilter.sucesso, child: Text('✓ Sucesso (2xx)')),
-              DropdownMenuItem(
-                  value: _StatusFilter.erro, child: Text('✗ Erro (3xx+)')),
+              ComboBoxItem(
+                  value: _StatusFilter.sucesso,
+                  child: Text('âœ“ Sucesso (2xx)')),
+              ComboBoxItem(
+                  value: _StatusFilter.erro, child: Text('âœ— Erro (3xx+)')),
             ],
             onChanged: (v) {
               if (v != null) onStatusChanged(v);
@@ -298,51 +279,35 @@ class _FilterBar extends StatelessWidget {
           ),
 
           // Data de
-          InkWell(
-            onTap: onDateFromTap,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(dateFrom != null
-                      ? 'De: ${dateFmt.format(dateFrom!)}'
-                      : 'Data início'),
-                ],
-              ),
+          InfoLabel(
+            label: 'De:',
+            child: DatePicker(
+              selected: dateFrom,
+              onChanged: (d) => onDateFromChanged(d),
             ),
           ),
 
-          // Data até
-          InkWell(
-            onTap: onDateToTap,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(dateTo != null
-                      ? 'Até: ${dateFmt.format(dateTo!)}'
-                      : 'Data fim'),
-                ],
-              ),
+          // Data atÃ©
+          InfoLabel(
+            label: 'AtÃ©:',
+            child: DatePicker(
+              selected: dateTo,
+              onChanged: (d) => onDateToChanged(d),
             ),
           ),
 
           // Limpar filtros
           if (_hasActiveFilters)
-            TextButton.icon(
+            Button(
               onPressed: onClearFilters,
-              icon: const Icon(Icons.clear, size: 16),
-              label: const Text('Limpar filtros'),
-              style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(FluentIcons.clear, size: 14),
+                  SizedBox(width: 6),
+                  Text('Limpar filtros'),
+                ],
+              ),
             ),
         ],
       ),
@@ -350,9 +315,9 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Log card
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _LogCard extends StatelessWidget {
   final ApiLog log;
@@ -367,25 +332,25 @@ class _LogCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  Color _statusColor(BuildContext context) {
+  Color _statusColor() {
     final code = log.statusCode;
-    if (code == null) return Colors.grey;
-    if (code >= 200 && code < 300) return Colors.green.shade700;
-    if (code >= 400 && code < 500) return Colors.orange.shade800;
-    return Colors.red.shade700;
+    if (code == null) return const Color(0xFF9E9E9E);
+    if (code >= 200 && code < 300) return const Color(0xFF388E3C);
+    if (code >= 400 && code < 500) return const Color(0xFFEF6C00);
+    return const Color(0xFFD32F2F);
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(context);
+    final statusColor = _statusColor();
     final label = _labelFor(log.endpoint);
+    final theme = FluentTheme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Card(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
@@ -394,13 +359,14 @@ class _LogCard extends StatelessWidget {
                 width: 52,
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withAlpha(25),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: statusColor.withAlpha(80)),
+                  border: Border.all(
+                      color: statusColor.withValues(alpha: 0.31)),
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  log.statusCode?.toString() ?? '—',
+                  log.statusCode?.toString() ?? 'â€”',
                   style: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.bold,
@@ -415,19 +381,13 @@ class _LogCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
+                    Text(label, style: theme.typography.bodyStrong),
                     const SizedBox(height: 2),
                     Text(
                       log.endpoint,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withAlpha(140),
-                          ),
+                      style: theme.typography.caption?.copyWith(
+                        color: theme.inactiveColor,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
@@ -437,15 +397,15 @@ class _LogCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           timeFmt.format(log.timestamp.toLocal()),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: theme.typography.caption,
                         ),
                         if (log.userId != null) ...[
                           const SizedBox(width: 12),
                           const Icon(Icons.person_outline, size: 12),
                           const SizedBox(width: 4),
                           Text(
-                            'Usuário #${log.userId}',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            'UsuÃ¡rio #${log.userId}',
+                            style: theme.typography.caption,
                           ),
                         ],
                       ],
@@ -456,14 +416,12 @@ class _LogCard extends StatelessWidget {
 
               // Actions
               IconButton(
-                icon: const Icon(Icons.info_outline),
-                tooltip: 'Ver detalhes',
+                icon: const Icon(FluentIcons.info, size: 16),
                 onPressed: onTap,
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error),
-                tooltip: 'Excluir',
+                icon: Icon(FluentIcons.delete,
+                    size: 16, color: const Color(0xFFD32F2F)),
                 onPressed: onDelete,
               ),
             ],
@@ -474,9 +432,9 @@ class _LogCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Detail dialog
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _LogDetailDialog extends StatefulWidget {
   final ApiLog log;
@@ -486,21 +444,8 @@ class _LogDetailDialog extends StatefulWidget {
   State<_LogDetailDialog> createState() => _LogDetailDialogState();
 }
 
-class _LogDetailDialogState extends State<_LogDetailDialog>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabs = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
-  }
+class _LogDetailDialogState extends State<_LogDetailDialog> {
+  int _tabIndex = 0;
 
   String _prettyJson(String? raw) {
     if (raw == null || raw.trim().isEmpty) return '(vazio)';
@@ -519,73 +464,52 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
     final label = _labelFor(log.endpoint);
     final prettyRequest = _prettyJson(log.request);
     final prettyResponse = _prettyJson(log.response);
+    final theme = FluentTheme.of(context);
 
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      child: SizedBox(
-        width: 900,
-        height: 640,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              label,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(width: 10),
-                            _StatusChip(code: log.statusCode),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          log.endpoint,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        Text(
-                          timeFmt.format(log.timestamp.toLocal()),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Tabs
-            TabBar(
-              controller: _tabs,
-              tabs: const [
-                Tab(text: 'Request'),
-                Tab(text: 'Response'),
+    return ContentDialog(
+      constraints: const BoxConstraints(maxWidth: 900),
+      title: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(label, style: theme.typography.subtitle),
+                    const SizedBox(width: 10),
+                    _StatusChip(code: log.statusCode),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(log.endpoint, style: theme.typography.caption),
+                Text(
+                  timeFmt.format(log.timestamp.toLocal()),
+                  style: theme.typography.caption,
+                ),
               ],
             ),
-
-            // Body
-            Expanded(
-              child: TabBarView(
-                controller: _tabs,
-                children: [
-                  _JsonPanel(content: prettyRequest, label: 'Request'),
-                  _JsonPanel(content: prettyResponse, label: 'Response'),
-                ],
-              ),
+          ),
+          IconButton(
+            icon: const Icon(FluentIcons.cancel, size: 14),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        height: 520,
+        child: TabView(
+          currentIndex: _tabIndex,
+          onChanged: (i) => setState(() => _tabIndex = i),
+          closeButtonVisibility: CloseButtonVisibilityMode.never,
+          tabs: [
+            Tab(
+              text: const Text('Request'),
+              body: _JsonPanel(content: prettyRequest, label: 'Request'),
+            ),
+            Tab(
+              text: const Text('Response'),
+              body: _JsonPanel(content: prettyResponse, label: 'Response'),
             ),
           ],
         ),
@@ -600,26 +524,26 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color color;
+    final Color color;
     if (code == null) {
-      color = Colors.grey;
+      color = const Color(0xFF9E9E9E);
     } else if (code! >= 200 && code! < 300) {
-      color = Colors.green.shade700;
+      color = const Color(0xFF388E3C);
     } else if (code! >= 400 && code! < 500) {
-      color = Colors.orange.shade800;
+      color = const Color(0xFFEF6C00);
     } else {
-      color = Colors.red.shade700;
+      color = const Color(0xFFD32F2F);
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withAlpha(80)),
+        border: Border.all(color: color.withValues(alpha: 0.31)),
       ),
       child: Text(
-        code?.toString() ?? '—',
+        code?.toString() ?? 'â€”',
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.bold,
@@ -637,6 +561,7 @@ class _JsonPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -645,22 +570,32 @@ class _JsonPanel extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
+              Button(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$label copiado')),
+                  displayInfoBar(
+                    context,
+                    builder: (ctx, close) => InfoBar(
+                      title: Text('$label copiado'),
+                      severity: InfoBarSeverity.success,
+                    ),
                   );
                 },
-                icon: const Icon(Icons.copy, size: 16),
-                label: const Text('Copiar'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.copy, size: 16),
+                    SizedBox(width: 6),
+                    Text('Copiar'),
+                  ],
+                ),
               ),
             ],
           ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Scrollbar(
@@ -683,4 +618,3 @@ class _JsonPanel extends StatelessWidget {
     );
   }
 }
-

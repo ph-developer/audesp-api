@@ -1,33 +1,27 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 
 class AppTheme {
   AppTheme._();
 
-  static const Color _primaryColor = Color(0xFF1565C0); // Azul TCE-SP
-  static const Color _secondaryColor = Color(0xFF0288D1);
-  static const Color _errorColor = Color(0xFFB00020);
+  // Azul TCE-SP
+  static const Color primaryColor = Color(0xFF1565C0);
+  static const Color secondaryColor = Color(0xFF0288D1);
 
-  static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _primaryColor,
-          secondary: _secondaryColor,
-          error: _errorColor,
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+  static FluentThemeData get light => FluentThemeData(
+        accentColor: AccentColor.swatch({
+          'darkest': const Color(0xFF003a7a),
+          'darker': const Color(0xFF004da3),
+          'dark': const Color(0xFF0d5fb8),
+          'normal': const Color(0xFF1565C0),
+          'light': const Color(0xFF3a7fd4),
+          'lighter': const Color(0xFF6aa0e0),
+          'lightest': const Color(0xFF9dc1ec),
+        }),
+        brightness: Brightness.light,
+        fontFamily: 'Segoe UI',
+        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
+        cardColor: const Color(0xFFFFFFFF),
+        micaBackgroundColor: const Color(0xFFF3F3F3),
+        shadowColor: const Color(0x1A000000),
       );
 }

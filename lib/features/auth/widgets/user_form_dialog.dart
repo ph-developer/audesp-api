@@ -1,12 +1,12 @@
 import 'package:drift/drift.dart' hide Column;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 
-/// Diálogo para criar ou editar um cadastro de usuário local.
-/// Não define senha — o usuário configura as credenciais AUDESP no primeiro login.
+/// DiÃ¡logo para criar ou editar um cadastro de usuÃ¡rio local.
+/// NÃ£o define senha â€” o usuÃ¡rio configura as credenciais AUDESP no primeiro login.
 class UserFormDialog extends ConsumerStatefulWidget {
   final User? user;
 
@@ -17,12 +17,12 @@ class UserFormDialog extends ConsumerStatefulWidget {
 }
 
 class _UserFormDialogState extends ConsumerState<UserFormDialog> {
-  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nome;
   late final TextEditingController _email;
   late final TextEditingController _municipio;
   late final TextEditingController _entidade;
   bool _saving = false;
+  String? _errorMessage;
 
   bool get _isEdit => widget.user != null;
 
@@ -44,12 +44,27 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     super.dispose();
   }
 
+  String? _validate() {
+    if (_nome.text.trim().isEmpty) return 'Nome Ã© obrigatÃ³rio.';
+    if (_email.text.trim().isEmpty) return 'E-mail Ã© obrigatÃ³rio.';
+    if (!_isEdit && !_email.text.contains('@')) return 'E-mail invÃ¡lido.';
+    if (_municipio.text.trim().isEmpty) return 'MunicÃ­pio Ã© obrigatÃ³rio.';
+    if (_entidade.text.trim().isEmpty) return 'Entidade Ã© obrigatÃ³ria.';
+    return null;
+  }
+
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
+    final error = _validate();
+    if (error != null) {
+      setState(() => _errorMessage = error);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
 
     final dao = ref.read(usersDaoProvider);
-
     try {
       if (_isEdit) {
         await dao.updateUser(
@@ -75,87 +90,87 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
-        );
-      }
+      setState(() {
+        _saving = false;
+        _errorMessage = 'Erro ao salvar: $e';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_isEdit ? 'Editar usuário' : 'Novo usuário'),
+    return ContentDialog(
+      title: Text(_isEdit ? 'Editar usuÃ¡rio' : 'Novo usuÃ¡rio'),
       content: SizedBox(
         width: 380,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InfoLabel(
+              label: 'Nome',
+              child: TextBox(
                 controller: _nome,
-                decoration: const InputDecoration(labelText: 'Nome'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                placeholder: 'Nome completo',
               ),
-              const SizedBox(height: 12),
-              TextFormField(
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'E-mail AUDESP',
+              child: TextBox(
                 controller: _email,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail AUDESP',
-                  helperText: 'Será usado como login e nas chamadas à API',
-                ),
+                placeholder: 'email@municipio.sp.gov.br',
                 keyboardType: TextInputType.emailAddress,
                 enabled: !_isEdit,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                  if (!v.contains('@')) return 'E-mail inválido';
-                  return null;
-                },
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _municipio,
-                decoration: const InputDecoration(labelText: 'Município'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _entidade,
-                decoration: const InputDecoration(labelText: 'Entidade'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
-              if (!_isEdit) ...[
-                const SizedBox(height: 12),
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, size: 16),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A senha AUDESP será configurada pelo próprio usuário no primeiro login.',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            ),
+            if (!_isEdit)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'SerÃ¡ usado como login e nas chamadas Ã  API',
+                  style: FluentTheme.of(context).typography.caption,
                 ),
-              ],
+              ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'MunicÃ­pio',
+              child: TextBox(
+                controller: _municipio,
+                placeholder: 'MunicÃ­pio',
+              ),
+            ),
+            const SizedBox(height: 12),
+            InfoLabel(
+              label: 'Entidade',
+              child: TextBox(
+                controller: _entidade,
+                placeholder: 'Entidade',
+              ),
+            ),
+            if (!_isEdit) ...[
+              const SizedBox(height: 12),
+              const InfoBar(
+                title: Text('Senha AUDESP'),
+                content: Text(
+                  'A senha AUDESP serÃ¡ configurada pelo prÃ³prio usuÃ¡rio no primeiro login.',
+                ),
+                severity: InfoBarSeverity.info,
+                isLong: true,
+              ),
             ],
-          ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 8),
+              InfoBar(
+                title: Text(_errorMessage!),
+                severity: InfoBarSeverity.error,
+              ),
+            ],
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancelar'),
         ),
@@ -165,7 +180,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
               ? const SizedBox(
                   height: 14,
                   width: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: ProgressRing(strokeWidth: 2),
                 )
               : Text(_isEdit ? 'Salvar' : 'Criar'),
         ),
@@ -173,8 +188,3 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     );
   }
 }
-
-
-/// Diálogo para criar ou editar um perfil de usuário local.
-/// Ao confirmar, persiste no SQLite e armazena a senha no secure storage.
-///

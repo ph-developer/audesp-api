@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/environments.dart';
@@ -6,15 +7,8 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../auth_providers.dart';
 
-/// Exibido antes do envio de qualquer módulo ao AUDESP.
+/// Exibido antes do envio de qualquer mÃ³dulo ao AUDESP.
 /// Autentica via API (Bearer token) e chama [onConfirm] mediante sucesso.
-///
-/// Uso:
-/// ```dart
-/// final ok = await showAudespAuthDialog(context, ref, onConfirm: () async {
-///   await enviarDocumento();
-/// });
-/// ```
 Future<bool> showAudespAuthDialog(
   BuildContext context,
   WidgetRef ref, {
@@ -59,7 +53,7 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
       if (password == null) {
         setState(() {
           _loading = false;
-          _error = 'Senha não encontrada. Recadastre o perfil.';
+          _error = 'Senha nÃ£o encontrada. Recadastre o perfil.';
         });
         return;
       }
@@ -83,10 +77,10 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
 
   String _parseError(Exception e) {
     final msg = e.toString();
-    if (msg.contains('401')) return 'Credenciais inválidas no AUDESP.';
+    if (msg.contains('401')) return 'Credenciais invÃ¡lidas no AUDESP.';
     if (msg.contains('403')) return 'Acesso negado pelo AUDESP.';
     if (msg.contains('SocketException') || msg.contains('network')) {
-      return 'Sem conexão com o servidor.';
+      return 'Sem conexÃ£o com o servidor.';
     }
     return 'Erro: $msg';
   }
@@ -96,56 +90,102 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
     final user = ref.watch(localSessionProvider);
     final env = ref.watch(environmentProvider);
 
-    return AlertDialog(
+    return ContentDialog(
       title: const Text('Autenticar no AUDESP'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text(user?.nome ?? '—'),
-            subtitle: Text(user?.email ?? ''),
-            contentPadding: EdgeInsets.zero,
-          ),
-          ListTile(
-            leading: const Icon(Icons.cloud_outlined),
-            title: const Text('Ambiente'),
-            trailing: Chip(
-              label: Text(env.label),
-              backgroundColor: env == Environment.piloto
-                  ? Colors.orange.shade100
-                  : Colors.green.shade100,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.person_outline, size: 20),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user?.nome ?? 'â€”',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      user?.email ?? '',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            contentPadding: EdgeInsets.zero,
+          ),
+          Row(
+            children: [
+              const Icon(Icons.cloud_outlined, size: 20),
+              const SizedBox(width: 8),
+              const Text('Ambiente: '),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: env == Environment.piloto
+                      ? const Color(0xFFFFF3E0)
+                      : const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: env == Environment.piloto
+                        ? const Color(0xFFFF9800)
+                        : const Color(0xFF4CAF50),
+                  ),
+                ),
+                child: Text(
+                  env.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: env == Environment.piloto
+                        ? const Color(0xFFE65100)
+                        : const Color(0xFF1B5E20),
+                  ),
+                ),
+              ),
+            ],
           ),
           if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 12),
+            InfoBar(
+              title: Text(_error!),
+              severity: InfoBarSeverity.error,
             ),
           ],
         ],
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancelar'),
         ),
-        FilledButton.icon(
+        FilledButton(
           onPressed: _loading ? null : _authenticate,
-          icon: _loading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: ProgressRing(strokeWidth: 2),
                   ),
                 )
-              : const Icon(Icons.send_outlined),
-          label: const Text('Autenticar e enviar'),
+              else
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(Icons.send_outlined, size: 16),
+                ),
+              const Text('Autenticar e enviar'),
+            ],
+          ),
         ),
       ],
     );

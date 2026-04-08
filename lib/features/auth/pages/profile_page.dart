@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide Column;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +21,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nome;
 
   // Seção de senha do sistema
@@ -58,7 +58,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_nome.text.trim().isEmpty) return;
     if (_user == null) return;
     setState(() => _saving = true);
 
@@ -83,15 +83,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil atualizado com sucesso.')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+          title: Text('Perfil atualizado com sucesso.'),
+          severity: InfoBarSeverity.success,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar perfil: $e')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => InfoBar(
+          title: Text('Erro ao salvar perfil: $e'),
+          severity: InfoBarSeverity.error,
+        ));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -104,16 +106,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final next = _sysPwNovaCtrl.text;
 
     if (current.isEmpty || next.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha a senha atual e a nova senha.')),
-      );
+      displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+        title: Text('Preencha a senha atual e a nova senha.'),
+        severity: InfoBarSeverity.warning,
+      ));
       return;
     }
     if (next.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('A nova senha deve ter ao menos 6 caracteres.')),
-      );
+      displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+        title: Text('A nova senha deve ter ao menos 6 caracteres.'),
+        severity: InfoBarSeverity.warning,
+      ));
       return;
     }
 
@@ -131,9 +134,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
       if (!ok) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha atual incorreta.')),
-          );
+          displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+            title: Text('Senha atual incorreta.'),
+            severity: InfoBarSeverity.error,
+          ));
         }
         return;
       }
@@ -152,15 +156,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _sysPwNovaCtrl.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Senha do sistema atualizada.')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+          title: Text('Senha do sistema atualizada.'),
+          severity: InfoBarSeverity.success,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar senha: $e')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => InfoBar(
+          title: Text('Erro ao atualizar senha: $e'),
+          severity: InfoBarSeverity.error,
+        ));
       }
     } finally {
       if (mounted) setState(() => _savingSysPw = false);
@@ -173,15 +179,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final next = _senhaNovaCtr1.text;
 
     if (current.isEmpty || next.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha a senha atual e a nova senha.')),
-      );
+      displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+        title: Text('Preencha a senha atual e a nova senha.'),
+        severity: InfoBarSeverity.warning,
+      ));
       return;
     }
     if (next.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A nova senha deve ter ao menos 4 caracteres.')),
-      );
+      displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+        title: Text('A nova senha deve ter ao menos 4 caracteres.'),
+        severity: InfoBarSeverity.warning,
+      ));
       return;
     }
 
@@ -192,9 +200,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final ok = await storage.verifyPassword(_user!.email, current);
       if (!ok) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha atual incorreta.')),
-          );
+          displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+            title: Text('Senha atual incorreta.'),
+            severity: InfoBarSeverity.error,
+          ));
         }
         return;
       }
@@ -204,15 +213,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _senhaNovaCtr1.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Senha AUDESP atualizada com sucesso.')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => const InfoBar(
+          title: Text('Senha AUDESP atualizada com sucesso.'),
+          severity: InfoBarSeverity.success,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar senha: $e')),
-        );
+        displayInfoBar(context, builder: (ctx, close) => InfoBar(
+          title: Text('Erro ao atualizar senha: $e'),
+          severity: InfoBarSeverity.error,
+        ));
       }
     } finally {
       if (mounted) setState(() => _savingPassword = false);
@@ -221,12 +232,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return ScaffoldPage(
+      header: PageHeader(
         title: const Text('Meu perfil'),
-        leading: BackButton(onPressed: () => context.go('/edital')),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => context.go('/edital'),
+        ),
       ),
-      body: Center(
+      content: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: ListView(
@@ -236,49 +250,42 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Dados cadastrais',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          initialValue: _user?.email ?? '',
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail AUDESP',
-                            helperText: 'O e-mail não pode ser alterado',
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Dados cadastrais',
+                        style: FluentTheme.of(context).typography.bodyStrong,
+                      ),
+                      const SizedBox(height: 16),
+                      InfoLabel(
+                        label: 'E-mail AUDESP',
+                        child: TextBox(
+                          controller: TextEditingController(text: _user?.email ?? ''),
                           enabled: false,
+                          placeholder: 'O e-mail n\u00e3o pode ser alterado',
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _nome,
-                          decoration: const InputDecoration(labelText: 'Nome'),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Obrigatório'
-                              : null,
+                      ),
+                      const SizedBox(height: 16),
+                      InfoLabel(
+                        label: 'Nome',
+                        child: TextBox(controller: _nome),
+                      ),
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: _saving ? null : _saveProfile,
+                          child: _saving
+                              ? const SizedBox(
+                                  height: 14,
+                                  width: 14,
+                                  child: ProgressRing(strokeWidth: 2),
+                                )
+                              : const Text('Salvar dados'),
                         ),
-                        const SizedBox(height: 20),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FilledButton(
-                            onPressed: _saving ? null : _saveProfile,
-                            child: _saving
-                                ? const SizedBox(
-                                    height: 14,
-                                    width: 14,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Text('Salvar dados'),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -297,57 +304,64 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           const SizedBox(width: 8),
                           Text(
                             'Senha do sistema',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: FluentTheme.of(context).typography.bodyStrong,
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Senha usada para acessar este aplicativo.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: FluentTheme.of(context).typography.caption,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _sysPwAtualCtrl,
-                        obscureText: _obscureSysPwAtual,
-                        decoration: InputDecoration(
-                          labelText: 'Senha atual',
-                          suffixIcon: IconButton(
+                      InfoLabel(
+                        label: 'Senha atual',
+                        child: TextBox(
+                          controller: _sysPwAtualCtrl,
+                          obscureText: _obscureSysPwAtual,
+                          suffix: IconButton(
                             icon: Icon(_obscureSysPwAtual
                                 ? Icons.visibility_off
-                                : Icons.visibility),
+                                : Icons.visibility,
+                              size: 18,
+                            ),
                             onPressed: () => setState(
                                 () => _obscureSysPwAtual = !_obscureSysPwAtual),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _sysPwNovaCtrl,
-                        obscureText: _obscureSysPwNova,
-                        decoration: InputDecoration(
-                          labelText: 'Nova senha',
-                          helperText: 'Mínimo de 6 caracteres',
-                          suffixIcon: IconButton(
+                      InfoLabel(
+                        label: 'Nova senha',
+                        child: TextBox(
+                          controller: _sysPwNovaCtrl,
+                          obscureText: _obscureSysPwNova,
+                          suffix: IconButton(
                             icon: Icon(_obscureSysPwNova
                                 ? Icons.visibility_off
-                                : Icons.visibility),
+                                : Icons.visibility,
+                              size: 18,
+                            ),
                             onPressed: () => setState(
                                 () => _obscureSysPwNova = !_obscureSysPwNova),
                           ),
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text('Mínimo de 6 caracteres',
+                            style: FluentTheme.of(context).typography.caption),
+                      ),
                       const SizedBox(height: 20),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton.tonal(
+                        child: Button(
                           onPressed: _savingSysPw ? null : _saveSystemPassword,
                           child: _savingSysPw
                               ? const SizedBox(
                                   height: 14,
                                   width: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
+                                  child: ProgressRing(strokeWidth: 2),
                                 )
                               : const Text('Alterar senha do sistema'),
                         ),
@@ -371,40 +385,44 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           const SizedBox(width: 8),
                           Text(
                             'Senha AUDESP',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: FluentTheme.of(context).typography.bodyStrong,
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Altere aqui se sua senha do sistema AUDESP foi modificada.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: FluentTheme.of(context).typography.caption,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _senhaAtualCtrl,
-                        obscureText: _obscureAtual,
-                        decoration: InputDecoration(
-                          labelText: 'Senha atual',
-                          suffixIcon: IconButton(
+                      InfoLabel(
+                        label: 'Senha atual',
+                        child: TextBox(
+                          controller: _senhaAtualCtrl,
+                          obscureText: _obscureAtual,
+                          suffix: IconButton(
                             icon: Icon(_obscureAtual
                                 ? Icons.visibility_off
-                                : Icons.visibility),
+                                : Icons.visibility,
+                              size: 18,
+                            ),
                             onPressed: () =>
                                 setState(() => _obscureAtual = !_obscureAtual),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _senhaNovaCtr1,
-                        obscureText: _obscureNova,
-                        decoration: InputDecoration(
-                          labelText: 'Nova senha',
-                          suffixIcon: IconButton(
+                      InfoLabel(
+                        label: 'Nova senha',
+                        child: TextBox(
+                          controller: _senhaNovaCtr1,
+                          obscureText: _obscureNova,
+                          suffix: IconButton(
                             icon: Icon(_obscureNova
                                 ? Icons.visibility_off
-                                : Icons.visibility),
+                                : Icons.visibility,
+                              size: 18,
+                            ),
                             onPressed: () =>
                                 setState(() => _obscureNova = !_obscureNova),
                           ),
@@ -413,14 +431,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       const SizedBox(height: 20),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton.tonal(
+                        child: Button(
                           onPressed: _savingPassword ? null : _savePassword,
                           child: _savingPassword
                               ? const SizedBox(
                                   height: 14,
                                   width: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
+                                  child: ProgressRing(strokeWidth: 2),
                                 )
                               : const Text('Atualizar senha AUDESP'),
                         ),

@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/widgets/widgets.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
@@ -32,8 +33,6 @@ class AjusteFormPage extends ConsumerStatefulWidget {
 }
 
 class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
-  final _formKey = GlobalKey<FormState>();
-
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
@@ -95,8 +94,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   // ── Objeto do Contrato ────────────────────────────────────────────────
   int? _tipoObjetoContrato;
-
-  final _dateFmt = DateFormat('dd/MM/yyyy');
 
   @override
   void initState() {
@@ -352,6 +349,34 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     return map;
   }
 
+  // ── Validation ────────────────────────────────────────────────────────
+
+  String? _validateForm() {
+    if (_editalId == null) return 'Selecione o Edital vinculado.';
+    if (_codigoEditalCtrl.text.trim().isEmpty) return 'Informe o Código do Edital.';
+    if (_codigoContratoCtrl.text.trim().isEmpty) return 'Informe o Código do Contrato.';
+    if (_fontesRecurso.isEmpty) return 'Selecione ao menos uma fonte de recurso.';
+    if (_itens.isEmpty) return 'Informe ao menos um item contratado.';
+    if (_tipoContratoId == null) return 'Selecione o Tipo de Contrato.';
+    if (_numeroContratoEmpenhoCtrl.text.trim().isEmpty) return 'Informe o Número do Contrato/Empenho.';
+    if (_categoriaProcessoId == null) return 'Selecione a Categoria do Processo.';
+    if (_niFornecedorCtrl.text.trim().isEmpty) return 'Informe o NI do Fornecedor.';
+    if (_tipoPessoaFornecedor == null) return 'Selecione o Tipo de Pessoa do Fornecedor.';
+    if (_nomeRazaoSocialFornecedorCtrl.text.trim().isEmpty) return 'Informe o Nome/Razão Social do Fornecedor.';
+    if (_objetoContratoCtrl.text.trim().isEmpty) return 'Informe o Objeto do Contrato.';
+    if (_valorInicialCtrl.text.trim().isEmpty) return 'Informe o Valor Inicial.';
+    if (double.tryParse(_valorInicialCtrl.text.trim()) == null) return 'Valor Inicial inválido.';
+    if (_dataAssinatura == null) return 'Informe a Data de Assinatura.';
+    if (_dataVigenciaInicio == null) return 'Informe o Início da Vigência.';
+    if (_dataVigenciaFim == null) return 'Informe o Fim da Vigência.';
+    if (_tipoObjetoContrato == null) return 'Selecione o Tipo de Objeto do Contrato.';
+    final ano = int.tryParse(_anoContratoCtrl.text.trim() );
+    if (_anoContratoCtrl.text.trim().isNotEmpty && (ano == null || ano < 1970 || ano > 2099)) {
+      return 'Ano do Contrato inválido (1970-2099).';
+    }
+    return null;
+  }
+
   // ── Salvar rascunho ───────────────────────────────────────────────────
 
   Future<void> _saveDraft() async {
@@ -359,21 +384,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Selecione o Edital vinculado.');
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
-    if (_fontesRecurso.isEmpty) {
-      _showError('Selecione ao menos uma fonte de recurso.');
-      return;
-    }
-    if (_itens.isEmpty) {
-      _showError('Informe ao menos um item contratado.');
-      return;
-    }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
-      return;
-    }
+    final err = _validateForm();
+    if (err != null) { _showError(err); return; }
 
     setState(() => _saving = true);
     try {
@@ -425,9 +437,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        displayInfoBar(context,
+            builder: (ctx, close) => InfoBar(
+                  title: const Text('Rascunho salvo com sucesso.'),
+                  severity: InfoBarSeverity.success,
+                ));
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -439,23 +453,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── Enviar ────────────────────────────────────────────────────────────
 
   Future<void> _enviar() async {
-    if (_editalId == null) {
-      _showError('Selecione o Edital vinculado.');
-      return;
-    }
-    if (!_formKey.currentState!.validate()) return;
-    if (_fontesRecurso.isEmpty) {
-      _showError('Selecione ao menos uma fonte de recurso.');
-      return;
-    }
-    if (_itens.isEmpty) {
-      _showError('Informe ao menos um item contratado.');
-      return;
-    }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
+    final err = _validateForm();
+    if (err != null) {
+      _showError(err);
       return;
     }
 
@@ -478,9 +478,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         );
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          displayInfoBar(context,
+              builder: (ctx, close) => InfoBar(
+                    title: Text(msg),
+                    severity: InfoBarSeverity.success,
+                  ));
           context.go('/ajuste');
         }
       },
@@ -489,17 +491,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    displayInfoBar(context,
+        builder: (ctx, close) => InfoBar(
+              title: Text(msg),
+              severity: InfoBarSeverity.error,
+            ));
   }
 
-  Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
-        context: context,
-        initialDate: initial ?? DateTime.now(),
-        firstDate: DateTime(1970),
-        lastDate: DateTime(2099),
-      );
+  // ─────────────────────────────────────────────────────────────────────
 
   void _addItem() {
     final val = int.tryParse(_itemCtrl.text.trim());
@@ -539,14 +538,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+      return const ScaffoldPage(
+          content: Center(child: ProgressRing()));
     }
 
     final readOnly = _isSent;
 
-    return Scaffold(
-      appBar: AppBar(
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        leading: IconButton(
+          icon: const Icon(FluentIcons.back),
+          onPressed: () => context.go('/ajuste'),
+        ),
         title: Text(
           _loadedId == null
               ? 'Novo Ajuste'
@@ -554,269 +558,272 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   ? 'Ajuste (Enviado)'
                   : 'Editar Ajuste',
         ),
-        actions: [
-          if (!readOnly) ...[
-            if (_saving)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
+        commandBar: readOnly
+            ? null
+            : _saving
+                ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
-              )
-            else ...[
-              TextButton.icon(
-                onPressed: _saveDraft,
-                icon: const Icon(Icons.save_outlined),
-                label: const Text('Salvar Rascunho'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _enviar,
-                icon: const Icon(Icons.send),
-                label: const Text('Enviar à AUDESP'),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ],
-        ],
+                    child: ProgressRing(strokeWidth: 2),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Button(
+                        onPressed: _saveDraft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(FluentIcons.save, size: 16),
+                            SizedBox(width: 6),
+                            Text('Salvar Rascunho'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: _enviar,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.send, size: 16),
+                            SizedBox(width: 6),
+                            Text('Enviar à AUDESP'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      content: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // ── Vínculo com Edital ───────────────────────────────────
-              _SectionHeader(title: 'Vínculo com Edital'),
-              DropdownButtonFormField<int>(
-                initialValue: _editalId,
-                decoration: const InputDecoration(labelText: 'Edital *'),
-                isExpanded: true,
-                items: _editais
-                    .map((e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(
-                            '${e.codigoEdital} — Mun.${e.municipio}/Ent.${e.entidade}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: readOnly
-                    ? null
-                    : (v) {
-                        setState(() {
-                          _editalId = v;
-                          _fillEditalDescriptor();
-                        });
-                      },
-                validator: (v) =>
-                    v == null ? 'Selecione o edital vinculado' : null,
+              SectionHeader(title: 'Vínculo com Edital'),
+              InfoLabel(
+                label: 'Edital *',
+                child: ComboBox<int>(
+                  value: _editalId,
+                  placeholder: const Text('Selecione o edital vinculado'),
+                  isExpanded: true,
+                  items: _editais
+                      .map((e) => ComboBoxItem(
+                            value: e.id,
+                            child: Text(
+                              '${e.codigoEdital} — Mun.${e.municipio}/Ent.${e.entidade}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: readOnly
+                      ? null
+                      : (v) {
+                          setState(() {
+                            _editalId = v;
+                            _fillEditalDescriptor();
+                          });
+                        },
+                ),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int?>(
-                initialValue: _ataId,
-                decoration: const InputDecoration(
-                    labelText: 'Ata (opcional — somente para SRP)'),
-                isExpanded: true,
-                items: [
-                  const DropdownMenuItem<int?>(
-                      value: null, child: Text('— Nenhuma —')),
-                  ..._atas.map((a) => DropdownMenuItem(
-                        value: a.id,
-                        child: Text(
-                          '${a.codigoAta} — ${a.codigoEdital}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
-                ],
-                onChanged: readOnly
-                    ? null
-                    : (v) {
-                        setState(() {
-                          _ataId = v;
-                          if (v != null) {
-                            final ata =
-                                _atas.where((a) => a.id == v).firstOrNull;
-                            if (ata != null) {
-                              _codigoAtaCtrl.text = ata.codigoAta;
+              InfoLabel(
+                label: 'Ata (opcional — somente para SRP)',
+                child: ComboBox<int?>(
+                  value: _ataId,
+                  placeholder: const Text('— Nenhuma —'),
+                  isExpanded: true,
+                  items: [
+                    const ComboBoxItem<int?>(
+                        value: null, child: Text('— Nenhuma —')),
+                    ..._atas.map((a) => ComboBoxItem(
+                          value: a.id,
+                          child: Text(
+                            '${a.codigoAta} — ${a.codigoEdital}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )),
+                  ],
+                  onChanged: readOnly
+                      ? null
+                      : (v) {
+                          setState(() {
+                            _ataId = v;
+                            if (v != null) {
+                              final ata =
+                                  _atas.where((a) => a.id == v).firstOrNull;
+                              if (ata != null) {
+                                _codigoAtaCtrl.text = ata.codigoAta;
+                              }
+                            } else {
+                              _codigoAtaCtrl.clear();
                             }
-                          } else {
-                            _codigoAtaCtrl.clear();
-                          }
-                        });
-                      },
+                          });
+                        },
+                ),
               ),
               const SizedBox(height: 24),
 
               // ── Descritor ────────────────────────────────────────────
-              _SectionHeader(title: 'Descritor'),
+              SectionHeader(title: 'Descritor'),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _codigoEditalCtrl,
-                      decoration:
-                          const InputDecoration(labelText: 'Código do Edital *'),
-                      readOnly: readOnly,
-                      maxLength: 25,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                    child: InfoLabel(
+                      label: 'Código do Edital *',
+                      child: TextBox(
+                        controller: _codigoEditalCtrl,
+                        enabled: !readOnly,
+                        maxLength: 25,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
-                      controller: _codigoAtaCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Código da Ata (opcional)'),
-                      readOnly: readOnly,
-                      maxLength: 30,
+                    child: InfoLabel(
+                      label: 'Código da Ata (opcional)',
+                      child: TextBox(
+                        controller: _codigoAtaCtrl,
+                        enabled: !readOnly,
+                        maxLength: 30,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _codigoContratoCtrl,
-                decoration:
-                    const InputDecoration(labelText: 'Código do Contrato *'),
-                readOnly: readOnly,
-                maxLength: 25,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+              InfoLabel(
+                label: 'Código do Contrato *',
+                child: TextBox(
+                  controller: _codigoContratoCtrl,
+                  enabled: !readOnly,
+                  maxLength: 25,
+                ),
               ),
               const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Retificação'),
-                subtitle: const Text('Este documento é uma retificação?'),
-                value: _retificacao,
+              ToggleSwitch(
+                checked: _retificacao,
                 onChanged: readOnly ? null : (v) => setState(() => _retificacao = v),
-                contentPadding: EdgeInsets.zero,
+                content: const Text('Retificação'),
               ),
-              SwitchListTile(
-                title: const Text('Adesão / Participação'),
-                subtitle: const Text(
-                    'Adesão ou participação em licitação gerenciada por outra entidade?'),
-                value: _adesaoParticipacao,
+              const SizedBox(height: 8),
+              ToggleSwitch(
+                checked: _adesaoParticipacao,
                 onChanged:
                     readOnly ? null : (v) => setState(() => _adesaoParticipacao = v),
-                contentPadding: EdgeInsets.zero,
+                content: const Text('Adesão / Participação'),
               ),
               if (_adesaoParticipacao) ...[
-                SwitchListTile(
-                  title: const Text('Gerenciadora Jurisdicionada'),
-                  subtitle: const Text(
-                      'A entidade gerenciadora é jurisdicionada ao TCE-SP?'),
-                  value: _gerenciadoraJurisdicionada,
+                const SizedBox(height: 8),
+                ToggleSwitch(
+                  checked: _gerenciadoraJurisdicionada,
                   onChanged: readOnly
                       ? null
                       : (v) =>
                           setState(() => _gerenciadoraJurisdicionada = v),
-                  contentPadding: EdgeInsets.zero,
+                  content: const Text('Gerenciadora Jurisdicionada (TCE-SP)'),
                 ),
+                const SizedBox(height: 8),
                 if (_gerenciadoraJurisdicionada) ...[
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
-                          controller: _municipioGerenciadorCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Município Gerenciador *'),
-                          readOnly: readOnly,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (v) => _gerenciadoraJurisdicionada &&
-                                  _adesaoParticipacao &&
-                                  (v == null || v.trim().isEmpty)
-                              ? 'Obrigatório'
-                              : null,
+                        child: InfoLabel(
+                          label: 'Município Gerenciador *',
+                          child: TextBox(
+                            controller: _municipioGerenciadorCtrl,
+                            enabled: !readOnly,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
-                          controller: _entidadeGerenciadoraCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Entidade Gerenciadora *'),
-                          readOnly: readOnly,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (v) => _gerenciadoraJurisdicionada &&
-                                  _adesaoParticipacao &&
-                                  (v == null || v.trim().isEmpty)
-                              ? 'Obrigatório'
-                              : null,
+                        child: InfoLabel(
+                          label: 'Entidade Gerenciadora *',
+                          child: TextBox(
+                            controller: _entidadeGerenciadoraCtrl,
+                            enabled: !readOnly,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ] else ...[
-                  TextFormField(
-                    controller: _cnpjGerenciadoraCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'CNPJ da Entidade Gerenciadora'),
-                    readOnly: readOnly,
-                    maxLength: 14,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  InfoLabel(
+                    label: 'CNPJ da Entidade Gerenciadora',
+                    child: TextBox(
+                      controller: _cnpjGerenciadoraCtrl,
+                      enabled: !readOnly,
+                      maxLength: 14,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
                   ),
                 ],
               ],
               const SizedBox(height: 24),
 
               // ── Fontes de Recurso ─────────────────────────────────────
-              _SectionHeader(title: 'Fontes de Recurso *'),
+              SectionHeader(title: 'Fontes de Recurso *'),
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 children: kFonteRecursoAjuste.entries.map((e) {
-                  final selected = _fontesRecurso.contains(e.key);
-                  return FilterChip(
-                    label: Text(e.value),
-                    selected: selected,
-                    onSelected: readOnly
+                  return Checkbox(
+                    checked: _fontesRecurso.contains(e.key),
+                    onChanged: readOnly
                         ? null
                         : (v) {
                             setState(() {
-                              if (v) {
+                              if (v == true) {
                                 _fontesRecurso.add(e.key);
                               } else {
                                 _fontesRecurso.remove(e.key);
                               }
                             });
                           },
+                    content: Text(e.value),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 24),
 
               // ── Itens contratados ─────────────────────────────────────
-              _SectionHeader(title: 'Itens Contratados *'),
+              SectionHeader(title: 'Itens Contratados *'),
               if (!readOnly)
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: TextBox(
                         controller: _itemCtrl,
-                        decoration: const InputDecoration(
-                            labelText: 'Número do item'),
+                        placeholder: 'Número do item',
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
-                        onFieldSubmitted: (_) => _addItem(),
+                        onSubmitted: (_) => _addItem(),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.tonal(
+                    Button(
                       onPressed: _addItem,
-                      child: const Text('Adicionar'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(FluentIcons.add, size: 14),
+                          SizedBox(width: 6),
+                          Text('Adicionar'),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -826,11 +833,30 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   spacing: 6,
                   runSpacing: 4,
                   children: _itens
-                      .map((n) => Chip(
-                            label: Text('Item $n'),
-                            onDeleted: readOnly
-                                ? null
-                                : () => setState(() => _itens.remove(n)),
+                      .map((n) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: FluentTheme.of(context)
+                                  .accentColor
+                                  .withValues(alpha: 0.1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Item $n'),
+                                if (!readOnly) ...[
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _itens.remove(n)),
+                                    child: const Icon(FluentIcons.cancel,
+                                        size: 10),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ))
                       .toList(),
                 ),
@@ -838,117 +864,117 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(height: 24),
 
               // ── Dados do Contrato ─────────────────────────────────────
-              _SectionHeader(title: 'Dados do Contrato'),
-              DropdownButtonFormField<int>(
-                initialValue: _tipoContratoId,
-                decoration:
-                    const InputDecoration(labelText: 'Tipo de Contrato *'),
-                isExpanded: true,
-                items: kTipoContrato.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
-                    .toList(),
-                onChanged: readOnly ? null : (v) => setState(() => _tipoContratoId = v),
-                validator: (v) => v == null ? 'Selecione o tipo de contrato' : null,
+              SectionHeader(title: 'Dados do Contrato'),
+              InfoLabel(
+                label: 'Tipo de Contrato *',
+                child: ComboBox<int>(
+                  value: _tipoContratoId,
+                  placeholder: const Text('Selecione o tipo de contrato'),
+                  isExpanded: true,
+                  items: kTipoContrato.entries
+                      .map((e) => ComboBoxItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ))
+                      .toList(),
+                  onChanged:
+                      readOnly ? null : (v) => setState(() => _tipoContratoId = v),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     flex: 3,
-                    child: TextFormField(
-                      controller: _numeroContratoEmpenhoCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Número do Contrato/Empenho *'),
-                      readOnly: readOnly,
-                      maxLength: 50,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                    child: InfoLabel(
+                      label: 'Número do Contrato/Empenho *',
+                      child: TextBox(
+                        controller: _numeroContratoEmpenhoCtrl,
+                        enabled: !readOnly,
+                        maxLength: 50,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
-                      controller: _anoContratoCtrl,
-                      decoration:
-                          const InputDecoration(labelText: 'Ano do Contrato *'),
-                      readOnly: readOnly,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      maxLength: 4,
-                      validator: (v) {
-                        final n = int.tryParse(v ?? '');
-                        if (n == null || n < 1970 || n > 2099) {
-                          return 'Ano inválido (1970-2099)';
-                        }
-                        return null;
-                      },
+                    child: InfoLabel(
+                      label: 'Ano do Contrato *',
+                      child: TextBox(
+                        controller: _anoContratoCtrl,
+                        enabled: !readOnly,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        maxLength: 4,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _processoCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Número do Processo (opcional)'),
-                readOnly: readOnly,
-                maxLength: 50,
+              InfoLabel(
+                label: 'Número do Processo (opcional)',
+                child: TextBox(
+                  controller: _processoCtrl,
+                  enabled: !readOnly,
+                  maxLength: 50,
+                ),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                initialValue: _categoriaProcessoId,
-                decoration:
-                    const InputDecoration(labelText: 'Categoria do Processo *'),
-                isExpanded: true,
-                items: kCategoriaProcesso.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
-                    .toList(),
-                onChanged:
-                    readOnly ? null : (v) => setState(() => _categoriaProcessoId = v),
-                validator: (v) =>
-                    v == null ? 'Selecione a categoria do processo' : null,
+              InfoLabel(
+                label: 'Categoria do Processo *',
+                child: ComboBox<int>(
+                  value: _categoriaProcessoId,
+                  placeholder: const Text('Selecione a categoria do processo'),
+                  isExpanded: true,
+                  items: kCategoriaProcesso.entries
+                      .map((e) => ComboBoxItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ))
+                      .toList(),
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _categoriaProcessoId = v),
+                ),
               ),
               const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Receita'),
-                subtitle: const Text(
-                    'O processo gera receita (true) ou despesa (false) para a entidade?'),
-                value: _receita,
+              ToggleSwitch(
+                checked: _receita,
                 onChanged:
                     readOnly ? null : (v) => setState(() => _receita = v),
-                contentPadding: EdgeInsets.zero,
+                content: const Text('Receita'),
               ),
               const SizedBox(height: 12),
 
               // Despesas
-              _SectionHeader(title: 'Classificações de Despesa'),
+              SectionHeader(title: 'Classificações de Despesa'),
               if (!readOnly)
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: TextBox(
                         controller: _despesaCtrl,
-                        decoration: const InputDecoration(
-                            labelText: '8 dígitos (ex: 33903900)'),
+                        placeholder: '8 dígitos (ex: 33903900)',
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(8),
                         ],
-                        onFieldSubmitted: (_) => _addDespesa(),
+                        onSubmitted: (_) => _addDespesa(),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.tonal(
+                    Button(
                       onPressed: _addDespesa,
-                      child: const Text('Adicionar'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(FluentIcons.add, size: 14),
+                          SizedBox(width: 6),
+                          Text('Adicionar'),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -958,174 +984,188 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   spacing: 6,
                   runSpacing: 4,
                   children: _despesas
-                      .map((d) => Chip(
-                            label: Text(d),
-                            onDeleted: readOnly
-                                ? null
-                                : () => setState(() => _despesas.remove(d)),
+                      .map((d) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: FluentTheme.of(context)
+                                  .accentColor
+                                  .withValues(alpha: 0.1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(d),
+                                if (!readOnly) ...[
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _despesas.remove(d)),
+                                    child: const Icon(FluentIcons.cancel,
+                                        size: 10),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ))
                       .toList(),
                 ),
               ],
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _codigoUnidadeCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Código da Unidade (PNCP — opcional)'),
-                readOnly: readOnly,
-                maxLength: 30,
+              InfoLabel(
+                label: 'Código da Unidade (PNCP — opcional)',
+                child: TextBox(
+                  controller: _codigoUnidadeCtrl,
+                  enabled: !readOnly,
+                  maxLength: 30,
+                ),
               ),
               const SizedBox(height: 24),
 
               // ── Fornecedor ────────────────────────────────────────────
-              _SectionHeader(title: 'Fornecedor'),
+              SectionHeader(title: 'Fornecedor'),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _niFornecedorCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'NI do Fornecedor (CNPJ/CPF) *'),
-                      readOnly: readOnly,
-                      maxLength: 50,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                    child: InfoLabel(
+                      label: 'NI do Fornecedor (CNPJ/CPF) *',
+                      child: TextBox(
+                        controller: _niFornecedorCtrl,
+                        enabled: !readOnly,
+                        maxLength: 50,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _tipoPessoaFornecedor,
-                      decoration: const InputDecoration(
-                          labelText: 'Tipo de Pessoa *'),
-                      isExpanded: true,
-                      items: kTipoPessoaFornecedor.entries
-                          .map((e) => DropdownMenuItem(
-                                value: e.key,
-                                child: Text(e.value),
-                              ))
-                          .toList(),
-                      onChanged: readOnly
-                          ? null
-                          : (v) =>
-                              setState(() => _tipoPessoaFornecedor = v),
-                      validator: (v) =>
-                          v == null ? 'Selecione o tipo de pessoa' : null,
+                    child: InfoLabel(
+                      label: 'Tipo de Pessoa *',
+                      child: ComboBox<String>(
+                        value: _tipoPessoaFornecedor,
+                        placeholder: const Text('Selecione'),
+                        isExpanded: true,
+                        items: kTipoPessoaFornecedor.entries
+                            .map((e) => ComboBoxItem(
+                                  value: e.key,
+                                  child: Text(e.value),
+                                ))
+                            .toList(),
+                        onChanged: readOnly
+                            ? null
+                            : (v) => setState(() => _tipoPessoaFornecedor = v),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _nomeRazaoSocialFornecedorCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Nome/Razão Social do Fornecedor *'),
-                readOnly: readOnly,
-                maxLength: 100,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+              InfoLabel(
+                label: 'Nome/Razão Social do Fornecedor *',
+                child: TextBox(
+                  controller: _nomeRazaoSocialFornecedorCtrl,
+                  enabled: !readOnly,
+                  maxLength: 100,
+                ),
               ),
               const SizedBox(height: 16),
 
               // Subcontratado (opcional)
-              _SectionHeader(title: 'Subcontratado (opcional)'),
+              SectionHeader(title: 'Subcontratado (opcional)'),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _niFornecedorSubCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'NI do Subcontratado'),
-                      readOnly: readOnly,
-                      maxLength: 50,
+                    child: InfoLabel(
+                      label: 'NI do Subcontratado',
+                      child: TextBox(
+                        controller: _niFornecedorSubCtrl,
+                        enabled: !readOnly,
+                        maxLength: 50,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _tipoPessoaFornecedorSub,
-                      decoration: const InputDecoration(
-                          labelText: 'Tipo de Pessoa'),
-                      isExpanded: true,
-                      items: [
-                        const DropdownMenuItem<String?>(
-                            value: null, child: Text('— Nenhum —')),
-                        ...kTipoPessoaFornecedor.entries.map((e) =>
-                            DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            )),
-                      ],
-                      onChanged: readOnly
-                          ? null
-                          : (v) =>
-                              setState(() => _tipoPessoaFornecedorSub = v),
+                    child: InfoLabel(
+                      label: 'Tipo de Pessoa',
+                      child: ComboBox<String?>(
+                        value: _tipoPessoaFornecedorSub,
+                        placeholder: const Text('— Nenhum —'),
+                        isExpanded: true,
+                        items: [
+                          const ComboBoxItem<String?>(
+                              value: null, child: Text('— Nenhum —')),
+                          ...kTipoPessoaFornecedor.entries.map((e) =>
+                              ComboBoxItem(
+                                value: e.key,
+                                child: Text(e.value),
+                              )),
+                        ],
+                        onChanged: readOnly
+                            ? null
+                            : (v) =>
+                                setState(() => _tipoPessoaFornecedorSub = v),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _nomeRazaoSocialFornecedorSubCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Nome/Razão Social do Subcontratado'),
-                readOnly: readOnly,
-                maxLength: 100,
+              InfoLabel(
+                label: 'Nome/Razão Social do Subcontratado',
+                child: TextBox(
+                  controller: _nomeRazaoSocialFornecedorSubCtrl,
+                  enabled: !readOnly,
+                  maxLength: 100,
+                ),
               ),
               const SizedBox(height: 24),
 
               // ── Objeto e Valores ──────────────────────────────────────
-              _SectionHeader(title: 'Objeto e Valores'),
-              TextFormField(
-                controller: _objetoContratoCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Objeto do Contrato *'),
-                readOnly: readOnly,
-                maxLength: 5120,
-                maxLines: 3,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+              SectionHeader(title: 'Objeto e Valores'),
+              InfoLabel(
+                label: 'Objeto do Contrato *',
+                child: TextBox(
+                  controller: _objetoContratoCtrl,
+                  enabled: !readOnly,
+                  maxLength: 5120,
+                  maxLines: 3,
+                ),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _infComplementarCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Informações Complementares (opcional)'),
-                readOnly: readOnly,
-                maxLength: 5120,
-                maxLines: 2,
+              InfoLabel(
+                label: 'Informações Complementares (opcional)',
+                child: TextBox(
+                  controller: _infComplementarCtrl,
+                  enabled: !readOnly,
+                  maxLength: 5120,
+                  maxLines: 2,
+                ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _valorInicialCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Valor Inicial (R\$) *'),
-                      readOnly: readOnly,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Obrigatório';
-                        }
-                        if (double.tryParse(v.trim()) == null) {
-                          return 'Valor inválido';
-                        }
-                        return null;
-                      },
+                    child: InfoLabel(
+                      label: 'Valor Inicial (R\$) *',
+                      child: TextBox(
+                        controller: _valorInicialCtrl,
+                        enabled: !readOnly,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
-                      controller: _valorGlobalCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Valor Global (R\$)'),
-                      readOnly: readOnly,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                    child: InfoLabel(
+                      label: 'Valor Global (R\$)',
+                      child: TextBox(
+                        controller: _valorGlobalCtrl,
+                        enabled: !readOnly,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                      ),
                     ),
                   ),
                 ],
@@ -1134,37 +1174,40 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _numeroParcelasCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Nº de Parcelas'),
-                      readOnly: readOnly,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                    child: InfoLabel(
+                      label: 'Nº de Parcelas',
+                      child: TextBox(
+                        controller: _numeroParcelasCtrl,
+                        enabled: !readOnly,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
-                      controller: _valorParcelaCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Valor da Parcela (R\$)'),
-                      readOnly: readOnly,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                    child: InfoLabel(
+                      label: 'Valor da Parcela (R\$)',
+                      child: TextBox(
+                        controller: _valorParcelaCtrl,
+                        enabled: !readOnly,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
-                      controller: _valorAcumuladoCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Valor Acumulado (R\$)'),
-                      readOnly: readOnly,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                    child: InfoLabel(
+                      label: 'Valor Acumulado (R\$)',
+                      child: TextBox(
+                        controller: _valorAcumuladoCtrl,
+                        enabled: !readOnly,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                      ),
                     ),
                   ),
                 ],
@@ -1172,135 +1215,87 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(height: 24),
 
               // ── Datas ────────────────────────────────────────────────
-              _SectionHeader(title: 'Datas'),
-              _DatePickerRow(
-                label: 'Data de Assinatura *',
-                value: _dataAssinatura,
-                fmt: _dateFmt,
-                readOnly: readOnly,
-                onChanged: (d) => setState(() => _dataAssinatura = d),
-                pickDate: _pickDate,
+              SectionHeader(title: 'Datas'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: InfoLabel(
+                      label: 'Data de Assinatura *',
+                      child: DatePicker(
+                        selected: _dataAssinatura,
+                        onChanged: readOnly
+                            ? null
+                            : (d) => setState(() => _dataAssinatura = d),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InfoLabel(
+                      label: 'Início da Vigência *',
+                      child: DatePicker(
+                        selected: _dataVigenciaInicio,
+                        onChanged: readOnly
+                            ? null
+                            : (d) => setState(() => _dataVigenciaInicio = d),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InfoLabel(
+                      label: 'Fim da Vigência *',
+                      child: DatePicker(
+                        selected: _dataVigenciaFim,
+                        onChanged: readOnly
+                            ? null
+                            : (d) => setState(() => _dataVigenciaFim = d),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              _DatePickerRow(
-                label: 'Início da Vigência *',
-                value: _dataVigenciaInicio,
-                fmt: _dateFmt,
-                readOnly: readOnly,
-                onChanged: (d) => setState(() => _dataVigenciaInicio = d),
-                pickDate: _pickDate,
-              ),
-              const SizedBox(height: 12),
-              _DatePickerRow(
-                label: 'Fim da Vigência *',
-                value: _dataVigenciaFim,
-                fmt: _dateFmt,
-                readOnly: readOnly,
-                onChanged: (d) => setState(() => _dataVigenciaFim = d),
-                pickDate: _pickDate,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _vigenciaMesesCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Vigência em Meses (opcional)'),
-                readOnly: readOnly,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              InfoLabel(
+                label: 'Vigência em Meses (opcional)',
+                child: TextBox(
+                  controller: _vigenciaMesesCtrl,
+                  enabled: !readOnly,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
               ),
               const SizedBox(height: 24),
 
               // ── Tipo de Objeto ────────────────────────────────────────
-              _SectionHeader(title: 'Tipo de Objeto do Contrato'),
-              DropdownButtonFormField<int>(
-                initialValue: _tipoObjetoContrato,
-                decoration: const InputDecoration(
-                    labelText: 'Tipo de Objeto do Contrato *'),
-                isExpanded: true,
-                items: kTipoObjetoContrato.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
-                    .toList(),
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _tipoObjetoContrato = v),
-                validator: (v) =>
-                    v == null ? 'Selecione o tipo de objeto' : null,
+              SectionHeader(title: 'Tipo de Objeto do Contrato'),
+              InfoLabel(
+                label: 'Tipo de Objeto do Contrato *',
+                child: ComboBox<int>(
+                  value: _tipoObjetoContrato,
+                  placeholder: const Text('Selecione o tipo de objeto'),
+                  isExpanded: true,
+                  items: kTipoObjetoContrato.entries
+                      .map((e) => ComboBoxItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ))
+                      .toList(),
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _tipoObjetoContrato = v),
+                ),
               ),
               const SizedBox(height: 32),
             ],
           ),
         ),
-      ),
     );
   }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
+// SectionHeader → lib/shared/widgets/section_header.dart
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall!
-                .copyWith(color: Theme.of(context).colorScheme.primary),
-          ),
-          const Divider(),
-        ],
-      ),
-    );
-  }
-}
-
-class _DatePickerRow extends StatelessWidget {
-  final String label;
-  final DateTime? value;
-  final DateFormat fmt;
-  final bool readOnly;
-  final ValueChanged<DateTime?> onChanged;
-  final Future<DateTime?> Function(DateTime?) pickDate;
-
-  const _DatePickerRow({
-    required this.label,
-    required this.value,
-    required this.fmt,
-    required this.readOnly,
-    required this.onChanged,
-    required this.pickDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: readOnly
-          ? null
-          : () async {
-              final picked = await pickDate(value);
-              if (picked != null) onChanged(picked);
-            },
-      borderRadius: BorderRadius.circular(4),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: readOnly ? null : const Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          value != null ? fmt.format(value!) : '—',
-        ),
-      ),
-    );
-  }
-}

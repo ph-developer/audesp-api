@@ -6,6 +6,11 @@ analyzer:
     - "**/*.freezed.dart"
   errors:
     invalid_annotation_target: ignore
+  # fluent_ui reexporta muitos símbolos do Material internamente.
+  # Evitar importar flutter/material.dart junto com fluent_ui para
+  # prevenir ambiguidade de tipos (Card, Checkbox, Dialog, ListTile, etc.)
+  language:
+    strict-casts: false
 
 linter:
   rules:

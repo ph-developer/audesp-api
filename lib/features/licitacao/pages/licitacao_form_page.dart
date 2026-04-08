@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,8 +28,6 @@ class LicitacaoFormPage extends ConsumerStatefulWidget {
 }
 
 class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
-  final _formKey = GlobalKey<FormState>();
-
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
@@ -276,7 +275,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       _showError('Selecione o Edital vinculado.');
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
+    final formError = _validateForm();
+    if (formError != null) {
+      _showError(formError);
+      return;
+    }
     if (_itens.isEmpty) {
       _showError('Adicione pelo menos um item.');
       return;
@@ -321,9 +324,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        displayInfoBar(context,
+            builder: (ctx, close) => const InfoBar(
+                  title: Text('Rascunho salvo com sucesso.'),
+                  severity: InfoBarSeverity.success,
+                ));
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -339,7 +344,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       _showError('Selecione o Edital vinculado.');
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
+    final formError = _validateForm();
+    if (formError != null) {
+      _showError(formError);
+      return;
+    }
     if (_itens.isEmpty) {
       _showError('Adicione pelo menos um item.');
       return;
@@ -366,9 +375,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          displayInfoBar(context,
+              builder: (ctx, close) => InfoBar(
+                    title: Text(msg),
+                    severity: InfoBarSeverity.success,
+                  ));
           context.go('/licitacao');
         }
       },
@@ -377,9 +388,27 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    displayInfoBar(context,
+        builder: (ctx, close) => InfoBar(
+              title: Text(msg),
+              severity: InfoBarSeverity.error,
+            ));
+  }
+
+  String? _validateForm() {
+    if (_codigoEditalCtrl.text.trim().isEmpty) return 'Código do Edital obrigatório';
+    if (_recursoBID == null) return 'Recurso BID obrigatório';
+    if (_tipoNatureza == null) return 'Tipo de Natureza obrigatório';
+    if (_interposicaoRecurso == null) return 'Interposição de Recurso obrigatória';
+    if (_exigenciaGarantiaLicitantes == null) return 'Exigência de Garantia obrigatória';
+    if (_exigenciaGarantiaLicitantes == 1) {
+      final pct = _percentualValorCtrl.text.trim();
+      if (pct.isNotEmpty) {
+        final d = double.tryParse(pct.replaceAll(',', '.'));
+        if (d == null || d < 0 || d > 100) return 'Percentual deve ser entre 0 e 100';
+      }
+    }
+    return null;
   }
 
   // ── Índices econômicos ────────────────────────────────────────────────
@@ -399,47 +428,52 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
+        builder: (ctx, setS) => ContentDialog(
+          constraints: const BoxConstraints(maxWidth: 440),
           title:
               Text(editIndex == null ? 'Adicionar Índice' : 'Editar Índice'),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<int>(
-                  initialValue: tipoIndice,
-                  decoration: const InputDecoration(labelText: 'Tipo *'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InfoLabel(
+                label: 'Tipo *',
+                child: ComboBox<int>(
+                  value: tipoIndice,
+                  isExpanded: true,
+                  placeholder: const Text('Selecione'),
                   items: kTipoIndice.entries
                       .map((e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)))
+                          ComboBoxItem(value: e.key, child: Text(e.value)))
                       .toList(),
                   onChanged: (v) => setS(() => tipoIndice = v),
                 ),
-                const SizedBox(height: 12),
-                if (tipoIndice == 8)
-                  TextField(
+              ),
+              const SizedBox(height: 12),
+              if (tipoIndice == 8)
+                InfoLabel(
+                  label: 'Nome do Índice (3–50 caracteres)',
+                  child: TextBox(
                     controller: nomeCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Nome do Índice (3–50 caracteres)'),
                     maxLength: 50,
                   ),
-                const SizedBox(height: 12),
-                TextField(
+                ),
+              const SizedBox(height: 12),
+              InfoLabel(
+                label: 'Valor *',
+                child: TextBox(
                   controller: valorCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Valor *'),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           actions: [
-            TextButton(
+            Button(
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('Cancelar')),
             FilledButton(
@@ -499,81 +533,103 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const ScaffoldPage(
+          content: Center(child: ProgressRing()));
     }
 
     final isNew = widget.licitacaoId == null;
     final readonly = _isSent;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => context.go('/licitacao')),
+    return ScaffoldPage(
+      padding: EdgeInsets.zero,
+      header: PageHeader(
+        leading: IconButton(
+          icon: const Icon(FluentIcons.back),
+          onPressed: () => context.go('/licitacao'),
+        ),
         title: Text(isNew ? 'Nova Licitação' : 'Editar Licitação'),
-        actions: [
-          if (!_isSent) ...[
-            if (_saving)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
+        commandBar: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!_isSent) ...[
+              if (_saving)
+                const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: ProgressRing(strokeWidth: 2),
+                )
+              else ...[
+                Button(
+                  onPressed: _saveDraft,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.save_outlined, size: 16),
+                      SizedBox(width: 6),
+                      Text('Salvar Rascunho'),
+                    ],
+                  ),
                 ),
-              )
-            else ...[
-              TextButton.icon(
-                onPressed: _saveDraft,
-                icon: const Icon(Icons.save_outlined),
-                label: const Text('Salvar Rascunho'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _enviar,
-                icon: const Icon(Icons.send),
-                label: const Text('Enviar à AUDESP'),
-              ),
-              const SizedBox(width: 8),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: _enviar,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.send, size: 16),
+                      SizedBox(width: 6),
+                      Text('Enviar à AUDESP'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
             ],
+            if (_isSent)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: FluentTheme.of(context).accentColor.lighter,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle, size: 14),
+                    SizedBox(width: 4),
+                    Text('Enviada'),
+                  ],
+                ),
+              ),
           ],
-          if (_isSent)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Chip(
-                label: const Text('Enviada'),
-                avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              ),
-            ),
-        ],
+        ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildEditalSection(readonly),
-              const SizedBox(height: 16),
-              _buildDescritorSection(readonly),
-              const SizedBox(height: 16),
-              _buildBidSection(readonly),
-              const SizedBox(height: 16),
-              _buildDadosGeraisSection(readonly),
-              const SizedBox(height: 16),
-              _buildGarantiaSection(readonly),
-              const SizedBox(height: 16),
-              _buildQuitacaoSection(readonly),
-              const SizedBox(height: 16),
-              _buildFontesRecursoSection(readonly),
-              const SizedBox(height: 16),
-              _buildContratacaoConduzidaSection(readonly),
-              const SizedBox(height: 16),
-              _buildIndicesEconomicosSection(readonly),
-              const SizedBox(height: 16),
-              _buildItensSection(readonly),
-            ],
-          ),
+      content: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildEditalSection(readonly),
+            const SizedBox(height: 16),
+            _buildDescritorSection(readonly),
+            const SizedBox(height: 16),
+            _buildBidSection(readonly),
+            const SizedBox(height: 16),
+            _buildDadosGeraisSection(readonly),
+            const SizedBox(height: 16),
+            _buildGarantiaSection(readonly),
+            const SizedBox(height: 16),
+            _buildQuitacaoSection(readonly),
+            const SizedBox(height: 16),
+            _buildFontesRecursoSection(readonly),
+            const SizedBox(height: 16),
+            _buildContratacaoConduzidaSection(readonly),
+            const SizedBox(height: 16),
+            _buildIndicesEconomicosSection(readonly),
+            const SizedBox(height: 16),
+            _buildItensSection(readonly),
+          ],
         ),
       ),
     );
@@ -585,28 +641,30 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return _SectionCard(
       title: 'Edital Vinculado',
       children: [
-        DropdownButtonFormField<int>(
-          initialValue: _editalId,
-          decoration: const InputDecoration(labelText: 'Edital *'),
-          isExpanded: true,
-          items: _editais
-              .map((e) => DropdownMenuItem(
-                    value: e.id,
-                    child: Text(
-                      '${e.codigoEdital}  (${e.municipio} / ${e.entidade})',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ))
-              .toList(),
-          onChanged: readonly
-              ? null
-              : (v) {
-                  setState(() {
-                    _editalId = v;
-                    _fillEditalDescriptor();
-                  });
-                },
-          validator: (v) => v == null ? 'Selecione o edital vinculado' : null,
+        InfoLabel(
+          label: 'Edital *',
+          child: ComboBox<int>(
+            value: _editalId,
+            isExpanded: true,
+            placeholder: const Text('Selecione o edital'),
+            items: _editais
+                .map((e) => ComboBoxItem(
+                      value: e.id,
+                      child: Text(
+                        '${e.codigoEdital}  (${e.municipio} / ${e.entidade})',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ))
+                .toList(),
+            onChanged: readonly
+                ? null
+                : (v) {
+                    setState(() {
+                      _editalId = v;
+                      _fillEditalDescriptor();
+                    });
+                  },
+          ),
         ),
       ],
     );
@@ -622,33 +680,29 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               'Município: ${sessionUser.municipio}   |   Entidade: ${sessionUser.entidade}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: FluentTheme.of(context).typography.caption,
             ),
           ),
         Row(
           children: [
             Expanded(
               flex: 2,
-              child: TextFormField(
-                controller: _codigoEditalCtrl,
-                enabled: !readonly,
-                decoration: const InputDecoration(
-                  labelText: 'Código do Edital *',
-                  hintText: 'Até 25 caracteres',
-                  counterText: '',
+              child: InfoLabel(
+                label: 'Código do Edital *',
+                child: TextBox(
+                  controller: _codigoEditalCtrl,
+                  enabled: !readonly,
+                  placeholder: 'Até 25 caracteres',
+                  maxLength: 25,
                 ),
-                maxLength: 25,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SwitchListTile(
-                value: _retificacao,
+              child: ToggleSwitch(
+                checked: _retificacao,
                 onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
-                title: const Text('Retificação'),
-                contentPadding: EdgeInsets.zero,
+                content: const Text('Retificação'),
               ),
             ),
           ],
@@ -661,12 +715,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return _SectionCard(
       title: 'Recursos BID',
       children: [
-        _DropdownField(
+        _ComboField(
           label: 'Recurso BID *',
           value: _recursoBID,
           items: kRecursoBID,
           onChanged: readonly ? null : (v) => setState(() => _recursoBID = v),
-          validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         if (_recursoBID == 1) ...[
           const SizedBox(height: 12),
@@ -675,7 +728,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           const SizedBox(height: 8),
           Row(children: [
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Abertura Pré-Qualificação',
                 value: _aberturaPreQualificacaoBID,
                 items: kTriState,
@@ -686,7 +739,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Edital Pré-Qualificação',
                 value: _editalPreQualificacaoBID,
                 items: kTriState,
@@ -699,7 +752,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           const SizedBox(height: 8),
           Row(children: [
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Julgamento Pré-Qualificação',
                 value: _julgamentoPreQualificacaoBID,
                 items: kTriState,
@@ -710,7 +763,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Edital 2ª Fase',
                 value: _edital2FaseBID,
                 items: kTriState,
@@ -723,7 +776,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           const SizedBox(height: 8),
           Row(children: [
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Julgamento de Propostas',
                 value: _julgamentoPropostasBID,
                 items: kTriState,
@@ -734,7 +787,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _DropdownField(
+              child: _ComboField(
                 label: 'Julgamento/Negociação',
                 value: _julgamentoNegociacaoBID,
                 items: kTriState,
@@ -755,17 +808,16 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       children: [
         Row(children: [
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Tipo de Natureza *',
               value: _tipoNatureza,
               items: kTipoNatureza,
               onChanged: readonly ? null : (v) => setState(() => _tipoNatureza = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Viabilidade de Contratação',
               value: _viabilidadeContratacao,
               items: kTriState,
@@ -778,19 +830,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Interposição de Recurso *',
               value: _interposicaoRecurso,
               items: kTriState,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _interposicaoRecurso = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Audiência Pública',
               value: _audienciaPublica,
               items: kTriState,
@@ -803,7 +854,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Exigência de Amostra',
               value: _exigenciaAmostra,
               items: kTriState,
@@ -814,7 +865,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Exigência de Visita Técnica',
               value: _exigenciaVisitaTecnica,
               items: kTriState,
@@ -827,36 +878,30 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
-            child: CheckboxListTile(
-              value: _exigenciaCurriculo ?? false,
+            child: Checkbox(
+              checked: _exigenciaCurriculo ?? false,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _exigenciaCurriculo = v),
-              title: const Text('Exige Currículo'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Exige Currículo'),
             ),
           ),
           Expanded(
-            child: CheckboxListTile(
-              value: _exigenciaVistoCREA ?? false,
+            child: Checkbox(
+              checked: _exigenciaVistoCREA ?? false,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _exigenciaVistoCREA = v),
-              title: const Text('Exige Visto CREA'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Exige Visto CREA'),
             ),
           ),
           Expanded(
-            child: CheckboxListTile(
-              value: _declaracaoRecursos ?? false,
+            child: Checkbox(
+              checked: _declaracaoRecursos ?? false,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _declaracaoRecursos = v),
-              title: const Text('Declaração de Recursos'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Declaração de Recursos'),
             ),
           ),
         ]),
@@ -870,37 +915,29 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       children: [
         Row(children: [
           Expanded(
-            child: _DropdownField(
+            child: _ComboField(
               label: 'Exigência de Garantia *',
               value: _exigenciaGarantiaLicitantes,
               items: kTriState,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _exigenciaGarantiaLicitantes = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextFormField(
-              controller: _percentualValorCtrl,
-              enabled: !readonly && _exigenciaGarantiaLicitantes == 1,
-              decoration: const InputDecoration(
-                labelText: 'Percentual (%)',
-                hintText: '0 a 100',
+            child: InfoLabel(
+              label: 'Percentual (%)',
+              child: TextBox(
+                controller: _percentualValorCtrl,
+                enabled: !readonly && _exigenciaGarantiaLicitantes == 1,
+                placeholder: '0 a 100',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                ],
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-              ],
-              validator: (v) {
-                if (_exigenciaGarantiaLicitantes != 1) return null;
-                if (v == null || v.trim().isEmpty) return null;
-                final d = double.tryParse(v.trim().replaceAll(',', '.'));
-                if (d == null || d < 0 || d > 100) return 'Valor entre 0 e 100';
-                return null;
-              },
             ),
           ),
         ]),
@@ -914,33 +951,27 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       children: [
         Row(children: [
           Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoFederal ?? false,
+            child: Checkbox(
+              checked: _quitacaoFederal ?? false,
               onChanged:
                   readonly ? null : (v) => setState(() => _quitacaoFederal = v),
-              title: const Text('Tributos Federais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Tributos Federais'),
             ),
           ),
           Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoEstadual ?? false,
+            child: Checkbox(
+              checked: _quitacaoEstadual ?? false,
               onChanged:
                   readonly ? null : (v) => setState(() => _quitacaoEstadual = v),
-              title: const Text('Tributos Estaduais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Tributos Estaduais'),
             ),
           ),
           Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoMunicipal ?? false,
+            child: Checkbox(
+              checked: _quitacaoMunicipal ?? false,
               onChanged:
                   readonly ? null : (v) => setState(() => _quitacaoMunicipal = v),
-              title: const Text('Tributos Municipais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+              content: const Text('Tributos Municipais'),
             ),
           ),
         ]),
@@ -957,18 +988,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           runSpacing: 4,
           children: kFonteRecurso.entries.map((e) {
             final selected = _fontesRecurso.contains(e.key);
-            return FilterChip(
-              label: Text(e.value, style: const TextStyle(fontSize: 11)),
-              selected: selected,
-              onSelected: readonly
+            return Checkbox(
+              checked: selected,
+              onChanged: readonly
                   ? null
                   : (v) => setState(() {
-                        if (v) {
+                        if (v == true) {
                           _fontesRecurso.add(e.key);
                         } else {
                           _fontesRecurso.remove(e.key);
                         }
                       }),
+              content: Text(e.value, style: const TextStyle(fontSize: 11)),
             );
           }).toList(),
         ),
@@ -980,37 +1011,37 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return _SectionCard(
       title: 'Contratação Conduzida',
       children: [
-        SwitchListTile(
-          value: _contratacaoConduzida,
+        ToggleSwitch(
+          checked: _contratacaoConduzida,
           onChanged:
               readonly ? null : (v) => setState(() => _contratacaoConduzida = v),
-          title: const Text('Contratação Conduzida por Órgão Externo *'),
-          contentPadding: EdgeInsets.zero,
+          content: const Text('Contratação Conduzida por Órgão Externo *'),
         ),
         if (_contratacaoConduzida) ...[
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: TextFormField(
-                  controller: _cpfCondutorCtrl,
-                  enabled: !readonly,
-                  decoration: const InputDecoration(
-                    labelText: 'CPF do Condutor (11 dígitos)',
-                    hintText: '00000000000',
-                    counterText: '',
+                child: InfoLabel(
+                  label: 'CPF do Condutor (11 dígitos)',
+                  child: TextBox(
+                    controller: _cpfCondutorCtrl,
+                    enabled: !readonly,
+                    placeholder: '00000000000',
+                    maxLength: 11,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
-                  maxLength: 11,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
               const SizedBox(width: 8),
               if (!readonly)
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  onPressed: _addCpf,
-                  tooltip: 'Adicionar CPF',
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: IconButton(
+                    icon: const Icon(FluentIcons.add),
+                    onPressed: _addCpf,
+                  ),
                 ),
             ],
           ),
@@ -1019,10 +1050,30 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             spacing: 6,
             runSpacing: 4,
             children: _cpfsCondutores
-                .map((cpf) => Chip(
-                      label: Text(cpf),
-                      onDeleted:
-                          readonly ? null : () => setState(() => _cpfsCondutores.remove(cpf)),
+                .map((cpf) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: FluentTheme.of(context)
+                            .resources
+                            .controlFillColorDefault,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(cpf),
+                          if (!readonly) ...[
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _cpfsCondutores.remove(cpf)),
+                              child: const Icon(FluentIcons.cancel,
+                                  size: 10),
+                            ),
+                          ],
+                        ],
+                      ),
                     ))
                 .toList(),
           ),
@@ -1035,7 +1086,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return _SectionCard(
       title: 'Índices Econômicos',
       children: [
-        _DropdownField(
+        _ComboField(
           label: 'Exigência de Índices Econômicos',
           value: _exigenciaIndicesEconomicos,
           items: kTriState,
@@ -1050,43 +1101,63 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             children: [
               Text(
                 'Índices (${_indicesEconomicos.length})',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: FluentTheme.of(context).typography.bodyStrong,
               ),
               if (!readonly)
-                TextButton.icon(
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Adicionar'),
+                Button(
                   onPressed: _addIndice,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.add, size: 12),
+                      SizedBox(width: 6),
+                      Text('Adicionar'),
+                    ],
+                  ),
                 ),
             ],
           ),
           ..._indicesEconomicos.asMap().entries.map((entry) {
             final i = entry.key;
             final idx = entry.value;
-            return Card(
+            return Container(
               margin: const EdgeInsets.only(top: 4),
-              child: ListTile(
-                dense: true,
-                title: Text(kTipoIndice[idx['tipoIndice']] ?? ''),
-                subtitle: Text(
-                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${idx['valorIndice']}',
-                ),
-                trailing: readonly
-                    ? null
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 16),
-                            onPressed: () => _showIndiceDialog(i),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 16),
-                            onPressed: () =>
-                                setState(() => _indicesEconomicos.removeAt(i)),
-                          ),
-                        ],
-                      ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    FluentTheme.of(context).resources.controlFillColorDefault,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(kTipoIndice[idx['tipoIndice']] ?? '',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w500)),
+                        Text(
+                          '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${idx['valorIndice']}',
+                          style:
+                              FluentTheme.of(context).typography.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!readonly) ...[
+                    IconButton(
+                      icon: const Icon(FluentIcons.edit, size: 14),
+                      onPressed: () => _showIndiceDialog(i),
+                    ),
+                    IconButton(
+                      icon: const Icon(FluentIcons.delete, size: 14),
+                      onPressed: () =>
+                          setState(() => _indicesEconomicos.removeAt(i)),
+                    ),
+                  ],
+                ],
               ),
             );
           }),
@@ -1102,7 +1173,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         if (!readonly)
           Align(
             alignment: Alignment.centerRight,
-            child: FilledButton.tonal(
+            child: Button(
               onPressed: () async {
                 final result = await showItemLicitacaoDialog(context);
                 if (result != null) setState(() => _itens.add(result));
@@ -1115,7 +1186,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: FluentTheme.of(context).resources.controlFillColorDefault,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
@@ -1134,44 +1205,60 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 : '';
             final numLicitantes =
                 (item['licitantes'] as List<dynamic>? ?? []).length;
-            return Card(
+            return Container(
               margin: const EdgeInsets.only(top: 4),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: CircleAvatar(
-                  child: Text('$numItem'),
-                ),
-                title: Text('Item $numItem'),
-                subtitle: Text(
-                  '$situacao  |  $numLicitantes licitante(s)',
-                ),
-                trailing: readonly
-                    ? null
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined),
-                            tooltip: 'Editar',
-                            onPressed: () async {
-                              final result = await showItemLicitacaoDialog(
-                                context,
-                                initial: item,
-                              );
-                              if (result != null) {
-                                setState(() => _itens[i] = result);
-                              }
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Remover',
-                            onPressed: () =>
-                                setState(() => _itens.removeAt(i)),
-                          ),
-                        ],
-                      ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    FluentTheme.of(context).resources.controlFillColorDefault,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: FluentTheme.of(context).accentColor.lighter,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('$numItem',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Item $numItem',
+                            style: const TextStyle(fontWeight: FontWeight.w500)),
+                        Text('$situacao  |  $numLicitantes licitante(s)',
+                            style:
+                                FluentTheme.of(context).typography.caption),
+                      ],
+                    ),
+                  ),
+                  if (!readonly) ...[
+                    IconButton(
+                      icon: const Icon(FluentIcons.edit, size: 14),
+                      onPressed: () async {
+                        final result = await showItemLicitacaoDialog(
+                          context,
+                          initial: item,
+                        );
+                        if (result != null) {
+                          setState(() => _itens[i] = result);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(FluentIcons.delete, size: 14),
+                      onPressed: () =>
+                          setState(() => _itens.removeAt(i)),
+                    ),
+                  ],
+                ],
               ),
             );
           }),
@@ -1195,7 +1282,7 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(title, style: FluentTheme.of(context).typography.subtitle),
             const SizedBox(height: 12),
             ...children,
           ],
@@ -1205,32 +1292,32 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _DropdownField extends StatelessWidget {
+class _ComboField extends StatelessWidget {
   final String label;
   final int? value;
   final Map<int, String> items;
   final ValueChanged<int?>? onChanged;
-  final FormFieldValidator<int>? validator;
 
-  const _DropdownField({
+  const _ComboField({
     required this.label,
     required this.value,
     required this.items,
     required this.onChanged,
-    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<int>(
-      initialValue: value,
-      decoration: InputDecoration(labelText: label),
-      isExpanded: true,
-      items: items.entries
-          .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-          .toList(),
-      onChanged: onChanged,
-      validator: validator,
+    return InfoLabel(
+      label: label,
+      child: ComboBox<int>(
+        value: value,
+        isExpanded: true,
+        placeholder: const Text('Selecione'),
+        items: items.entries
+            .map((e) => ComboBoxItem(value: e.key, child: Text(e.value)))
+            .toList(),
+        onChanged: onChanged,
+      ),
     );
   }
 }

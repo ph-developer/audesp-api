@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/edital_domain.dart';
@@ -28,8 +28,6 @@ class _ItemCompraDialog extends StatefulWidget {
 }
 
 class _ItemCompraDialogState extends State<_ItemCompraDialog> {
-  final _formKey = GlobalKey<FormState>();
-
   String _materialOuServico = 'M';
   int? _tipoBeneficio;
   bool _incentivoBasico = false;
@@ -79,8 +77,39 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
     super.dispose();
   }
 
+  String? _validateForm() {
+    if (_tipoBeneficio == null) return 'Tipo de Benefício é obrigatório.';
+    if (_descCtrl.text.trim().isEmpty) return 'Descrição é obrigatória.';
+    if (_qtdCtrl.text.trim().isEmpty ||
+        double.tryParse(_qtdCtrl.text.trim()) == null) {
+      return 'Quantidade inválida.';
+    }
+    if (_unidadeCtrl.text.trim().isEmpty) {
+      return 'Unidade de Medida é obrigatória.';
+    }
+    if (_valorUnitCtrl.text.trim().isEmpty ||
+        double.tryParse(_valorUnitCtrl.text.trim()) == null) {
+      return 'Valor Unitário inválido.';
+    }
+    if (_valorTotalCtrl.text.trim().isEmpty ||
+        double.tryParse(_valorTotalCtrl.text.trim()) == null) {
+      return 'Valor Total inválido.';
+    }
+    if (_criterioJulgamento == null) {
+      return 'Critério de Julgamento é obrigatório.';
+    }
+    if (_itemCategoria == null) return 'Categoria do Item é obrigatória.';
+    return null;
+  }
+
   void _confirm() {
-    if (!_formKey.currentState!.validate()) return;
+    final err = _validateForm();
+    if (err != null) {
+      displayInfoBar(context,
+          builder: (ctx, close) =>
+              InfoBar(title: Text(err), severity: InfoBarSeverity.error));
+      return;
+    }
     final result = <String, dynamic>{
       'numeroItem': widget.numero,
       'materialOuServico': _materialOuServico,
@@ -107,125 +136,126 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return ContentDialog(
       title: Text('Item ${widget.numero}'),
-      scrollable: true,
-      content: SizedBox(
-        width: 560,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Material ou Serviço
-              Row(
-                children: [
-                  const Text('Material ou Serviço *'),
-                  const SizedBox(width: 12),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'M', label: Text('Material')),
-                      ButtonSegment(value: 'S', label: Text('Serviço')),
-                    ],
-                    selected: {_materialOuServico},
-                    onSelectionChanged: (s) =>
-                        setState(() => _materialOuServico = s.first),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Tipo de Benefício
-              DropdownButtonFormField<int>(
-                key: ValueKey('ben_$_tipoBeneficio'),
-                initialValue: _tipoBeneficio,
-                decoration:
-                    const InputDecoration(labelText: 'Tipo de Benefício *'),
+      constraints: const BoxConstraints(maxWidth: 600),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Material ou Serviço
+            const Text('Material ou Serviço *'),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _materialOuServico == 'M'
+                    ? FilledButton(
+                        onPressed: null,
+                        child: const Text('Material'),
+                      )
+                    : Button(
+                        onPressed: () =>
+                            setState(() => _materialOuServico = 'M'),
+                        child: const Text('Material'),
+                      ),
+                const SizedBox(width: 8),
+                _materialOuServico == 'S'
+                    ? FilledButton(
+                        onPressed: null,
+                        child: const Text('Serviço'),
+                      )
+                    : Button(
+                        onPressed: () =>
+                            setState(() => _materialOuServico = 'S'),
+                        child: const Text('Serviço'),
+                      ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Tipo de Benefício
+            InfoLabel(
+              label: 'Tipo de Benefício *',
+              child: ComboBox<int>(
+                value: _tipoBeneficio,
+                placeholder: const Text('Selecione...'),
+                isExpanded: true,
                 items: kTipoBeneficio.entries
                     .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
+                        ComboBoxItem(value: e.key, child: Text(e.value)))
                     .toList(),
                 onChanged: (v) => setState(() => _tipoBeneficio = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 8),
-              // Switches
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Incentivo Produtivo Básico (PPB)'),
-                value: _incentivoBasico,
-                onChanged: (v) => setState(() => _incentivoBasico = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Orçamento Sigiloso'),
-                value: _orcamentoSigiloso,
-                onChanged: (v) => setState(() => _orcamentoSigiloso = v),
-              ),
-              const SizedBox(height: 8),
-              // Descrição
-              TextFormField(
+            ),
+            const SizedBox(height: 8),
+            // Switches
+            ToggleSwitch(
+              checked: _incentivoBasico,
+              onChanged: (v) => setState(() => _incentivoBasico = v),
+              content: const Text('Incentivo Produtivo Básico (PPB)'),
+            ),
+            const SizedBox(height: 6),
+            ToggleSwitch(
+              checked: _orcamentoSigiloso,
+              onChanged: (v) => setState(() => _orcamentoSigiloso = v),
+              content: const Text('Orçamento Sigiloso'),
+            ),
+            const SizedBox(height: 12),
+            // Descrição
+            InfoLabel(
+              label: 'Descrição *',
+              child: TextBox(
                 controller: _descCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição *',
-                  counterText: '',
-                ),
                 maxLength: 2048,
                 maxLines: 3,
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
-              // Quantidade + Unidade (em linha)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
+            ),
+            const SizedBox(height: 12),
+            // Quantidade + Unidade
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: InfoLabel(
+                    label: 'Quantidade *',
+                    child: TextBox(
                       controller: _qtdCtrl,
-                      decoration:
-                          const InputDecoration(labelText: 'Quantidade *'),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
                             RegExp(r'[0-9.]')),
                       ],
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Número inválido';
-                        return null;
-                      },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: InfoLabel(
+                    label: 'Unidade de Medida *',
+                    child: TextBox(
                       controller: _unidadeCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Unidade de Medida *',
-                        counterText: '',
-                      ),
                       maxLength: 30,
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Obrigatório' : null,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Valores
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Valores
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Valor Unitário Est. *',
+                    child: TextBox(
                       controller: _valorUnitCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Valor Unitário Est. *',
-                        prefixText: 'R\$ ',
+                      prefix: const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Text('R\$'),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
@@ -233,20 +263,18 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                         FilteringTextInputFormatter.allow(
                             RegExp(r'[0-9.]')),
                       ],
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Valor inválido';
-                        return null;
-                      },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InfoLabel(
+                    label: 'Valor Total *',
+                    child: TextBox(
                       controller: _valorTotalCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Valor Total *',
-                        prefixText: 'R\$ ',
+                      prefix: const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Text('R\$'),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
@@ -254,69 +282,59 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                         FilteringTextInputFormatter.allow(
                             RegExp(r'[0-9.]')),
                       ],
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Valor inválido';
-                        return null;
-                      },
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Critério de Julgamento
-              DropdownButtonFormField<int>(
-                key: ValueKey('crit_$_criterioJulgamento'),
-                initialValue: _criterioJulgamento,
-                decoration: const InputDecoration(
-                    labelText: 'Critério de Julgamento *'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Critério de Julgamento
+            InfoLabel(
+              label: 'Critério de Julgamento *',
+              child: ComboBox<int>(
+                value: _criterioJulgamento,
+                placeholder: const Text('Selecione...'),
+                isExpanded: true,
                 items: kCriterioJulgamento.entries
                     .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
+                        ComboBoxItem(value: e.key, child: Text(e.value)))
                     .toList(),
                 onChanged: (v) => setState(() => _criterioJulgamento = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
-              // Categoria do Item
-              DropdownButtonFormField<int>(
-                key: ValueKey('cat_$_itemCategoria'),
-                initialValue: _itemCategoria,
-                decoration:
-                    const InputDecoration(labelText: 'Categoria do Item *'),
+            ),
+            const SizedBox(height: 12),
+            // Categoria do Item
+            InfoLabel(
+              label: 'Categoria do Item *',
+              child: ComboBox<int>(
+                value: _itemCategoria,
+                placeholder: const Text('Selecione...'),
+                isExpanded: true,
                 items: kItemCategoria.entries
                     .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
+                        ComboBoxItem(value: e.key, child: Text(e.value)))
                     .toList(),
                 onChanged: (v) => setState(() => _itemCategoria = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
-              // Patrimônio (opcional)
-              TextFormField(
-                controller: _patrimonioCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Patrimônio (facultativo)',
-                  counterText: '',
-                ),
-                maxLength: 255,
-              ),
-              const SizedBox(height: 12),
-              // Código de Registro Imobiliário (opcional)
-              TextFormField(
-                controller: _registroImobCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Código de Registro Imobiliário (facultativo)',
-                  counterText: '',
-                ),
-                maxLength: 255,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            // Patrimônio (opcional)
+            InfoLabel(
+              label: 'Patrimônio (facultativo)',
+              child: TextBox(controller: _patrimonioCtrl, maxLength: 255),
+            ),
+            const SizedBox(height: 12),
+            // Código de Registro Imobiliário (opcional)
+            InfoLabel(
+              label: 'Código de Registro Imobiliário (facultativo)',
+              child:
+                  TextBox(controller: _registroImobCtrl, maxLength: 255),
+            ),
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        Button(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
