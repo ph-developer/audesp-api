@@ -135,10 +135,12 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
 1. **Dependência:** adicionar `google_generative_ai` ao `pubspec.yaml`.
 
    > **Pergunta 1:** A chave de API do Gemini deve ser armazenada no arquivo `.env` já existente (em `assets/.env`, lida via `flutter_dotenv`) ou em configuração acessível pelo usuário nas telas de administração?
+   > **Resposta 1**: A chave da API deve ser alterável pelo admin na tela de administração. 
 
 2. **`GeminiService`:** serviço que recebe o path do PDF, lê os bytes, envia à API Gemini com instruções e retorna `Map<String, dynamic>` com os campos identificados.
 
    > **Pergunta 2:** Qual modelo Gemini usar? Sugestão: `gemini-2.0-flash` (suporte nativo a PDF, boa relação custo/velocidade).
+   > **Resposta 2:** O nome do modelo deve ser digitável pelo admin na tela de administração.
 
 3. **Prompt Gemini (a definir):**
    O prompt instruirá o modelo a extrair do PDF os seguintes campos do edital:
@@ -147,6 +149,7 @@ As etapas foram dimensionadas para caber em janelas de contexto de ~120 k tokens
    > **Pergunta 3:** Confirmar lista de campos que o Gemini deve tentar preencher. Há campos adicionais ou que devem ser excluídos?
 
    > **Pergunta 4:** O Gemini deve tentar extrair também os **itens de compra** (lista)? Isso aumenta a complexidade do prompt e do dialog de revisão.
+   > **Resposta 4:** Não.
 
 4. **`GeminiImportDialog`:** dialog `AlertDialog` que mostra uma tabela com:
    - Nome do campo
