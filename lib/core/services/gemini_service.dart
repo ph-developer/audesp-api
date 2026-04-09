@@ -127,7 +127,7 @@ Exemplo de resposta esperada:
     final result = <String, String?>{};
     for (final field in fields) {
       final value = decoded[field.key];
-      result[field.key] = value != null ? value.toString() : null;
+      result[field.key] = value?.toString();
     }
     return result;
   }

@@ -316,7 +316,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── PDF picker ────────────────────────────────────────────────────────────
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -329,7 +329,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Future<void> _importFromPdf() async {
     // Seleciona o PDF para análise
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );

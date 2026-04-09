@@ -7,8 +7,20 @@ import '../../core/database/database_providers.dart';
 import '../../features/auth/auth_providers.dart';
 import 'widgets/environment_dialog.dart';
 
-/// Índice da aba selecionada na NavigationRail.
-final selectedShellIndexProvider = StateProvider<int>((_) => 0);
+/// Notifier para controlar o índice da aba selecionada.
+class SelectedShellIndex extends Notifier<int> {
+  @override
+  int build() => 0; // Estado inicial
+
+  void setIndex(int index) {
+    state = index;
+  }
+}
+
+/// Provider da aba selecionada.
+final selectedShellIndexProvider = NotifierProvider<SelectedShellIndex, int>(
+  SelectedShellIndex.new,
+);
 
 /// Shell com NavigationRail lateral — envolve todos os módulos principais.
 class ShellPage extends ConsumerWidget {
@@ -47,7 +59,7 @@ class ShellPage extends ConsumerWidget {
               extended: false,
               selectedIndex: selectedIndex,
               onDestinationSelected: (i) {
-                ref.read(selectedShellIndexProvider.notifier).state = i;
+                ref.read(selectedShellIndexProvider.notifier).setIndex(i);
                 context.go(_routes[i]);
               },
               leading: Padding(

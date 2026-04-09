@@ -39,7 +39,7 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   List<EditalItemCsvModel>? _preview;
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
       withData: true,
@@ -88,7 +88,7 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
         '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;\r\n'
         '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
 
-    final path = await FilePicker.platform.saveFile(
+    final path = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
       fileName: 'template_itens.csv',
       allowedExtensions: ['csv'],

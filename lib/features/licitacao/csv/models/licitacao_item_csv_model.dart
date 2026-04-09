@@ -11,7 +11,6 @@ class LicitanteCsvModel {
   /// 1 = ME, 2 = EPP, 3 = Não.
   ///
   /// Quando extraído como "SIM" do CSV, é mapeado para `1` (ME).
-  // TODO: a UI deve permitir que o usuário corrija para 2 (EPP) caso necessário.
   final int declaracaoMEouEPP;
 
   final double valorProposta;

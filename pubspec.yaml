@@ -14,28 +14,28 @@ dependencies:
 
   # ORM SQLite (desktop-first)
   drift: ^2.22.0
-  drift_flutter: ^0.2.4
+  drift_flutter: ^0.3.0
 
   # HTTP client com interceptors
   dio: ^5.7.0
 
   # Seleção de PDF
-  file_picker: ^8.1.7
+  file_picker: ^11.0.2
 
   # Gerenciamento de estado
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.3.1
 
   # Roteamento declarativo
-  go_router: ^14.6.2
+  go_router: ^17.2.0
 
   # Armazenamento seguro de senhas locais (DPAPI no Windows)
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
 
   # Formatação de datas
   intl: ^0.20.2
 
   # Variáveis de ambiente (.env)
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^6.0.0
 
   # Hash de senhas
   crypto: ^3.0.5
@@ -44,7 +44,7 @@ dependencies:
   google_generative_ai: ^0.4.6
 
   # Modelos imutáveis + serialização
-  freezed_annotation: ^2.4.4
+  freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
 
   # Manipulação de caminhos de arquivos
@@ -57,7 +57,7 @@ dev_dependencies:
 
   # Code generation
   build_runner: ^2.4.13
-  freezed: ^2.5.7
+  freezed: ^3.2.5
   json_serializable: ^6.9.0
   drift_dev: ^2.22.0
 

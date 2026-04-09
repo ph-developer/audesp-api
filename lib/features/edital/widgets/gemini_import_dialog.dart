@@ -285,7 +285,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
       );
 
   void _rejectAll() => setState(
-        () => _accepted.updateAll((_, __) => false),
+        () => _accepted.updateAll((_, _) => false),
       );
 
   Map<String, String> _buildResult() {

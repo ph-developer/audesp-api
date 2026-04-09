@@ -20,12 +20,13 @@ User buildAdminUser() => User(
 // ─────────────────────────────────────────────────────────────────────────────
 
 final localSessionProvider =
-    StateNotifierProvider<LocalSessionNotifier, User?>(
-  (_) => LocalSessionNotifier(),
+    NotifierProvider<LocalSessionNotifier, User?>(
+  LocalSessionNotifier.new,
 );
 
-class LocalSessionNotifier extends StateNotifier<User?> {
-  LocalSessionNotifier() : super(null);
+class LocalSessionNotifier extends Notifier<User?> {
+  @override
+  User? build() => null;
 
   void login(User user) => state = user;
 

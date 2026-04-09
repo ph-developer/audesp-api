@@ -184,8 +184,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                             return 'Obrigatório para o tipo de orçamento selecionado';
                           }
                           if (v != null && v.trim().isNotEmpty) {
-                            if (double.tryParse(v.trim().replaceAll(',', '.')) ==
-                                null) return 'Valor inválido';
+                            if (double.tryParse(v.trim().replaceAll(',', '.')) == null) {
+                              return 'Valor inválido';
+                            }
                           }
                           return null;
                         },

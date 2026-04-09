@@ -1380,7 +1380,7 @@ class _SearchableIntField extends StatelessWidget {
           ),
           onFieldSubmitted: (_) => onSubmitted(),
           validator: (_) => validator?.call(
-            value != null ? value.toString() : null,
+            value?.toString(),
           ),
         );
       },

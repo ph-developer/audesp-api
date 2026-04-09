@@ -31,7 +31,6 @@ class CsvMappers {
   /// - "SIM"              → 1 (ME)
   ///
   /// **Atenção**: o valor `1` é provisório — o portal não distingue ME de EPP.
-  // TODO: a UI deve oferecer ao usuário a opção de corrigir para 2 (EPP).
   static int declaracaoMEouEPP(String raw) {
     final upper = raw.trim().toUpperCase();
     if (upper == 'SIM') return 1;

@@ -158,7 +158,6 @@ Lote/Item;Classificação;Razão Social;Valor Uni.;Valor Total;Situação;CNPJ;R
         CsvFileKeys.brPropostas: _toBytes(propostasSim),
       });
 
-      // TODO: a UI deve oferecer ao usuário a opção de corrigir para 2 (EPP).
       expect(result.first.licitantes.first.declaracaoMEouEPP, 1);
     });
   });

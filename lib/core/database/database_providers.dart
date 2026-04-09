@@ -54,41 +54,46 @@ final geminiServiceProvider = Provider<GeminiService>(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Notifier genérico para configurações de texto persistidas em [AppSettings].
-class StringSettingNotifier extends StateNotifier<String> {
-  final AppSettingsDao _dao;
-  final String _key;
+abstract class StringSettingNotifier extends Notifier<String> {
+  String get settingsKey;
 
-  StringSettingNotifier(this._dao, this._key) : super('') {
+  AppSettingsDao get _dao => ref.read(appSettingsDaoProvider);
+
+  @override
+  String build() {
     _load();
+    return '';
   }
 
   Future<void> _load() async {
-    final v = await _dao.get(_key);
-    if (v != null && mounted) state = v;
+    final v = await _dao.get(settingsKey);
+    if (v != null) state = v;
   }
 
   Future<void> setValue(String v) async {
     if (v.isEmpty) {
-      await _dao.delete(_key);
+      await _dao.delete(settingsKey);
     } else {
-      await _dao.set(_key, v);
+      await _dao.set(settingsKey, v);
     }
     state = v;
   }
 }
 
-final codigoMunicipioProvider =
-    StateNotifierProvider<StringSettingNotifier, String>(
-  (ref) => StringSettingNotifier(
-    ref.watch(appSettingsDaoProvider),
-    SettingsKeys.codigoMunicipio,
-  ),
+class CodigoMunicipioNotifier extends StringSettingNotifier {
+  @override
+  String get settingsKey => SettingsKeys.codigoMunicipio;
+}
+
+class CodigoEntidadeNotifier extends StringSettingNotifier {
+  @override
+  String get settingsKey => SettingsKeys.codigoEntidade;
+}
+
+final codigoMunicipioProvider = NotifierProvider<CodigoMunicipioNotifier, String>(
+  CodigoMunicipioNotifier.new,
 );
 
-final codigoEntidadeProvider =
-    StateNotifierProvider<StringSettingNotifier, String>(
-  (ref) => StringSettingNotifier(
-    ref.watch(appSettingsDaoProvider),
-    SettingsKeys.codigoEntidade,
-  ),
+final codigoEntidadeProvider = NotifierProvider<CodigoEntidadeNotifier, String>(
+  CodigoEntidadeNotifier.new,
 );

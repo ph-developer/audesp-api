@@ -20,20 +20,22 @@ extension EnvironmentExtension on Environment {
 
 /// Provider global do ambiente ativo. O valor é persistido em [AppSettings].
 final environmentProvider =
-    StateNotifierProvider<EnvironmentNotifier, Environment>(
-  (ref) => EnvironmentNotifier(ref.watch(appSettingsDaoProvider)),
+    NotifierProvider<EnvironmentNotifier, Environment>(
+      EnvironmentNotifier.new,
 );
 
-class EnvironmentNotifier extends StateNotifier<Environment> {
-  final AppSettingsDao _dao;
+class EnvironmentNotifier extends Notifier<Environment> {
+   AppSettingsDao get _dao => ref.read(appSettingsDaoProvider);
 
-  EnvironmentNotifier(this._dao) : super(Environment.piloto) {
+   @override
+  Environment build() {
     _load();
+    return Environment.piloto;
   }
 
   Future<void> _load() async {
     final saved = await _dao.get(SettingsKeys.environment);
-    if (saved != null && mounted) {
+    if (saved != null) {
       state = Environment.values.firstWhere(
         (e) => e.name == saved,
         orElse: () => Environment.piloto,

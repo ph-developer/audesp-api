@@ -64,7 +64,7 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: licitantes.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, i) {
                   final entry = licitantes[i];
                   final ni = entry.key;
