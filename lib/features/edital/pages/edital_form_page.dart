@@ -842,26 +842,24 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: Expanded(
-                child: TextFormField(
-                  controller: _anoCompraCtrl,
-                  enabled: !readonly,
-                  decoration: const InputDecoration(
-                    labelText: 'Ano da Compra *',
-                    hintText: 'Ex.: 2024',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obrigatório';
-                    final n = int.tryParse(v);
-                    if (n == null || n < 1970 || n > 2099) return '1970–2099';
-                    return null;
-                  },
+              child: TextFormField(
+                controller: _anoCompraCtrl,
+                enabled: !readonly,
+                decoration: const InputDecoration(
+                  labelText: 'Ano da Compra *',
+                  hintText: 'Ex.: 2024',
                 ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Obrigatório';
+                  final n = int.tryParse(v);
+                  if (n == null || n < 1970 || n > 2099) return '1970–2099';
+                  return null;
+                },
               ),
             ),
           ],
