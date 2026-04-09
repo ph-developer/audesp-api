@@ -210,6 +210,11 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                           FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                         ],
                         validator: (v) {
+                          if (_tipoOrcamento != null &&
+                              _tipoOrcamento != 0 &&
+                              (v == null || v.trim().isEmpty)) {
+                            return 'Obrigatório para o tipo de orçamento selecionado';
+                          }
                           if (v != null && v.trim().isNotEmpty) {
                             if (double.tryParse(v.trim().replaceAll(',', '.')) ==
                                 null) return 'Valor inválido';
@@ -230,6 +235,11 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         readOnly: true,
                         onTap: () => _pickDate(_dataOrcamentoCtrl),
                         validator: (v) {
+                          if (_tipoOrcamento != null &&
+                              _tipoOrcamento != 0 &&
+                              (v == null || v.trim().isEmpty)) {
+                            return 'Obrigatória para o tipo de orçamento selecionado';
+                          }
                           if (v != null && v.trim().isNotEmpty) {
                             try {
                               DateFormat('dd/MM/yyyy').parseStrict(v.trim());

@@ -87,12 +87,16 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       'tipoBeneficioId': _tipoBeneficio,
       'incentivoProdutivoBasico': _incentivoBasico,
       'descricao': _descCtrl.text.trim(),
-      'quantidade': double.tryParse(_qtdCtrl.text.trim()) ?? 0,
+      'quantidade': double.parse(
+          (double.tryParse(_qtdCtrl.text.trim()) ?? 0).toStringAsFixed(4)),
       'unidadeMedida': _unidadeCtrl.text.trim(),
       'orcamentoSigiloso': _orcamentoSigiloso,
-      'valorUnitarioEstimado':
-          double.tryParse(_valorUnitCtrl.text.trim()) ?? 0,
-      'valorTotal': double.tryParse(_valorTotalCtrl.text.trim()) ?? 0,
+      'valorUnitarioEstimado': double.parse(
+          (double.tryParse(_valorUnitCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4)),
+      'valorTotal': double.parse(
+          (double.tryParse(_valorTotalCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4)),
       'criterioJulgamentoId': _criterioJulgamento,
       'itemCategoriaId': _itemCategoria,
     };

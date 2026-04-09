@@ -913,6 +913,13 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 onTap: readonly
                     ? null
                     : () => _pickDateTime(_dataAberturaCtrl),
+                validator: (v) {
+                  if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
+                      (v == null || v.trim().isEmpty)) {
+                    return 'Obrigatório para instrumento tipo 1 ou 2';
+                  }
+                  return null;
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -931,6 +938,13 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 onTap: readonly
                     ? null
                     : () => _pickDateTime(_dataEncerramentoCtrl),
+                validator: (v) {
+                  if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
+                      (v == null || v.trim().isEmpty)) {
+                    return 'Obrigatório para instrumento tipo 1 ou 2';
+                  }
+                  return null;
+                },
               ),
             ),
           ],

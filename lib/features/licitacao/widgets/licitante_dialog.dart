@@ -150,11 +150,14 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                   validator: (v) => v == null ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 12),
-                // Valor proposto (opcional)
+                // Valor proposto (obrigatório para habilitados 1 e 2)
                 TextFormField(
                   controller: _valorCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Valor Proposto (R\$)',
+                  decoration: InputDecoration(
+                    labelText: (_resultadoHabilitacao == 1 ||
+                            _resultadoHabilitacao == 2)
+                        ? 'Valor Proposto (R\$) *'
+                        : 'Valor Proposto (R\$)',
                     hintText: 'Ex.: 12345.55',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -162,6 +165,11 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                   ],
                   validator: (v) {
+                    if ((_resultadoHabilitacao == 1 ||
+                            _resultadoHabilitacao == 2) &&
+                        (v == null || v.trim().isEmpty)) {
+                      return 'Obrigatório para classificados (resultado 1 ou 2)';
+                    }
                     if (v != null && v.trim().isNotEmpty) {
                       final parsed = double.tryParse(v.trim().replaceAll(',', '.'));
                       if (parsed == null) return 'Valor inválido';

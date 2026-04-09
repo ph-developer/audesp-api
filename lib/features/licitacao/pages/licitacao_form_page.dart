@@ -346,6 +346,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
+    if (_fontesRecurso.isEmpty) {
+      _showError('Selecione ao menos uma fonte de recurso.');
+      return;
+    }
+    if (_contratacaoConduzida && _cpfsCondutores.isEmpty) {
+      _showError('Informe ao menos um CPF condutor quando a contratação for conduzida.');
+      return;
+    }
+    if (_exigenciaIndicesEconomicos == 1 && _indicesEconomicos.isEmpty) {
+      _showError('Adicione ao menos um índice econômico quando exigência for marcada como "Sim".');
+      return;
+    }
     if (_itens.isEmpty) {
       _showError('Adicione pelo menos um item.');
       return;

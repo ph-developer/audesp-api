@@ -296,7 +296,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'nomeRazaoSocialFornecedor':
           _nomeRazaoSocialFornecedorCtrl.text.trim(),
       'objetoContrato': _objetoContratoCtrl.text.trim(),
-      'valorInicial': double.tryParse(_valorInicialCtrl.text.trim()) ?? 0,
+      'valorInicial': double.parse(
+          (double.tryParse(_valorInicialCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4)),
       'dataAssinatura': _dataAssinatura != null
           ? isoFmt.format(_dataAssinatura!)
           : '',
@@ -334,15 +336,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           int.tryParse(_numeroParcelasCtrl.text.trim());
     }
     if (_valorParcelaCtrl.text.trim().isNotEmpty) {
-      map['valorParcela'] =
-          double.tryParse(_valorParcelaCtrl.text.trim());
+      map['valorParcela'] = double.parse(
+          (double.tryParse(_valorParcelaCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4));
     }
     if (_valorGlobalCtrl.text.trim().isNotEmpty) {
-      map['valorGlobal'] = double.tryParse(_valorGlobalCtrl.text.trim());
+      map['valorGlobal'] = double.parse(
+          (double.tryParse(_valorGlobalCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4));
     }
     if (_valorAcumuladoCtrl.text.trim().isNotEmpty) {
-      map['valorAcumulado'] =
-          double.tryParse(_valorAcumuladoCtrl.text.trim());
+      map['valorAcumulado'] = double.parse(
+          (double.tryParse(_valorAcumuladoCtrl.text.trim()) ?? 0)
+              .toStringAsFixed(4));
     }
     if (_vigenciaMesesCtrl.text.trim().isNotEmpty) {
       map['vigenciaMeses'] =
@@ -447,6 +453,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     if (_itens.isEmpty) {
       _showError('Informe ao menos um item contratado.');
+      return;
+    }
+    if (_tipoContratoId == 7 && _despesas.isEmpty) {
+      _showError('Para empenho (tipo 7), informe ao menos uma classificação de despesa.');
+      return;
+    }
+    if (_tipoContratoId == 7 && _despesas.length > 1) {
+      _showError('Para empenho (tipo 7), informe apenas uma classificação de despesa.');
       return;
     }
     if (_dataAssinatura == null ||

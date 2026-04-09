@@ -439,7 +439,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           decoration: const InputDecoration(
                             labelText: 'Código do Edital *',
                           ),
-                          maxLength: 30,
+                          maxLength: 25,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o código do edital'
                               : null,
