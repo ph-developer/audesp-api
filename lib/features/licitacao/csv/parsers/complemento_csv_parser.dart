@@ -1,6 +1,6 @@
 import '../mappers/complemento_csv_mapper.dart';
 import '../models/licitacao_item_csv_model.dart';
-import '_csv_utils.dart';
+import '../../../../core/utils/csv_utils.dart';
 import 'portal_csv_parser.dart';
 
 /// Parser para a **planilha complementar** (Template Padrão).
@@ -56,7 +56,10 @@ class ComplementoCsvParser {
         final numeroItem = int.parse(numeroItemStr);
 
         final tipoOrcStr = _tryGet(row, header, 'tipoorcamento');
-        final valorEstStr = _tryGet(row, header, 'valorestimado');
+        // Aceita tanto 'ValorEstimado' (template antigo) quanto
+        // 'ValorEstimadoMedia' (template estendido) para retrocompatibilidade.
+        final valorEstStr = _tryGet(row, header, 'valorestimadimedia') ??
+            _tryGet(row, header, 'valorestimado');
         final dataOrcStr = _tryGet(row, header, 'dataorcamento');
         final situacaoCompraItemStr = _tryGet(row, header, 'situacaocompraitem');
         final dataSitStr = _tryGet(row, header, 'datasituacao');

@@ -1,2 +1,12 @@
-NumeroItem;TipoOrcamento;ValorEstimado;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
-1;GLOBAL;10500,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
+NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;TipoOrcamento;ValorEstimadoMedia;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
+# Colunas do EDITAL (itens de compra): NumeroItem, Descricao, MaterialOuServico, Quantidade, UnidadeMedida, ValorUnitarioMenor (Menor Valor Orçado), CriterioJulgamento, TipoBeneficio
+# Colunas da LICITACAO (complemento): TipoOrcamento, ValorEstimadoMedia (Média dos Orçamentos), DataOrcamento, SituacaoCompraItem, DataSituacao, TipoValor, TipoProposta
+# MaterialOuServico: M (Material) ou S (Serviço)
+# ValorUnitarioMenor: menor valor unitário orçado — usado no EDITAL  |  ValorEstimadoMedia: média dos valores orçados — usado na LICITACAO
+# CriterioJulgamento: MENOR_PRECO, MAIOR_DESCONTO, TECNICA_PRECO, MAIOR_LANCE, MAIOR_RETORNO, NAO_SE_APLICA, MELHOR_TECNICA, CONTEUDO_ARTISTICO
+# TipoBeneficio: EXCLUSIVO_ME_EPP, SUBCONTRATACAO_ME_EPP, COTA_RESERVADA_ME_EPP, SEM_BENEFICIO, NAO_SE_APLICA
+# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO
+# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO
+# DataOrcamento e DataSituacao: formato DD/MM/AAAA
+# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO
+1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Utilitários internos de leitura e parse de arquivos CSV.
+/// Utilitários de leitura e parse de arquivos CSV.
 ///
 /// Suporta arquivos em UTF-8 (com ou sem BOM) e Latin-1/ISO-8859-1.
 class CsvUtils {

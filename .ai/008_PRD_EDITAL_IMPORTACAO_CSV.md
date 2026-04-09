@@ -15,7 +15,7 @@ O Serviço de Licitações lança o **Edital** e a **Licitação** na AUDESP ao 
 
 Isso significa que o usuário precisa digitar os mesmos itens duas vezes (ou mais), o que gera retrabalho e risco de inconsistências entre Edital e Licitação.
 
-**Objetivo:** Permitir que o usuário importe os itens do Edital usando a **mesma planilha** já utilizada na Licitação, com o mínimo de colunas adicionais necessárias.
+**Objetivo:** Permitir que o usuário importe os itens do Edital usando a **mesma planilha** já utilizada na Licitação, com o mínimo de colunas adicionais necessárias, respeitando as regras de negócio específicas de valores para cada módulo.
 
 ---
 
@@ -26,6 +26,7 @@ Isso significa que o usuário precisa digitar os mesmos itens duas vezes (ou mai
 - Parser de CSV que lê as colunas já existentes na planilha complementar da Licitação **e** colunas opcionais específicas do Edital.
 - Diálogo de confirmação/revisão antes de aplicar os itens importados.
 - Tratamento de erros (colunas ausentes, valores inválidos, encoding).
+- **Tratamento rigoroso de Valores:** Separação entre "Menor Valor" (Edital) e "Média de Valores" (Licitação).
 
 ### Excluído
 - Importação a partir dos portais BLL/BrConectado (os portais não exportam metadados de edital).
@@ -33,7 +34,11 @@ Isso significa que o usuário precisa digitar os mesmos itens duas vezes (ou mai
 
 ---
 
-## 3. Dados: Campos do Item
+## 3. Dados: Campos do Item e Regra de Valores
+
+**Atenção Crítica:** Existe uma diferença fundamental na regra de negócio dos valores entre os módulos:
+- **Edital:** O campo `valorUnitarioEstimado` deve conter sempre o **menor valor orçado**.
+- **Licitação:** O campo `valor` na lista de itens deve conter a **média dos valores orçados**.
 
 ### Edital (`Item de Compra`)
 
@@ -44,7 +49,7 @@ Isso significa que o usuário precisa digitar os mesmos itens duas vezes (ou mai
 | `materialOuServico` | String (M/S) | Sim | M = Material, S = Serviço |
 | `quantidade` | double | Sim | Quantidade estimada |
 | `unidadeMedida` | String | Sim | Ex: UN, KG, M² |
-| `valorUnitarioEstimado` | double | Não | Valor unitário médio |
+| `valorUnitarioEstimado` | double | Não | **Menor valor orçado** (Teto de referência) |
 | `valorTotal` | double | Calculado | `quantidade × valorUnitarioEstimado` |
 | `criterioJulgamentoId` | int | Não | 1=Menor Preço, 2=Maior Desconto… |
 | `tipoBeneficioId` | int | Não | Benefício ME/EPP |
@@ -58,27 +63,27 @@ Isso significa que o usuário precisa digitar os mesmos itens duas vezes (ou mai
 |---|---|---|
 | `NumeroItem` | `numeroItem` | ✅ Sim |
 | `TipoOrcamento` | `tipoOrcamento` | ❌ Não (campo de licitação) |
-| `ValorEstimado` | `valor` (médio dos orçamentos) | ✅ → `valorUnitarioEstimado` |
+| `ValorEstimado` | `valor` (**média dos orçamentos**) | ❌ **Não** (O edital exige o Menor Valor, não a média) |
 | `DataOrcamento` | `dataOrcamento` | ❌ Não |
 | `SituacaoCompraItem` | `situacaoCompraItemId` | ❌ Não |
 | `DataSituacao` | `dataSituacaoItem` | ❌ Não |
 | `TipoValor` | `tipoValor` | ❌ Não |
 | `TipoProposta` | `tipoProposta` | ❌ Não |
 
-**Conclusão:** apenas `NumeroItem` e `ValorEstimado` podem ser reutilizados diretamente. As demais colunas de Edital são específicas e precisam ser adicionadas.
-
 ---
 
 ## 4. Proposta de Template CSV Estendido
 
-A solução adotada é **estender o template existente** com colunas opcionais para o Edital. Colunas que o Edital não precisa são simplesmente ignoradas no parser da Licitação (já funciona assim). Colunas que o Edital precisa e que a Licitação não usa ficam em branco para usuários que só preenchem a Licitação.
+A solução adotada é **estender o template existente** com colunas opcionais para o Edital. Para evitar inconsistências fiscais e de auditoria, as colunas de valor serão estritamente separadas, sem fallbacks matematicamente incorretos.
 
 ### Template CSV proposto
 
+```csv
+NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;TipoOrcamento;ValorEstimadoMedia;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
+1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
 ```
-NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitario;CriterioJulgamento;TipoBeneficio;TipoOrcamento;ValorEstimado;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
-1;Cadeira ergonômica;M;10;UN;850,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
-```
+
+*(Nota: Na linha acima, o menor orçado foi 800,00, que vai pro Edital. A média foi 850,00, que vai pra Licitação).*
 
 #### Mapeamento de coluna → campo
 
@@ -89,18 +94,18 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitario;Cr
 | `MaterialOuServico` | `materialOuServico` (M/S) | — (ignorado) |
 | `Quantidade` | `quantidade` | — (ignorado) |
 | `UnidadeMedida` | `unidadeMedida` | — (ignorado) |
-| `ValorUnitario` | `valorUnitarioEstimado` | — (ignorado) |
+| `ValorUnitarioMenor` | `valorUnitarioEstimado` (**Menor**) | — (ignorado) |
 | `CriterioJulgamento` | `criterioJulgamentoId` (código ou texto) | — (ignorado) |
 | `TipoBeneficio` | `tipoBeneficioId` (código ou texto) | — (ignorado) |
 | `TipoOrcamento` | — (ignorado) | `tipoOrcamento` |
-| `ValorEstimado` | fallback para `valorUnitarioEstimado` se `ValorUnitario` ausente | `valor` |
+| `ValorEstimadoMedia`| — (ignorado) | `valor` (**Média**) |
 | `DataOrcamento` | — (ignorado) | `dataOrcamento` |
 | `SituacaoCompraItem` | — (ignorado) | `situacaoCompraItemId` |
 | `DataSituacao` | — (ignorado) | `dataSituacaoItem` |
 | `TipoValor` | — (ignorado) | `tipoValor` |
 | `TipoProposta` | — (ignorado) | `tipoProposta` |
 
-**Retrocompatibilidade:** O template antigo (sem as novas colunas) continua funcionando no parser da Licitação — nenhuma quebra.
+**Retrocompatibilidade:** O template antigo continuará funcionando no parser da Licitação. Se as colunas do Edital faltarem, a Licitação simplesmente as ignora. Se a coluna `ValorUnitarioMenor` faltar no momento da importação do Edital, o item será importado sem valor (para preenchimento manual posterior).
 
 ---
 
@@ -112,7 +117,7 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitario;Cr
   → Botão "Importar via Planilha"
   → FilePicker abre seleção de CSV
   → Parser lê e valida colunas obrigatórias (NumeroItem, Descricao, MaterialOuServico, Quantidade, UnidadeMedida)
-  → Exibe resumo: "N itens encontrados – X com valor, Y sem valor"
+  → Exibe resumo: "N itens encontrados – X com valor unitário (menor preço), Y sem valor"
   → Se houver itens já preenchidos → diálogo "Substituir itens existentes?"
   → Confirma → lista de itens preenchida no estado
 ```
@@ -149,52 +154,22 @@ Um novo `edital_import_csv_dialog.dart` (ou integração direta via `FilePicker`
 ## 7. Decisões Arquiteturais e Questionamentos
 
 ### ❓ D1 – Mover `CsvUtils` para `core/`?
-
-**Contexto:** `_csv_utils.dart` está em `lib/features/licitacao/csv/parsers/` e é privado (prefixo `_`). Para reutilizá-lo no Edital, precisamos:
-- **Opção A:** Mover para `lib/core/utils/csv_utils.dart` e tornar público.
-- **Opção B:** Duplicar a lógica no parser do Edital (má prática).
-- **Opção C:** Mudar o arquivo para `lib/features/licitacao/csv/parsers/csv_utils.dart` (sem `_`) mas mantê-lo na feature de Licitação — e importar cross-feature.
-
-**Recomendação:** Opção A (mover para `core/`). O `CsvUtils` é genérico o suficiente para ser compartilhado.
-
-**Decisão necessária:** ✅ Mover para `core/utils/csv_utils.dart`? Ou manter na Licitação e importar cross-feature?
-
----
+Sim (mover para `core/utils/csv_utils.dart`). O `CsvUtils` é genérico o suficiente para ser compartilhado entre Edital e Licitação.
 
 ### ❓ D2 – Representação de `CriterioJulgamento` e `TipoBeneficio` no CSV
-
-**Contexto:** Esses campos são enums da AUDESP com IDs inteiros. No CSV atual, `TipoOrcamento` e `SituacaoCompraItem` usam strings legíveis (`GLOBAL`, `HOMOLOGADO`) mapeadas para inteiros.
-
-**Opções para o CSV do Edital:**
-- **Opção A:** Usar strings legíveis mapeadas (ex: `MENOR_PRECO` → 1, `SEM_BENEFICIO` → 0).
-- **Opção B:** Usar os códigos inteiros diretamente (ex: `1`, `0`).
-- **Opção C:** Aceitar ambos.
-
-**Recomendação:** Opção A com fallback numérico (Opção C), igual ao padrão já usado na Licitação.
-
----
+Usar strings legíveis (ex: `MENOR_PRECO`) com fallback numérico, igual ao padrão já usado na Licitação.
 
 ### ❓ D3 – `valorTotal` calculado ou importado?
-
-**Contexto:** O campo `valorTotal` do Edital pode ser calculado como `quantidade × valorUnitarioEstimado`, mas em alguns casos pode precisar de arredondamento específico.
-
-**Recomendação:** Calcular automaticamente no parser; o usuário pode editar manualmente após a importação via `ItemCompraDialog`.
-
----
+Calcular automaticamente no parser (`Quantidade` × `ValorUnitarioMenor`); o usuário pode editar manualmente após a importação via `ItemCompraDialog` caso haja arredondamentos em centavos.
 
 ### ❓ D4 – Revisão por item antes de confirmar?
-
-**Contexto:** O diálogo de importação da Licitação mostra um SnackBar de confirmação mas não permite revisar item a item. Para o Edital, faz sentido mostrar uma prévia em lista antes de confirmar, pois os dados (descrição, quantidade) são mais críticos.
-
-**Sugestão:** Mostrar diálogo com DataTable resumindo os itens encontrados, com a opção de confirmar ou cancelar.
-
-**Decisão necessária:** ✅ Revisão prévia em diálogo (mais segura) ou importação direta com SnackBar (mais ágil)?
+Mostrar diálogo com DataTable resumindo os itens encontrados (foco especial em destacar itens onde o "Menor Valor" não foi preenchido), com a opção de confirmar ou cancelar, garantindo mais segurança na operação.
 
 ---
 
 ## 8. Campos Obrigatórios vs. Opcionais no CSV
 
-Para o parser aceitar uma linha como válida:
+Para o parser do Edital aceitar uma linha como válida:
 
 | Campo | Obrigatório no CSV |
 |---|---|
@@ -203,7 +178,7 @@ Para o parser aceitar uma linha como válida:
 | `MaterialOuServico` | Sim |
 | `Quantidade` | Sim |
 | `UnidadeMedida` | Sim |
-| `ValorUnitario` ou `ValorEstimado` | Não (item importado sem valor) |
+| `ValorUnitarioMenor` | Não (item importado com valor zerado/nulo) |
 | `CriterioJulgamento` | Não |
 | `TipoBeneficio` | Não |
 
@@ -211,19 +186,23 @@ Para o parser aceitar uma linha como válida:
 
 ## 9. Alterações no Template de Planilha
 
-Atualizar o arquivo `docs/template_itens.csv` com as novas colunas (mantendo retrocompatibilidade). Publicar uma nova versão do template para os usuários.
+1. Renomear `ValorEstimado` para `ValorEstimadoMedia` (para clareza).
+2. Adicionar `ValorUnitarioMenor`.
+3. Atualizar o arquivo `docs/template_itens.csv` com as novas colunas (mantendo retrocompatibilidade). 
+4. Publicar uma nova versão do template e notificar a equipe de suporte/usuários sobre a distinção dos valores.
 
 ---
 
 ## 10. Plano de Implementação
 
-| # | Tarefa | Complexidade |
-|---|---|---|
-| 1 | Mover `CsvUtils` para `core/utils/` (ou decisão D1 alternativa) | Baixa |
-| 2 | Criar `EditalItemCsvModel` | Baixa |
-| 3 | Criar `EditalComplementoCsvParser` | Média |
-| 4 | Criar `EditalComplementoCsvMapper` | Baixa |
-| 5 | Criar widget de importação no Edital | Média |
-| 6 | Integrar botão na `EditalFormPage` | Baixa |
-| 7 | Atualizar `template_itens.csv` com novas colunas | Baixa |
-| 8 | Testes unitários do parser | Média |
+| # | Tarefa | Complexidade | Completo |
+|---|---|---|---|
+| 1 | Mover `CsvUtils` para `core/utils/` | Baixa | ✅ |
+| 2 | Criar `EditalItemCsvModel` | Baixa | ✅ |
+| 3 | Criar `EditalComplementoCsvParser` | Média | ✅ |
+| 4 | Criar `EditalComplementoCsvMapper` | Baixa | ✅ |
+| 5 | Criar widget de pré-visualização e importação no Edital | Média | ✅ |
+| 6 | Integrar botão na `EditalFormPage` | Baixa | ✅ |
+| 7 | Atualizar `template_itens.csv` com as novas colunas de valores | Baixa | ✅ |
+| 8 | Escrever testes unitários do parser (foco na separação de valores) | Média | ✅ |
+| 9 | Rescrever/corrigir testes unitários | Média | ✅ |

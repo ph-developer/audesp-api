@@ -64,14 +64,18 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
   Future<void> _downloadTemplate() async {
     const content =
-        'NumeroItem;TipoOrcamento;ValorEstimado;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
-        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;\r\n'
-        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;\r\n'
-        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;\r\n'
-        '# TipoValor: MOEDA, PERCENTUAL;;;;;;;\r\n'
-        '# TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;\r\n'
-        '# Exemplo:;;;;;;;\r\n'
-        '1;GLOBAL;10500,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
+        'NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;'
+        'ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;'
+        'TipoOrcamento;ValorEstimadoMedia;DataOrcamento;'
+        'SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
+        '# Colunas do EDITAL: Descricao, MaterialOuServico, Quantidade, UnidadeMedida, ValorUnitarioMenor (Menor Valor Orc.), CriterioJulgamento, TipoBeneficio;;;;;;;;;;;\r\n'
+        '# Colunas da LICITACAO: TipoOrcamento, ValorEstimadoMedia (Media dos Orc.), DataOrcamento, SituacaoCompraItem, DataSituacao, TipoValor, TipoProposta;;;;;;;;;;;\r\n'
+        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;\r\n'
+        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;;;;;\r\n'
+        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;;;;;\r\n'
+        '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;\r\n'
+        '# Exemplo:;;;;;;;;;;;\r\n'
+        '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
 
     final path = await FilePicker.platform.saveFile(
       dialogTitle: 'Salvar Template de Itens',

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:audesp_api/features/licitacao/csv/mappers/csv_mappers.dart';
 import 'package:audesp_api/features/licitacao/csv/mappers/bll_mapper.dart';
 import 'package:audesp_api/features/licitacao/csv/mappers/br_conectado_mapper.dart';
-import 'package:audesp_api/features/licitacao/csv/parsers/_csv_utils.dart';
+import 'package:audesp_api/core/utils/csv_utils.dart';
 
 void main() {
   // ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
+import '../widgets/edital_import_csv_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/publicacao_dialog.dart';
@@ -997,18 +998,42 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     );
   }
 
+  // ── Importação via CSV ────────────────────────────────────────────────────
+
+  Future<void> _importItemsFromCsv() async {
+    final imported = await showEditalImportCsvDialog(
+      context,
+      existingCount: _itens.length,
+    );
+    if (imported == null || imported.isEmpty) return;
+    setState(() => _itens = imported);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${imported.length} item(s) importado(s) com sucesso.'),
+        ),
+      );
+    }
+  }
+
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
   Widget _buildItensSection(bool readonly) {
     return SectionCard(
       title: 'Itens de Compra',
       titleActions: [
-        if (!readonly)
+        if (!readonly) ...[          TextButton.icon(
+              onPressed: _importItemsFromCsv,
+              icon: const Icon(Icons.upload_file_outlined),
+              label: const Text('Importar via Planilha'),
+            ),
+          const SizedBox(width: 8),
           TextButton.icon(
               onPressed: _addItem,
               icon: const Icon(Icons.add),
               label: const Text('Adicionar Item'),
             ),
+        ],
       ],
       children: [
         if (_itens.isEmpty)

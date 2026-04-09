@@ -1,7 +1,7 @@
 import '../mappers/bll_mapper.dart';
 import '../mappers/csv_mappers.dart';
 import '../models/licitacao_item_csv_model.dart';
-import '_csv_utils.dart';
+import '../../../../core/utils/csv_utils.dart';
 import 'portal_csv_parser.dart';
 
 /// Parser para os arquivos CSV exportados pelo portal **BLL**.
