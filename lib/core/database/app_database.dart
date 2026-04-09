@@ -1,6 +1,9 @@
-import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
+import 'dart:io';
 
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+
+import 'db_config_helper.dart';
 import 'tables.dart';
 
 export 'tables.dart';
@@ -26,6 +29,15 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy();
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: 'audesp_api');
+    return LazyDatabase(() async {
+      final dbPath = await DbConfigHelper.getDatabasePath();
+      final file = File(dbPath);
+
+      if (!await file.parent.exists()) {
+        await file.parent.create(recursive: true);
+      }
+
+      return NativeDatabase.createInBackground(file);
+    });
   }
 }

@@ -47,6 +47,9 @@ dependencies:
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
 
+  # Manipulação de caminhos de arquivos
+  path: ^1.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
