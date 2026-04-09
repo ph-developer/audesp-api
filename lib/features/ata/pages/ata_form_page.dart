@@ -11,6 +11,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../services/ata_service.dart';
 
@@ -54,9 +55,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Itens (números dos itens da licitação) ────────────────────────────
   List<int> _numerosItem = [];
   final _itemCtrl = TextEditingController();
-
-  // ── Date formatters ────────────────────────────────────────────────────
-  final _dateFmt = DateFormat('dd/MM/yyyy');
 
   @override
   void initState() {
@@ -306,17 +304,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     );
   }
 
-  // ── Seletor de data ───────────────────────────────────────────────────
-
-  Future<DateTime?> _pickDate(DateTime? initial) async {
-    return showDatePicker(
-      context: context,
-      initialDate: initial ?? DateTime.now(),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(2100),
-    );
-  }
-
   // ── Itens ─────────────────────────────────────────────────────────────
 
   void _addItem() {
@@ -366,8 +353,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
@@ -391,7 +378,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -554,41 +541,32 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _DateField(
+                        child: AudespDatePickerField(
                           label: 'Data de Assinatura *',
                           value: _dataAssinatura,
                           readOnly: readOnly,
-                          formatter: _dateFmt,
-                          onTap: () async {
-                            final d = await _pickDate(_dataAssinatura);
-                            if (d != null) setState(() => _dataAssinatura = d);
-                          },
+                          onChanged: (d) => setState(() => _dataAssinatura = d),
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _DateField(
+                        child: AudespDatePickerField(
                           label: 'Início de Vigência *',
                           value: _dataVigenciaInicio,
                           readOnly: readOnly,
-                          formatter: _dateFmt,
-                          onTap: () async {
-                            final d = await _pickDate(_dataVigenciaInicio);
-                            if (d != null) setState(() => _dataVigenciaInicio = d);
-                          },
+                          onChanged: (d) => setState(() => _dataVigenciaInicio = d),
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _DateField(
+                        child: AudespDatePickerField(
                           label: 'Fim de Vigência *',
                           value: _dataVigenciaFim,
                           readOnly: readOnly,
-                          formatter: _dateFmt,
-                          onTap: () async {
-                            final d = await _pickDate(_dataVigenciaFim);
-                            if (d != null) setState(() => _dataVigenciaFim = d);
-                          },
+                          onChanged: (d) => setState(() => _dataVigenciaFim = d),
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                     ],
@@ -657,43 +635,3 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-class _DateField extends StatelessWidget {
-  final String label;
-  final DateTime? value;
-  final bool readOnly;
-  final DateFormat formatter;
-  final VoidCallback onTap;
-
-  const _DateField({
-    required this.label,
-    required this.value,
-    required this.readOnly,
-    required this.formatter,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: readOnly ? null : onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: readOnly
-              ? null
-              : const Icon(Icons.calendar_today_outlined, size: 18),
-        ),
-        child: Text(
-          value != null ? formatter.format(value!) : '—',
-          style: value == null
-              ? TextStyle(color: Theme.of(context).colorScheme.outline)
-              : null,
-        ),
-      ),
-    );
-  }
-}

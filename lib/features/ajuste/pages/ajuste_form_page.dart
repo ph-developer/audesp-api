@@ -11,6 +11,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/ajuste_domain.dart';
 import '../services/ajuste_service.dart';
@@ -96,8 +97,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   // ── Objeto do Contrato ────────────────────────────────────────────────
   int? _tipoObjetoContrato;
-
-  final _dateFmt = DateFormat('dd/MM/yyyy');
 
   @override
   void initState() {
@@ -505,13 +504,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     );
   }
 
-  Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
-        context: context,
-        initialDate: initial ?? DateTime.now(),
-        firstDate: DateTime(1970),
-        lastDate: DateTime(2099),
-      );
-
   void _addItem() {
     final val = int.tryParse(_itemCtrl.text.trim());
     if (val == null || val < 1) {
@@ -571,8 +563,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2)),
               )
             else ...[
@@ -595,7 +587,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1288,35 +1280,32 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _DatePickerRow(
+                        child: AudespDatePickerField(
                           label: 'Data de Assinatura *',
                           value: _dataAssinatura,
-                          fmt: _dateFmt,
                           readOnly: readOnly,
                           onChanged: (d) => setState(() => _dataAssinatura = d),
-                          pickDate: _pickDate,
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _DatePickerRow(
+                        child: AudespDatePickerField(
                           label: 'Início da Vigência *',
                           value: _dataVigenciaInicio,
-                          fmt: _dateFmt,
                           readOnly: readOnly,
                           onChanged: (d) => setState(() => _dataVigenciaInicio = d),
-                          pickDate: _pickDate,
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _DatePickerRow(
+                        child: AudespDatePickerField(
                           label: 'Fim da Vigência *',
                           value: _dataVigenciaFim,
-                          fmt: _dateFmt,
                           readOnly: readOnly,
                           onChanged: (d) => setState(() => _dataVigenciaFim = d),
-                          pickDate: _pickDate,
+                          validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
                     ],
@@ -1335,48 +1324,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(height: 32),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-class _DatePickerRow extends StatelessWidget {
-  final String label;
-  final DateTime? value;
-  final DateFormat fmt;
-  final bool readOnly;
-  final ValueChanged<DateTime?> onChanged;
-  final Future<DateTime?> Function(DateTime?) pickDate;
-
-  const _DatePickerRow({
-    required this.label,
-    required this.value,
-    required this.fmt,
-    required this.readOnly,
-    required this.onChanged,
-    required this.pickDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: readOnly
-          ? null
-          : () async {
-              final picked = await pickDate(value);
-              if (picked != null) onChanged(picked);
-            },
-      borderRadius: BorderRadius.circular(4),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: readOnly ? null : const Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          value != null ? fmt.format(value!) : '—',
         ),
       ),
     );

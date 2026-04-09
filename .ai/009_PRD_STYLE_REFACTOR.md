@@ -64,7 +64,7 @@ Criar uma pasta `lib/shared/components/` para hospedar nossos widgets genéricos
   * **Solução:** Criar um botão (wrapper do `FilledButton`) que aceite uma função assíncrona no `onPressed`. Ele próprio deve gerenciar seu estado de `loading` e renderizar um `CircularProgressIndicator` de tamanho único (ex: `16x16`).
 
 * **REQ-04: Padronização de Layouts de Página**
-  * Ajustar todas as páginas (`Ajuste`, `Ata`, `Edital`, `Licitacao`) para utilizarem o mesmo `EdgeInsets.all(24)` (ou 16, a gente escolhe um e abraça).
+  * Ajustar todas as páginas (`Ajuste`, `Ata`, `Edital`, `Licitacao`) para utilizarem o mesmo `EdgeInsets.all(16)`.
   * Padronizar o texto dos botões: 
     * Fluxo de Adição: "Adicionar [Item]"
     * Fluxo de Edição: "Salvar [Item]"
