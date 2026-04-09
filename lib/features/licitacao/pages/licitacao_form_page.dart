@@ -644,8 +644,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )

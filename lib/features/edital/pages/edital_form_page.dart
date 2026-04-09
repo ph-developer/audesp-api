@@ -12,6 +12,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
@@ -43,7 +44,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Descritor ────────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
-  final _dataDocCtrl = TextEditingController();
+  DateTime? _dataDoc;
   bool _retificacao = false;
 
   // ── Publicidade ──────────────────────────────────────────────────────────
@@ -84,7 +85,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   @override
   void dispose() {
     _codigoEditalCtrl.dispose();
-    _dataDocCtrl.dispose();
     _codigoUnidadeCtrl.dispose();
     _numeroCompraCtrl.dispose();
     _anoCompraCtrl.dispose();
@@ -124,7 +124,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final publicidade = doc['publicidade'] as Map<String, dynamic>? ?? {};
 
     _codigoEditalCtrl.text = descritor['codigoEdital'] as String? ?? edital.codigoEdital;
-    _dataDocCtrl.text = _toDisplayDate(descritor['dataDocumento'] as String? ?? '');
+    _dataDoc = DateTime.tryParse(descritor['dataDocumento'] as String? ?? '');
     _retificacao = descritor['retificacao'] as bool? ?? edital.retificacao;
 
     _houvePublicacao = publicidade['houvePublicacao'] as bool? ?? false;
@@ -165,7 +165,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         'municipio': municipio,
         'entidade': entidade,
         'codigoEdital': _codigoEditalCtrl.text.trim(),
-        'dataDocumento': _fromDisplayDate(_dataDocCtrl.text.trim()),
+        'dataDocumento': _dataDoc != null ? DateFormat('yyyy-MM-dd').format(_dataDoc!) : '',
         'retificacao': _retificacao,
       },
       'publicidade': {
@@ -214,7 +214,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       _showError('Informe o Código do Edital para salvar o rascunho.');
       return false;
     }
-    if (_dataDocCtrl.text.trim().isEmpty) {
+    if (_dataDoc == null) {
       _showError('Informe a Data do Documento para salvar o rascunho.');
       return false;
     }
@@ -340,7 +340,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     try {
       final currentValues = <String, String>{
         'codigoEdital': _codigoEditalCtrl.text.trim(),
-        'dataDocumento': _dataDocCtrl.text.trim(),
+        'dataDocumento': _dataDoc != null ? DateFormat('dd/MM/yyyy').format(_dataDoc!) : '',
         'tipoInstrumentoConvocatorioId': _tipoInstrumento?.toString() ?? '',
         'modalidadeId': _modalidade?.toString() ?? '',
         'modoDisputaId': _modoDisputa?.toString() ?? '',
@@ -368,7 +368,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _codigoEditalCtrl.text = accepted['codigoEdital']!;
         }
         if (accepted.containsKey('dataDocumento')) {
-          _dataDocCtrl.text = accepted['dataDocumento']!;
+          try {
+            _dataDoc = DateFormat('dd/MM/yyyy').parse(accepted['dataDocumento']!);
+          } catch (_) {}
         }
         if (accepted.containsKey('tipoInstrumentoConvocatorioId')) {
           _tipoInstrumento =
@@ -444,17 +446,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
   }
 
-  /// `dd/MM/yyyy` → `yyyy-MM-dd` (para JSON/API).
-  static String _fromDisplayDate(String display) {
-    if (display.isEmpty) return '';
-    try {
-      return DateFormat('yyyy-MM-dd')
-          .format(DateFormat('dd/MM/yyyy').parse(display));
-    } catch (_) {
-      return display;
-    }
-  }
-
   /// `dd/MM/yyyy HH:mm` → `yyyy-MM-ddTHH:mm:ss`.
   static String _fromDisplayDateTime(String display) {
     if (display.isEmpty) return '';
@@ -466,24 +457,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
   }
 
-  Future<void> _pickDate(TextEditingController ctrl) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
-    );
-    if (picked != null) {
-      ctrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
-  }
-
   Future<void> _pickDateTime(TextEditingController ctrl) async {
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
+      firstDate: DateTime(1950),
+      lastDate: DateTime(2100),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
@@ -491,8 +470,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       initialTime: TimeOfDay.now(),
     );
     if (time == null) return;
-    ctrl.text =
-        '${DateFormat('dd/MM/yyyy').format(date)} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    setState(() => ctrl.text =
+        '${DateFormat('dd/MM/yyyy').format(date)} '
+        '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}');
   }
 
   void _showError(String msg) {
@@ -524,8 +505,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
@@ -638,18 +619,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: TextFormField(
-                controller: _dataDocCtrl,
-                readOnly: true,
-                enabled: !readonly,
-                decoration: const InputDecoration(
-                  labelText: 'Data do Edital *',
-                  hintText: 'dd/MM/yyyy',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                onTap: readonly ? null : () => _pickDate(_dataDocCtrl),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Obrigatório' : null,
+              child: AudespDatePickerField(
+                label: 'Data do Edital *',
+                value: _dataDoc,
+                readOnly: readonly,
+                onChanged: (d) => setState(() => _dataDoc = d),
+                validator: (d) => d == null ? 'Obrigatório' : null,
               ),
             ),
             const SizedBox(width: 12),
