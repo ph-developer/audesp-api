@@ -603,64 +603,72 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Vínculo com Edital',
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _editalId,
-                    decoration: const InputDecoration(labelText: 'Edital *'),
-                    isExpanded: true,
-                    items: _editais
-                        .map((e) => DropdownMenuItem(
-                              value: e.id,
-                              child: Text(
-                                '${e.codigoEdital} — Mun.${e.municipio}/Ent.${e.entidade}',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: readOnly
-                        ? null
-                        : (v) {
-                            setState(() {
-                              _editalId = v;
-                              _fillEditalDescriptor();
-                            });
-                          },
-                    validator: (v) =>
-                        v == null ? 'Selecione o edital vinculado' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<int?>(
-                    initialValue: _ataId,
-                    decoration: const InputDecoration(
-                        labelText: 'Ata (opcional — somente para SRP)'),
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<int?>(
-                          value: null, child: Text('— Nenhuma —')),
-                      ..._atas.map((a) => DropdownMenuItem(
-                            value: a.id,
-                            child: Text(
-                              '${a.codigoAta} — ${a.codigoEdital}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _editalId,
+                          decoration: const InputDecoration(labelText: 'Edital *'),
+                          isExpanded: true,
+                          items: _editais
+                              .map((e) => DropdownMenuItem(
+                                    value: e.id,
+                                    child: Text(
+                                      '${e.codigoEdital} — Mun.${e.municipio}/Ent.${e.entidade}',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: readOnly
+                              ? null
+                              : (v) {
+                                  setState(() {
+                                    _editalId = v;
+                                    _fillEditalDescriptor();
+                                  });
+                                },
+                          validator: (v) =>
+                              v == null ? 'Selecione o edital vinculado' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          initialValue: _ataId,
+                          decoration: const InputDecoration(
+                              labelText: 'Ata (opcional — somente para SRP)'),
+                          isExpanded: true,
+                          items: [
+                            const DropdownMenuItem<int?>(
+                                value: null, child: Text('— Nenhuma —')),
+                            ..._atas.map((a) => DropdownMenuItem(
+                                  value: a.id,
+                                  child: Text(
+                                    '${a.codigoAta} — ${a.codigoEdital}',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                )),
+                          ],
+                          onChanged: readOnly
+                              ? null
+                              : (v) {
+                                  setState(() {
+                                    _ataId = v;
+                                    if (v != null) {
+                                      final ata =
+                                          _atas.where((a) => a.id == v).firstOrNull;
+                                      if (ata != null) {
+                                        _codigoAtaCtrl.text = ata.codigoAta;
+                                      }
+                                    } else {
+                                      _codigoAtaCtrl.clear();
+                                    }
+                                  });
+                                },
+                        ),
+                      ),
                     ],
-                    onChanged: readOnly
-                        ? null
-                        : (v) {
-                            setState(() {
-                              _ataId = v;
-                              if (v != null) {
-                                final ata =
-                                    _atas.where((a) => a.id == v).firstOrNull;
-                                if (ata != null) {
-                                  _codigoAtaCtrl.text = ata.codigoAta;
-                                }
-                              } else {
-                                _codigoAtaCtrl.clear();
-                              }
-                            });
-                          },
-                  ),
+                  ),                  
                 ],
               ),
               const SizedBox(height: 16),
@@ -678,56 +686,44 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        'Município: $municipio   |   Entidade: $entidade',
+                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : _codigoAtaCtrl.text}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     );
-                  }),
+                  }),                  
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          controller: _codigoEditalCtrl,
+                          controller: _codigoContratoCtrl,
                           decoration: const InputDecoration(
-                            labelText: 'Código do Edital',
-                            helperText: 'Preenchido automaticamente pelo Edital vinculado',
-                          ),
-                          readOnly: true,
+                              labelText: 'Código do Contrato *'),
+                          readOnly: readOnly,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _codigoAtaCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Código da Ata',
-                            helperText: 'Preenchido automaticamente pela Ata vinculada',
-                          ),
-                          readOnly: true,
+                      SizedBox(
+                        width: 200,
+                        child: SwitchListTile(
+                          title: const Text('Retificação'),
+                          value: _retificacao,
+                          onChanged:
+                              readOnly ? null : (v) => setState(() => _retificacao = v),
+                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
-                    controller: _codigoContratoCtrl,
+                    controller: _codigoUnidadeCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Código do Contrato *'),
+                        labelText: 'Código da Unidade (PNCP — opcional)'),
                     readOnly: readOnly,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                   ),
-                  const SizedBox(height: 4),
-                  SwitchListTile(
-                    title: const Text('Retificação'),
-                    subtitle: const Text('Este documento é uma retificação?'),
-                    value: _retificacao,
-                    onChanged:
-                        readOnly ? null : (v) => setState(() => _retificacao = v),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                  const SizedBox(height: 4),                  
                   SwitchListTile(
                     title: const Text('Adesão / Participação'),
                     subtitle: const Text(
@@ -810,7 +806,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
               // ── Fontes de Recurso ─────────────────────────────────────
               SectionCard(
-                title: 'Fontes de Recurso *',
+                title: 'Fontes de Recurso',
                 children: [
                   Wrap(
                     spacing: 8,
@@ -818,7 +814,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     children: kFonteRecursoAjuste.entries.map((e) {
                       final selected = _fontesRecurso.contains(e.key);
                       return FilterChip(
-                        label: Text(e.value),
+                        label: Text(e.value, style: const TextStyle(fontSize: 11)),
                         selected: selected,
                         onSelected: readOnly
                             ? null
@@ -840,38 +836,46 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
               // ── Itens contratados ─────────────────────────────────────
               SectionCard(
-                title: 'Itens Contratados *',
+                title: 'Itens Contratados',
                 children: [
                   if (!readOnly)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _itemCtrl,
-                            decoration: const InputDecoration(
-                                labelText: 'Número do item'),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
-                            onFieldSubmitted: (_) => _addItem(),
+                    TextFormField(
+                      controller: _itemCtrl,
+                      decoration: InputDecoration(
+                          labelText: 'Número do item',
+                          hintText: 'Ex: 1',
+                          suffixIcon: IconButton(
+                            onPressed: _addItem,
+                            icon: const Icon(Icons.add),
+                            tooltip: 'Adicionar',
+                            iconSize: 18,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.tonal(
-                          onPressed: _addItem,
-                          child: const Text('Adicionar'),
-                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly
                       ],
+                      onFieldSubmitted: (_) => _addItem(),
                     ),
-                  if (_itens.isNotEmpty) ...[
+                  if (_itens.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Nenhum item adicionado.',
+                        style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                      ),
+                    )
+                  else ...[
                     const SizedBox(height: 8),
                     Wrap(
-                      spacing: 6,
+                      spacing: 8,
                       runSpacing: 4,
                       children: _itens
                           .map((n) => Chip(
                                 label: Text('Item $n'),
+                                deleteIcon: readOnly
+                                    ? null
+                                    : const Icon(Icons.close, size: 16),
                                 onDeleted: readOnly
                                     ? null
                                     : () => setState(() => _itens.remove(n)),
@@ -907,7 +911,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        flex: 3,
                         child: TextFormField(
                           controller: _numeroContratoEmpenhoCtrl,
                           decoration: const InputDecoration(
@@ -918,12 +921,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
+                      SizedBox(
+                        width: 200,
                         child: TextFormField(
                           controller: _anoContratoCtrl,
                           decoration: const InputDecoration(
-                              labelText: 'Ano do Contrato *'),
+                              labelText: 'Ano do Contrato *',
+                              hintText: 'Ex: 2024' 
+                            ),
                           readOnly: readOnly,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -942,27 +947,35 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _processoCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Número do Processo *'),
-                    readOnly: readOnly,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  _SearchableIntField(
-                    items: kCategoriaProcesso,
-                    value: _categoriaProcessoId,
-                    label: 'Categoria do Processo *',
-                    enabled: !readOnly,
-                    onChanged: (v) => setState(
-                        () => _categoriaProcessoId = v != null ? int.tryParse(v) : null),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Selecione a categoria do processo'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _processoCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Número do Processo *'),
+                          readOnly: readOnly,
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SearchableIntField(
+                          items: kCategoriaProcesso,
+                          value: _categoriaProcessoId,
+                          label: 'Categoria do Processo *',
+                          enabled: !readOnly,
+                          onChanged: (v) => setState(
+                              () => _categoriaProcessoId = v != null ? int.tryParse(v) : null),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Selecione a categoria do processo'
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),                  
+                  const SizedBox(height: 8),
                   // ── Receita ou Despesa ─────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1007,29 +1020,33 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   title: 'Classificações de Despesa',
                   children: [
                     if (!readOnly)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _despesaCtrl,
-                              decoration: const InputDecoration(
-                                  labelText: '8 dígitos (ex: 33903900)'),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(8),
-                              ],
-                              onFieldSubmitted: (_) => _addDespesa(),
-                            ),
+                      TextFormField(
+                        controller: _despesaCtrl,
+                        decoration: InputDecoration(
+                            labelText: '8 dígitos (ex: 33903900)',                                
+                            suffixIcon: IconButton(
+                              onPressed: _addDespesa,
+                              icon: const Icon(Icons.add),
+                              tooltip: 'Adicionar',
+                              iconSize: 18,
+                            )
                           ),
-                          const SizedBox(width: 8),
-                          FilledButton.tonal(
-                            onPressed: _addDespesa,
-                            child: const Text('Adicionar'),
-                          ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(8),
                         ],
+                        onFieldSubmitted: (_) => _addDespesa(),
                       ),
-                    if (_despesas.isNotEmpty) ...[
+                    if (_despesas.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          'Nenhuma despesa adicionada.',
+                          style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                        ),
+                      )
+                    else ...[
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
@@ -1037,6 +1054,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         children: _despesas
                             .map((d) => Chip(
                                   label: Text(d),
+                                  deleteIcon: readOnly
+                                      ? null
+                                      : const Icon(Icons.close, size: 16),
                                   onDeleted: readOnly
                                       ? null
                                       : () =>
@@ -1045,13 +1065,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             .toList(),
                       ),
                     ],
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _codigoUnidadeCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Código da Unidade (PNCP — opcional)'),
-                      readOnly: readOnly,
-                    ),
                   ],
                 ),
               const SizedBox(height: 16),
@@ -1161,6 +1174,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Objeto e Valores',
                 children: [
+                  _SearchableIntField(
+                    items: kTipoObjetoContrato,
+                    value: _tipoObjetoContrato,
+                    label: 'Tipo de Objeto do Contrato *',
+                    enabled: !readOnly,
+                    onChanged: (v) => setState(() =>
+                        _tipoObjetoContrato = v != null ? int.tryParse(v) : null),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Selecione o tipo de objeto'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _objetoContratoCtrl,
                     decoration: const InputDecoration(
@@ -1260,31 +1285,41 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Datas',
                 children: [
-                  _DatePickerRow(
-                    label: 'Data de Assinatura *',
-                    value: _dataAssinatura,
-                    fmt: _dateFmt,
-                    readOnly: readOnly,
-                    onChanged: (d) => setState(() => _dataAssinatura = d),
-                    pickDate: _pickDate,
-                  ),
-                  const SizedBox(height: 12),
-                  _DatePickerRow(
-                    label: 'Início da Vigência *',
-                    value: _dataVigenciaInicio,
-                    fmt: _dateFmt,
-                    readOnly: readOnly,
-                    onChanged: (d) => setState(() => _dataVigenciaInicio = d),
-                    pickDate: _pickDate,
-                  ),
-                  const SizedBox(height: 12),
-                  _DatePickerRow(
-                    label: 'Fim da Vigência *',
-                    value: _dataVigenciaFim,
-                    fmt: _dateFmt,
-                    readOnly: readOnly,
-                    onChanged: (d) => setState(() => _dataVigenciaFim = d),
-                    pickDate: _pickDate,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DatePickerRow(
+                          label: 'Data de Assinatura *',
+                          value: _dataAssinatura,
+                          fmt: _dateFmt,
+                          readOnly: readOnly,
+                          onChanged: (d) => setState(() => _dataAssinatura = d),
+                          pickDate: _pickDate,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _DatePickerRow(
+                          label: 'Início da Vigência *',
+                          value: _dataVigenciaInicio,
+                          fmt: _dateFmt,
+                          readOnly: readOnly,
+                          onChanged: (d) => setState(() => _dataVigenciaInicio = d),
+                          pickDate: _pickDate,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _DatePickerRow(
+                          label: 'Fim da Vigência *',
+                          value: _dataVigenciaFim,
+                          fmt: _dateFmt,
+                          readOnly: readOnly,
+                          onChanged: (d) => setState(() => _dataVigenciaFim = d),
+                          pickDate: _pickDate,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -1294,25 +1329,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     readOnly: readOnly,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // ── Tipo de Objeto ────────────────────────────────────────
-              SectionCard(
-                title: 'Tipo de Objeto do Contrato',
-                children: [
-                  _SearchableIntField(
-                    items: kTipoObjetoContrato,
-                    value: _tipoObjetoContrato,
-                    label: 'Tipo de Objeto do Contrato *',
-                    enabled: !readOnly,
-                    onChanged: (v) => setState(() =>
-                        _tipoObjetoContrato = v != null ? int.tryParse(v) : null),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Selecione o tipo de objeto'
-                        : null,
                   ),
                 ],
               ),

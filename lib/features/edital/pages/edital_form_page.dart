@@ -629,10 +629,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 maxLength: 25,
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(25)
+                ],
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            SizedBox(
+              width: 200,
               child: TextFormField(
                 controller: _dataDocCtrl,
                 readOnly: true,
@@ -647,16 +651,17 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
               ),
             ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 200,
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Retificação'),
+                value: _retificacao,
+                onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 8),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Retificação'),
-          subtitle: const Text(
-              'Marque se este documento corrige uma prestação já enviada'),
-          value: _retificacao,
-          onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
         ),
       ],
     );
@@ -827,25 +832,35 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 maxLength: 50,
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(50),
+                ],
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                controller: _anoCompraCtrl,
-                enabled: !readonly,
-                decoration: const InputDecoration(
-                  labelText: 'Ano da Compra *',
-                  hintText: 'Ex.: 2024',
+            SizedBox(
+              width: 200,
+              child: Expanded(
+                child: TextFormField(
+                  controller: _anoCompraCtrl,
+                  enabled: !readonly,
+                  decoration: const InputDecoration(
+                    labelText: 'Ano da Compra *',
+                    hintText: 'Ex.: 2024',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obrigatório';
+                    final n = int.tryParse(v);
+                    if (n == null || n < 1970 || n > 2099) return '1970–2099';
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Obrigatório';
-                  final n = int.tryParse(v);
-                  if (n == null || n < 1970 || n > 2099) return '1970–2099';
-                  return null;
-                },
               ),
             ),
           ],
@@ -987,6 +1002,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   Widget _buildItensSection(bool readonly) {
     return SectionCard(
       title: 'Itens de Compra',
+      titleActions: [
+        if (!readonly)
+          TextButton.icon(
+              onPressed: _addItem,
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar Item'),
+            ),
+      ],
       children: [
         if (_itens.isEmpty)
           Padding(
@@ -997,15 +1020,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
           ),
         for (int i = 0; i < _itens.length; i++) _buildItemTile(i, readonly),
-        if (!readonly)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _addItem,
-              icon: const Icon(Icons.add),
-              label: const Text('Adicionar Item'),
-            ),
-          ),
       ],
     );
   }
@@ -1083,6 +1097,16 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   Widget _buildPdfSection(bool readonly) {
     return SectionCard(
       title: 'Arquivo PDF',
+      titleActions: [
+        if (!readonly) ...[
+          TextButton.icon(
+            onPressed: _pickPdf,
+            icon: const Icon(Icons.upload_file),
+            label: Text(
+                _pdfPath == null ? 'Selecionar PDF' : 'Substituir PDF'),
+          ),
+        ],
+      ],
       children: [
         if (_pdfPath != null)
           ListTile(
@@ -1111,20 +1135,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             style:
                 TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
-        if (!readonly) ...[
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: _pickPdf,
-            icon: const Icon(Icons.upload_file),
-            label: Text(
-                _pdfPath == null ? 'Selecionar PDF' : 'Substituir PDF'),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'O PDF será enviado junto com os dados ao AUDESP.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
       ],
     );
   }

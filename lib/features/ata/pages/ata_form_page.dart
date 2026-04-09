@@ -399,28 +399,45 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               SectionCard(
                 title: 'Vínculo com Edital',
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _editalId,
-                    decoration: const InputDecoration(
-                      labelText: 'Edital *',
-                    ),
-                    items: _editais
-                        .map((e) => DropdownMenuItem(
-                              value: e.id,
-                              child: Text(
-                                '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: readOnly
-                        ? null
-                        : (v) {
-                            setState(() => _editalId = v);
-                            _fillEditalDescriptor();
-                          },
-                    validator: (v) =>
-                        v == null ? 'Selecione o edital vinculado' : null,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _editalId,
+                          decoration: const InputDecoration(
+                            labelText: 'Edital *',
+                          ),
+                          items: _editais
+                              .map((e) => DropdownMenuItem(
+                                    value: e.id,
+                                    child: Text(
+                                      '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: readOnly
+                              ? null
+                              : (v) {
+                                  setState(() => _editalId = v);
+                                  _fillEditalDescriptor();
+                                },
+                          validator: (v) =>
+                              v == null ? 'Selecione o edital vinculado' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 200,
+                        child: SwitchListTile(
+                          title: const Text('Retificação'),
+                          value: _retificacao,
+                          onChanged:
+                              readOnly ? null : (v) => setState(() => _retificacao = v),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -439,27 +456,13 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        'Município: $municipio   |   Entidade: $entidade',
+                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     );
                   }),
                   Row(
                     children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _codigoEditalCtrl,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Código do Edital',
-                            helperText: 'Preenchido automaticamente pelo Edital vinculado',
-                          ),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Informe o código do edital'
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
                           controller: _codigoAtaCtrl,
@@ -472,11 +475,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                               : null,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
+                      const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
                         child: TextFormField(
@@ -484,8 +483,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           readOnly: readOnly,
                           decoration: const InputDecoration(
                             labelText: 'Ano da Contratação *',
+                            hintText: 'ex: 2026',
                           ),
-                          keyboardType: TextInputType.number,
+                          keyboardType: TextInputType.number,                          
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(4),
@@ -497,17 +497,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             }
                             return null;
                           },
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: SwitchListTile(
-                          title: const Text('Retificação'),
-                          subtitle: const Text('Marque se este documento retifica outro'),
-                          value: _retificacao,
-                          onChanged:
-                              readOnly ? null : (v) => setState(() => _retificacao = v),
-                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ],
@@ -536,12 +525,13 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       ),
                       const SizedBox(width: 16),
                       SizedBox(
-                        width: 180,
+                        width: 200,
                         child: TextFormField(
                           controller: _anoAtaCtrl,
                           readOnly: readOnly,
                           decoration: const InputDecoration(
                             labelText: 'Ano da Ata *',
+                            hintText: 'ex: 2026',
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -612,40 +602,34 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                 title: 'Itens da Licitação Referenciados',
                 children: [
                   if (!readOnly)
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 160,
-                          child: TextFormField(
-                            controller: _itemCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'N.º do Item',
-                              hintText: 'ex: 3',
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onFieldSubmitted: (_) => _addItem(),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        FilledButton.tonalIcon(
+                    TextFormField(
+                      controller: _itemCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Número do item',
+                        hintText: 'ex: 3',
+                        suffixIcon: IconButton(
                           onPressed: _addItem,
                           icon: const Icon(Icons.add),
-                          label: const Text('Adicionar Item'),
-                        ),
+                          tooltip: 'Adicionar',
+                          iconSize: 18,
+                        )
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
                       ],
+                      onFieldSubmitted: (_) => _addItem(),                            
                     ),
-                  const SizedBox(height: 12),
                   if (_numerosItem.isEmpty)
-                    Text(
-                      'Nenhum item adicionado.',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Nenhum item adicionado.',
+                        style: TextStyle(color: Theme.of(context).colorScheme.outline),
                       ),
                     )
-                  else
+                  else ...[
+                    const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
@@ -660,7 +644,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             ),
                           )
                           .toList(),
-                    ),
+                      ),
+                    ]
                 ],
               ),
               const SizedBox(height: 16),

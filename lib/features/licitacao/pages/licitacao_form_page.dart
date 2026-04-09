@@ -714,28 +714,44 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Edital Vinculado',
       children: [
-        DropdownButtonFormField<int>(
-          initialValue: _editalId,
-          decoration: const InputDecoration(labelText: 'Edital *'),
-          isExpanded: true,
-          items: _editais
-              .map((e) => DropdownMenuItem(
-                    value: e.id,
-                    child: Text(
-                      '${e.codigoEdital}  (${e.municipio} / ${e.entidade})',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ))
-              .toList(),
-          onChanged: readonly
-              ? null
-              : (v) {
-                  setState(() {
-                    _editalId = v;
-                    _fillEditalDescriptor();
-                  });
-                },
-          validator: (v) => v == null ? 'Selecione o edital vinculado' : null,
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                initialValue: _editalId,
+                decoration: const InputDecoration(labelText: 'Edital *'),
+                isExpanded: true,
+                items: _editais
+                    .map((e) => DropdownMenuItem(
+                          value: e.id,
+                          child: Text(
+                            '${e.codigoEdital}  (${e.municipio} / ${e.entidade})',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: readonly
+                    ? null
+                    : (v) {
+                        setState(() {
+                          _editalId = v;
+                          _fillEditalDescriptor();
+                        });
+                      },
+                validator: (v) => v == null ? 'Selecione o edital vinculado' : null,
+              ),
+            ),
+                      const SizedBox(width: 12),
+            SizedBox(
+              width: 200,
+              child: SwitchListTile(
+                value: _retificacao,
+                onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
+                title: const Text('Retificação'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -751,36 +767,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'Município: $municipio   |   Entidade: $entidade',
+              'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: TextFormField(
-                controller: _codigoEditalCtrl,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Código do Edital',
-                  helperText: 'Preenchido automaticamente pelo Edital vinculado',
-                ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: SwitchListTile(
-                value: _retificacao,
-                onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
-                title: const Text('Retificação'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -823,9 +813,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _editalPreQualificacaoBID = v),
               ),
             ),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
+            const SizedBox(width: 12),
             Expanded(
               child: _DropdownField(
                 label: 'Julgamento Pré-Qualificação',
@@ -836,7 +824,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _julgamentoPreQualificacaoBID = v),
               ),
             ),
-            const SizedBox(width: 12),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
             Expanded(
               child: _DropdownField(
                 label: 'Edital 2ª Fase',
@@ -847,9 +837,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _edital2FaseBID = v),
               ),
             ),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
+            const SizedBox(width: 12),
             Expanded(
               child: _DropdownField(
                 label: 'Julgamento de Propostas',
@@ -1021,6 +1009,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                LengthLimitingTextInputFormatter(3),
               ],
               validator: (v) {
                 if (_exigenciaGarantiaLicitantes != 1) return null;
@@ -1225,46 +1214,40 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   Widget _buildItensSection(bool readonly) {
     return SectionCard(
-      title: 'Itens de Licitação *',
-      children: [
-        if (!readonly)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _openPortalImportDialog,
-                icon: const Icon(Icons.download_outlined, size: 18),
-                label: const Text('Importar do Portal'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: (_itens.isNotEmpty && _temLicitante)
-                    ? _abrirAjusteMeEpp
-                    : null,
-                icon: const Icon(Icons.tune_outlined, size: 18),
-                label: const Text('Ajustar ME/EPP'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonal(
-                onPressed: () async {
-                  final result = await showItemLicitacaoDialog(context);
-                  if (result != null) setState(() => _itens.add(result));
-                },
-                child: const Text('Adicionar Item'),
-              ),
-            ],
+      title: 'Itens de Licitação',
+      titleActions: [        
+        if (!readonly) ...[
+          TextButton.icon(
+            onPressed: _openPortalImportDialog,
+            icon: const Icon(Icons.download_outlined, size: 18),
+            label: const Text('Importar do Portal'),
           ),
-        const SizedBox(height: 8),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: (_itens.isNotEmpty && _temLicitante)
+                ? _abrirAjusteMeEpp
+                : null,
+            icon: const Icon(Icons.tune_outlined, size: 18),
+            label: const Text('Ajustar ME/EPP'),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: () async {
+              final result = await showItemLicitacaoDialog(context);
+              if (result != null) setState(() => _itens.add(result));
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Adicionar Item'),
+          ),
+        ],
+      ],
+      children: [        
         if (_itens.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
               'Nenhum item adicionado.',
-              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
           )
         else
