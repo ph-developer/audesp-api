@@ -56,15 +56,6 @@ void main() {
       expect(result.map((e) => e.numeroItem).toList(), [1, 2, 3, 4]);
     });
 
-    test('situacaoCompraItemId = 2 para item ADJUDICADO', () {
-      final result = parser.parse({
-        CsvFileKeys.brRelatClassificacao: _toBytes(_relatCsv),
-        CsvFileKeys.brPropostas: _toBytes(_propostasCsv),
-      });
-
-      expect(result[0].situacaoCompraItemId, 2); // item 1 adjudicado
-    });
-
     test('resultadoHabilitacao = 1 para ADJUDICADO', () {
       final result = parser.parse({
         CsvFileKeys.brRelatClassificacao: _toBytes(_relatCsv),

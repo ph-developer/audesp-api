@@ -15,6 +15,20 @@ const kRecursoBID = <int, String>{
   3: '3 – Não se Aplica',
 };
 
+/// `exigenciaAmostra` — Domínio AUDESP.
+const kExigenciaAmostra = <int, String>{
+  1: '1 – Sim, para todos os licitantes',
+  2: '2 – Sim, somente do vencedor do certame',
+  3: '3 – Não',
+};
+
+/// `exigenciaVisitaTecnica` — Domínio AUDESP.
+const kExigenciaVisitaTecnica = <int, String>{
+  1: '1 – Sim',
+  2: '2 – Não',
+  3: '3 – O processo não se refere à obra nem a serviço de engenharia',
+};
+
 /// `tipoNatureza` — Domínio AUDESP: Tipo de Natureza.
 const kTipoNatureza = <int, String>{
   1: '1 – Normal',

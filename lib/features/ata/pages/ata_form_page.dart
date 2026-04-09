@@ -430,16 +430,30 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               SectionCard(
                 title: 'Descritor',
                 children: [
+                  Builder(builder: (context) {
+                    final municipio = ref.watch(codigoMunicipioProvider);
+                    final entidade = ref.watch(codigoEntidadeProvider);
+                    if (municipio.isEmpty && entidade.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Município: $municipio   |   Entidade: $entidade',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    );
+                  }),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: _codigoEditalCtrl,
-                          readOnly: readOnly,
+                          readOnly: true,
                           decoration: const InputDecoration(
-                            labelText: 'Código do Edital *',
+                            labelText: 'Código do Edital',
+                            helperText: 'Preenchido automaticamente pelo Edital vinculado',
                           ),
-                          maxLength: 25,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o código do edital'
                               : null,
@@ -453,7 +467,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           decoration: const InputDecoration(
                             labelText: 'Código da Ata *',
                           ),
-                          maxLength: 30,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o código da ata'
                               : null,
@@ -516,7 +529,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           decoration: const InputDecoration(
                             labelText: 'Número da Ata no Sistema de Origem *',
                           ),
-                          maxLength: 30,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o número da ata'
                               : null,

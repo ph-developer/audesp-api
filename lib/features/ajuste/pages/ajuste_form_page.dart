@@ -314,7 +314,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (_processoCtrl.text.trim().isNotEmpty) {
       map['processo'] = _processoCtrl.text.trim();
     }
-    if (_despesas.isNotEmpty) map['despesas'] = _despesas;
+    if (_despesas.isNotEmpty && !_receita) map['despesas'] = _despesas;
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
       map['codigoUnidade'] = _codigoUnidadeCtrl.text.trim();
     }
@@ -455,11 +455,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Informe ao menos um item contratado.');
       return;
     }
-    if (_tipoContratoId == 7 && _despesas.isEmpty) {
+    if (_tipoContratoId == 7 && !_receita && _despesas.isEmpty) {
       _showError('Para empenho (tipo 7), informe ao menos uma classificação de despesa.');
       return;
     }
-    if (_tipoContratoId == 7 && _despesas.length > 1) {
+    if (_tipoContratoId == 7 && !_receita && _despesas.length > 1) {
       _showError('Para empenho (tipo 7), informe apenas uma classificação de despesa.');
       return;
     }
@@ -669,15 +669,30 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Descritor',
                 children: [
+                  Builder(builder: (context) {
+                    final municipio = ref.watch(codigoMunicipioProvider);
+                    final entidade = ref.watch(codigoEntidadeProvider);
+                    if (municipio.isEmpty && entidade.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Município: $municipio   |   Entidade: $entidade',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    );
+                  }),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: _codigoEditalCtrl,
                           decoration: const InputDecoration(
-                              labelText: 'Código do Edital *'),
-                          readOnly: readOnly,
-                          maxLength: 25,
+                            labelText: 'Código do Edital',
+                            helperText: 'Preenchido automaticamente pelo Edital vinculado',
+                          ),
+                          readOnly: true,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                         ),
@@ -687,9 +702,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         child: TextFormField(
                           controller: _codigoAtaCtrl,
                           decoration: const InputDecoration(
-                              labelText: 'Código da Ata (opcional)'),
-                          readOnly: readOnly,
-                          maxLength: 30,
+                            labelText: 'Código da Ata',
+                            helperText: 'Preenchido automaticamente pela Ata vinculada',
+                          ),
+                          readOnly: true,
                         ),
                       ),
                     ],
@@ -700,7 +716,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     decoration: const InputDecoration(
                         labelText: 'Código do Contrato *'),
                     readOnly: readOnly,
-                    maxLength: 25,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                   ),
@@ -781,10 +796,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         decoration: const InputDecoration(
                             labelText: 'CNPJ da Entidade Gerenciadora'),
                         readOnly: readOnly,
-                        maxLength: 14,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(14),
                         ],
                       ),
                     ],
@@ -898,7 +913,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           decoration: const InputDecoration(
                               labelText: 'Número do Contrato/Empenho *'),
                           readOnly: readOnly,
-                          maxLength: 50,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                         ),
@@ -913,9 +927,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           readOnly: readOnly,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(4),
                           ],
-                          maxLength: 4,
                           validator: (v) {
                             final n = int.tryParse(v ?? '');
                             if (n == null || n < 1970 || n > 2099) {
@@ -931,95 +945,115 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   TextFormField(
                     controller: _processoCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Número do Processo (opcional)'),
+                        labelText: 'Número do Processo *'),
                     readOnly: readOnly,
-                    maxLength: 50,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    initialValue: _categoriaProcessoId,
-                    decoration: const InputDecoration(
-                        labelText: 'Categoria do Processo *'),
-                    isExpanded: true,
-                    items: kCategoriaProcesso.entries
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ))
-                        .toList(),
-                    onChanged: readOnly
-                        ? null
-                        : (v) => setState(() => _categoriaProcessoId = v),
                     validator: (v) =>
-                        v == null ? 'Selecione a categoria do processo' : null,
+                        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                   ),
                   const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: const Text('Receita'),
-                    subtitle: const Text(
-                        'O processo gera receita (true) ou despesa (false) para a entidade?'),
-                    value: _receita,
-                    onChanged:
-                        readOnly ? null : (v) => setState(() => _receita = v),
-                    contentPadding: EdgeInsets.zero,
+                  _SearchableIntField(
+                    items: kCategoriaProcesso,
+                    value: _categoriaProcessoId,
+                    label: 'Categoria do Processo *',
+                    enabled: !readOnly,
+                    onChanged: (v) => setState(
+                        () => _categoriaProcessoId = v != null ? int.tryParse(v) : null),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Selecione a categoria do processo'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  // ── Receita ou Despesa ─────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Receita ou Despesa *',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(
+                              value: false,
+                              label: Text('Despesa'),
+                              icon: Icon(Icons.arrow_circle_up_outlined),
+                            ),
+                            ButtonSegment(
+                              value: true,
+                              label: Text('Receita'),
+                              icon: Icon(Icons.arrow_circle_down_outlined),
+                            ),
+                          ],
+                          selected: {_receita},
+                          onSelectionChanged: readOnly
+                              ? null
+                              : (v) => setState(() => _receita = v.first),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
 
               // ── Classificações de Despesa ─────────────────────────────
-              SectionCard(
-                title: 'Classificações de Despesa',
-                children: [
-                  if (!readOnly)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _despesaCtrl,
-                            decoration: const InputDecoration(
-                                labelText: '8 dígitos (ex: 33903900)'),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(8),
-                            ],
-                            onFieldSubmitted: (_) => _addDespesa(),
+              if (!_receita)
+                SectionCard(
+                  title: 'Classificações de Despesa',
+                  children: [
+                    if (!readOnly)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _despesaCtrl,
+                              decoration: const InputDecoration(
+                                  labelText: '8 dígitos (ex: 33903900)'),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(8),
+                              ],
+                              onFieldSubmitted: (_) => _addDespesa(),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.tonal(
-                          onPressed: _addDespesa,
-                          child: const Text('Adicionar'),
-                        ),
-                      ],
-                    ),
-                  if (_despesas.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: _despesas
-                          .map((d) => Chip(
-                                label: Text(d),
-                                onDeleted: readOnly
-                                    ? null
-                                    : () =>
-                                        setState(() => _despesas.remove(d)),
-                              ))
-                          .toList(),
+                          const SizedBox(width: 8),
+                          FilledButton.tonal(
+                            onPressed: _addDespesa,
+                            child: const Text('Adicionar'),
+                          ),
+                        ],
+                      ),
+                    if (_despesas.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: _despesas
+                            .map((d) => Chip(
+                                  label: Text(d),
+                                  onDeleted: readOnly
+                                      ? null
+                                      : () =>
+                                          setState(() => _despesas.remove(d)),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _codigoUnidadeCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Código da Unidade (PNCP — opcional)'),
+                      readOnly: readOnly,
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _codigoUnidadeCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Código da Unidade (PNCP — opcional)'),
-                    readOnly: readOnly,
-                    maxLength: 30,
-                  ),
-                ],
-              ),
+                ),
               const SizedBox(height: 16),
 
               // ── Fornecedor ────────────────────────────────────────────
@@ -1034,7 +1068,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           decoration: const InputDecoration(
                               labelText: 'NI do Fornecedor (CNPJ/CPF) *'),
                           readOnly: readOnly,
-                          maxLength: 50,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                         ),
@@ -1068,7 +1101,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     decoration: const InputDecoration(
                         labelText: 'Nome/Razão Social do Fornecedor *'),
                     readOnly: readOnly,
-                    maxLength: 100,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                   ),
@@ -1088,7 +1120,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           decoration: const InputDecoration(
                               labelText: 'NI do Subcontratado'),
                           readOnly: readOnly,
-                          maxLength: 50,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1121,7 +1152,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     decoration: const InputDecoration(
                         labelText: 'Nome/Razão Social do Subcontratado'),
                     readOnly: readOnly,
-                    maxLength: 100,
                   ),
                 ],
               ),
@@ -1136,7 +1166,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     decoration: const InputDecoration(
                         labelText: 'Objeto do Contrato *'),
                     readOnly: readOnly,
-                    maxLength: 5120,
                     maxLines: 3,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -1147,7 +1176,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     decoration: const InputDecoration(
                         labelText: 'Informações Complementares (opcional)'),
                     readOnly: readOnly,
-                    maxLength: 5120,
                     maxLines: 2,
                   ),
                   const SizedBox(height: 12),
@@ -1275,22 +1303,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Tipo de Objeto do Contrato',
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _tipoObjetoContrato,
-                    decoration: const InputDecoration(
-                        labelText: 'Tipo de Objeto do Contrato *'),
-                    isExpanded: true,
-                    items: kTipoObjetoContrato.entries
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ))
-                        .toList(),
-                    onChanged: readOnly
-                        ? null
-                        : (v) => setState(() => _tipoObjetoContrato = v),
-                    validator: (v) =>
-                        v == null ? 'Selecione o tipo de objeto' : null,
+                  _SearchableIntField(
+                    items: kTipoObjetoContrato,
+                    value: _tipoObjetoContrato,
+                    label: 'Tipo de Objeto do Contrato *',
+                    enabled: !readOnly,
+                    onChanged: (v) => setState(() =>
+                        _tipoObjetoContrato = v != null ? int.tryParse(v) : null),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Selecione o tipo de objeto'
+                        : null,
                   ),
                 ],
               ),
@@ -1341,6 +1363,92 @@ class _DatePickerRow extends StatelessWidget {
           value != null ? fmt.format(value!) : '—',
         ),
       ),
+    );
+  }
+}
+
+/// Campo pesquisável para seleção de itens de um mapa `int → String`.
+/// Funciona como o campo de Amparo Legal no Edital.
+class _SearchableIntField extends StatelessWidget {
+  final Map<int, String> items;
+  final int? value;
+  final String label;
+  final bool enabled;
+  final ValueChanged<String?> onChanged;
+  final FormFieldValidator<String?>? validator;
+
+  const _SearchableIntField({
+    required this.items,
+    required this.value,
+    required this.label,
+    required this.enabled,
+    required this.onChanged,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = items.entries.toList();
+
+    return Autocomplete<MapEntry<int, String>>(
+      initialValue: value != null && items.containsKey(value)
+          ? TextEditingValue(text: items[value]!)
+          : TextEditingValue.empty,
+      optionsBuilder: (textEditingValue) {
+        final q = textEditingValue.text.toLowerCase();
+        if (q.isEmpty) return options;
+        return options.where(
+          (e) =>
+              e.key.toString().contains(q) ||
+              e.value.toLowerCase().contains(q),
+        );
+      },
+      displayStringForOption: (e) => e.value,
+      onSelected: (e) => onChanged(e.key.toString()),
+      fieldViewBuilder: (context, textController, focusNode, onSubmitted) {
+        return TextFormField(
+          controller: textController,
+          focusNode: focusNode,
+          enabled: enabled,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: 'Digite o código ou pesquise a descrição',
+            suffixIcon: const Icon(Icons.arrow_drop_down),
+          ),
+          onFieldSubmitted: (_) => onSubmitted(),
+          validator: (_) => validator?.call(
+            value != null ? value.toString() : null,
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260, maxWidth: 600),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final option = options.elementAt(index);
+                  return InkWell(
+                    onTap: () => onSelected(option),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      child: Text(option.value),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

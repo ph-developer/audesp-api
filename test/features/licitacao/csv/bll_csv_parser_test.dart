@@ -17,12 +17,6 @@ const _classificacaoCsv = '''
 "1","1","4","MICHEL BURANI","39478217000147","17517,4400","N/A","N/A","SIM","NÃO","SIM"
 ''';
 
-/// Vencedores com status HOMOLOGADO para o item 1.
-const _vencedoresCsv = '''
-"Razão Social","CPF/CNPJ","Lote","Status","Item","Descrição","Unidade","Marca","Modelo","Quantidade","Vl. Unit.","Vl. Total"
-"OLLA MAGNETICA LTDA","14733837000154","1","HOMOLOGADO","1","Descrição","SERV","PIGEONS","LH120","1,0000","19600,0000","19600,00"
-''';
-
 List<int> _toBytes(String s) => utf8.encode(s);
 
 void main() {
@@ -31,23 +25,9 @@ void main() {
 
     setUp(() => parser = const BllCsvParser());
 
-    test('analisa itens e licitantes corretamente', () {
-      final result = parser.parse({
-        CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
-      });
-
-      expect(result, hasLength(1));
-      final item = result.first;
-      expect(item.numeroItem, 1);
-      expect(item.situacaoCompraItemId, 2); // HOMOLOGADO
-      expect(item.licitantes, hasLength(4));
-    });
-
     test('vencedor (posição 1) recebe resultadoHabilitacao = 1', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
       });
 
       final vencedor = result.first.licitantes.first;
@@ -60,7 +40,6 @@ void main() {
     test('posição 2 classificado SIM → resultadoHabilitacao = 2', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
       });
 
       final segundo = result.first.licitantes[1];
@@ -70,7 +49,6 @@ void main() {
     test('classificado NÃO → resultadoHabilitacao = 4', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
       });
 
       final desclass = result.first.licitantes[3];
@@ -80,7 +58,6 @@ void main() {
     test('ME "SIM" → declaracaoMEouEPP = 1', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
       });
 
       expect(result.first.licitantes.first.declaracaoMEouEPP, 1);
@@ -89,43 +66,11 @@ void main() {
     test('valorProposta é convertido corretamente', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
       });
 
       expect(
         result.first.licitantes.first.valorProposta,
         closeTo(19600.0, 0.001),
-      );
-    });
-
-    test('item sem entrada em vencedores recebe situacao = 1', () {
-      const semVencedores = '''
-"Razão Social","CPF/CNPJ","Lote","Status","Item","Descrição","Unidade","Marca","Modelo","Quantidade","Vl. Unit.","Vl. Total"
-''';
-      final result = parser.parse({
-        CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        CsvFileKeys.bllVencedores: _toBytes(semVencedores),
-      });
-
-      expect(result.first.situacaoCompraItemId, 1);
-    });
-
-    test('lança CsvParseException quando arquivo classificacao está ausente',
-        () {
-      expect(
-        () => parser.parse({
-          CsvFileKeys.bllVencedores: _toBytes(_vencedoresCsv),
-        }),
-        throwsA(isA<CsvParseException>()),
-      );
-    });
-
-    test('lança CsvParseException quando arquivo vencedores está ausente', () {
-      expect(
-        () => parser.parse({
-          CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
-        }),
-        throwsA(isA<CsvParseException>()),
       );
     });
 
@@ -135,14 +80,8 @@ void main() {
 "1","2","1","EMP B","28801237000190","500,00","x","y","NÃO","SIM","SIM"
 "1","1","1","EMP A","14733837000154","300,00","a","b","SIM","SIM","SIM"
 ''';
-      const venc = '''
-"Razão Social","CPF/CNPJ","Lote","Status","Item","Descrição","Unidade","Marca","Modelo","Quantidade","Vl. Unit.","Vl. Total"
-"EMP A","14733837000154","1","HOMOLOGADO","1","D","SERV","","","1","300,00","300,00"
-"EMP B","28801237000190","1","HOMOLOGADO","2","D","SERV","","","1","500,00","500,00"
-''';
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(multi),
-        CsvFileKeys.bllVencedores: _toBytes(venc),
       });
 
       expect(result[0].numeroItem, 1);

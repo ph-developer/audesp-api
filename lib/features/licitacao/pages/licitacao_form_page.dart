@@ -761,13 +761,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               flex: 2,
               child: TextFormField(
                 controller: _codigoEditalCtrl,
-                enabled: !readonly,
+                readOnly: true,
                 decoration: const InputDecoration(
-                  labelText: 'Código do Edital *',
-                  hintText: 'Até 25 caracteres',
-                  counterText: '',
+                  labelText: 'Código do Edital',
+                  helperText: 'Preenchido automaticamente pelo Edital vinculado',
                 ),
-                maxLength: 25,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
@@ -936,7 +934,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             child: _DropdownField(
               label: 'Exigência de Amostra',
               value: _exigenciaAmostra,
-              items: kTriState,
+              items: kExigenciaAmostra,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _exigenciaAmostra = v),
@@ -947,7 +945,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             child: _DropdownField(
               label: 'Exigência de Visita Técnica',
               value: _exigenciaVisitaTecnica,
-              items: kTriState,
+              items: kExigenciaVisitaTecnica,
               onChanged: readonly
                   ? null
                   : (v) => setState(() => _exigenciaVisitaTecnica = v),

@@ -203,7 +203,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                       child: TextFormField(
                         controller: _valorCtrl,
                         decoration:
-                            const InputDecoration(labelText: 'Valor (R\$)', hintText: 'Ex.: 12345.00'),
+                            const InputDecoration(labelText: 'Valor Médio dos Orçamentos (R\$)', hintText: 'Ex.: 12345.00'),
                         keyboardType:
                             const TextInputType.numberWithOptions(decimal: true),
                         inputFormatters: [

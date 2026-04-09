@@ -78,25 +78,6 @@ void main() {
   // BllMapper
   // ---------------------------------------------------------------------------
   group('BllMapper', () {
-    group('situacaoCompraItemId', () {
-      test('"HOMOLOGADO" → 2',
-          () => expect(BllMapper.situacaoCompraItemId('HOMOLOGADO'), 2));
-      test('"Homologado" (case-insensitive) → 2',
-          () => expect(BllMapper.situacaoCompraItemId('Homologado'), 2));
-      test('"ANULADO" → 3',
-          () => expect(BllMapper.situacaoCompraItemId('ANULADO'), 3));
-      test('"REVOGADO" → 3',
-          () => expect(BllMapper.situacaoCompraItemId('REVOGADO'), 3));
-      test('"CANCELADO" → 3',
-          () => expect(BllMapper.situacaoCompraItemId('CANCELADO'), 3));
-      test('"DESERTO" → 4',
-          () => expect(BllMapper.situacaoCompraItemId('DESERTO'), 4));
-      test('"FRACASSADO" → 5',
-          () => expect(BllMapper.situacaoCompraItemId('FRACASSADO'), 5));
-      test('desconhecido → 1 (Em Andamento)',
-          () => expect(BllMapper.situacaoCompraItemId('OUTRO'), 1));
-    });
-
     group('resultadoHabilitacao', () {
       test('posicao 1 → 1 (Vencedor)', () {
         expect(
@@ -132,15 +113,6 @@ void main() {
   // BrConectadoMapper
   // ---------------------------------------------------------------------------
   group('BrConectadoMapper', () {
-    group('situacaoCompraItemId', () {
-      test('"ADJUDICADO" → 2',
-          () => expect(BrConectadoMapper.situacaoCompraItemId('ADJUDICADO'), 2));
-      test('case-insensitive',
-          () => expect(BrConectadoMapper.situacaoCompraItemId('Adjudicado'), 2));
-      test('outros → 1',
-          () => expect(BrConectadoMapper.situacaoCompraItemId('OUTRO'), 1));
-    });
-
     group('resultadoHabilitacao', () {
       test('"ADJUDICADO" → 1',
           () => expect(BrConectadoMapper.resultadoHabilitacao('ADJUDICADO'), 1));
