@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/environments.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 
 Future<void> showEnvironmentDialog(BuildContext context, WidgetRef ref) =>
-    showDialog(
+    showAudespDialog(
       context: context,
+      size: DialogSize.small,
       builder: (_) => const _EnvironmentDialog(),
     );
 

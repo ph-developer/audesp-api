@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/audesp_async_button.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/csv.dart';
 
 enum PortalType { bll, brConectado }
@@ -11,8 +13,9 @@ enum PortalType { bll, brConectado }
 /// ou null se o usuário cancelou.
 Future<List<LicitacaoItemCsvModel>?> showPortalImportDialog(
     BuildContext context) {
-  return showDialog<List<LicitacaoItemCsvModel>>(
+  return showAudespDialog<List<LicitacaoItemCsvModel>>(
     context: context,
+    size: DialogSize.medium,
     builder: (_) => const _PortalImportDialog(),
   );
 }
@@ -95,38 +98,34 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   }
 
   Future<void> _importar() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+    setState(() => _errorMessage = null);
 
+    // Validação antes de iniciar o trabalho pesado
+    if (_portal == PortalType.bll) {
+      if (_bllClassificacao?.bytes == null) {
+        setState(() => _errorMessage = 'Selecione o arquivo do portal BLL para importar.');
+        return;
+      }
+    } else {
+      if (_brRelatClassificacao?.bytes == null || _brPropostas?.bytes == null) {
+        setState(() => _errorMessage = 'Selecione os dois arquivos do portal BRConectado para importar.');
+        return;
+      }
+    }
+    if (_complemento?.bytes == null) {
+      setState(() => _errorMessage = 'Selecione a planilha de itens complementar para importar.');
+      return;
+    }
+
+    setState(() => _loading = true);
     try {
       final Map<String, List<int>> csvFiles;
       final PortalCsvParser parser;
 
       if (_portal == PortalType.bll) {
-        if (_bllClassificacao?.bytes == null) {
-          setState(() {
-            _errorMessage =
-                'Selecione o arquivo do portal BLL para importar.';
-            _loading = false;
-          });
-          return;
-        }
-        csvFiles = {
-          CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!,
-        };
+        csvFiles = {CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!};
         parser = const BllCsvParser();
       } else {
-        if (_brRelatClassificacao?.bytes == null ||
-            _brPropostas?.bytes == null) {
-          setState(() {
-            _errorMessage =
-                'Selecione os dois arquivos do portal BRConectado para importar.';
-            _loading = false;
-          });
-          return;
-        }
         csvFiles = {
           CsvFileKeys.brRelatClassificacao: _brRelatClassificacao!.bytes!,
           CsvFileKeys.brPropostas: _brPropostas!.bytes!,
@@ -134,21 +133,10 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         parser = const BrConectadoCsvParser();
       }
 
-      if (_complemento?.bytes == null) {
-        setState(() {
-          _errorMessage =
-              'Selecione a planilha de itens complementar para importar.';
-          _loading = false;
-        });
-        return;
-      }
-
-      await Future.delayed(const Duration(milliseconds: 300)); // Para mostrar o indicador de loading
+      await Future.delayed(const Duration(milliseconds: 300));
       List<LicitacaoItemCsvModel> itens = parser.parse(csvFiles);
 
-      // Merge com planilha complementar.
-      final complementoMap =
-          const ComplementoCsvParser().parse(_complemento!.bytes!);
+      final complementoMap = const ComplementoCsvParser().parse(_complemento!.bytes!);
       itens = itens.map((item) {
         final extra = complementoMap[item.numeroItem];
         if (extra == null) return item;
@@ -165,15 +153,11 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
       if (mounted) Navigator.of(context).pop(itens);
     } on CsvParseException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-        _loading = false;
-      });
+      setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Erro inesperado ao processar o arquivo: $e';
-        _loading = false;
-      });
+      setState(() => _errorMessage = 'Erro inesperado ao processar o arquivo: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -182,7 +166,6 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
     return AlertDialog(
       title: const Text('Importar do Portal'),
       content: SizedBox(
-        width: 520,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,16 +269,10 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
           onPressed: _loading ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton.icon(
-          onPressed: _loading ? null : _importar,
-          icon: _loading
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.download_outlined, size: 18),
-          label: const Text('Importar'),
+        AudespAsyncButton.icon(
+          onPressed: _importar,
+          icon: Icons.download_outlined,
+          label: 'Importar',
         ),
       ],
     );

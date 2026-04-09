@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/licitacao_domain.dart';
 
 /// Exibe o diálogo para adicionar ou editar um licitante dentro de um item.
@@ -10,8 +11,9 @@ Future<Map<String, dynamic>?> showLicitanteDialog(
   BuildContext context, {
   Map<String, dynamic>? initial,
 }) {
-  return showDialog<Map<String, dynamic>>(
+  return showAudespDialog<Map<String, dynamic>>(
     context: context,
+    size: DialogSize.medium,
     builder: (_) => _LicitanteDialog(initial: initial),
   );
 }
@@ -77,7 +79,6 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
     return AlertDialog(
       title: Text(widget.initial == null ? 'Adicionar Licitante' : 'Editar Licitante'),
       content: SizedBox(
-        width: 480,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(

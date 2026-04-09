@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/audesp_dialog.dart';
+
 /// Abre o diálogo de ajuste em lote do enquadramento ME/EPP.
 ///
 /// Recebe [licitantesUnicos]: mapa de [niPessoa] → dados do licitante
@@ -12,8 +14,9 @@ Future<Map<String, int>?> showAjusteMeEppDialog(
   BuildContext context,
   Map<String, Map<String, dynamic>> licitantesUnicos,
 ) {
-  return showDialog<Map<String, int>>(
+  return showAudespDialog<Map<String, int>>(
     context: context,
+    size: DialogSize.large,
     builder: (_) => _AjusteMeEppDialog(licitantesUnicos: licitantesUnicos),
   );
 }
@@ -46,7 +49,6 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
     return AlertDialog(
       title: const Text('Ajustar ME/EPP'),
       content: SizedBox(
-        width: 620,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

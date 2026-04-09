@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
+import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/licitacao_domain.dart';
 import 'licitante_dialog.dart';
 
@@ -12,8 +13,9 @@ Future<Map<String, dynamic>?> showItemLicitacaoDialog(
   BuildContext context, {
   Map<String, dynamic>? initial,
 }) {
-  return showDialog<Map<String, dynamic>>(
+  return showAudespDialog<Map<String, dynamic>>(
     context: context,
+    size: DialogSize.large,
     builder: (_) => _ItemLicitacaoDialog(initial: initial),
   );
 }
@@ -32,9 +34,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
   final _numeroItemCtrl = TextEditingController();
   int? _tipoOrcamento;
   final _valorCtrl = TextEditingController();
-  final _dataOrcamentoCtrl = TextEditingController();
+  DateTime? _dataOrcamento;
   int? _situacaoCompraItemId;
-  final _dataSituacaoCtrl = TextEditingController();
+  DateTime? _dataSituacao;
   String? _tipoValor;
   int? _tipoProposta;
 
@@ -48,13 +50,11 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       _numeroItemCtrl.text = d['numeroItem']?.toString() ?? '';
       _tipoOrcamento = d['tipoOrcamento'] as int?;
       _valorCtrl.text = d['valor']?.toString() ?? '';
-      _dataOrcamentoCtrl.text =
-          _apiToDisplay(d['dataOrcamento'] as String? ?? '');
+      _dataOrcamento = DateTime.tryParse(d['dataOrcamento'] as String? ?? '');
       _situacaoCompraItemId = d['situacaoCompraItemId'] != null
           ? (d['situacaoCompraItemId'] as num).toInt()
           : null;
-      _dataSituacaoCtrl.text =
-          _apiToDisplay(d['dataSituacaoItem'] as String? ?? '');
+      _dataSituacao = DateTime.tryParse(d['dataSituacaoItem'] as String? ?? '');
       _tipoValor = d['tipoValor'] as String?;
       _tipoProposta = d['tipoProposta'] != null
           ? (d['tipoProposta'] as num).toInt()
@@ -70,41 +70,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
   void dispose() {
     _numeroItemCtrl.dispose();
     _valorCtrl.dispose();
-    _dataOrcamentoCtrl.dispose();
-    _dataSituacaoCtrl.dispose();
     super.dispose();
-  }
-
-  // ── Date helpers ─────────────────────────────────────────────────────────
-
-  static String _apiToDisplay(String api) {
-    if (api.isEmpty) return '';
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(api));
-    } catch (_) {
-      return api;
-    }
-  }
-
-  static String _displayToApi(String display) {
-    if (display.isEmpty) return '';
-    try {
-      return DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(display));
-    } catch (_) {
-      return display;
-    }
-  }
-
-  Future<void> _pickDate(TextEditingController ctrl) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
-    );
-    if (picked != null) {
-      ctrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
   }
 
   // ── Licitantes ────────────────────────────────────────────────────────────
@@ -141,15 +107,18 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       'numeroItem': int.parse(_numeroItemCtrl.text.trim()),
       'tipoOrcamento': _tipoOrcamento!,
       'situacaoCompraItemId': _situacaoCompraItemId!,
-      'dataSituacaoItem': _displayToApi(_dataSituacaoCtrl.text.trim()),
+      'dataSituacaoItem': _dataSituacao != null
+          ? _dataSituacao!.toIso8601String().substring(0, 10)
+          : '',
       'tipoValor': _tipoValor!,
       'tipoProposta': _tipoProposta!,
       'licitantes': _licitantes,
     };
     final valor = double.tryParse(_valorCtrl.text.trim().replaceAll(',', '.'));
     if (valor != null) map['valor'] = valor;
-    final dataOrca = _displayToApi(_dataOrcamentoCtrl.text.trim());
-    if (dataOrca.isNotEmpty) map['dataOrcamento'] = dataOrca;
+    if (_dataOrcamento != null) {
+      map['dataOrcamento'] = _dataOrcamento!.toIso8601String().substring(0, 10);
+    }
     Navigator.of(context).pop(map);
   }
 
@@ -158,7 +127,6 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
     return AlertDialog(
       title: Text(widget.initial == null ? 'Adicionar Item' : 'Editar Item'),
       content: SizedBox(
-        width: 680,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -225,27 +193,15 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
-                        controller: _dataOrcamentoCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Data do Orçamento',
-                          hintText: 'dd/MM/yyyy',
-                          suffixIcon: Icon(Icons.calendar_today, size: 16),
-                        ),
-                        readOnly: true,
-                        onTap: () => _pickDate(_dataOrcamentoCtrl),
-                        validator: (v) {
+                      child: AudespDatePickerField(
+                        label: 'Data do Orçamento',
+                        value: _dataOrcamento,
+                        onChanged: (d) => setState(() => _dataOrcamento = d),
+                        validator: (d) {
                           if (_tipoOrcamento != null &&
                               _tipoOrcamento != 0 &&
-                              (v == null || v.trim().isEmpty)) {
+                              d == null) {
                             return 'Obrigatória para o tipo de orçamento selecionado';
-                          }
-                          if (v != null && v.trim().isNotEmpty) {
-                            try {
-                              DateFormat('dd/MM/yyyy').parseStrict(v.trim());
-                            } catch (_) {
-                              return 'Data inválida';
-                            }
                           }
                           return null;
                         },
@@ -271,24 +227,11 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
-                        controller: _dataSituacaoCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Data da Situação *',
-                          hintText: 'dd/MM/yyyy',
-                          suffixIcon: Icon(Icons.calendar_today, size: 16),
-                        ),
-                        readOnly: true,
-                        onTap: () => _pickDate(_dataSituacaoCtrl),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                          try {
-                            DateFormat('dd/MM/yyyy').parseStrict(v.trim());
-                          } catch (_) {
-                            return 'Data inválida';
-                          }
-                          return null;
-                        },
+                      child: AudespDatePickerField(
+                        label: 'Data da Situação *',
+                        value: _dataSituacao,
+                        onChanged: (d) => setState(() => _dataSituacao = d),
+                        validator: (d) => d == null ? 'Obrigatório' : null,
                       ),
                     ),
                   ],
