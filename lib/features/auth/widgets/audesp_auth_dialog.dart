@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/environments.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/secure_storage_service.dart';
+import '../../../shared/widgets/audesp_async_button.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../auth_providers.dart';
 
 /// Exibido antes do envio de qualquer módulo ao AUDESP.
@@ -20,9 +22,10 @@ Future<bool> showAudespAuthDialog(
   WidgetRef ref, {
   required Future<void> Function(String token) onConfirm,
 }) async {
-  final result = await showDialog<bool>(
+  final result = await showAudespDialog<bool>(
     context: context,
     barrierDismissible: false,
+    size: DialogSize.small,
     builder: (_) => _AudespAuthDialog(onConfirm: onConfirm),
   );
   return result == true;
@@ -38,7 +41,6 @@ class _AudespAuthDialog extends ConsumerStatefulWidget {
 }
 
 class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
-  bool _loading = false;
   String? _error;
 
   Future<void> _authenticate() async {
@@ -49,18 +51,12 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
 
     if (user == null) return;
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _error = null);
 
     try {
       final password = await storage.getPassword(user.email);
       if (password == null) {
-        setState(() {
-          _loading = false;
-          _error = 'Senha não encontrada. Recadastre o perfil.';
-        });
+        if (mounted) setState(() => _error = 'Senha não encontrada. Recadastre o perfil.');
         return;
       }
 
@@ -74,10 +70,7 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
 
       if (mounted) Navigator.of(context).pop(true);
     } on Exception catch (e) {
-      setState(() {
-        _loading = false;
-        _error = _parseError(e);
-      });
+      if (mounted) setState(() => _error = _parseError(e));
     }
   }
 
@@ -130,22 +123,13 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _loading ? null : () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancelar'),
         ),
-        FilledButton.icon(
-          onPressed: _loading ? null : _authenticate,
-          icon: _loading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.send_outlined),
-          label: const Text('Autenticar e enviar'),
+        AudespAsyncButton.icon(
+          onPressed: _authenticate,
+          icon: Icons.send_outlined,
+          label: 'Autenticar e enviar',
         ),
       ],
     );

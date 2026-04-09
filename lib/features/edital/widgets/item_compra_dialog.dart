@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/edital_domain.dart';
 
 /// Diálogo para adicionar ou editar um Item de Compra do Edital.
@@ -12,8 +13,9 @@ Future<Map<String, dynamic>?> showItemCompraDialog(
   required int numero,
   Map<String, dynamic>? initial,
 }) {
-  return showDialog<Map<String, dynamic>>(
+  return showAudespDialog<Map<String, dynamic>>(
     context: context,
+    size: DialogSize.medium,
     builder: (_) => _ItemCompraDialog(numero: numero, initial: initial),
   );
 }
@@ -115,7 +117,6 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       title: Text('Item ${widget.numero}'),
       scrollable: true,
       content: SizedBox(
-        width: 560,
         child: Form(
           key: _formKey,
           child: Column(

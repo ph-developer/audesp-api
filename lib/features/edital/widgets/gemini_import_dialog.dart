@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../core/services/gemini_service.dart';
 import '../domain/edital_domain.dart';
 
@@ -125,9 +126,10 @@ Future<Map<String, String>?> showGeminiImportDialog({
   required Map<String, String> currentValues,
 }) async {
   // Mostra progress enquanto chama a API
-  final result = await showDialog<GeminiExtractionResult?>(
+  final result = await showAudespDialog<GeminiExtractionResult?>(
     context: context,
     barrierDismissible: false,
+    size: DialogSize.small,
     builder: (_) => _GeminiLoadingDialog(
       ref: ref,
       pdfPath: pdfPath,
@@ -137,9 +139,10 @@ Future<Map<String, String>?> showGeminiImportDialog({
   if (result == null || !context.mounted) return null;
 
   // Exibe o dialog de revisão
-  return showDialog<Map<String, String>?>(
+  return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
+    size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
       fields: _kEditalFields,
       currentValues: currentValues,
@@ -313,7 +316,6 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         ],
       ),
       content: SizedBox(
-        width: 720,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

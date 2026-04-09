@@ -4,6 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_async_button.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
+
+/// Abre o diálogo de criação/edição de usuário usando o sistema responsivo.
+Future<bool?> showUserFormDialog(BuildContext context, {User? user}) {
+  return showAudespDialog<bool>(
+    context: context,
+    size: DialogSize.small,
+    builder: (_) => UserFormDialog(user: user),
+  );
+}
 
 /// Diálogo para criar ou editar um cadastro de usuário local.
 /// Não define senha — o usuário configura as credenciais AUDESP no primeiro login.
@@ -20,7 +31,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nome;
   late final TextEditingController _email;
-  bool _saving = false;
 
   bool get _isEdit => widget.user != null;
 
@@ -40,10 +50,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-
     final dao = ref.read(usersDaoProvider);
-
     try {
       if (_isEdit) {
         await dao.updateUser(
@@ -61,10 +68,8 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
           ),
         );
       }
-
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _saving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao salvar: $e')),
@@ -78,7 +83,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     return AlertDialog(
       title: Text(_isEdit ? 'Editar usuário' : 'Novo usuário'),
       content: SizedBox(
-        width: 380,
         child: Form(
           key: _formKey,
           child: Column(
@@ -131,18 +135,12 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _saving ? null : _save,
-          child: _saving
-              ? const SizedBox(
-                  height: 14,
-                  width: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_isEdit ? 'Salvar' : 'Criar'),
+        AudespAsyncButton(
+          onPressed: _save,
+          label: _isEdit ? 'Salvar' : 'Criar',
         ),
       ],
     );

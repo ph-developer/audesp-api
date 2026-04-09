@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/edital_domain.dart';
 
 /// Diálogo para adicionar ou editar uma Publicação do Edital.
@@ -11,8 +12,9 @@ Future<Map<String, dynamic>?> showPublicacaoDialog(
   BuildContext context, {
   Map<String, dynamic>? initial,
 }) {
-  return showDialog<Map<String, dynamic>>(
+  return showAudespDialog<Map<String, dynamic>>(
     context: context,
+    size: DialogSize.medium,
     builder: (_) => _PublicacaoDialog(initial: initial),
   );
 }
@@ -27,10 +29,10 @@ class _PublicacaoDialog extends StatefulWidget {
 
 class _PublicacaoDialogState extends State<_PublicacaoDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _dateCtrl = TextEditingController();
   final _pncpCtrl = TextEditingController();
   final _outrosCtrl = TextEditingController();
 
+  DateTime? _date;
   int? _veiculo;
 
   @override
@@ -38,12 +40,8 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
     super.initState();
     final ini = widget.initial;
     if (ini != null) {
-      // Converte yyyy-MM-dd armazenado no JSON para dd/MM/yyyy (exibição).
       final raw = ini['dataPublicacao'] as String? ?? '';
-      _dateCtrl.text = raw.isEmpty
-          ? ''
-          : DateFormat('dd/MM/yyyy')
-              .format(DateFormat('yyyy-MM-dd').parse(raw));
+      _date = raw.isNotEmpty ? DateTime.tryParse(raw) : null;
       _veiculo = ini['veiculoPublicacao'] as int?;
       _pncpCtrl.text = ini['idContratacaoPNCP'] as String? ?? '';
       _outrosCtrl.text = ini['veiculoPublicacaoNome'] as String? ?? '';
@@ -52,35 +50,14 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
 
   @override
   void dispose() {
-    _dateCtrl.dispose();
     _pncpCtrl.dispose();
     _outrosCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2099),
-    );
-    if (picked != null) {
-      _dateCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
-  }
-
   void _confirm() {
     if (!_formKey.currentState!.validate()) return;
-    // Converte dd/MM/yyyy de volta para yyyy-MM-dd antes de retornar.
-    String apiDate = '';
-    try {
-      final d = DateFormat('dd/MM/yyyy').parse(_dateCtrl.text.trim());
-      apiDate = DateFormat('yyyy-MM-dd').format(d);
-    } catch (_) {
-      apiDate = _dateCtrl.text.trim();
-    }
+    final apiDate = _date != null ? _date!.toIso8601String().substring(0, 10) : '';
     final result = <String, dynamic>{
       'dataPublicacao': apiDate,
       'veiculoPublicacao': _veiculo,
@@ -100,24 +77,17 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
       title:
           Text(widget.initial == null ? 'Adicionar Publicação' : 'Editar Publicação'),
       content: SizedBox(
-        width: 460,
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Data de publicação
-              TextFormField(
-                controller: _dateCtrl,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Data de Publicação *',
-                  hintText: 'dd/MM/yyyy',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                onTap: _pickDate,
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Obrigatório' : null,
+              AudespDatePickerField(
+                label: 'Data de Publicação *',
+                value: _date,
+                onChanged: (d) => setState(() => _date = d),
+                validator: (d) => d == null ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 12),
               // Veículo de publicação

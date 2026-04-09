@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/edital_csv.dart';
 
 /// Abre o diálogo de importação de itens do Edital via planilha CSV.
@@ -14,8 +15,9 @@ Future<List<Map<String, dynamic>>?> showEditalImportCsvDialog(
   BuildContext context, {
   int existingCount = 0,
 }) {
-  return showDialog<List<Map<String, dynamic>>>(
+  return showAudespDialog<List<Map<String, dynamic>>>(
     context: context,
+    size: DialogSize.large,
     builder: (_) => _EditalImportCsvDialog(existingCount: existingCount),
   );
 }
@@ -138,7 +140,6 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
     return AlertDialog(
       title: const Text('Importar Itens via Planilha CSV'),
       content: SizedBox(
-        width: 700,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
