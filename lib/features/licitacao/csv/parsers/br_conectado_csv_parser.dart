@@ -70,6 +70,9 @@ class BrConectadoCsvParser implements PortalCsvParser {
       if (row.length <= 1) continue;
       try {
         final itemStr = CsvUtils.getField(row, header, 'lote/item');
+
+        if (itemStr.trim().isEmpty) continue; // Ignora linhas sem número de item
+
         final cnpjStr = CsvUtils.getField(row, header, 'cnpj');
         final meStr = CsvUtils.getField(row, header, 'me/epp');
 
@@ -111,6 +114,9 @@ class BrConectadoCsvParser implements PortalCsvParser {
       if (row.length <= 1) continue;
       try {
         final itemStr = CsvUtils.getField(row, header, 'lote/item');
+
+        if (itemStr.trim().isEmpty) continue; // Ignora linhas sem número de item
+
         final razaoSocial = CsvUtils.getField(row, header, 'razão social');
         final cnpjStr = CsvUtils.getField(row, header, 'cnpj');
         final valorStr = CsvUtils.getField(row, header, 'valor uni.');
