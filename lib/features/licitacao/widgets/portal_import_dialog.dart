@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -26,10 +28,11 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   PortalType _portal = PortalType.bll;
 
   PlatformFile? _bllClassificacao;
-  PlatformFile? _bllVencedores;
 
   PlatformFile? _brRelatClassificacao;
   PlatformFile? _brPropostas;
+
+  PlatformFile? _complemento;
 
   bool _loading = false;
   String? _errorMessage;
@@ -47,14 +50,44 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
       switch (fileKey) {
         case CsvFileKeys.bllClassificacao:
           _bllClassificacao = file;
-        case CsvFileKeys.bllVencedores:
-          _bllVencedores = file;
         case CsvFileKeys.brRelatClassificacao:
           _brRelatClassificacao = file;
         case CsvFileKeys.brPropostas:
           _brPropostas = file;
+        case _complementoKey:
+          _complemento = file;
       }
     });
+  }
+
+  static const _complementoKey = 'complemento';
+
+  Future<void> _downloadTemplate() async {
+    const content =
+        'NumeroItem;TipoOrcamento;ValorEstimado;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
+        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;\r\n'
+        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;\r\n'
+        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;\r\n'
+        '# TipoValor: MOEDA, PERCENTUAL;;;;;;;\r\n'
+        '# TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;\r\n'
+        '# Exemplo:;;;;;;;\r\n'
+        '1;GLOBAL;10500,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
+
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: 'Salvar Template de Itens',
+      fileName: 'template_itens.csv',
+      allowedExtensions: ['csv'],
+      type: FileType.custom,
+    );
+    if (path == null) return;
+
+    try {
+      await File(path).writeAsBytes(content.codeUnits);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Erro ao salvar template: $e');
+      }
+    }
   }
 
   Future<void> _importar() async {
@@ -68,17 +101,16 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
       final PortalCsvParser parser;
 
       if (_portal == PortalType.bll) {
-        if (_bllClassificacao?.bytes == null || _bllVencedores?.bytes == null) {
+        if (_bllClassificacao?.bytes == null) {
           setState(() {
             _errorMessage =
-                'Selecione os dois arquivos do portal BLL para importar.';
+                'Selecione o arquivo do portal BLL para importar.';
             _loading = false;
           });
           return;
         }
         csvFiles = {
           CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!,
-          CsvFileKeys.bllVencedores: _bllVencedores!.bytes!,
         };
         parser = const BllCsvParser();
       } else {
@@ -98,8 +130,34 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         parser = const BrConectadoCsvParser();
       }
 
+      if (_complemento?.bytes == null) {
+        setState(() {
+          _errorMessage =
+              'Selecione a planilha de itens complementar para importar.';
+          _loading = false;
+        });
+        return;
+      }
+
       await Future.delayed(const Duration(milliseconds: 300)); // Para mostrar o indicador de loading
-      final itens = parser.parse(csvFiles);
+      List<LicitacaoItemCsvModel> itens = parser.parse(csvFiles);
+
+      // Merge com planilha complementar.
+      final complementoMap =
+          const ComplementoCsvParser().parse(_complemento!.bytes!);
+      itens = itens.map((item) {
+        final extra = complementoMap[item.numeroItem];
+        if (extra == null) return item;
+        return item.copyWith(
+          tipoOrcamento: extra.tipoOrcamento,
+          valorEstimado: extra.valorEstimado,
+          dataOrcamento: extra.dataOrcamento,
+          situacaoCompraItemId: extra.situacaoCompraItemId,
+          dataSituacao: extra.dataSituacao,
+          tipoValor: extra.tipoValor,
+          tipoProposta: extra.tipoProposta,
+        );
+      }).toList();
 
       if (mounted) Navigator.of(context).pop(itens);
     } on CsvParseException catch (e) {
@@ -151,21 +209,14 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
             const SizedBox(height: 24),
             if (_portal == PortalType.bll) ...[
               _FilePickerRow(
-                label: '1. Classificação com itens',
+                label: 'Classificação com itens',
                 fileName: _bllClassificacao?.name,
                 onPick:
                     _loading ? null : () => _pickFile(CsvFileKeys.bllClassificacao),
               ),
-              const SizedBox(height: 12),
-              _FilePickerRow(
-                label: '2. Relatório de vencedores',
-                fileName: _bllVencedores?.name,
-                onPick:
-                    _loading ? null : () => _pickFile(CsvFileKeys.bllVencedores),
-              ),
             ] else ...[
               _FilePickerRow(
-                label: '1. Relatório de classificação',
+                label: 'Relatório de classificação',
                 fileName: _brRelatClassificacao?.name,
                 onPick: _loading
                     ? null
@@ -173,12 +224,36 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               ),
               const SizedBox(height: 12),
               _FilePickerRow(
-                label: '2. Propostas',
+                label: 'Propostas',
                 fileName: _brPropostas?.name,
                 onPick:
                     _loading ? null : () => _pickFile(CsvFileKeys.brPropostas),
               ),
             ],
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _FilePickerRow(
+                    label: 'Planilha de Itens',
+                    fileName: _complemento?.name,
+                    onPick: _loading
+                        ? null
+                        : () => _pickFile(_complementoKey),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: 'Baixar Template',
+                  child: IconButton.outlined(
+                    icon: const Icon(Icons.download_outlined, size: 18),
+                    onPressed: _loading ? null : _downloadTemplate,
+                  ),
+                ),
+              ],
+            ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
               Row(

@@ -16,6 +16,7 @@ import '../domain/licitacao_domain.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
+import '../widgets/ajuste_me_epp_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -522,11 +523,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   static Map<String, dynamic> _csvItemToMap(LicitacaoItemCsvModel item) {
-    return {
+    final map = <String, dynamic>{
       'numeroItem': item.numeroItem,
       'situacaoCompraItemId': item.situacaoCompraItemId,
       'licitantes': item.licitantes.map(_csvLicitanteToMap).toList(),
     };
+    if (item.tipoOrcamento != null) map['tipoOrcamento'] = item.tipoOrcamento;
+    if (item.valorEstimado != null) map['valor'] = item.valorEstimado;
+    if (item.dataOrcamento != null) map['dataOrcamento'] = item.dataOrcamento;
+    if (item.dataSituacao != null) map['dataSituacaoItem'] = item.dataSituacao;
+    if (item.tipoValor != null) map['tipoValor'] = item.tipoValor;
+    if (item.tipoProposta != null) map['tipoProposta'] = item.tipoProposta;
+    return map;
   }
 
   static Map<String, dynamic> _csvLicitanteToMap(LicitanteCsvModel l) {
@@ -542,6 +550,48 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   // ── CPFs condutores ────────────────────────────────────────────────────
+
+  // ── Ajuste ME/EPP em lote ─────────────────────────────────────────────
+
+  bool get _temLicitante => _itens.any(
+        (item) =>
+            (item['licitantes'] as List<dynamic>? ?? []).isNotEmpty,
+      );
+
+  Future<void> _abrirAjusteMeEpp() async {
+    // Extrai licitantes únicos (por niPessoa), preservando status atual.
+    final unicos = <String, Map<String, dynamic>>{};
+    for (final item in _itens) {
+      for (final l
+          in (item['licitantes'] as List<dynamic>? ?? [])
+              .whereType<Map<String, dynamic>>()) {
+        final ni = l['niPessoa'] as String? ?? '';
+        if (ni.isEmpty) continue;
+        unicos.putIfAbsent(ni, () => Map<String, dynamic>.from(l));
+      }
+    }
+
+    if (unicos.isEmpty || !mounted) return;
+
+    final resultado = await showAjusteMeEppDialog(context, unicos);
+    if (resultado == null || !mounted) return;
+
+    // Aplica o status atualizado em cascata em todos os itens/licitantes.
+    setState(() {
+      _itens = _itens.map((item) {
+        final licitantes =
+            (item['licitantes'] as List<dynamic>? ?? [])
+                .whereType<Map<String, dynamic>>()
+                .map((l) {
+          final ni = l['niPessoa'] as String? ?? '';
+          final novoStatus = resultado[ni];
+          if (novoStatus == null) return l;
+          return {...l, 'declaracaoMEouEPP': novoStatus};
+        }).toList();
+        return {...item, 'licitantes': licitantes};
+      }).toList();
+    });
+  }
 
   void _addCpf() {
     final cpf = _cpfCondutorCtrl.text.trim().replaceAll(RegExp(r'\D'), '');
@@ -1175,6 +1225,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 onPressed: _openPortalImportDialog,
                 icon: const Icon(Icons.download_outlined, size: 18),
                 label: const Text('Importar do Portal'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: (_itens.isNotEmpty && _temLicitante)
+                    ? _abrirAjusteMeEpp
+                    : null,
+                icon: const Icon(Icons.tune_outlined, size: 18),
+                label: const Text('Ajustar ME/EPP'),
               ),
               const SizedBox(width: 8),
               FilledButton.tonal(

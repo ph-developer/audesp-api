@@ -8,7 +8,6 @@ import 'portal_csv_parser.dart';
 ///
 /// Arquivos necessários (informar via [CsvFileKeys]):
 /// - [CsvFileKeys.bllClassificacao] → `Classificacao com itens.csv`
-/// - [CsvFileKeys.bllVencedores]    → `Relatorio de vencedores.csv`
 ///
 /// ### Colunas esperadas
 ///
@@ -16,18 +15,12 @@ import 'portal_csv_parser.dart';
 /// ```
 /// "Lote","Item","Posição","Razão Social","Documento","Lance","Marca","Modelo","ME","Classificado","Habilitado"
 /// ```
-///
-/// **Relatorio de vencedores.csv**
-/// ```
-/// "Razão Social","CPF/CNPJ","Lote","Status","Item","Descrição","Unidade","Marca","Modelo","Quantidade","Vl. Unit.","Vl. Total"
-/// ```
 class BllCsvParser implements PortalCsvParser {
   const BllCsvParser();
 
   @override
   List<LicitacaoItemCsvModel> parse(Map<String, List<int>> csvFiles) {
     final classificacaoBytes = csvFiles[CsvFileKeys.bllClassificacao];
-    final vencedoresBytes = csvFiles[CsvFileKeys.bllVencedores];
 
     if (classificacaoBytes == null) {
       throw const CsvParseException(
@@ -35,70 +28,15 @@ class BllCsvParser implements PortalCsvParser {
         '(chave: "${CsvFileKeys.bllClassificacao}").',
       );
     }
-    if (vencedoresBytes == null) {
-      throw const CsvParseException(
-        'Arquivo "Relatorio de vencedores.csv" não fornecido '
-        '(chave: "${CsvFileKeys.bllVencedores}").',
-      );
-    }
 
-    final statusPorItem = _buildStatusMap(vencedoresBytes);
-    return _parseClassificacao(classificacaoBytes, statusPorItem);
+    return _parseClassificacao(classificacaoBytes);
   }
 
   // ---------------------------------------------------------------------------
-  // Passo 1 — Constrói mapa itemNum → situacaoCompraItemId a partir do
-  //           Relatorio de vencedores.csv.
+  // Parseia Classificacao com itens.csv, agrupa por item e monta o modelo final.
   // ---------------------------------------------------------------------------
 
-  Map<int, int> _buildStatusMap(List<int> bytes) {
-    final rows = CsvUtils.parseCsv(
-      CsvUtils.decodeBytes(bytes),
-      delimiter: ',',
-    );
-    if (rows.isEmpty) {
-      throw const CsvParseException(
-        '"Relatorio de vencedores.csv" está vazio.',
-      );
-    }
-
-    final header = CsvUtils.buildHeaderIndex(rows.first);
-    final result = <int, int>{};
-
-    for (final row in rows.skip(1)) {
-      if (row.length <= 1) continue;
-      try {
-        final itemStr = CsvUtils.getField(row, header, 'item');
-        final statusStr = CsvUtils.getField(row, header, 'status');
-
-        final itemNum = int.parse(itemStr);
-        final situacao = BllMapper.situacaoCompraItemId(statusStr);
-
-        // Prioriza o status "mais avançado" caso o item apareça mais de uma vez.
-        result.update(
-          itemNum,
-          (existing) => existing < situacao ? situacao : existing,
-          ifAbsent: () => situacao,
-        );
-      } catch (e) {
-        throw CsvParseException(
-          'Erro ao ler linha de "Relatorio de vencedores.csv": $e',
-        );
-      }
-    }
-
-    return result;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Passo 2 — Parseia Classificacao com itens.csv, agrupa por item e monta
-  //           o modelo final.
-  // ---------------------------------------------------------------------------
-
-  List<LicitacaoItemCsvModel> _parseClassificacao(
-    List<int> bytes,
-    Map<int, int> statusPorItem,
-  ) {
+  List<LicitacaoItemCsvModel> _parseClassificacao(List<int> bytes) {
     final rows = CsvUtils.parseCsv(
       CsvUtils.decodeBytes(bytes),
       delimiter: ',',
@@ -152,7 +90,6 @@ class BllCsvParser implements PortalCsvParser {
     return itensMapa.entries
         .map((e) => LicitacaoItemCsvModel(
               numeroItem: e.key,
-              situacaoCompraItemId: statusPorItem[e.key] ?? 1,
               licitantes: e.value,
             ))
         .toList()

@@ -138,16 +138,9 @@ class BrConectadoCsvParser implements PortalCsvParser {
 
         final acc = itensMapa.putIfAbsent(
           itemNum,
-          () => _ItemAccumulator(situacaoCompraItemId: 1),
+          () => _ItemAccumulator(),
         );
         acc.licitantes.add(licitante);
-
-        // Herda o status mais "avançado" do item (e.g., ADJUDICADO prevalece).
-        final novoStatus =
-            BrConectadoMapper.situacaoCompraItemId(situacaoStr);
-        if (novoStatus > acc.situacaoCompraItemId) {
-          acc.situacaoCompraItemId = novoStatus;
-        }
       } catch (e) {
         throw CsvParseException(
           'Erro ao ler linha de "relatclassificacao.csv": $e',
@@ -158,7 +151,6 @@ class BrConectadoCsvParser implements PortalCsvParser {
     return itensMapa.entries
         .map((e) => LicitacaoItemCsvModel(
               numeroItem: e.key,
-              situacaoCompraItemId: e.value.situacaoCompraItemId,
               licitantes: e.value.licitantes,
             ))
         .toList()
@@ -188,8 +180,7 @@ class _ItemCnpjKey {
 }
 
 class _ItemAccumulator {
-  int situacaoCompraItemId;
   final List<LicitanteCsvModel> licitantes = [];
 
-  _ItemAccumulator({required this.situacaoCompraItemId});
+  _ItemAccumulator();
 }

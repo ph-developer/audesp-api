@@ -3,35 +3,6 @@ class BllMapper {
   BllMapper._();
 
   // ---------------------------------------------------------------------------
-  // situacaoCompraItemId  (coluna "Status" do Relatorio de vencedores.csv)
-  // ---------------------------------------------------------------------------
-
-  /// Converte o status textual do item no BLL para o código PNCP.
-  ///
-  /// Valores conhecidos:
-  /// - "HOMOLOGADO"          → 2
-  /// - "ANULADO" / "REVOGADO" / "CANCELADO" → 3
-  /// - "DESERTO"             → 4
-  /// - "FRACASSADO"          → 5
-  /// - demais                → 1 (Em Andamento)
-  static int situacaoCompraItemId(String status) {
-    switch (status.trim().toUpperCase()) {
-      case 'HOMOLOGADO':
-        return 2;
-      case 'ANULADO':
-      case 'REVOGADO':
-      case 'CANCELADO':
-        return 3;
-      case 'DESERTO':
-        return 4;
-      case 'FRACASSADO':
-        return 5;
-      default:
-        return 1;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // resultadoHabilitacao  (colunas "Posição" e "Classificado")
   // ---------------------------------------------------------------------------
 

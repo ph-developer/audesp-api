@@ -40,18 +40,68 @@ class LicitanteCsvModel {
 class LicitacaoItemCsvModel {
   final int numeroItem;
 
+  final List<LicitanteCsvModel> licitantes;
+
+  // Campos opcionais preenchidos pela planilha complementar (Template Padrão).
+
+  /// Código AUDESP tipoOrcamento: 0 = Não, 1 = Global, 2 = Unitário, 3 = Desconto.
+  final int? tipoOrcamento;
+
+  /// Valor estimado do item (R$).
+  final double? valorEstimado;
+
+  /// Data do orçamento no formato yyyy-MM-dd.
+  final String? dataOrcamento;
+
   /// Código PNCP situacaoCompraItemId:
   /// 1 = Em Andamento, 2 = Homologado, 3 = Anulado/Revogado/Cancelado,
   /// 4 = Deserto, 5 = Fracassado.
-  final int situacaoCompraItemId;
+  final int? situacaoCompraItemId;
 
-  final List<LicitanteCsvModel> licitantes;
+  /// Data da situação do item no formato yyyy-MM-dd.
+  final String? dataSituacao;
+
+  /// Tipo de valor: "M" = Monetário, "P" = Percentual.
+  final String? tipoValor;
+
+  /// Código AUDESP tipoProposta: 1 = Global, 2 = Unitário, 3 = Desconto.
+  final int? tipoProposta;
 
   const LicitacaoItemCsvModel({
     required this.numeroItem,
-    required this.situacaoCompraItemId,
     required this.licitantes,
+    this.tipoOrcamento,
+    this.valorEstimado,
+    this.dataOrcamento,
+    this.situacaoCompraItemId,
+    this.dataSituacao,
+    this.tipoValor,
+    this.tipoProposta,
   });
+
+  LicitacaoItemCsvModel copyWith({
+    int? numeroItem,
+    List<LicitanteCsvModel>? licitantes,
+    int? tipoOrcamento,
+    double? valorEstimado,
+    String? dataOrcamento,
+    int? situacaoCompraItemId,
+    String? dataSituacao,
+    String? tipoValor,
+    int? tipoProposta,
+  }) {
+    return LicitacaoItemCsvModel(
+      numeroItem: numeroItem ?? this.numeroItem,
+      licitantes: licitantes ?? this.licitantes,
+      tipoOrcamento: tipoOrcamento ?? this.tipoOrcamento,
+      valorEstimado: valorEstimado ?? this.valorEstimado,
+      dataOrcamento: dataOrcamento ?? this.dataOrcamento,
+      situacaoCompraItemId: situacaoCompraItemId ?? this.situacaoCompraItemId,
+      dataSituacao: dataSituacao ?? this.dataSituacao,
+      tipoValor: tipoValor ?? this.tipoValor,
+      tipoProposta: tipoProposta ?? this.tipoProposta,
+    );
+  }
 
   @override
   String toString() =>

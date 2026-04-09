@@ -5,9 +5,6 @@ abstract class CsvFileKeys {
   /// BLL: arquivo `Classificacao com itens.csv`.
   static const bllClassificacao = 'bll_classificacao';
 
-  /// BLL: arquivo `Relatorio de vencedores.csv`.
-  static const bllVencedores = 'bll_vencedores';
-
   /// BRConectado: arquivo `relatclassificacao.csv`.
   static const brRelatClassificacao = 'br_relat_classificacao';
 

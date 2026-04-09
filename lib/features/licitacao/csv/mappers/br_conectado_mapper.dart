@@ -3,24 +3,6 @@ class BrConectadoMapper {
   BrConectadoMapper._();
 
   // ---------------------------------------------------------------------------
-  // situacaoCompraItemId  (coluna "Situação" do relatclassificacao.csv)
-  // ---------------------------------------------------------------------------
-
-  /// Converte o status textual do item no BRConectado para o código PNCP.
-  ///
-  /// Valores conhecidos:
-  /// - "ADJUDICADO" → 2 (Homologado)
-  /// - demais       → 1 (Em Andamento)
-  static int situacaoCompraItemId(String status) {
-    switch (status.trim().toUpperCase()) {
-      case 'ADJUDICADO':
-        return 2;
-      default:
-        return 1;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // resultadoHabilitacao  (coluna "Situação" do relatclassificacao.csv ou propostas.csv)
   // ---------------------------------------------------------------------------
 
