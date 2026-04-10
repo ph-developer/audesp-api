@@ -9,13 +9,13 @@ class BrConectadoMapper {
   /// Converte o status da proposta/classificação para o código AUDESP.
   ///
   /// Valores conhecidos:
-  /// - "ADJUDICADO"                      → 1 (Classificado Vencedor)
+  /// - "ADJUDICADO" / "ARREMATANTE"      → 1 (Classificado Vencedor)
   /// - "CLASSIFICADA/HABILITADA" (ou similar contendo "CLASSIFICA" e/ou "HABILITA") → 2 (Classificado)
   /// - "DESCLASSIFICADO" / "DESCLASSIFICADA" → 4 (Desclassificado)
   /// - demais                            → 6 (Proposta não Analisada)
   static int resultadoHabilitacao(String situacao) {
     final upper = situacao.trim().toUpperCase();
-    if (upper == 'ADJUDICADO') return 1;
+    if (upper == 'ADJUDICADO' || upper == 'ARREMATANTE') return 1;
     if (upper == 'DESCLASSIFICADO' || upper == 'DESCLASSIFICADA') return 4;
     if (upper.contains('CLASSIFICA') || upper.contains('HABILITA')) return 2;
     return 6;
