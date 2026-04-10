@@ -1,46 +1,43 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:ini/ini.dart';
 
 class DbConfigHelper {
-  DbConfigHelper._();
-
-  static Future<String> getDatabasePath() async {
-    final fallbackPath = p.join(getAppDirectory(), 'audesp_default.sqlite');
-
+  DbConfigHelper._(); 
+  
+  static Future<Config?> loadConfig() async {
     try {
       final appDir = getAppDirectory();
+      debugPrint('Diretório do aplicativo: $appDir');
       final iniFile = File(p.join(appDir, 'config.ini'));
 
       if (!await iniFile.exists()) {
         debugPrint('Arquivo config.ini não encontrado. Usando fallback.');
-        return fallbackPath;
+        return null;
       }
 
       final lines = await iniFile.readAsLines();
-      
-      for (var line in lines) {
-        line = line.trim();
-        if (line.isEmpty || line.startsWith('#') || line.startsWith(';')) {
-          continue;
-        }
-
-        if (line.toLowerCase().startsWith('path=')) {
-          final extractedPath = line.substring(5).trim(); // Pega o que vem depois do "path="
-          if (extractedPath.isNotEmpty) {
-            debugPrint('Caminho do banco carregado do config.ini: $extractedPath');
-            return extractedPath;
-          }
-        }
-      }
-
-      debugPrint('Chave "Path" não encontrada no config.ini. Usando fallback.');
-      return fallbackPath;
-
+      return Config.fromStrings(lines);
     } catch (e) {
       debugPrint('Erro ao ler config.ini: $e');
-      return fallbackPath;
+      return null;
     }
+  }
+
+  static Future<String> getSqlitePath(Config? config) async {
+    final fallbackPath = p.join(getAppDirectory(), 'audesp_default.sqlite');
+
+    if (config != null) {
+      final path = config.get('SQLite', 'Path');
+      if (path != null && path.isNotEmpty) {
+        debugPrint('Caminho do banco carregado do config.ini: $path');
+        return path;
+      }
+    }
+
+    debugPrint('Usando fallback do caminho do SQLite.');
+    return fallbackPath;
   }
 
   static String getAppDirectory() {

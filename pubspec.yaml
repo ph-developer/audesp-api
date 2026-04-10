@@ -49,6 +49,9 @@ dependencies:
 
   # Manipulação de caminhos de arquivos
   path: ^1.9.1
+  ini: ^2.1.0
+  postgres: ^3.5.9
+  drift_postgres: ^1.3.1
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +63,12 @@ dev_dependencies:
   freezed: ^3.2.5
   json_serializable: ^6.9.0
   drift_dev: ^2.22.0
+
+drift:
+  sql:
+    dialect:
+      - sqlite
+      - postgres
 
 flutter:
   uses-material-design: true
