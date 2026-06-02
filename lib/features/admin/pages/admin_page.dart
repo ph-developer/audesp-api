@@ -68,17 +68,34 @@ class _AdminPageState extends ConsumerState<AdminPage>
 // Tab 1 — Gerenciamento de usuários
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _UsersTab extends ConsumerWidget {
+class _UsersTab extends ConsumerStatefulWidget {
   const _UsersTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final usersStream = ref.watch(usersDaoProvider).watchAll();
+  ConsumerState<_UsersTab> createState() => _UsersTabState();
+}
 
+class _UsersTabState extends ConsumerState<_UsersTab> {
+  late Future<List<User>> _usersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _usersFuture = ref.read(usersDaoProvider).watchAll();
+  }
+
+  void _refresh() {
+    setState(() {
+      _usersFuture = ref.read(usersDaoProvider).watchAll();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Stack(
       children: [
-        StreamBuilder<List<User>>(
-          stream: usersStream,
+        FutureBuilder<List<User>>(
+          future: _usersFuture,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
@@ -108,13 +125,13 @@ class _UsersTab extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.edit_outlined),
                           tooltip: 'Editar',
-                          onPressed: () => _openForm(ctx, ref, u),
+                          onPressed: () => _openForm(u),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
                           tooltip: 'Excluir',
                           color: Theme.of(ctx).colorScheme.error,
-                          onPressed: () => _confirmDelete(ctx, ref, u),
+                          onPressed: () => _confirmDelete(u),
                         ),
                       ],
                     ),
@@ -129,7 +146,7 @@ class _UsersTab extends ConsumerWidget {
           bottom: 16,
           child: FloatingActionButton.extended(
             heroTag: 'admin_users_fab',
-            onPressed: () => _openForm(context, ref, null),
+            onPressed: () => _openForm(null),
             icon: const Icon(Icons.person_add_outlined),
             label: const Text('Novo usuário'),
           ),
@@ -138,14 +155,15 @@ class _UsersTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _openForm(BuildContext context, WidgetRef ref, User? user) =>
-      showDialog(
-        context: context,
-        builder: (_) => UserFormDialog(user: user),
-      );
+  Future<void> _openForm(User? user) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => UserFormDialog(user: user),
+    );
+    if (result == true) _refresh();
+  }
 
-  Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, User user) async {
+  Future<void> _confirmDelete(User user) async {
     final session = ref.read(localSessionProvider);
     if (session?.id == user.id) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +196,7 @@ class _UsersTab extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(usersDaoProvider).deleteById(user.id);
       await ref.read(secureStorageServiceProvider).deletePassword(user.email);
+      _refresh();
     }
   }
 }
@@ -460,9 +479,9 @@ class _RegistrosTabState extends ConsumerState<_RegistrosTab> {
 class _EditaisRegistros extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stream = ref.watch(editaisDaoProvider).watchAll();
+    final dao = ref.watch(editaisDaoProvider);
     return _RecordsListView(
-      stream: stream,
+      future: dao.watchAll(),
       itemBuilder: (ctx, item) => _RecordTile(
         title: 'Edital ${item.codigoEdital}',
         subtitle: '${item.entidade} — ${item.municipio}',
@@ -476,9 +495,9 @@ class _EditaisRegistros extends ConsumerWidget {
 class _LicitacoesRegistros extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stream = ref.watch(licitacoesDaoProvider).watchAll();
+    final dao = ref.watch(licitacoesDaoProvider);
     return _RecordsListView(
-      stream: stream,
+      future: dao.watchAll(),
       itemBuilder: (ctx, item) => _RecordTile(
         title: 'Licitação ${item.codigoEdital}',
         subtitle: '${item.entidade} — ${item.municipio}',
@@ -492,9 +511,9 @@ class _LicitacoesRegistros extends ConsumerWidget {
 class _AtasRegistros extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stream = ref.watch(atasDaoProvider).watchAll();
+    final dao = ref.watch(atasDaoProvider);
     return _RecordsListView(
-      stream: stream,
+      future: dao.watchAll(),
       itemBuilder: (ctx, item) => _RecordTile(
         title: 'Ata ${item.codigoAta}',
         subtitle: '${item.entidade} — ${item.municipio}',
@@ -508,9 +527,9 @@ class _AtasRegistros extends ConsumerWidget {
 class _AjustesRegistros extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stream = ref.watch(ajustesDaoProvider).watchAll();
+    final dao = ref.watch(ajustesDaoProvider);
     return _RecordsListView(
-      stream: stream,
+      future: dao.watchAll(),
       itemBuilder: (ctx, item) => _RecordTile(
         title: 'Ajuste #${item.id}',
         subtitle: '${item.entidade} — ${item.municipio}',
@@ -524,18 +543,18 @@ class _AjustesRegistros extends ConsumerWidget {
 // ── Helpers de UI ────────────────────────────────────────────────────────────
 
 class _RecordsListView<T> extends StatelessWidget {
-  final Stream<List<T>> stream;
+  final Future<List<T>> future;
   final Widget Function(BuildContext, T) itemBuilder;
 
   const _RecordsListView({
-    required this.stream,
+    required this.future,
     required this.itemBuilder,
   });
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<T>>(
-      stream: stream,
+    return FutureBuilder<List<T>>(
+      future: future,
       builder: (ctx, snap) {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -737,9 +756,9 @@ class _GeminiTabState extends ConsumerState<_GeminiTab> {
                   controller: _modelCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Modelo Gemini',
-                    hintText: 'gemini-2.0-flash',
+                    hintText: 'gemini-3.1-flash-lite',
                     helperText:
-                        'Deixe em branco para usar "gemini-2.0-flash" (padrão).',
+                        'Deixe em branco para usar "gemini-3.1-flash-lite" (padrão).',
                   ),
                 ),
                 const SizedBox(height: 24),

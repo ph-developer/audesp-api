@@ -1,8 +1,5 @@
-import 'package:drift/drift.dart';
+import '../database_service.dart';
 
-import '../app_database.dart';
-
-/// Chaves conhecidas usadas em [AppSettings].
 abstract class SettingsKeys {
   static const geminiApiKey = 'gemini_api_key';
   static const geminiModel = 'gemini_model';
@@ -12,26 +9,28 @@ abstract class SettingsKeys {
 }
 
 class AppSettingsDao {
-  final AppDatabase _db;
+  final DatabaseService _db;
   AppSettingsDao(this._db);
 
   Future<String?> get(String key) async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((t) => t.key.equals(key)))
-        .getSingleOrNull();
-    return row?.value;
+    final stmt =
+        await _db.pool.prepare('SELECT value FROM app_settings WHERE `key` = (?)');
+    final result = await stmt.execute([key]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : rows.first.typedAssoc()['value'] as String?;
   }
 
   Future<void> set(String key, String value) async {
-    await _db
-        .into(_db.appSettings)
-        .insertOnConflictUpdate(AppSettingsCompanion(
-          key: Value(key),
-          value: Value(value),
-        ));
+    final stmt = await _db.pool.prepare(
+      'INSERT INTO app_settings (`key`, `value`) VALUES (?, ?) '
+      'ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+    );
+    await stmt.execute([key, value]);
   }
 
   Future<void> delete(String key) async {
-    await (_db.delete(_db.appSettings)..where((t) => t.key.equals(key))).go();
+    final stmt =
+        await _db.pool.prepare('DELETE FROM app_settings WHERE `key` = (?)');
+    await stmt.execute([key]);
   }
 }

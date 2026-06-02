@@ -16,7 +16,7 @@ class EditalPage extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Editais'),
+          title: const Text('Editals'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Rascunhos'),
@@ -89,7 +89,7 @@ class _EditalList extends ConsumerWidget {
 }
 
 class _EditalCard extends ConsumerWidget {
-  final Editai edital;
+  final Edital edital;
   const _EditalCard({required this.edital});
 
   @override

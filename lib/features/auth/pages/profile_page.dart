@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -63,11 +62,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       await dao.updateUser(
-        UsersCompanion(
-          id: Value(_user!.id),
-          nome: Value(_nome.text.trim()),
-          email: Value(_user!.email),
-        ),
+        id: _user!.id,
+        nome: _nome.text.trim(),
+        email: _user!.email,
       );
 
       final updated = await dao.findById(_user!.id);

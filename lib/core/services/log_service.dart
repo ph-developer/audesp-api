@@ -1,8 +1,6 @@
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/database_providers.dart';
-import '../database/app_database.dart';
 import '../database/daos/api_logs_dao.dart';
 
 final logServiceProvider = Provider<LogService>(
@@ -21,13 +19,11 @@ class LogService {
     int? userId,
   }) =>
       _dao.insertLog(
-        ApiLogsCompanion.insert(
-          endpoint: endpoint,
-          request: request,
-          response: Value(response),
-          statusCode: Value(statusCode),
-          userId: Value(userId),
-        ),
+        endpoint: endpoint,
+        request: request,
+        response: response,
+        statusCode: statusCode,
+        userId: userId,
       );
 }
 

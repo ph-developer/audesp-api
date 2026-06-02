@@ -1,71 +1,34 @@
-import 'dart:io';
-
-import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:drift_postgres/drift_postgres.dart';
-import 'package:postgres/postgres.dart';
+import 'package:mysql_client/mysql_client.dart';
 
 import 'db_config_helper.dart';
-import 'tables.dart';
+import 'database_service.dart';
 
-export 'tables.dart';
+export 'models/user.dart';
+export 'models/edital.dart';
+export 'models/licitacoe.dart';
+export 'models/ata.dart';
+export 'models/ajuste.dart';
+export 'models/api_log.dart';
+export 'models/app_setting.dart';
 
-part 'app_database.g.dart';
+DatabaseService openConnection() {
+  final config = DbConfigHelper.loadConfigSync();
 
-@DriftDatabase(tables: [
-  Users,
-  Editais,
-  Licitacoes,
-  Atas,
-  Ajustes,
-  ApiLogs,
-  AppSettings,
-])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  final host = config?.get('MariaDB', 'Host') ?? 'localhost';
+  final port =
+      int.tryParse(config?.get('MariaDB', 'Port') ?? '3306') ?? 3306;
+  final dbName = config?.get('MariaDB', 'Database') ?? 'audesp';
+  final user = config?.get('MariaDB', 'User') ?? 'root';
+  final password = config?.get('MariaDB', 'Password') ?? '';
 
-  @override
-  int get schemaVersion => 1;
+  final pool = MySQLConnectionPool(
+    host: host,
+    port: port,
+    userName: user,
+    password: password,
+    databaseName: dbName,
+    maxConnections: 1,
+  );
 
-  @override
-  MigrationStrategy get migration => MigrationStrategy();
-
-  static QueryExecutor _openConnection() {
-    return LazyDatabase(() async {
-      final config = await DbConfigHelper.loadConfig();
-      final driver = config?.get('Database', 'Driver')?.toLowerCase() ?? 'sqlite';
-
-      if (driver == 'postgres') {
-        final host = config?.get('Postgres', 'Host') ?? 'localhost';
-        final port = int.tryParse(config?.get('Postgres', 'Port') ?? '5432') ?? 5432;
-        final dbName = config?.get('Postgres', 'Database') ?? 'audesp';
-        final user = config?.get('Postgres', 'User') ?? 'postgres';
-        final password = config?.get('Postgres', 'Password') ?? '';
-
-        return PgDatabase(
-          endpoint: Endpoint(
-            host: host,
-            port: port,
-            database: dbName,
-            username: user,
-            password: password,
-          ),
-        );
-      }
-
-      final dbPath = await DbConfigHelper.getSqlitePath(config);
-      final file = File(dbPath);
-
-      if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
-      }
-
-      return NativeDatabase.createInBackground(
-        file,
-        setup: (db) async {
-          db.execute('PRAGMA busy_timeout = 10000;');
-        },
-      );
-    });
-  }
+  return DatabaseService(pool);
 }

@@ -1,59 +1,121 @@
-import 'package:drift/drift.dart';
-
 import '../app_database.dart';
+import '../database_service.dart';
 
 class EditaisDao {
-  final AppDatabase _db;
+  final DatabaseService _db;
   EditaisDao(this._db);
 
-  Stream<List<Editai>> watchAll() =>
-      (_db.select(_db.editais)
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
+  Future<List<Edital>> watchAll() async {
+    final result =
+        await _db.pool.execute('SELECT * FROM editais ORDER BY updated_at DESC');
+    return result.rows.map((r) => Edital.fromMap(r.typedAssoc())).toList();
+  }
 
-  Stream<List<Editai>> watchByStatus(String status) =>
-      (_db.select(_db.editais)
-            ..where((t) => t.status.equals(status))
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
+  Future<List<Edital>> watchByStatus(String status) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM editais WHERE status = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([status]);
+    return result.rows.map((r) => Edital.fromMap(r.typedAssoc())).toList();
+  }
 
-  Future<Editai?> findById(int id) =>
-      (_db.select(_db.editais)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+  Future<Edital?> findById(int id) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM editais WHERE id = (?)',
+    );
+    final result = await stmt.execute([id]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : Edital.fromMap(rows.first.typedAssoc());
+  }
 
-  Future<Editai?> findByCodigoEdital(
-          String municipio, String entidade, String codigoEdital) =>
-      (_db.select(_db.editais)
-            ..where((t) =>
-                t.municipio.equals(municipio) &
-                t.entidade.equals(entidade) &
-                t.codigoEdital.equals(codigoEdital)))
-          .getSingleOrNull();
+  Future<Edital?> findByCodigoEdital(
+    String municipio,
+    String entidade,
+    String codigoEdital,
+  ) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM editais WHERE municipio = (?) AND entidade = (?) AND codigo_edital = (?)',
+    );
+    final result = await stmt.execute([municipio, entidade, codigoEdital]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : Edital.fromMap(rows.first.typedAssoc());
+  }
 
-  Future<int> insertEdital(EditaisCompanion entry) =>
-      _db.into(_db.editais).insert(entry);
+  Future<int> insertEdital({
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+    required String status,
+    String? pdfPath,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'INSERT INTO editais (municipio, entidade, codigo_edital, retificacao, status, pdf_path, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    final result = await stmt.execute([
+      municipio,
+      entidade,
+      codigoEdital,
+      retificacao ? 1 : 0,
+      status,
+      pdfPath,
+      documentoJson,
+      now,
+    ]);
+    return result.lastInsertID.toInt();
+  }
 
-  Future<bool> updateEdital(EditaisCompanion entry) =>
-      _db.update(_db.editais).replace(entry);
+  Future<bool> updateEdital({
+    required int id,
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+    required String status,
+    String? pdfPath,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE editais SET municipio = ?, entidade = ?, codigo_edital = ?, retificacao = ?, status = ?, pdf_path = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+    );
+    final result = await stmt.execute([
+      municipio,
+      entidade,
+      codigoEdital,
+      retificacao ? 1 : 0,
+      status,
+      pdfPath,
+      documentoJson,
+      now,
+      id,
+    ]);
+    return result.affectedRows.toInt() > 0;
+  }
 
   Future<void> markAsSent(int id) async {
-    await (_db.update(_db.editais)..where((t) => t.id.equals(id))).write(
-      EditaisCompanion(
-        status: const Value('sent'),
-        updatedAt: Value(DateTime.now()),
-      ),
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE editais SET status = ?, updated_at = ? WHERE id = ?',
     );
+    await stmt.execute(['sent', now, id]);
   }
 
   Future<void> updateJson(int id, String json) async {
-    await (_db.update(_db.editais)..where((t) => t.id.equals(id))).write(
-      EditaisCompanion(
-        documentoJson: Value(json),
-        updatedAt: Value(DateTime.now()),
-      ),
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE editais SET documento_json = ?, updated_at = ? WHERE id = ?',
     );
+    await stmt.execute([json, now, id]);
   }
 
-  Future<int> deleteById(int id) =>
-      (_db.delete(_db.editais)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteById(int id) async {
+    final stmt = await _db.pool.prepare('DELETE FROM editais WHERE id = ?');
+    final result = await stmt.execute([id]);
+    return result.affectedRows.toInt();
+  }
 }

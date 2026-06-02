@@ -11,7 +11,7 @@ class UsersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usersStream = ref.watch(usersDaoProvider).watchAll();
+    final usersFuture = ref.watch(usersDaoProvider).watchAll();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Gerenciar perfis')),
@@ -20,8 +20,8 @@ class UsersPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Novo perfil'),
       ),
-      body: StreamBuilder<List<User>>(
-        stream: usersStream,
+      body: FutureBuilder<List<User>>(
+        future: usersFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

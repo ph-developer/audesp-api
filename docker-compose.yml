@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: audesp-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: audesp
+      MYSQL_USER: audesp
+      MYSQL_PASSWORD: audesp
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

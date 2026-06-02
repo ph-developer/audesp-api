@@ -107,7 +107,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stream = ref.watch(apiLogsDaoProvider).watchAll();
+    final future = ref.watch(apiLogsDaoProvider).watchAll();
 
     return Scaffold(
       appBar: AppBar(
@@ -142,8 +142,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
           // ── Lista ─────────────────────────────────────────────────────
           Expanded(
-            child: StreamBuilder<List<ApiLog>>(
-              stream: stream,
+            child: FutureBuilder<List<ApiLog>>(
+              future: future,
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

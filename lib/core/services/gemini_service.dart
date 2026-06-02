@@ -54,7 +54,7 @@ class GeminiService {
     final modelName = await _settings.get(SettingsKeys.geminiModel);
     final model = (modelName != null && modelName.trim().isNotEmpty)
         ? modelName.trim()
-        : 'gemini-2.0-flash';
+        : 'gemini-3.1-flash-lite';
 
     final pdfBytes = await File(pdfPath).readAsBytes();
 

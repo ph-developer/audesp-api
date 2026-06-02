@@ -1,0 +1,162 @@
+import 'package:mysql_client/mysql_client.dart';
+
+class DatabaseService {
+  final MySQLConnectionPool pool;
+
+  DatabaseService(this.pool);
+
+  Future<void> initialize() async {
+    await _createSchemaTable();
+    await _createTables();
+    await _ensureUniqueIndexes();
+  }
+
+  Future<int> get schemaVersion async {
+    final result = await pool.execute('SELECT version FROM __schema');
+    return result.rows.first.typedAssoc()['version'] as int;
+  }
+
+  Future<void> setSchemaVersion(int version) async {
+    final stmt = await pool.prepare('UPDATE __schema SET version = (?)');
+    await stmt.execute([version]);
+  }
+
+  Future<void> _createSchemaTable() async {
+    await pool.execute(
+      'CREATE TABLE IF NOT EXISTS __schema ('
+      'version INTEGER NOT NULL DEFAULT 0'
+      ')',
+    );
+    final count = await pool.execute('SELECT COUNT(*) FROM __schema');
+    if (count.rows.first.typedAssoc()['COUNT(*)'] as int == 0) {
+      await pool.execute('INSERT INTO __schema (version) VALUES (0)');
+    }
+  }
+
+  Future<void> _createTables() async {
+    final version = await schemaVersion;
+
+    if (version < 1) {
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          nome TEXT NOT NULL,
+          email TEXT NOT NULL,
+          password_hash TEXT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS editais (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          municipio TEXT NOT NULL,
+          entidade TEXT NOT NULL,
+          codigo_edital TEXT NOT NULL,
+          retificacao TINYINT NOT NULL DEFAULT 0,
+          status TEXT NOT NULL,
+          pdf_path TEXT NULL,
+          documento_json TEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS licitacoes (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          edital_id BIGINT NOT NULL,
+          municipio TEXT NOT NULL,
+          entidade TEXT NOT NULL,
+          codigo_edital TEXT NOT NULL,
+          retificacao TINYINT NOT NULL DEFAULT 0,
+          status TEXT NOT NULL,
+          documento_json TEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          FOREIGN KEY (edital_id) REFERENCES editais(id)
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS atas (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          edital_id BIGINT NOT NULL,
+          municipio TEXT NOT NULL,
+          entidade TEXT NOT NULL,
+          codigo_edital TEXT NOT NULL,
+          codigo_ata TEXT NOT NULL,
+          retificacao TINYINT NOT NULL DEFAULT 0,
+          status TEXT NOT NULL,
+          documento_json TEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          FOREIGN KEY (edital_id) REFERENCES editais(id)
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS ajustes (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          edital_id BIGINT NOT NULL,
+          ata_id BIGINT NULL,
+          municipio TEXT NOT NULL,
+          entidade TEXT NOT NULL,
+          codigo_edital TEXT NOT NULL,
+          codigo_ata TEXT NULL,
+          codigo_contrato TEXT NOT NULL,
+          retificacao TINYINT NOT NULL DEFAULT 0,
+          status TEXT NOT NULL,
+          documento_json TEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          FOREIGN KEY (edital_id) REFERENCES editais(id),
+          FOREIGN KEY (ata_id) REFERENCES atas(id)
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS app_settings (
+          `key` VARCHAR(255) NOT NULL PRIMARY KEY,
+          `value` TEXT NOT NULL
+        )
+      ''');
+
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS api_logs (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          endpoint TEXT NOT NULL,
+          request LONGTEXT NOT NULL,
+          response LONGTEXT NULL,
+          status_code INT NULL,
+          user_id BIGINT NULL,
+          timestamp BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+
+      await setSchemaVersion(1);
+    }
+
+    if (version < 2) {
+      await _ensureUniqueIndexes();
+      await setSchemaVersion(2);
+    }
+  }
+
+  Future<void> _ensureUniqueIndexes() async {
+    final result = await pool.execute(
+      "SELECT COUNT(*) AS c FROM information_schema.statistics "
+      "WHERE table_schema = (SELECT DATABASE()) "
+      "AND table_name = 'users' AND index_name = 'idx_users_email'",
+    );
+    if (result.rows.first.typedAssoc()['c'] == 0) {
+      await pool.execute(
+        'CREATE UNIQUE INDEX idx_users_email ON users(email(255))',
+      );
+    }
+  }
+
+  Future<void> close() async {
+    await pool.close();
+  }
+}

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,7 +43,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── Vínculo com Edital e Ata ──────────────────────────────────────────
   int? _editalId;
   int? _ataId;
-  List<Editai> _editais = [];
+  List<Edital> _editais = [];
   List<Ata> _atas = [];
 
   // ── Descritor ─────────────────────────────────────────────────────────
@@ -134,8 +133,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    _editais = await ref.read(editaisDaoProvider).watchAll().first;
-    _atas = await ref.read(atasDaoProvider).watchAll().first;
+    _editais = await ref.read(editaisDaoProvider).watchAll();
+    _atas = await ref.read(atasDaoProvider).watchAll();
 
     if (widget.preselectedEditalId != null) {
       _editalId = widget.preselectedEditalId;
@@ -388,41 +387,37 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
-          AjustesCompanion(
-            editalId: Value(_editalId!),
-            ataId: Value(_ataId),
-            municipio: Value(municipio),
-            entidade: Value(entidade),
-            codigoEdital: Value(_codigoEditalCtrl.text.trim()),
-            codigoAta: Value(_codigoAtaCtrl.text.trim().isNotEmpty
-                ? _codigoAtaCtrl.text.trim()
-                : null),
-            codigoContrato: Value(_codigoContratoCtrl.text.trim()),
-            retificacao: Value(_retificacao),
-            status: const Value('draft'),
-            documentoJson: Value(jsonStr),
-            updatedAt: Value(DateTime.now()),
-          ),
+          editalId: _editalId!,
+          ataId: _ataId,
+          municipio: municipio,
+          entidade: entidade,
+          codigoEdital: _codigoEditalCtrl.text.trim(),
+          codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
+              ? _codigoAtaCtrl.text.trim()
+              : null,
+          codigoContrato: _codigoContratoCtrl.text.trim(),
+          retificacao: _retificacao,
+          status: 'draft',
+          documentoJson: jsonStr,
+          updatedAt: DateTime.now(),
         );
         _loadedId = id;
       } else {
         await dao.updateAjuste(
-          AjustesCompanion(
-            id: Value(_loadedId!),
-            editalId: Value(_editalId!),
-            ataId: Value(_ataId),
-            municipio: Value(municipio),
-            entidade: Value(entidade),
-            codigoEdital: Value(_codigoEditalCtrl.text.trim()),
-            codigoAta: Value(_codigoAtaCtrl.text.trim().isNotEmpty
-                ? _codigoAtaCtrl.text.trim()
-                : null),
-            codigoContrato: Value(_codigoContratoCtrl.text.trim()),
-            retificacao: Value(_retificacao),
-            status: const Value('draft'),
-            documentoJson: Value(jsonStr),
-            updatedAt: Value(DateTime.now()),
-          ),
+          id: _loadedId!,
+          editalId: _editalId!,
+          ataId: _ataId,
+          municipio: municipio,
+          entidade: entidade,
+          codigoEdital: _codigoEditalCtrl.text.trim(),
+          codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
+              ? _codigoAtaCtrl.text.trim()
+              : null,
+          codigoContrato: _codigoContratoCtrl.text.trim(),
+          retificacao: _retificacao,
+          status: 'draft',
+          documentoJson: jsonStr,
+          updatedAt: DateTime.now(),
         );
       }
       if (mounted) {

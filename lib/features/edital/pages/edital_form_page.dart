@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show
@@ -9,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
@@ -238,31 +236,27 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
       if (_loadedId == null) {
         final id = await dao.insertEdital(
-          EditaisCompanion(
-            municipio: Value(municipio),
-            entidade: Value(entidade),
-            codigoEdital: Value(PcnpInputFormatter.stripMask(_codigoEditalCtrl.text)),
-            retificacao: Value(_retificacao),
-            status: const Value('draft'),
-            pdfPath: Value(_pdfPath),
-            documentoJson: Value(jsonStr),
-            updatedAt: Value(DateTime.now()),
-          ),
+          municipio: municipio,
+          entidade: entidade,
+          codigoEdital: PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
+          retificacao: _retificacao,
+          status: 'draft',
+          pdfPath: _pdfPath,
+          documentoJson: jsonStr,
+          updatedAt: DateTime.now(),
         );
         _loadedId = id;
       } else {
         await dao.updateEdital(
-          EditaisCompanion(
-            id: Value(_loadedId!),
-            municipio: Value(municipio),
-            entidade: Value(entidade),
-            codigoEdital: Value(PcnpInputFormatter.stripMask(_codigoEditalCtrl.text)),
-            retificacao: Value(_retificacao),
-            status: const Value('draft'),
-            pdfPath: Value(_pdfPath),
-            documentoJson: Value(jsonStr),
-            updatedAt: Value(DateTime.now()),
-          ),
+          id: _loadedId!,
+          municipio: municipio,
+          entidade: entidade,
+          codigoEdital: PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
+          retificacao: _retificacao,
+          status: 'draft',
+          pdfPath: _pdfPath,
+          documentoJson: jsonStr,
+          updatedAt: DateTime.now(),
         );
       }
       if (mounted) {

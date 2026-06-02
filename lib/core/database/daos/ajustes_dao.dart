@@ -1,56 +1,133 @@
-import 'package:drift/drift.dart';
-
 import '../app_database.dart';
+import '../database_service.dart';
 
 class AjustesDao {
-  final AppDatabase _db;
+  final DatabaseService _db;
   AjustesDao(this._db);
 
-  Stream<List<Ajuste>> watchAll() =>
-      (_db.select(_db.ajustes)
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
-
-  Stream<List<Ajuste>> watchByEdital(int editalId) =>
-      (_db.select(_db.ajustes)
-            ..where((t) => t.editalId.equals(editalId)))
-          .watch();
-
-  Stream<List<Ajuste>> watchByAta(int ataId) =>
-      (_db.select(_db.ajustes)
-            ..where((t) => t.ataId.equals(ataId)))
-          .watch();
-
-  Future<Ajuste?> findById(int id) =>
-      (_db.select(_db.ajustes)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
-
-  Future<int> insertAjuste(AjustesCompanion entry) =>
-      _db.into(_db.ajustes).insert(entry);
-
-  Future<bool> updateAjuste(AjustesCompanion entry) =>
-      _db.update(_db.ajustes).replace(entry);
-
-  Stream<List<Ajuste>> watchByStatus(String status) =>
-      (_db.select(_db.ajustes)
-            ..where((t) => t.status.equals(status))
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
-
-  Future<List<Ajuste>> getAll() =>
-      (_db.select(_db.ajustes)
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .get();
-
-  Future<void> markAsSent(int id) async {
-    await (_db.update(_db.ajustes)..where((t) => t.id.equals(id))).write(
-      AjustesCompanion(
-        status: const Value('sent'),
-        updatedAt: Value(DateTime.now()),
-      ),
-    );
+  Future<List<Ajuste>> watchAll() async {
+    final result = await _db.pool
+        .execute('SELECT * FROM ajustes ORDER BY updated_at DESC');
+    return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<int> deleteById(int id) =>
-      (_db.delete(_db.ajustes)..where((t) => t.id.equals(id))).go();
+  Future<List<Ajuste>> watchByEdital(int editalId) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM ajustes WHERE edital_id = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([editalId]);
+    return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
+  }
+
+  Future<List<Ajuste>> watchByAta(int ataId) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM ajustes WHERE ata_id = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([ataId]);
+    return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
+  }
+
+  Future<Ajuste?> findById(int id) async {
+    final stmt =
+        await _db.pool.prepare('SELECT * FROM ajustes WHERE id = (?)');
+    final result = await stmt.execute([id]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : Ajuste.fromMap(rows.first.typedAssoc());
+  }
+
+  Future<int> insertAjuste({
+    required int editalId,
+    int? ataId,
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    String? codigoAta,
+    required String codigoContrato,
+    required bool retificacao,
+    required String status,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'INSERT INTO ajustes (edital_id, ata_id, municipio, entidade, codigo_edital, codigo_ata, codigo_contrato, retificacao, status, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    final result = await stmt.execute([
+      editalId,
+      ataId,
+      municipio,
+      entidade,
+      codigoEdital,
+      codigoAta,
+      codigoContrato,
+      retificacao ? 1 : 0,
+      status,
+      documentoJson,
+      now,
+    ]);
+    return result.lastInsertID.toInt();
+  }
+
+  Future<bool> updateAjuste({
+    required int id,
+    required int editalId,
+    int? ataId,
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    String? codigoAta,
+    required String codigoContrato,
+    required bool retificacao,
+    required String status,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE ajustes SET edital_id = ?, ata_id = ?, municipio = ?, entidade = ?, codigo_edital = ?, codigo_ata = ?, codigo_contrato = ?, retificacao = ?, status = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+    );
+    final result = await stmt.execute([
+      editalId,
+      ataId,
+      municipio,
+      entidade,
+      codigoEdital,
+      codigoAta,
+      codigoContrato,
+      retificacao ? 1 : 0,
+      status,
+      documentoJson,
+      now,
+      id,
+    ]);
+    return result.affectedRows.toInt() > 0;
+  }
+
+  Future<List<Ajuste>> watchByStatus(String status) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM ajustes WHERE status = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([status]);
+    return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
+  }
+
+  Future<List<Ajuste>> getAll() async {
+    final result = await _db.pool
+        .execute('SELECT * FROM ajustes ORDER BY updated_at DESC');
+    return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
+  }
+
+  Future<void> markAsSent(int id) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE ajustes SET status = ?, updated_at = ? WHERE id = ?',
+    );
+    await stmt.execute(['sent', now, id]);
+  }
+
+  Future<int> deleteById(int id) async {
+    final stmt = await _db.pool.prepare('DELETE FROM ajustes WHERE id = ?');
+    final result = await stmt.execute([id]);
+    return result.affectedRows.toInt();
+  }
 }

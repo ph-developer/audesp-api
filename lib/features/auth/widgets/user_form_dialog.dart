@@ -1,9 +1,10 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_env.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/password_hasher.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 
@@ -17,7 +18,7 @@ Future<bool?> showUserFormDialog(BuildContext context, {User? user}) {
 }
 
 /// Diálogo para criar ou editar um cadastro de usuário local.
-/// Não define senha — o usuário configura as credenciais AUDESP no primeiro login.
+/// Na criação, já define a senha padrão do .env.
 class UserFormDialog extends ConsumerStatefulWidget {
   final User? user;
 
@@ -54,17 +55,17 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     try {
       if (_isEdit) {
         await dao.updateUser(
-          UsersCompanion(
-            id: Value(widget.user!.id),
-            nome: Value(_nome.text.trim()),
-            email: Value(_email.text.trim()),
-          ),
+          id: widget.user!.id,
+          nome: _nome.text.trim(),
+          email: _email.text.trim(),
         );
       } else {
         await dao.insertUser(
-          UsersCompanion.insert(
-            nome: _nome.text.trim(),
-            email: _email.text.trim(),
+          nome: _nome.text.trim(),
+          email: _email.text.trim(),
+          passwordHash: PasswordHasher.hash(
+            _email.text.trim(),
+            AppEnv.defaultUserPassword,
           ),
         );
       }

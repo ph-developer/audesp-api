@@ -1,37 +1,72 @@
-import 'package:drift/drift.dart';
-
 import '../app_database.dart';
+import '../database_service.dart';
 
 class UsersDao {
-  final AppDatabase _db;
+  final DatabaseService _db;
   UsersDao(this._db);
 
-  Stream<List<User>> watchAll() => _db.select(_db.users).watch();
-
-  Future<User?> findById(int id) =>
-      (_db.select(_db.users)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
-
-  Future<User?> findByEmail(String email) =>
-      (_db.select(_db.users)..where((t) => t.email.equals(email)))
-          .getSingleOrNull();
-
-  Future<int> countUsers() async {
-    final rows = await _db.select(_db.users).get();
-    return rows.length;
+  Future<List<User>> watchAll() async {
+    final result = await _db.pool.execute('SELECT * FROM users');
+    return result.rows.map((r) => User.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<int> insertUser(UsersCompanion entry) =>
-      _db.into(_db.users).insert(entry);
+  Future<User?> findById(int id) async {
+    final stmt =
+        await _db.pool.prepare('SELECT * FROM users WHERE id = (?)');
+    final result = await stmt.execute([id]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : User.fromMap(rows.first.typedAssoc());
+  }
 
-  Future<bool> updateUser(UsersCompanion entry) =>
-      _db.update(_db.users).replace(entry);
+  Future<User?> findByEmail(String email) async {
+    final stmt =
+        await _db.pool.prepare('SELECT * FROM users WHERE email = (?)');
+    final result = await stmt.execute([email]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : User.fromMap(rows.first.typedAssoc());
+  }
 
-  Future<int> deleteById(int id) =>
-      (_db.delete(_db.users)..where((t) => t.id.equals(id))).go();
+  Future<int> countUsers() async {
+    final result = await _db.pool.execute('SELECT COUNT(*) FROM users');
+    return result.rows.first.typedAssoc()['COUNT(*)'] as int;
+  }
 
-  Future<void> setPasswordHash(int userId, String hash) =>
-      (_db.update(_db.users)..where((u) => u.id.equals(userId)))
-          .write(UsersCompanion(passwordHash: Value(hash)));
+  Future<int> insertUser({
+    required String nome,
+    required String email,
+    String? passwordHash,
+    DateTime? createdAt,
+  }) async {
+    final now = (createdAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'INSERT INTO users (nome, email, password_hash, created_at) VALUES (?, ?, ?, ?)',
+    );
+    final result = await stmt.execute([nome, email, passwordHash, now]);
+    return result.lastInsertID.toInt();
+  }
+
+  Future<bool> updateUser({
+    required int id,
+    required String nome,
+    required String email,
+    String? passwordHash,
+  }) async {
+    final stmt = await _db.pool.prepare(
+      'UPDATE users SET nome = ?, email = ?, password_hash = ? WHERE id = ?',
+    );
+    final result = await stmt.execute([nome, email, passwordHash, id]);
+    return result.affectedRows.toInt() > 0;
+  }
+
+  Future<int> deleteById(int id) async {
+    final stmt = await _db.pool.prepare('DELETE FROM users WHERE id = ?');
+    final result = await stmt.execute([id]);
+    return result.affectedRows.toInt();
+  }
+
+  Future<void> setPasswordHash(int userId, String hash) async {
+    final stmt =
+        await _db.pool.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    await stmt.execute([hash, userId]);
+  }
 }
-

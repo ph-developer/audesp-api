@@ -1,55 +1,116 @@
-import 'package:drift/drift.dart';
-
 import '../app_database.dart';
+import '../database_service.dart';
 
 class LicitacoesDao {
-  final AppDatabase _db;
+  final DatabaseService _db;
   LicitacoesDao(this._db);
 
-  Stream<List<Licitacoe>> watchAll() =>
-      (_db.select(_db.licitacoes)
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
+  Future<List<Licitacoe>> watchAll() async {
+    final result = await _db.pool
+        .execute('SELECT * FROM licitacoes ORDER BY updated_at DESC');
+    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+  }
 
-  Stream<List<Licitacoe>> watchByStatus(String status) =>
-      (_db.select(_db.licitacoes)
-            ..where((t) => t.status.equals(status))
-            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-          .watch();
+  Future<List<Licitacoe>> watchByStatus(String status) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM licitacoes WHERE status = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([status]);
+    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+  }
 
-  Stream<List<Licitacoe>> watchByEdital(int editalId) =>
-      (_db.select(_db.licitacoes)
-            ..where((t) => t.editalId.equals(editalId)))
-          .watch();
+  Future<List<Licitacoe>> watchByEdital(int editalId) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM licitacoes WHERE edital_id = (?) ORDER BY updated_at DESC',
+    );
+    final result = await stmt.execute([editalId]);
+    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+  }
 
-  Future<Licitacoe?> findById(int id) =>
-      (_db.select(_db.licitacoes)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+  Future<Licitacoe?> findById(int id) async {
+    final stmt =
+        await _db.pool.prepare('SELECT * FROM licitacoes WHERE id = (?)');
+    final result = await stmt.execute([id]);
+    final rows = result.rows;
+    return rows.isEmpty ? null : Licitacoe.fromMap(rows.first.typedAssoc());
+  }
 
-  Future<int> insertLicitacao(LicitacoesCompanion entry) =>
-      _db.into(_db.licitacoes).insert(entry);
+  Future<int> insertLicitacao({
+    required int editalId,
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+    required String status,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'INSERT INTO licitacoes (edital_id, municipio, entidade, codigo_edital, retificacao, status, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    final result = await stmt.execute([
+      editalId,
+      municipio,
+      entidade,
+      codigoEdital,
+      retificacao ? 1 : 0,
+      status,
+      documentoJson,
+      now,
+    ]);
+    return result.lastInsertID.toInt();
+  }
 
-  Future<bool> updateLicitacao(LicitacoesCompanion entry) =>
-      _db.update(_db.licitacoes).replace(entry);
+  Future<bool> updateLicitacao({
+    required int id,
+    required int editalId,
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+    required String status,
+    required String documentoJson,
+    DateTime? updatedAt,
+  }) async {
+    final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE licitacoes SET edital_id = ?, municipio = ?, entidade = ?, codigo_edital = ?, retificacao = ?, status = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+    );
+    final result = await stmt.execute([
+      editalId,
+      municipio,
+      entidade,
+      codigoEdital,
+      retificacao ? 1 : 0,
+      status,
+      documentoJson,
+      now,
+      id,
+    ]);
+    return result.affectedRows.toInt() > 0;
+  }
 
   Future<void> markAsSent(int id) async {
-    await (_db.update(_db.licitacoes)..where((t) => t.id.equals(id))).write(
-      LicitacoesCompanion(
-        status: const Value('sent'),
-        updatedAt: Value(DateTime.now()),
-      ),
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE licitacoes SET status = ?, updated_at = ? WHERE id = ?',
     );
+    await stmt.execute(['sent', now, id]);
   }
 
   Future<void> updateJson(int id, String json) async {
-    await (_db.update(_db.licitacoes)..where((t) => t.id.equals(id))).write(
-      LicitacoesCompanion(
-        documentoJson: Value(json),
-        updatedAt: Value(DateTime.now()),
-      ),
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE licitacoes SET documento_json = ?, updated_at = ? WHERE id = ?',
     );
+    await stmt.execute([json, now, id]);
   }
 
-  Future<int> deleteById(int id) =>
-      (_db.delete(_db.licitacoes)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteById(int id) async {
+    final stmt =
+        await _db.pool.prepare('DELETE FROM licitacoes WHERE id = ?');
+    final result = await stmt.execute([id]);
+    return result.affectedRows.toInt();
+  }
 }
