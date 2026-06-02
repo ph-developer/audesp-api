@@ -10,7 +10,7 @@ import '../domain/edital_domain.dart';
 // Campos extraídos pelo Gemini para o Edital
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _kEditalFields = <GeminiField>[
+final _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'dataDocumento',
     label: 'Data do Edital',
@@ -61,7 +61,9 @@ const _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'amparoLegalId',
     label: 'Amparo Legal',
-    hint: 'código numérico do amparo legal',
+    hint: 'código numérico APENAS, sem texto. Use o mapeamento abaixo para '
+        'encontrar o código que corresponde ao dispositivo legal mencionado no edital:\n'
+        '${kAmparosLegais.entries.map((e) => '${e.key} = ${e.value}').join('\n')}',
   ),
   GeminiField(
     key: 'dataAberturaProposta',

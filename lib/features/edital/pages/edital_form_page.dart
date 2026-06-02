@@ -396,7 +396,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _srp = accepted['srp']?.toLowerCase() == 'true';
         }
         if (accepted.containsKey('amparoLegalId')) {
-          _amparoLegalCtrl.text = accepted['amparoLegalId']!;
+          _amparoLegalCtrl.text = _sanitizeAmparoLegal(accepted['amparoLegalId']!);
         }
         if (accepted.containsKey('dataAberturaProposta')) {
           _dataAberturaCtrl.text = accepted['dataAberturaProposta']!;
@@ -418,6 +418,27 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     } finally {
       if (mounted) setState(() => _importingGemini = false);
     }
+  }
+
+  /// Tenta converter o valor bruto do Gemini em código numérico do amparo legal.
+  /// Ex.: "Lei 14.133/2021, Art. 28, I - Pregão" → "1"
+  static String _sanitizeAmparoLegal(String raw) {
+    final trimmed = raw.trim();
+
+    // Já é numérico
+    if (int.tryParse(trimmed) != null) return trimmed;
+
+    // Busca por correspondência textual no mapa de amparos legais
+    final found = kAmparosLegais.entries.where(
+      (e) => e.value.toLowerCase().contains(trimmed.toLowerCase()),
+    );
+    if (found.length == 1) return found.first.key.toString();
+
+    // Tenta extrair o primeiro número inteiro do texto
+    final match = RegExp(r'\d+').firstMatch(trimmed);
+    if (match != null) return match.group(0)!;
+
+    return trimmed;
   }
 
   // ── Date/datetime helpers ─────────────────────────────────────────────────
