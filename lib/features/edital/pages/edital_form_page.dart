@@ -400,9 +400,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       if (!mounted || accepted == null || accepted.isEmpty) return;
 
       setState(() {
-        if (accepted.containsKey('codigoEdital')) {
-          _codigoEditalCtrl.text = accepted['codigoEdital']!;
-        }
         if (accepted.containsKey('dataDocumento')) {
           try {
             _dataDoc = DateFormat('dd/MM/yyyy').parse(accepted['dataDocumento']!);

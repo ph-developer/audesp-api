@@ -12,11 +12,6 @@ import '../domain/edital_domain.dart';
 
 const _kEditalFields = <GeminiField>[
   GeminiField(
-    key: 'codigoEdital',
-    label: 'Código do Edital',
-    hint: 'até 25 caracteres',
-  ),
-  GeminiField(
     key: 'dataDocumento',
     label: 'Data do Edital',
     hint: 'formato dd/MM/yyyy',
