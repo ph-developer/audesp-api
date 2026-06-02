@@ -1,0 +1,9 @@
+[Database]
+Driver=mariadb
+
+[MariaDB]
+Host=localhost
+Port=3306
+Database=audesp
+User=audesp
+Password=audesp
