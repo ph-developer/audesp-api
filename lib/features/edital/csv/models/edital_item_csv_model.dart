@@ -30,6 +30,10 @@ class EditalItemCsvModel {
   /// Mapeado a partir da coluna `TipoBeneficio`.
   final int? tipoBeneficioId;
 
+  /// Código AUDESP itemCategoriaId.
+  /// Mapeado a partir da coluna `ItemCategoria`.
+  final int? itemCategoriaId;
+
   const EditalItemCsvModel({
     required this.numeroItem,
     required this.descricao,
@@ -40,10 +44,12 @@ class EditalItemCsvModel {
     this.valorTotal,
     this.criterioJulgamentoId,
     this.tipoBeneficioId,
+    this.itemCategoriaId,
   });
 
   @override
   String toString() =>
       'EditalItemCsvModel(#$numeroItem, $descricao, '
-      'qtd=$quantidade $unidadeMedida, valor=$valorUnitarioEstimado)';
+      'qtd=$quantidade $unidadeMedida, valor=$valorUnitarioEstimado, '
+      'cat=$itemCategoriaId)';
 }

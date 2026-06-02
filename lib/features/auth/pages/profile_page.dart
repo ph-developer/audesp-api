@@ -31,9 +31,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _savingSysPw = false;
 
   // Seção de credenciais AUDESP
-  final _senhaAtualCtrl = TextEditingController();
   final _senhaNovaCtr1 = TextEditingController();
-  bool _obscureAtual = true;
   bool _obscureNova = true;
 
   bool _saving = false;
@@ -52,7 +50,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _nome.dispose();
     _sysPwAtualCtrl.dispose();
     _sysPwNovaCtrl.dispose();
-    _senhaAtualCtrl.dispose();
     _senhaNovaCtr1.dispose();
     super.dispose();
   }
@@ -166,12 +163,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _savePassword() async {
     if (_user == null) return;
-    final current = _senhaAtualCtrl.text;
     final next = _senhaNovaCtr1.text;
 
-    if (current.isEmpty || next.isEmpty) {
+    if (next.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha a senha atual e a nova senha.')),
+        const SnackBar(content: Text('Informe a nova senha.')),
       );
       return;
     }
@@ -186,18 +182,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final storage = ref.read(secureStorageServiceProvider);
 
     try {
-      final ok = await storage.verifyPassword(_user!.email, current);
-      if (!ok) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha atual incorreta.')),
-          );
-        }
-        return;
-      }
-
       await storage.storePassword(_user!.email, next);
-      _senhaAtualCtrl.clear();
       _senhaNovaCtr1.clear();
 
       if (mounted) {
@@ -376,21 +361,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       Text(
                         'Altere aqui se sua senha do sistema AUDESP foi modificada.',
                         style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _senhaAtualCtrl,
-                        obscureText: _obscureAtual,
-                        decoration: InputDecoration(
-                          labelText: 'Senha atual',
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureAtual
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () =>
-                                setState(() => _obscureAtual = !_obscureAtual),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/edital_csv.dart';
+import '../domain/edital_domain.dart';
 
 /// Abre o diálogo de importação de itens do Edital via planilha CSV.
 ///
@@ -75,18 +76,19 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   Future<void> _downloadTemplate() async {
     const content =
         'NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;'
-        'ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;'
+        'ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;ItemCategoria;'
         'TipoOrcamento;ValorEstimadoMedia;DataOrcamento;'
         'SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
-        '# MaterialOuServico: M (Material) ou S (Serviço);;;;;;;;;;;;;\r\n'
-        '# ValorUnitarioMenor: menor valor orçado (Edital)  |  ValorEstimadoMedia: média dos orçamentos (Licitação);;;;;;;;;;;;;\r\n'
-        '# CriterioJulgamento: MENOR_PRECO, MAIOR_DESCONTO, TECNICA_PRECO, MAIOR_LANCE, MAIOR_RETORNO, NAO_SE_APLICA, MELHOR_TECNICA, CONTEUDO_ARTISTICO;;;;;;;;;;;;;\r\n'
-        '# TipoBeneficio: EXCLUSIVO_ME_EPP, SUBCONTRATACAO_ME_EPP, COTA_RESERVADA_ME_EPP, SEM_BENEFICIO, NAO_SE_APLICA;;;;;;;;;;;;;\r\n'
-        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;\r\n'
-        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;;;;;;;\r\n'
-        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;;;;;;;\r\n'
-        '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;\r\n'
-        '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
+        '# MaterialOuServico: M (Material) ou S (Serviço);;;;;;;;;;;;;;;\r\n'
+        '# ValorUnitarioMenor: menor valor orçado (Edital)  |  ValorEstimadoMedia: média dos orçamentos (Licitação);;;;;;;;;;;;;;;\r\n'
+        '# CriterioJulgamento: MENOR_PRECO, MAIOR_DESCONTO, TECNICA_PRECO, MAIOR_LANCE, MAIOR_RETORNO, NAO_SE_APLICA, MELHOR_TECNICA, CONTEUDO_ARTISTICO;;;;;;;;;;;;;;\r\n'
+        '# TipoBeneficio: EXCLUSIVO_ME_EPP, SUBCONTRATACAO_ME_EPP, COTA_RESERVADA_ME_EPP, SEM_BENEFICIO, NAO_SE_APLICA;;;;;;;;;;;;;;\r\n'
+        '# ItemCategoria: BENS_IMOVEIS, BENS_MOVEIS, NAO_SE_APLICA;;;;;;;;;;;;;;\r\n'
+        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;;\r\n'
+        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;;;;;;;;\r\n'
+        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;;;;;;;;\r\n'
+        '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;;\r\n'
+        '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;BENS_MOVEIS;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
 
     final path = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
@@ -120,6 +122,8 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
               'criterioJulgamentoId': item.criterioJulgamentoId,
             if (item.tipoBeneficioId != null)
               'tipoBeneficioId': item.tipoBeneficioId,
+            if (item.itemCategoriaId != null)
+              'itemCategoriaId': item.itemCategoriaId,
             'incentivoProdutivoBasico': false,
             'orcamentoSigiloso': false,
           },
@@ -419,6 +423,7 @@ class _PreviewTable extends StatelessWidget {
         DataColumn(label: Text('#')),
         DataColumn(label: Text('Descrição')),
         DataColumn(label: Text('T')),
+        DataColumn(label: Text('Cat.')),
         DataColumn(label: Text('Qtd')),
         DataColumn(label: Text('UN')),
         DataColumn(label: Text('Valor Unit. (Menor)')),
@@ -445,6 +450,13 @@ class _PreviewTable extends StatelessWidget {
               ),
             ),
             DataCell(Text(item.materialOuServico)),
+            DataCell(
+              Text(
+                item.itemCategoriaId != null
+                    ? (kItemCategoria[item.itemCategoriaId] ?? '?')
+                    : '—',
+              ),
+            ),
             DataCell(Text('${item.quantidade}')),
             DataCell(Text(item.unidadeMedida)),
             DataCell(

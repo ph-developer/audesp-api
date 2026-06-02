@@ -22,9 +22,9 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida
 
 /// CSV completo com todas as colunas do template estendido.
 const _csvCompleto = '''
-NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;TipoOrcamento;ValorEstimadoMedia;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
-1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
-2;Mesa escritório;M;5;UN;1.200,50;2;1;GLOBAL;1.300,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
+NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;ItemCategoria;TipoOrcamento;ValorEstimadoMedia;DataOrcamento;SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta
+1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;BENS_MOVEIS;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
+2;Mesa escritório;M;5;UN;1.200,50;2;1;NAO_SE_APLICA;GLOBAL;1.300,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL
 ''';
 
 /// CSV com separação crítica de valores: ValorUnitarioMenor ≠ ValorEstimadoMedia.
@@ -72,6 +72,7 @@ void main() {
         expect(item.valorTotal, isNull);
         expect(item.criterioJulgamentoId, isNull);
         expect(item.tipoBeneficioId, isNull);
+        expect(item.itemCategoriaId, isNull);
       });
     });
 
@@ -146,6 +147,16 @@ void main() {
       test('item 2 — tipoBeneficioId mapeado de código numérico "1"', () {
         final item = parser.parse(_toBytes(_csvCompleto))[1];
         expect(item.tipoBeneficioId, 1);
+      });
+
+      test('itemCategoriaId mapeado de texto "BENS_MOVEIS" → 2', () {
+        final item = parser.parse(_toBytes(_csvCompleto)).first;
+        expect(item.itemCategoriaId, 2);
+      });
+
+      test('itemCategoriaId mapeado de texto "NAO_SE_APLICA" → 3', () {
+        final item = parser.parse(_toBytes(_csvCompleto))[1];
+        expect(item.itemCategoriaId, 3);
       });
 
       test('colunas de Licitação (TipoOrcamento, ValorEstimadoMedia, etc.) são ignoradas', () {
@@ -715,6 +726,51 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMen
         expect(EditalComplementoCsvMapper.tipoBeneficioId(''), isNull);
       });
     });
+
+    // -------------------------------------------------------------------------
+    // itemCategoriaId
+    // -------------------------------------------------------------------------
+    group('itemCategoriaId', () {
+      test('"BENS_IMOVEIS" → 1', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('BENS_IMOVEIS'), 1);
+      });
+
+      test('"BENS IMÓVEIS" → 1', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('BENS IMÓVEIS'), 1);
+      });
+
+      test('"BENS_MOVEIS" → 2', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('BENS_MOVEIS'), 2);
+      });
+
+      test('"BENS MÓVEIS" → 2', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('BENS MÓVEIS'), 2);
+      });
+
+      test('"NAO_SE_APLICA" → 3', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('NAO_SE_APLICA'), 3);
+      });
+
+      test('"NÃO SE APLICA" → 3', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('NÃO SE APLICA'), 3);
+      });
+
+      test('código numérico direto "2" → 2', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('2'), 2);
+      });
+
+      test('"bens_moveis" (lowercase) → 2', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('bens_moveis'), 2);
+      });
+
+      test('valor desconhecido "INEXISTENTE" → null', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId('INEXISTENTE'), isNull);
+      });
+
+      test('vazio → null', () {
+        expect(EditalComplementoCsvMapper.itemCategoriaId(''), isNull);
+      });
+    });
   });
 
   // =========================================================================
@@ -748,6 +804,7 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;ValorUnitarioMen
       expect(item.valorTotal, isNull);
       expect(item.criterioJulgamentoId, isNull);
       expect(item.tipoBeneficioId, isNull);
+      expect(item.itemCategoriaId, isNull);
     });
   });
 }

@@ -132,4 +132,41 @@ class EditalComplementoCsvMapper {
         return null;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // itemCategoriaId
+  // ---------------------------------------------------------------------------
+
+  /// Converte o texto da coluna `ItemCategoria` para o código AUDESP.
+  ///
+  /// Aceita tanto o texto legível quanto o valor numérico diretamente.
+  ///
+  /// | Texto              | Código |
+  /// |---|---|
+  /// | BENS_IMOVEIS       | 1      |
+  /// | BENS_MOVEIS        | 2      |
+  /// | NAO_SE_APLICA      | 3      |
+  static int? itemCategoriaId(String raw) {
+    final normalized = raw.trim().toUpperCase();
+    // Tenta parse numérico direto primeiro.
+    final asInt = int.tryParse(normalized);
+    if (asInt != null) return asInt;
+
+    switch (normalized) {
+      case 'BENS_IMOVEIS':
+      case 'BENS IMÓVEIS':
+      case 'BENS IMOVEIS':
+        return 1;
+      case 'BENS_MOVEIS':
+      case 'BENS MÓVEIS':
+      case 'BENS MOVEIS':
+        return 2;
+      case 'NAO_SE_APLICA':
+      case 'NÃO SE APLICA':
+      case 'NAO SE APLICA':
+        return 3;
+      default:
+        return null;
+    }
+  }
 }

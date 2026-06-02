@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/edital_domain.dart';
+import 'pcnp_input_formatter.dart';
 
 /// Diálogo para adicionar ou editar uma Publicação do Edital.
 ///
@@ -43,7 +45,9 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
       final raw = ini['dataPublicacao'] as String? ?? '';
       _date = raw.isNotEmpty ? DateTime.tryParse(raw) : null;
       _veiculo = ini['veiculoPublicacao'] as int?;
-      _pncpCtrl.text = ini['idContratacaoPNCP'] as String? ?? '';
+      _pncpCtrl.text = PcnpInputFormatter.applyMask(
+        ini['idContratacaoPNCP'] as String? ?? '',
+      );
       _outrosCtrl.text = ini['veiculoPublicacaoNome'] as String? ?? '';
     }
   }
@@ -63,7 +67,7 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
       'veiculoPublicacao': _veiculo,
     };
     if (_veiculo == 5) {
-      result['idContratacaoPNCP'] = _pncpCtrl.text.trim();
+      result['idContratacaoPNCP'] = PcnpInputFormatter.stripMask(_pncpCtrl.text);
     }
     if (_veiculo == 10) {
       result['veiculoPublicacaoNome'] = _outrosCtrl.text.trim();
@@ -112,15 +116,19 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
                   controller: _pncpCtrl,
                   decoration: const InputDecoration(
                     labelText: 'ID Contratação PNCP *',
-                    hintText: '25 dígitos numéricos',
+                    hintText: '00000000000000-0-000000/0000',
                     counterText: '',
                   ),
-                  maxLength: 25,
+                  maxLength: 28,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    PcnpInputFormatter(),
+                    LengthLimitingTextInputFormatter(28),
+                  ],
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obrigatório';
-                    if (!RegExp(r'^[0-9]{25}$').hasMatch(v)) {
-                      return 'Deve ter exatamente 25 dígitos numéricos';
-                    }
+                    final raw = PcnpInputFormatter.stripMask(v);
+                    if (raw.length < 25) return 'ID de Contratação PNCP incompleto';
                     return null;
                   },
                 ),

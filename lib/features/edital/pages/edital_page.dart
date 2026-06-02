@@ -183,7 +183,17 @@ class _EditalCard extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(editaisDaoProvider).deleteById(edital.id);
+      try {
+        await ref.read(editaisDaoProvider).deleteById(edital.id);
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

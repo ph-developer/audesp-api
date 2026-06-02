@@ -13,7 +13,7 @@ import '../models/edital_item_csv_model.dart';
 ///
 /// Colunas opcionais reconhecidas:
 /// ```
-/// ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio
+/// ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;ItemCategoria
 /// ```
 ///
 /// Colunas da planilha da Licitação (ex: `ValorEstimadoMedia`, `TipoOrcamento`)
@@ -132,6 +132,11 @@ class EditalComplementoCsvParser {
             ? EditalComplementoCsvMapper.tipoBeneficioId(beneficioStr)
             : null;
 
+        final categoriaStr = _tryGet(row, header, 'itemcategoria');
+        final categoriaId = categoriaStr != null
+            ? EditalComplementoCsvMapper.itemCategoriaId(categoriaStr)
+            : null;
+
         result.add(EditalItemCsvModel(
           numeroItem: numeroItem,
           descricao: descricao,
@@ -142,6 +147,7 @@ class EditalComplementoCsvParser {
           valorTotal: valorTotal,
           criterioJulgamentoId: criterioId,
           tipoBeneficioId: beneficioId,
+          itemCategoriaId: categoriaId,
         ));
       } on EditalCsvParseException {
         rethrow;
@@ -188,6 +194,7 @@ class EditalComplementoCsvParser {
       'materialouservico': 'MaterialOuServico',
       'quantidade': 'Quantidade',
       'unidademedida': 'UnidadeMedida',
+      'itemcategoria': 'ItemCategoria',
     };
     return names[col] ?? col;
   }
