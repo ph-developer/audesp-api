@@ -15,7 +15,7 @@ Future<List<LicitacaoItemCsvModel>?> showPortalImportDialog(
     BuildContext context) {
   return showAudespDialog<List<LicitacaoItemCsvModel>>(
     context: context,
-    size: DialogSize.medium,
+    size: DialogSize.large,
     builder: (_) => const _PortalImportDialog(),
   );
 }

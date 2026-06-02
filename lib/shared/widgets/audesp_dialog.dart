@@ -61,8 +61,19 @@ class _AudespDialogConstraint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: size.maxWidth),
+    final theme = Theme.of(context);
+    // O Dialog (Material 3) aplica internamente dialogTheme.constraints
+    // (padrão: min 280 / max 560), ignorando qualquer ConstrainedBox externo.
+    // Sobrescrevemos aqui para garantir largura fixa conforme o DialogSize.
+    return Theme(
+      data: theme.copyWith(
+        dialogTheme: theme.dialogTheme.copyWith(
+          constraints: BoxConstraints(
+            minWidth: size.maxWidth,
+            maxWidth: size.maxWidth,
+          ),
+        ),
+      ),
       child: child,
     );
   }

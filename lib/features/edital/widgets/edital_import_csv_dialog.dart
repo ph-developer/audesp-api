@@ -17,7 +17,7 @@ Future<List<Map<String, dynamic>>?> showEditalImportCsvDialog(
 }) {
   return showAudespDialog<List<Map<String, dynamic>>>(
     context: context,
-    size: DialogSize.large,
+    size: DialogSize.medium,
     builder: (_) => _EditalImportCsvDialog(existingCount: existingCount),
   );
 }

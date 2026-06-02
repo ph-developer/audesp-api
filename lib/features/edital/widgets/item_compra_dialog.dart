@@ -15,7 +15,7 @@ Future<Map<String, dynamic>?> showItemCompraDialog(
 }) {
   return showAudespDialog<Map<String, dynamic>>(
     context: context,
-    size: DialogSize.medium,
+    size: DialogSize.large,
     builder: (_) => _ItemCompraDialog(numero: numero, initial: initial),
   );
 }

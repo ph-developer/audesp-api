@@ -129,7 +129,7 @@ Future<Map<String, String>?> showGeminiImportDialog({
   final result = await showAudespDialog<GeminiExtractionResult?>(
     context: context,
     barrierDismissible: false,
-    size: DialogSize.small,
+    size: DialogSize.medium,
     builder: (_) => _GeminiLoadingDialog(
       ref: ref,
       pdfPath: pdfPath,
