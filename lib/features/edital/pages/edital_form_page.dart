@@ -379,7 +379,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _modoDisputa = int.tryParse(accepted['modoDisputaId']!);
         }
         if (accepted.containsKey('numeroCompra')) {
-          _numeroCompraCtrl.text = accepted['numeroCompra']!;
+          var v = accepted['numeroCompra']!;
+          if (v.contains('/')) v = v.split('/').first;
+          _numeroCompraCtrl.text = v;
         }
         if (accepted.containsKey('anoCompra')) {
           _anoCompraCtrl.text = accepted['anoCompra']!;

@@ -37,7 +37,7 @@ const _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'numeroCompra',
     label: 'Número da Compra',
-    hint: 'número sequencial da compra',
+    hint: 'apenas o número sequencial, sem o ano. Ex.: se for "14/2024", extraia "14"',
   ),
   GeminiField(
     key: 'anoCompra',
