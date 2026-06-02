@@ -56,7 +56,7 @@ final _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'srp',
     label: 'SRP – Sistema de Registro de Preços',
-    hint: 'true ou false',
+    hint: 'APENAS "true" ou "false" (inglês), nunca "sim" ou "não"',
   ),
   GeminiField(
     key: 'amparoLegalId',
@@ -85,8 +85,8 @@ String _displayValue(String key, String raw) {
   if (raw.isEmpty) return raw;
   switch (key) {
     case 'srp':
-      if (raw.toLowerCase() == 'true') return 'Sim';
-      if (raw.toLowerCase() == 'false') return 'Não';
+      if (['true', 'sim'].contains(raw.toLowerCase())) return 'Sim';
+      if (['false', 'não', 'nao'].contains(raw.toLowerCase())) return 'Não';
       return raw;
     case 'tipoInstrumentoConvocatorioId':
       final id = int.tryParse(raw);
@@ -273,6 +273,15 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         f.key: widget.suggestedValues[f.key] != null &&
             (widget.currentValues[f.key] ?? '').isEmpty,
     };
+    // Se objetoCompra foi pré-selecionado, seleciona SRP junto
+    _syncSrpFromObjeto();
+  }
+
+  void _syncSrpFromObjeto() {
+    if (_accepted['objetoCompra'] == true &&
+        widget.suggestedValues['srp'] != null) {
+      _accepted['srp'] = true;
+    }
   }
 
   void _acceptAll() => setState(

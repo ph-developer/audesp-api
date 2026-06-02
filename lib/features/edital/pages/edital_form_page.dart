@@ -393,7 +393,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _objetoCompraCtrl.text = accepted['objetoCompra']!;
         }
         if (accepted.containsKey('srp')) {
-          _srp = accepted['srp']?.toLowerCase() == 'true';
+          _srp = ['true', 'sim'].contains(accepted['srp']?.toLowerCase());
         }
         if (accepted.containsKey('amparoLegalId')) {
           _amparoLegalCtrl.text = _sanitizeAmparoLegal(accepted['amparoLegalId']!);
