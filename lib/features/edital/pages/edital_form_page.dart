@@ -21,6 +21,40 @@ import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/publicacao_dialog.dart';
 
+class _PcnpInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return const TextEditingValue(text: '');
+
+    final masked = _applyMask(digits);
+    return TextEditingValue(
+      text: masked,
+      selection: TextSelection.collapsed(offset: masked.length),
+    );
+  }
+
+  static String applyMask(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    return _applyMask(digits);
+  }
+
+  static String _applyMask(String digits) {
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i == 14 || i == 15) buffer.write('-');
+      if (i == 21) buffer.write('/');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+
+  static String stripMask(String masked) => masked.replaceAll(RegExp(r'\D'), '');
+}
+
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
 /// [editalId] null → criar novo; não-null → editar existente.
@@ -123,7 +157,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     final publicidade = doc['publicidade'] as Map<String, dynamic>? ?? {};
 
-    _codigoEditalCtrl.text = descritor['codigoEdital'] as String? ?? edital.codigoEdital;
+    _codigoEditalCtrl.text = _PcnpInputFormatter.applyMask(
+      descritor['codigoEdital'] as String? ?? edital.codigoEdital,
+    );
     _dataDoc = DateTime.tryParse(descritor['dataDocumento'] as String? ?? '');
     _retificacao = descritor['retificacao'] as bool? ?? edital.retificacao;
 
@@ -164,7 +200,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'descritor': {
         'municipio': municipio,
         'entidade': entidade,
-        'codigoEdital': _codigoEditalCtrl.text.trim(),
+        'codigoEdital': _PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
         'dataDocumento': _dataDoc != null ? DateFormat('yyyy-MM-dd').format(_dataDoc!) : '',
         'retificacao': _retificacao,
       },
@@ -211,7 +247,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   bool _validateDraft() {
     if (_codigoEditalCtrl.text.trim().isEmpty) {
-      _showError('Informe o Código do Edital para salvar o rascunho.');
+      _showError('Informe o ID de Contratação PNCP para salvar o rascunho.');
       return false;
     }
     if (_dataDoc == null) {
@@ -236,7 +272,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           EditaisCompanion(
             municipio: Value(municipio),
             entidade: Value(entidade),
-            codigoEdital: Value(_codigoEditalCtrl.text.trim()),
+            codigoEdital: Value(_PcnpInputFormatter.stripMask(_codigoEditalCtrl.text)),
             retificacao: Value(_retificacao),
             status: const Value('draft'),
             pdfPath: Value(_pdfPath),
@@ -251,7 +287,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             id: Value(_loadedId!),
             municipio: Value(municipio),
             entidade: Value(entidade),
-            codigoEdital: Value(_codigoEditalCtrl.text.trim()),
+            codigoEdital: Value(_PcnpInputFormatter.stripMask(_codigoEditalCtrl.text)),
             retificacao: Value(_retificacao),
             status: const Value('draft'),
             pdfPath: Value(_pdfPath),
@@ -604,16 +640,22 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 controller: _codigoEditalCtrl,
                 enabled: !readonly && !_retificacao,
                 decoration: const InputDecoration(
-                  labelText: 'Código do Edital *',
-                  hintText: 'Até 25 caracteres',
+                  labelText: 'ID de Contratação PNCP *',
+                  hintText: '00000000000000-0-000000/0000',
                   counterText: '',
                 ),
-                maxLength: 25,
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                maxLength: 28,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Obrigatório';
+                  final raw = _PcnpInputFormatter.stripMask(v);
+                  if (raw.length < 25) return 'ID de Contratação PNCP incompleto';
+                  return null;
+                },
                 inputFormatters: [
-                  LengthLimitingTextInputFormatter(25)
+                  _PcnpInputFormatter(),
+                  LengthLimitingTextInputFormatter(28),
                 ],
+                keyboardType: TextInputType.number,
               ),
             ),
             const SizedBox(width: 12),
