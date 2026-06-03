@@ -115,7 +115,7 @@ class EditalComplementoCsvParser {
 
         final valorTotal = (valorUnitario != null)
             ? double.parse(
-                (quantidade * valorUnitario).toStringAsFixed(2),
+                (quantidade * valorUnitario).toStringAsFixed(4),
               )
             : null;
 

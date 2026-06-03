@@ -459,7 +459,7 @@ class _PreviewTable extends StatelessWidget {
                       ],
                     )
                   : Text(
-                      'R\$ ${item.valorUnitarioEstimado!.toStringAsFixed(2)}',
+                      'R\$ ${item.valorUnitarioEstimado!.toStringAsFixed(4)}',
                     ),
             ),
           ],

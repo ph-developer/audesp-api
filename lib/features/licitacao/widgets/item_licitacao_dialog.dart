@@ -115,7 +115,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       'licitantes': _licitantes,
     };
     final valor = double.tryParse(_valorCtrl.text.trim().replaceAll(',', '.'));
-    if (valor != null) map['valor'] = valor;
+    if (valor != null) {
+      map['valor'] = double.parse(valor.toStringAsFixed(4));
+    }
     if (_dataOrcamento != null) {
       map['dataOrcamento'] = _dataOrcamento!.toIso8601String().substring(0, 10);
     }

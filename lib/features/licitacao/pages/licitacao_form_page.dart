@@ -239,7 +239,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final percentual =
         double.tryParse(_percentualValorCtrl.text.trim().replaceAll(',', '.'));
     if (percentual != null && _exigenciaGarantiaLicitantes == 1) {
-      map['percentualValor'] = percentual;
+      map['percentualValor'] = double.parse(percentual.toStringAsFixed(4));
     }
 
     if (_quitacaoFederal != null) map['quitacaoTributosFederais'] = _quitacaoFederal;
@@ -469,7 +469,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       if (valor == null) return;
       final entry = <String, dynamic>{
         'tipoIndice': tipoIndice,
-        'valorIndice': valor,
+        'valorIndice': double.parse(valor.toStringAsFixed(4)),
       };
       if (tipoIndice == 8 && nomeCtrl.text.trim().length >= 3) {
         entry['nomeIndice'] = nomeCtrl.text.trim();
@@ -536,7 +536,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       'licitantes': item.licitantes.map(_csvLicitanteToMap).toList(),
     };
     if (item.tipoOrcamento != null) map['tipoOrcamento'] = item.tipoOrcamento;
-    if (item.valorEstimado != null) map['valor'] = item.valorEstimado;
+    final valorEstimado = item.valorEstimado;
+    if (valorEstimado != null) {
+      map['valor'] = double.parse(valorEstimado.toStringAsFixed(4));
+    }
     if (item.dataOrcamento != null) map['dataOrcamento'] = item.dataOrcamento;
     if (item.dataSituacao != null) map['dataSituacaoItem'] = item.dataSituacao;
     if (item.tipoValor != null) map['tipoValor'] = item.tipoValor;
@@ -552,7 +555,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       'resultadoHabilitacao': l.resultadoHabilitacao,
     };
     if (l.nomeRazaoSocial.isNotEmpty) map['nomeRazaoSocial'] = l.nomeRazaoSocial;
-    if (l.valorProposta != 0) map['valor'] = l.valorProposta;
+    if (l.valorProposta != 0) {
+      map['valor'] = double.parse(l.valorProposta.toStringAsFixed(4));
+    }
     return map;
   }
 
@@ -1181,7 +1186,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 dense: true,
                 title: Text(kTipoIndice[idx['tipoIndice']] ?? ''),
                 subtitle: Text(
-                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${idx['valorIndice']}',
+                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${(idx['valorIndice'] as num?)?.toStringAsFixed(4) ?? ''}',
                 ),
                 trailing: readonly
                     ? null

@@ -70,7 +70,9 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
       map['nomeRazaoSocial'] = _nomeCtrl.text.trim();
     }
     final valor = double.tryParse(_valorCtrl.text.replaceAll(',', '.'));
-    if (valor != null) map['valor'] = valor;
+    if (valor != null) {
+      map['valor'] = double.parse(valor.toStringAsFixed(4));
+    }
     Navigator.of(context).pop(map);
   }
 
