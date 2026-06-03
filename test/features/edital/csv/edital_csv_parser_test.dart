@@ -357,21 +357,12 @@ NumeroItem;Descricao;MaterialOuServico;Quantidade
     // Erros: valores inválidos nas linhas de dados
     // -------------------------------------------------------------------------
     group('erros — valores inválidos em linhas', () {
-      test('NumeroItem não numérico → lança EditalCsvParseException com número da linha', () {
+      test('NumeroItem não numérico → linha ignorada (pode ser linha de descrição do template)', () {
         const csv = '''
 NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida
 abc;Cadeira;M;10;UN
 ''';
-        expect(
-          () => parser.parse(_toBytes(csv)),
-          throwsA(
-            isA<EditalCsvParseException>().having(
-              (e) => e.message,
-              'message',
-              allOf(contains('NumeroItem'), contains('abc')),
-            ),
-          ),
-        );
+        expect(parser.parse(_toBytes(csv)), isEmpty);
       });
 
       test('Descricao vazia → lança EditalCsvParseException', () {

@@ -1,6 +1,8 @@
+import '../../../../core/constants/template_constants.dart';
+import '../../../../core/utils/csv_utils.dart';
+import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/complemento_csv_mapper.dart';
 import '../models/licitacao_item_csv_model.dart';
-import '../../../../core/utils/csv_utils.dart';
 import 'portal_csv_parser.dart';
 
 /// Parser para a **planilha complementar** (Template Padrão).
@@ -23,21 +25,20 @@ class ComplementoCsvParser {
   const ComplementoCsvParser();
 
   Map<int, LicitacaoItemCsvModel> parse(List<int> bytes) {
-    final content = CsvUtils.decodeBytes(bytes);
-
-    // Remove linhas de comentário antes do parse para evitar interferência.
-    final filteredLines = content
-        .split('\n')
-        .where((l) => !l.trimLeft().startsWith('#'))
-        .join('\n');
-
-    final rows = CsvUtils.parseCsv(filteredLines, delimiter: ';');
+    final rows = SheetUtils.parseRows(
+      bytes,
+      csvDelimiter: ';',
+      csvCommentPrefix: '#',
+    );
 
     if (rows.isEmpty) {
       throw const CsvParseException('Planilha complementar está vazia.');
     }
 
-    final header = CsvUtils.buildHeaderIndex(rows.first);
+    final header = CsvUtils.buildHeaderIndex(
+      rows.first,
+      aliases: templateItens.headerAliases,
+    );
 
     if (!header.containsKey('numeroitem')) {
       throw const CsvParseException(
@@ -53,7 +54,8 @@ class ComplementoCsvParser {
         final numeroItemStr = _tryGet(row, header, 'numeroitem') ?? '';
         if (numeroItemStr.isEmpty) continue;
 
-        final numeroItem = int.parse(numeroItemStr);
+        final numeroItem = int.tryParse(numeroItemStr);
+        if (numeroItem == null) continue;
 
         final tipoOrcStr = _tryGet(row, header, 'tipoorcamento');
         // Aceita tanto 'ValorEstimado' (template antigo) quanto

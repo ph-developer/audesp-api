@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/template_constants.dart';
+import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/edital_csv.dart';
 import '../domain/edital_domain.dart';
@@ -42,7 +44,7 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   Future<void> _pickFile() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv'],
+      allowedExtensions: ['csv', 'xlsx'],
       withData: true,
     );
     if (result == null || result.files.isEmpty) return;
@@ -74,31 +76,16 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   }
 
   Future<void> _downloadTemplate() async {
-    const content =
-        'NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;'
-        'ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;ItemCategoria;'
-        'TipoOrcamento;ValorEstimadoMedia;DataOrcamento;'
-        'SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
-        '# MaterialOuServico: M (Material) ou S (Serviço);;;;;;;;;;;;;;;\r\n'
-        '# ValorUnitarioMenor: menor valor orçado (Edital)  |  ValorEstimadoMedia: média dos orçamentos (Licitação);;;;;;;;;;;;;;;\r\n'
-        '# CriterioJulgamento: MENOR_PRECO, MAIOR_DESCONTO, TECNICA_PRECO, MAIOR_LANCE, MAIOR_RETORNO, NAO_SE_APLICA, MELHOR_TECNICA, CONTEUDO_ARTISTICO;;;;;;;;;;;;;;\r\n'
-        '# TipoBeneficio: EXCLUSIVO_ME_EPP, SUBCONTRATACAO_ME_EPP, COTA_RESERVADA_ME_EPP, SEM_BENEFICIO, NAO_SE_APLICA;;;;;;;;;;;;;;\r\n'
-        '# ItemCategoria: BENS_IMOVEIS, BENS_MOVEIS, NAO_SE_APLICA;;;;;;;;;;;;;;\r\n'
-        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;;\r\n'
-        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;;;;;;;;\r\n'
-        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;;;;;;;;\r\n'
-        '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;;;;\r\n'
-        '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;BENS_MOVEIS;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
-
     final path = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
-      fileName: 'template_itens.csv',
-      allowedExtensions: ['csv'],
+      fileName: 'template_itens.xlsx',
+      allowedExtensions: ['xlsx'],
       type: FileType.custom,
     );
     if (path == null) return;
     try {
-      await File(path).writeAsBytes(content.codeUnits);
+      final bytes = TemplateGenerator.generate(templateItens);
+      await File(path).writeAsBytes(bytes);
     } catch (e) {
       if (mounted) setState(() => _errorMessage = 'Erro ao salvar template: $e');
     }
@@ -142,7 +129,7 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
     final withoutValue = (preview?.length ?? 0) - withValue;
 
     return AlertDialog(
-      title: const Text('Importar Itens via Planilha CSV'),
+      title: const Text('Importar Itens via Planilha'),
       content: SizedBox(
         child: Column(
           mainAxisSize: MainAxisSize.min,

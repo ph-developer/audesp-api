@@ -46,6 +46,9 @@ dependencies:
   # Driver MySQL
   mysql_client: ^0.0.27
 
+  # Leitura de planilhas XLSX
+  excel: ^4.0.6
+
   # Manipulação de caminhos de arquivos
   path: ^1.9.1
   ini: ^2.1.0

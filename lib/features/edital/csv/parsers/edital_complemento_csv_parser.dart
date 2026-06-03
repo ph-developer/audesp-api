@@ -1,4 +1,6 @@
+import '../../../../core/constants/template_constants.dart';
 import '../../../../core/utils/csv_utils.dart';
+import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/edital_complemento_csv_mapper.dart';
 import '../models/edital_item_csv_model.dart';
 
@@ -35,15 +37,11 @@ class EditalComplementoCsvParser {
   ];
 
   List<EditalItemCsvModel> parse(List<int> bytes) {
-    final content = CsvUtils.decodeBytes(bytes);
-
-    // Remove linhas de comentário antes do parse.
-    final filteredLines = content
-        .split('\n')
-        .where((l) => !l.trimLeft().startsWith('#'))
-        .join('\n');
-
-    final rows = CsvUtils.parseCsv(filteredLines, delimiter: ';');
+    final rows = SheetUtils.parseRows(
+      bytes,
+      csvDelimiter: ';',
+      csvCommentPrefix: '#',
+    );
 
     if (rows.isEmpty) {
       throw const EditalCsvParseException(
@@ -51,7 +49,10 @@ class EditalComplementoCsvParser {
       );
     }
 
-    final header = CsvUtils.buildHeaderIndex(rows.first);
+    final header = CsvUtils.buildHeaderIndex(
+      rows.first,
+      aliases: templateItens.headerAliases,
+    );
 
     // Valida colunas obrigatórias.
     for (final col in _required) {
@@ -72,11 +73,7 @@ class EditalComplementoCsvParser {
         if (numeroItemStr.isEmpty) continue;
 
         final numeroItem = int.tryParse(numeroItemStr);
-        if (numeroItem == null) {
-          throw EditalCsvParseException(
-            'Linha ${index + 2}: "NumeroItem" não é um número inteiro válido: "$numeroItemStr".',
-          );
-        }
+        if (numeroItem == null) continue;
 
         final descricao = _tryGet(row, header, 'descricao') ?? '';
         if (descricao.isEmpty) {

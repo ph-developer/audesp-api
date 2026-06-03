@@ -1,7 +1,8 @@
+import '../../../../core/utils/csv_utils.dart';
+import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/br_conectado_mapper.dart';
 import '../mappers/csv_mappers.dart';
 import '../models/licitacao_item_csv_model.dart';
-import '../../../../core/utils/csv_utils.dart';
 import 'portal_csv_parser.dart';
 
 /// Parser para os arquivos CSV exportados pelo portal **BRConectado**.
@@ -55,10 +56,7 @@ class BrConectadoCsvParser implements PortalCsvParser {
   // ---------------------------------------------------------------------------
 
   Map<_ItemCnpjKey, int> _buildMeEppMap(List<int> bytes) {
-    final rows = CsvUtils.parseCsv(
-      CsvUtils.decodeBytes(bytes),
-      delimiter: ';',
-    );
+    final rows = SheetUtils.parseRows(bytes, csvDelimiter: ';');
     if (rows.isEmpty) {
       throw const CsvParseException('"propostas.csv" está vazio.');
     }
@@ -98,10 +96,7 @@ class BrConectadoCsvParser implements PortalCsvParser {
     List<int> bytes,
     Map<_ItemCnpjKey, int> meEppMap,
   ) {
-    final rows = CsvUtils.parseCsv(
-      CsvUtils.decodeBytes(bytes),
-      delimiter: ';',
-    );
+    final rows = SheetUtils.parseRows(bytes, csvDelimiter: ';');
     if (rows.isEmpty) {
       throw const CsvParseException('"relatclassificacao.csv" está vazio.');
     }

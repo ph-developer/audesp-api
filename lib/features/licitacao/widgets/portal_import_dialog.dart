@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/template_constants.dart';
+import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/csv.dart';
@@ -43,7 +45,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   Future<void> _pickFile(String fileKey) async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv'],
+      allowedExtensions: ['csv', 'xlsx'],
       withData: true,
     );
     if (result == null || result.files.isEmpty) return;
@@ -66,30 +68,16 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   static const _complementoKey = 'complemento';
 
   Future<void> _downloadTemplate() async {
-    const content =
-        'NumeroItem;Descricao;MaterialOuServico;Quantidade;UnidadeMedida;'
-        'ValorUnitarioMenor;CriterioJulgamento;TipoBeneficio;'
-        'TipoOrcamento;ValorEstimadoMedia;DataOrcamento;'
-        'SituacaoCompraItem;DataSituacao;TipoValor;TipoProposta\r\n'
-        '# Colunas do EDITAL: Descricao, MaterialOuServico, Quantidade, UnidadeMedida, ValorUnitarioMenor (Menor Valor Orc.), CriterioJulgamento, TipoBeneficio;;;;;;;;;;;\r\n'
-        '# Colunas da LICITACAO: TipoOrcamento, ValorEstimadoMedia (Media dos Orc.), DataOrcamento, SituacaoCompraItem, DataSituacao, TipoValor, TipoProposta;;;;;;;;;;;\r\n'
-        '# TipoOrcamento: NAO, GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;\r\n'
-        '# SituacaoCompraItem: ANDAMENTO, HOMOLOGADO, DESERTO, FRACASSADO, ANULADO, REVOGADO, CANCELADO;;;;;;;;;;;\r\n'
-        '# DataOrcamento e DataSituacao: formato DD/MM/AAAA;;;;;;;;;;;\r\n'
-        '# TipoValor: MOEDA, PERCENTUAL  |  TipoProposta: GLOBAL, UNITARIO, DESCONTO;;;;;;;;;;;\r\n'
-        '# Exemplo:;;;;;;;;;;;\r\n'
-        '1;Cadeira ergonômica;M;10;UN;800,00;MENOR_PRECO;SEM_BENEFICIO;GLOBAL;850,00;01/01/2025;HOMOLOGADO;15/01/2025;MOEDA;GLOBAL\r\n';
-
     final path = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
-      fileName: 'template_itens.csv',
-      allowedExtensions: ['csv'],
+      fileName: 'template_itens.xlsx',
+      allowedExtensions: ['xlsx'],
       type: FileType.custom,
     );
     if (path == null) return;
-
     try {
-      await File(path).writeAsBytes(content.codeUnits);
+      final bytes = TemplateGenerator.generate(templateItens);
+      await File(path).writeAsBytes(bytes);
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = 'Erro ao salvar template: $e');

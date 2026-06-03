@@ -1,7 +1,8 @@
+import '../../../../core/utils/csv_utils.dart';
+import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/bll_mapper.dart';
 import '../mappers/csv_mappers.dart';
 import '../models/licitacao_item_csv_model.dart';
-import '../../../../core/utils/csv_utils.dart';
 import 'portal_csv_parser.dart';
 
 /// Parser para os arquivos CSV exportados pelo portal **BLL**.
@@ -37,10 +38,7 @@ class BllCsvParser implements PortalCsvParser {
   // ---------------------------------------------------------------------------
 
   List<LicitacaoItemCsvModel> _parseClassificacao(List<int> bytes) {
-    final rows = CsvUtils.parseCsv(
-      CsvUtils.decodeBytes(bytes),
-      delimiter: ',',
-    );
+    final rows = SheetUtils.parseRows(bytes, csvDelimiter: ',');
     if (rows.isEmpty) {
       throw const CsvParseException(
         '"Classificacao com itens.csv" está vazio.',

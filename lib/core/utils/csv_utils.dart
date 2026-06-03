@@ -90,11 +90,26 @@ class CsvUtils {
   ///
   /// Os nomes são normalizados (trim + toLowerCase) para facilitar buscas
   /// case-insensitive.
-  static Map<String, int> buildHeaderIndex(List<String> headerRow) {
-    return {
+  ///
+  /// Se [aliases] for fornecido, cada entrada do cabeçalho também é
+  /// registrada com o alias correspondente (útil quando o cabeçalho exibe
+  /// títulos humanizados mas os parsers buscam pelo nome interno).
+  static Map<String, int> buildHeaderIndex(
+    List<String> headerRow, {
+    Map<String, String>? aliases,
+  }) {
+    final index = <String, int>{
       for (var i = 0; i < headerRow.length; i++)
         headerRow[i].trim().toLowerCase(): i,
     };
+    if (aliases != null) {
+      for (final entry in aliases.entries) {
+        if (index.containsKey(entry.key)) {
+          index[entry.value] = index[entry.key]!;
+        }
+      }
+    }
+    return index;
   }
 
   /// Retorna o valor de [row] no índice correspondente a [columnName] no
