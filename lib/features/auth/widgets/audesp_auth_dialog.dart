@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/environments.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/secure_storage_service.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../auth_providers.dart';
@@ -41,25 +40,32 @@ class _AudespAuthDialog extends ConsumerStatefulWidget {
 }
 
 class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
+  final _passwordCtrl = TextEditingController();
+  bool _obscure = true;
   String? _error;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _authenticate() async {
     final user = ref.read(localSessionProvider);
     final env = ref.read(environmentProvider);
     final authService = ref.read(authServiceProvider);
-    final storage = ref.read(secureStorageServiceProvider);
 
     if (user == null) return;
+
+    final password = _passwordCtrl.text;
+    if (password.isEmpty) {
+      setState(() => _error = 'Informe a senha do AUDESP.');
+      return;
+    }
 
     setState(() => _error = null);
 
     try {
-      final password = await storage.getPassword(user.email);
-      if (password == null) {
-        if (mounted) setState(() => _error = 'Senha não encontrada. Recadastre o perfil.');
-        return;
-      }
-
       final token = await authService.loginAudesp(
         email: user.email,
         password: password,
@@ -111,6 +117,24 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
                   : Colors.green.shade100,
             ),
             contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _passwordCtrl,
+            obscureText: _obscure,
+            decoration: InputDecoration(
+              labelText: 'Senha AUDESP',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure ? Icons.visibility_off : Icons.visibility,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _authenticate(),
+            autofocus: true,
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),

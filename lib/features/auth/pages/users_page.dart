@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
-import '../../../core/services/secure_storage_service.dart';
 import '../widgets/user_form_dialog.dart';
 
 class UsersPage extends ConsumerWidget {
@@ -104,7 +103,6 @@ class UsersPage extends ConsumerWidget {
 
     if (confirmed == true) {
       await ref.read(usersDaoProvider).deleteById(user.id);
-      await ref.read(secureStorageServiceProvider).deletePassword(user.email);
     }
   }
 }

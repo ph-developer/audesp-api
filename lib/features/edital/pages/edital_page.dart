@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
-import '../edital_providers.dart';
+import '../edital_providers.dart' show editaisDraftProvider, editaisEnviadosProvider;
 
 class EditalPage extends ConsumerWidget {
   const EditalPage({super.key});
@@ -16,7 +16,7 @@ class EditalPage extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Editals'),
+          title: const Text('Editais'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Rascunhos'),
@@ -163,20 +163,20 @@ class _EditalCard extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Excluir Edital'),
         content: Text(
             'Deseja excluir o edital "${edital.codigoEdital}"? Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Excluir'),
           ),
         ],
@@ -185,6 +185,8 @@ class _EditalCard extends ConsumerWidget {
     if (confirmed == true) {
       try {
         await ref.read(editaisDaoProvider).deleteById(edital.id);
+        ref.invalidate(editaisDraftProvider);
+        ref.invalidate(editaisEnviadosProvider);
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_env.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
-import '../../../core/services/secure_storage_service.dart';
 import '../../../core/utils/password_hasher.dart';
 import '../auth_providers.dart';
 
@@ -29,12 +28,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _obscureSysPwNova = true;
   bool _savingSysPw = false;
 
-  // Seção de credenciais AUDESP
-  final _senhaNovaCtr1 = TextEditingController();
-  bool _obscureNova = true;
-
   bool _saving = false;
-  bool _savingPassword = false;
   User? _user;
 
   @override
@@ -49,7 +43,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _nome.dispose();
     _sysPwAtualCtrl.dispose();
     _sysPwNovaCtrl.dispose();
-    _senhaNovaCtr1.dispose();
     super.dispose();
   }
 
@@ -155,46 +148,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } finally {
       if (mounted) setState(() => _savingSysPw = false);
-    }
-  }
-
-  Future<void> _savePassword() async {
-    if (_user == null) return;
-    final next = _senhaNovaCtr1.text;
-
-    if (next.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe a nova senha.')),
-      );
-      return;
-    }
-    if (next.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A nova senha deve ter ao menos 4 caracteres.')),
-      );
-      return;
-    }
-
-    setState(() => _savingPassword = true);
-    final storage = ref.read(secureStorageServiceProvider);
-
-    try {
-      await storage.storePassword(_user!.email, next);
-      _senhaNovaCtr1.clear();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Senha AUDESP atualizada com sucesso.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar senha: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _savingPassword = false);
     }
   }
 
@@ -335,64 +288,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
 
-              // ── Credenciais AUDESP ───────────────────────────────────────
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.lock_outline, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Senha AUDESP',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Altere aqui se sua senha do sistema AUDESP foi modificada.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _senhaNovaCtr1,
-                        obscureText: _obscureNova,
-                        decoration: InputDecoration(
-                          labelText: 'Nova senha',
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureNova
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () =>
-                                setState(() => _obscureNova = !_obscureNova),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: FilledButton.tonal(
-                          onPressed: _savingPassword ? null : _savePassword,
-                          child: _savingPassword
-                              ? const SizedBox(
-                                  height: 14,
-                                  width: 14,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
-                                )
-                              : const Text('Atualizar senha AUDESP'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),

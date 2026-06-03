@@ -6,7 +6,6 @@ import '../../../core/constants/environments.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/database/daos/app_settings_dao.dart';
-import '../../../core/services/secure_storage_service.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
 
@@ -195,7 +194,6 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
     );
     if (confirmed == true) {
       await ref.read(usersDaoProvider).deleteById(user.id);
-      await ref.read(secureStorageServiceProvider).deletePassword(user.email);
       _refresh();
     }
   }

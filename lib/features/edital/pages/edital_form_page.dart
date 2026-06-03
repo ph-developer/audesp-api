@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
+import '../edital_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
@@ -259,6 +260,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           updatedAt: DateTime.now(),
         );
       }
+      ref.invalidate(editaisDraftProvider);
+      ref.invalidate(editaisEnviadosProvider);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Rascunho salvo com sucesso.')),
