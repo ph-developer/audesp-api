@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'core/constants/app_env.dart';
 import 'core/database/app_database.dart';
+import 'core/database/database_providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,8 +12,14 @@ void main() async {
 
   final db = openConnection();
   await db.initialize();
-  await db.close();
 
-  runApp(const ProviderScope(child: App()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        databaseServiceProvider.overrideWithValue(db),
+      ],
+      child: const App(),
+    ),
+  );
 }
 

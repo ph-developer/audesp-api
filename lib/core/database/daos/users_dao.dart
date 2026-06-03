@@ -19,9 +19,10 @@ class UsersDao {
   }
 
   Future<User?> findByEmail(String email) async {
-    final stmt =
-        await _db.pool.prepare('SELECT * FROM users WHERE email = (?)');
-    final result = await stmt.execute([email]);
+    final result = await _db.pool.execute(
+      'SELECT * FROM users WHERE email = :email',
+      {'email': email},
+    );
     final rows = result.rows;
     return rows.isEmpty ? null : User.fromMap(rows.first.typedAssoc());
   }
@@ -65,8 +66,9 @@ class UsersDao {
   }
 
   Future<void> setPasswordHash(int userId, String hash) async {
-    final stmt =
-        await _db.pool.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
-    await stmt.execute([hash, userId]);
+    await _db.pool.execute(
+      'UPDATE users SET password_hash = :hash WHERE id = :id',
+      {'hash': hash, 'id': userId},
+    );
   }
 }
