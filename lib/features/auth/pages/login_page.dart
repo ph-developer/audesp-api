@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_env.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/local_prefs.dart';
 import '../../../core/utils/password_hasher.dart';
 import '../auth_providers.dart';
 
@@ -17,14 +18,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
   bool _obscure = true;
   String? _error;
   bool _loading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadLastUser();
+  }
+
+  Future<void> _loadLastUser() async {
+    final last = await LocalPrefs.getLastUser();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (last != null) {
+        _emailCtrl.text = last;
+        _passwordFocus.requestFocus();
+      } else {
+        _emailFocus.requestFocus();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -44,6 +69,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (username == 'admin') {
         if (password == AppEnv.adminPassword) {
           ref.read(localSessionProvider.notifier).login(buildAdminUser());
+          LocalPrefs.setLastUser(username);
         } else {
           setState(() => _error = 'Senha de administrador incorreta.');
         }
@@ -65,6 +91,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           final hash = PasswordHasher.hash(username, password);
           await dao.setPasswordHash(user.id, hash);
           ref.read(localSessionProvider.notifier).login(user);
+          LocalPrefs.setLastUser(username);
         } else {
           setState(() => _error =
               'Senha incorreta. Use a senha padrão fornecida pelo administrador.');
@@ -73,6 +100,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         // Acesso normal: verificar hash do banco
         if (PasswordHasher.verify(username, password, user.passwordHash!)) {
           ref.read(localSessionProvider.notifier).login(user);
+          LocalPrefs.setLastUser(username);
         } else {
           setState(() => _error = 'Senha incorreta.');
         }
@@ -129,6 +157,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     // ── Formulário ──────────────────────────────────────
                     TextFormField(
                       controller: _emailCtrl,
+                      focusNode: _emailFocus,
                       decoration: const InputDecoration(
                         labelText: 'E-mail',
                         prefixIcon: Icon(Icons.person_outline),
@@ -136,7 +165,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
-                      autofocus: true,
                       onChanged: (_) => setState(() => _error = null),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -144,6 +172,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordCtrl,
+                      focusNode: _passwordFocus,
                       obscureText: _obscure,
                       decoration: InputDecoration(
                         labelText: 'Senha',
