@@ -407,6 +407,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       Expanded(
                         child: DropdownButtonFormField<int>(
                           initialValue: _editalId,
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'Edital *',
                           ),
