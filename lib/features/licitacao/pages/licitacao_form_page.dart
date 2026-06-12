@@ -636,13 +636,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final isNew = widget.licitacaoId == null;
-    final readonly = _isSent;
+    final readOnly = _isSent;
 
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: () => context.go('/licitacao')),
-        title: Text(isNew ? 'Nova Licitação' : 'Editar Licitação'),
+        title: Text(
+          _loadedId == null
+              ? 'Nova Licitação'
+              : _isSent
+                  ? 'Licitação'
+                  : 'Editar Licitação',
+        ),
         actions: [
           if (!_isSent) ...[
             if (_saving)
@@ -687,25 +692,25 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildEditalSection(readonly),
+              _buildEditalSection(readOnly),
               const SizedBox(height: 16),
-              _buildDescritorSection(readonly),
+              _buildDescritorSection(readOnly),
               const SizedBox(height: 16),
-              _buildBidSection(readonly),
+              _buildBidSection(readOnly),
               const SizedBox(height: 16),
-              _buildDadosGeraisSection(readonly),
+              _buildDadosGeraisSection(readOnly),
               const SizedBox(height: 16),
-              _buildGarantiaSection(readonly),
+              _buildGarantiaSection(readOnly),
               const SizedBox(height: 16),
-              _buildQuitacaoSection(readonly),
+              _buildQuitacaoSection(readOnly),
               const SizedBox(height: 16),
-              _buildFontesRecursoSection(readonly),
+              _buildFontesRecursoSection(readOnly),
               const SizedBox(height: 16),
-              _buildContratacaoConduzidaSection(readonly),
+              _buildContratacaoConduzidaSection(readOnly),
               const SizedBox(height: 16),
-              _buildIndicesEconomicosSection(readonly),
+              _buildIndicesEconomicosSection(readOnly),
               const SizedBox(height: 16),
-              _buildItensSection(readonly),
+              _buildItensSection(readOnly),
             ],
           ),
         ),
@@ -715,7 +720,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   // ── Seções ─────────────────────────────────────────────────────────────
 
-  Widget _buildEditalSection(bool readonly) {
+  Widget _buildEditalSection(bool readOnly) {
     return SectionCard(
       title: 'Edital Vinculado',
       children: [
@@ -735,7 +740,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                           ),
                         ))
                     .toList(),
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) {
                         setState(() {
@@ -751,7 +756,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               width: 200,
               child: SwitchListTile(
                 value: _retificacao,
-                onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
+                onChanged: readOnly ? null : (v) => setState(() => _retificacao = v),
                 title: const Text('Retificação'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -762,7 +767,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildDescritorSection(bool readonly) {
+  Widget _buildDescritorSection(bool readOnly) {
     final municipio = ref.watch(codigoMunicipioProvider);
     final entidade = ref.watch(codigoEntidadeProvider);
     return SectionCard(
@@ -780,7 +785,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildBidSection(bool readonly) {
+  Widget _buildBidSection(bool readOnly) {
     return SectionCard(
       title: 'Recursos BID',
       children: [
@@ -788,7 +793,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           label: 'Recurso BID *',
           value: _recursoBID,
           items: kRecursoBID,
-          onChanged: readonly ? null : (v) => setState(() => _recursoBID = v),
+          onChanged: readOnly ? null : (v) => setState(() => _recursoBID = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         if (_recursoBID == 1) ...[
@@ -802,7 +807,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Abertura Pré-Qualificação',
                 value: _aberturaPreQualificacaoBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _aberturaPreQualificacaoBID = v),
               ),
@@ -813,7 +818,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Edital Pré-Qualificação',
                 value: _editalPreQualificacaoBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _editalPreQualificacaoBID = v),
               ),
@@ -824,7 +829,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Julgamento Pré-Qualificação',
                 value: _julgamentoPreQualificacaoBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _julgamentoPreQualificacaoBID = v),
               ),
@@ -837,7 +842,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Edital 2ª Fase',
                 value: _edital2FaseBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _edital2FaseBID = v),
               ),
@@ -848,7 +853,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Julgamento de Propostas',
                 value: _julgamentoPropostasBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _julgamentoPropostasBID = v),
               ),
@@ -859,7 +864,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Julgamento/Negociação',
                 value: _julgamentoNegociacaoBID,
                 items: kTriState,
-                onChanged: readonly
+                onChanged: readOnly
                     ? null
                     : (v) => setState(() => _julgamentoNegociacaoBID = v),
               ),
@@ -870,7 +875,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildDadosGeraisSection(bool readonly) {
+  Widget _buildDadosGeraisSection(bool readOnly) {
     return SectionCard(
       title: 'Dados Gerais',
       children: [
@@ -880,7 +885,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Tipo de Natureza *',
               value: _tipoNatureza,
               items: kTipoNatureza,
-              onChanged: readonly ? null : (v) => setState(() => _tipoNatureza = v),
+              onChanged: readOnly ? null : (v) => setState(() => _tipoNatureza = v),
               validator: (v) => v == null ? 'Obrigatório' : null,
             ),
           ),
@@ -890,7 +895,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Viabilidade de Contratação',
               value: _viabilidadeContratacao,
               items: kTriState,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _viabilidadeContratacao = v),
             ),
@@ -903,7 +908,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Interposição de Recurso *',
               value: _interposicaoRecurso,
               items: kTriState,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _interposicaoRecurso = v),
               validator: (v) => v == null ? 'Obrigatório' : null,
@@ -915,7 +920,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Audiência Pública',
               value: _audienciaPublica,
               items: kTriState,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _audienciaPublica = v),
             ),
@@ -928,7 +933,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Exigência de Amostra',
               value: _exigenciaAmostra,
               items: kExigenciaAmostra,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _exigenciaAmostra = v),
             ),
@@ -939,7 +944,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Exigência de Visita Técnica',
               value: _exigenciaVisitaTecnica,
               items: kExigenciaVisitaTecnica,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _exigenciaVisitaTecnica = v),
             ),
@@ -950,7 +955,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Expanded(
             child: CheckboxListTile(
               value: _exigenciaCurriculo ?? false,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _exigenciaCurriculo = v),
               title: const Text('Exige Currículo'),
@@ -961,7 +966,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Expanded(
             child: CheckboxListTile(
               value: _exigenciaVistoCREA ?? false,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _exigenciaVistoCREA = v),
               title: const Text('Exige Visto CREA'),
@@ -972,7 +977,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Expanded(
             child: CheckboxListTile(
               value: _declaracaoRecursos ?? false,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _declaracaoRecursos = v),
               title: const Text('Declaração de Recursos'),
@@ -985,7 +990,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildGarantiaSection(bool readonly) {
+  Widget _buildGarantiaSection(bool readOnly) {
     return SectionCard(
       title: 'Garantia de Licitantes',
       children: [
@@ -995,7 +1000,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               label: 'Exigência de Garantia *',
               value: _exigenciaGarantiaLicitantes,
               items: kTriState,
-              onChanged: readonly
+              onChanged: readOnly
                   ? null
                   : (v) => setState(() => _exigenciaGarantiaLicitantes = v),
               validator: (v) => v == null ? 'Obrigatório' : null,
@@ -1005,7 +1010,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Expanded(
             child: TextFormField(
               controller: _percentualValorCtrl,
-              enabled: !readonly && _exigenciaGarantiaLicitantes == 1,
+              enabled: !readOnly && _exigenciaGarantiaLicitantes == 1,
               decoration: const InputDecoration(
                 labelText: 'Percentual (%)',
                 hintText: '0 a 100',
@@ -1030,7 +1035,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildQuitacaoSection(bool readonly) {
+  Widget _buildQuitacaoSection(bool readOnly) {
     return SectionCard(
       title: 'Quitação de Tributos',
       children: [
@@ -1039,7 +1044,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             child: CheckboxListTile(
               value: _quitacaoFederal ?? false,
               onChanged:
-                  readonly ? null : (v) => setState(() => _quitacaoFederal = v),
+                  readOnly ? null : (v) => setState(() => _quitacaoFederal = v),
               title: const Text('Tributos Federais'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
@@ -1049,7 +1054,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             child: CheckboxListTile(
               value: _quitacaoEstadual ?? false,
               onChanged:
-                  readonly ? null : (v) => setState(() => _quitacaoEstadual = v),
+                  readOnly ? null : (v) => setState(() => _quitacaoEstadual = v),
               title: const Text('Tributos Estaduais'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
@@ -1059,7 +1064,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             child: CheckboxListTile(
               value: _quitacaoMunicipal ?? false,
               onChanged:
-                  readonly ? null : (v) => setState(() => _quitacaoMunicipal = v),
+                  readOnly ? null : (v) => setState(() => _quitacaoMunicipal = v),
               title: const Text('Tributos Municipais'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
@@ -1070,7 +1075,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildFontesRecursoSection(bool readonly) {
+  Widget _buildFontesRecursoSection(bool readOnly) {
     return SectionCard(
       title: 'Fontes de Recurso',
       children: [
@@ -1082,7 +1087,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             return FilterChip(
               label: Text(e.value, style: const TextStyle(fontSize: 11)),
               selected: selected,
-              onSelected: readonly
+              onSelected: readOnly
                   ? null
                   : (v) => setState(() {
                         if (v) {
@@ -1098,14 +1103,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildContratacaoConduzidaSection(bool readonly) {
+  Widget _buildContratacaoConduzidaSection(bool readOnly) {
     return SectionCard(
       title: 'Contratação Conduzida',
       children: [
         SwitchListTile(
           value: _contratacaoConduzida,
           onChanged:
-              readonly ? null : (v) => setState(() => _contratacaoConduzida = v),
+              readOnly ? null : (v) => setState(() => _contratacaoConduzida = v),
           title: const Text('Contratação Conduzida por Órgão Externo *'),
           contentPadding: EdgeInsets.zero,
         ),
@@ -1116,7 +1121,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               Expanded(
                 child: TextFormField(
                   controller: _cpfCondutorCtrl,
-                  enabled: !readonly,
+                  enabled: !readOnly,
                   decoration: const InputDecoration(
                     labelText: 'CPF do Condutor (11 dígitos)',
                     hintText: '00000000000',
@@ -1128,7 +1133,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (!readonly)
+              if (!readOnly)
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
                   onPressed: _addCpf,
@@ -1144,7 +1149,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 .map((cpf) => Chip(
                       label: Text(cpf),
                       onDeleted:
-                          readonly ? null : () => setState(() => _cpfsCondutores.remove(cpf)),
+                          readOnly ? null : () => setState(() => _cpfsCondutores.remove(cpf)),
                     ))
                 .toList(),
           ),
@@ -1153,7 +1158,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildIndicesEconomicosSection(bool readonly) {
+  Widget _buildIndicesEconomicosSection(bool readOnly) {
     return SectionCard(
       title: 'Índices Econômicos',
       children: [
@@ -1161,7 +1166,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           label: 'Exigência de Índices Econômicos',
           value: _exigenciaIndicesEconomicos,
           items: kTriState,
-          onChanged: readonly
+          onChanged: readOnly
               ? null
               : (v) => setState(() => _exigenciaIndicesEconomicos = v),
         ),
@@ -1174,7 +1179,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 'Índices (${_indicesEconomicos.length})',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
-              if (!readonly)
+              if (!readOnly)
                 TextButton.icon(
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Adicionar'),
@@ -1193,7 +1198,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 subtitle: Text(
                   '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${(idx['valorIndice'] as num?)?.toStringAsFixed(4) ?? ''}',
                 ),
-                trailing: readonly
+                trailing: readOnly
                     ? null
                     : Row(
                         mainAxisSize: MainAxisSize.min,
@@ -1217,11 +1222,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildItensSection(bool readonly) {
+  Widget _buildItensSection(bool readOnly) {
     return SectionCard(
       title: 'Itens de Licitação',
       titleActions: [        
-        if (!readonly) ...[
+        if (!readOnly) ...[
           TextButton.icon(
             onPressed: _openPortalImportDialog,
             icon: const Icon(Icons.download_outlined, size: 18),
@@ -1278,7 +1283,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 subtitle: Text(
                   '$situacao  |  $numLicitantes licitante(s)',
                 ),
-                trailing: readonly
+                trailing: readOnly
                     ? null
                     : Row(
                         mainAxisSize: MainAxisSize.min,

@@ -124,8 +124,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ata.codigoEdital;
-    _codigoAtaCtrl.text =
-        descritor['codigoAta'] as String? ?? ata.codigoAta;
+    _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
+        descritor['codigoAta'] as String? ?? ata.codigoAta);
     _retificacao = descritor['retificacao'] as bool? ?? ata.retificacao;
     _fillEditalDescriptor();
 
@@ -345,11 +345,12 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/ata')),
         title: Text(
           _loadedId == null
               ? 'Nova Ata'
               : _isSent
-                  ? 'Ata (Enviada)'
+                  ? 'Ata'
                   : 'Editar Ata',
         ),
         actions: [
@@ -378,6 +379,16 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               const SizedBox(width: 8),
             ],
           ],
+          if (_isSent)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Chip(
+                label: const Text('Enviada'),
+                avatar: const Icon(Icons.check_circle, size: 16),
+                backgroundColor:
+                    Theme.of(context).colorScheme.primaryContainer,
+              ),
+            ),
         ],
       ),
       body: Form(

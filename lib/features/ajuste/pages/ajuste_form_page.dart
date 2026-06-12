@@ -178,10 +178,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ajuste.codigoEdital;
-    _codigoAtaCtrl.text =
-        descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '';
-    _codigoContratoCtrl.text =
-        descritor['codigoContrato'] as String? ?? ajuste.codigoContrato;
+    _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
+        descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '');
+    _codigoContratoCtrl.text = PcnpInputFormatter.applyMask(
+        descritor['codigoContrato'] as String? ?? ajuste.codigoContrato);
     _retificacao = descritor['retificacao'] as bool? ?? ajuste.retificacao;
     _adesaoParticipacao =
         descritor['adesaoParticipacao'] as bool? ?? false;
@@ -550,11 +550,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/ajuste')),
         title: Text(
           _loadedId == null
               ? 'Novo Ajuste'
               : _isSent
-                  ? 'Ajuste (Enviado)'
+                  ? 'Ajuste'
                   : 'Editar Ajuste',
         ),
         actions: [
@@ -582,6 +583,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(width: 8),
             ],
           ],
+          if (_isSent)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Chip(
+                label: const Text('Enviado'),
+                avatar: const Icon(Icons.check_circle, size: 16),
+                backgroundColor:
+                    Theme.of(context).colorScheme.primaryContainer,
+              ),
+            ),
         ],
       ),
       body: Form(

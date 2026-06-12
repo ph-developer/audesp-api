@@ -515,13 +515,18 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final isNew = widget.editalId == null;
-    final readonly = _isSent;
+    final readOnly = _isSent;
 
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: () => context.go('/edital')),
-        title: Text(isNew ? 'Novo Edital' : 'Editar Edital'),
+        title: Text(
+          _loadedId == null
+              ? 'Novo Edital'
+              : _isSent
+                  ? 'Edital'
+                  : 'Editar Edital',
+        ),
         actions: [
           if (!_isSent) ...[
             if (_saving)
@@ -574,30 +579,22 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ),
       body: Form(
         key: _formKey,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Formulário principal ─────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildDescritorSection(readonly),
-                    const SizedBox(height: 16),
-                    _buildPublicidadeSection(readonly),
-                    const SizedBox(height: 16),
-                    _buildDadosGeraisSection(readonly),
-                    const SizedBox(height: 16),
-                    _buildItensSection(readonly),
-                    const SizedBox(height: 16),
-                    _buildPdfSection(readonly),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildDescritorSection(readOnly),
+              const SizedBox(height: 16),
+              _buildPublicidadeSection(readOnly),
+              const SizedBox(height: 16),
+              _buildDadosGeraisSection(readOnly),
+              const SizedBox(height: 16),
+              _buildItensSection(readOnly),
+              const SizedBox(height: 16),
+              _buildPdfSection(readOnly),
+            ],
+          ),
         ),
       ),
     );
@@ -605,7 +602,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Seção: Descritor ──────────────────────────────────────────────────────
 
-  Widget _buildDescritorSection(bool readonly) {
+  Widget _buildDescritorSection(bool readOnly) {
     final municipio = ref.watch(codigoMunicipioProvider);
     final entidade = ref.watch(codigoEntidadeProvider);
     return SectionCard(
@@ -625,7 +622,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               flex: 2,
               child: TextFormField(
                 controller: _codigoEditalCtrl,
-                enabled: !readonly && !_retificacao,
+                enabled: !readOnly && !_retificacao,
                 decoration: const InputDecoration(
                   labelText: 'ID de Contratação PNCP *',
                   hintText: '00000000000000-0-000000/0000',
@@ -651,7 +648,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               child: AudespDatePickerField(
                 label: 'Data do Edital *',
                 value: _dataDoc,
-                readOnly: readonly,
+                readOnly: readOnly,
                 onChanged: (d) => setState(() => _dataDoc = d),
                 validator: (d) => d == null ? 'Obrigatório' : null,
               ),
@@ -663,7 +660,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Retificação'),
                 value: _retificacao,
-                onChanged: readonly ? null : (v) => setState(() => _retificacao = v),
+                onChanged: readOnly ? null : (v) => setState(() => _retificacao = v),
               ),
             ),
           ],
@@ -674,7 +671,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Seção: Publicidade ────────────────────────────────────────────────────
 
-  Widget _buildPublicidadeSection(bool readonly) {
+  Widget _buildPublicidadeSection(bool readOnly) {
     return SectionCard(
       title: 'Publicidade',
       children: [
@@ -682,7 +679,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Houve Publicação *'),
           value: _houvePublicacao,
-          onChanged: readonly
+          onChanged: readOnly
               ? null
               : (v) => setState(() {
                     _houvePublicacao = v;
@@ -691,8 +688,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ),
         if (_houvePublicacao) ...[
           const SizedBox(height: 8),
-          _buildPublicacoesList(readonly),
-          if (!readonly)
+          _buildPublicacoesList(readOnly),
+          if (!readOnly)
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
@@ -711,7 +708,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     );
   }
 
-  Widget _buildPublicacoesList(bool readonly) {
+  Widget _buildPublicacoesList(bool readOnly) {
     if (_publicacoes.isEmpty) return const SizedBox.shrink();
     return Column(
       children: [
@@ -730,7 +727,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                     'Veículo ${_publicacoes[i]['veiculoPublicacao']}',
               ),
               subtitle: Text(_toDisplayDate(_publicacoes[i]['dataPublicacao'] as String? ?? '')),
-              trailing: readonly
+              trailing: readOnly
                   ? null
                   : Row(
                       mainAxisSize: MainAxisSize.min,
@@ -765,14 +762,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Seção: Dados Gerais ───────────────────────────────────────────────────
 
-  Widget _buildDadosGeraisSection(bool readonly) {
+  Widget _buildDadosGeraisSection(bool readOnly) {
     return SectionCard(
       title: 'Dados Gerais',
       children: [
         // Código da Unidade Compradora (facultativo)
         TextFormField(
           controller: _codigoUnidadeCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText: 'Código da Unidade Compradora (PNCP) – facultativo',
             counterText: '',
@@ -790,7 +787,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               .map((e) =>
                   DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
-          onChanged: readonly ? null : (v) => setState(() => _tipoInstrumento = v),
+          onChanged: readOnly ? null : (v) => setState(() => _tipoInstrumento = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -804,7 +801,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               .map((e) =>
                   DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
-          onChanged: readonly ? null : (v) => setState(() => _modalidade = v),
+          onChanged: readOnly ? null : (v) => setState(() => _modalidade = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -817,7 +814,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               .map((e) =>
                   DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
-          onChanged: readonly ? null : (v) => setState(() => _modoDisputa = v),
+          onChanged: readOnly ? null : (v) => setState(() => _modoDisputa = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -828,7 +825,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               flex: 2,
               child: TextFormField(
                 controller: _numeroCompraCtrl,
-                enabled: !readonly,
+                enabled: !readOnly,
                 decoration: const InputDecoration(
                   labelText: 'Número da Compra *',
                   hintText: 'Ex.: 14',
@@ -848,7 +845,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               width: 200,
               child: TextFormField(
                 controller: _anoCompraCtrl,
-                enabled: !readonly,
+                enabled: !readOnly,
                 decoration: const InputDecoration(
                   labelText: 'Ano da Compra *',
                   hintText: 'Ex.: 2024',
@@ -871,7 +868,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _numeroProcessoCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText: 'Número do Processo *',
             counterText: '',
@@ -883,7 +880,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _objetoCompraCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText: 'Objeto da Contratação *',
             counterText: '',
@@ -896,7 +893,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _infComplementarCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText: 'Informações Complementares – facultativo',
             counterText: '',
@@ -909,7 +906,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           contentPadding: EdgeInsets.zero,
           title: const Text('SRP – Sistema de Registro de Preços'),
           value: _srp,
-          onChanged: readonly ? null : (v) => setState(() => _srp = v),
+          onChanged: readOnly ? null : (v) => setState(() => _srp = v),
         ),
         const SizedBox(height: 12),
         // Datas de propostas
@@ -920,7 +917,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               child: TextFormField(
                 controller: _dataAberturaCtrl,
                 readOnly: true,
-                enabled: !readonly,
+                enabled: !readOnly,
                 decoration: const InputDecoration(
                   labelText: 'Abertura de Propostas',
                   hintText: 'dd/MM/yyyy HH:mm',
@@ -928,7 +925,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                   helperText:
                       'Obrigatório para instrumento tipo 1 ou 2',
                 ),
-                onTap: readonly
+                onTap: readOnly
                     ? null
                     : () => _pickDateTime(_dataAberturaCtrl),
                 validator: (v) {
@@ -945,7 +942,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               child: TextFormField(
                 controller: _dataEncerramentoCtrl,
                 readOnly: true,
-                enabled: !readonly,
+                enabled: !readOnly,
                 decoration: const InputDecoration(
                   labelText: 'Encerramento de Propostas',
                   hintText: 'dd/MM/yyyy HH:mm',
@@ -953,7 +950,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                   helperText:
                       'Obrigatório para instrumento tipo 1 ou 2',
                 ),
-                onTap: readonly
+                onTap: readOnly
                     ? null
                     : () => _pickDateTime(_dataEncerramentoCtrl),
                 validator: (v) {
@@ -971,12 +968,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         // Amparo Legal
         _AmparoLegalField(
           controller: _amparoLegalCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
         ),
         const SizedBox(height: 12),
         TextFormField(
           controller: _linkSistemaCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText: 'Link do Sistema de Origem – facultativo',
             hintText: 'https://',
@@ -987,7 +984,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _justificativaCtrl,
-          enabled: !readonly,
+          enabled: !readOnly,
           decoration: const InputDecoration(
             labelText:
                 'Justificativa para Modalidade Presencial – facultativo',
@@ -1020,11 +1017,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
-  Widget _buildItensSection(bool readonly) {
+  Widget _buildItensSection(bool readOnly) {
     return SectionCard(
       title: 'Itens de Compra',
       titleActions: [
-        if (!readonly) ...[          TextButton.icon(
+        if (!readOnly) ...[          TextButton.icon(
               onPressed: _importItemsFromCsv,
               icon: const Icon(Icons.upload_file_outlined),
               label: const Text('Importar via Planilha'),
@@ -1046,12 +1043,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
           ),
-        for (int i = 0; i < _itens.length; i++) _buildItemTile(i, readonly),
+        for (int i = 0; i < _itens.length; i++) _buildItemTile(i, readOnly),
       ],
     );
   }
 
-  Widget _buildItemTile(int index, bool readonly) {
+  Widget _buildItemTile(int index, bool readOnly) {
     final item = _itens[index];
     final beneficio =
         kTipoBeneficio[item['tipoBeneficioId'] as int? ?? 1] ?? '';
@@ -1077,7 +1074,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: readonly
+        trailing: readOnly
             ? null
             : Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1121,11 +1118,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Seção: PDF ────────────────────────────────────────────────────────────
 
-  Widget _buildPdfSection(bool readonly) {
+  Widget _buildPdfSection(bool readOnly) {
     return SectionCard(
       title: 'Arquivo PDF',
       titleActions: [
-        if (!readonly) ...[
+        if (!readOnly) ...[
           TextButton.icon(
             onPressed: _pickPdf,
             icon: const Icon(Icons.upload_file),
@@ -1149,7 +1146,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            trailing: readonly
+            trailing: readOnly
                 ? null
                 : IconButton(
                     icon: const Icon(Icons.clear),
