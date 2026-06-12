@@ -403,7 +403,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                               .map((e) => DropdownMenuItem(
                                     value: e.id,
                                     child: Text(
-                                      '${e.codigoEdital} — Mun: ${e.municipio} / Ent: ${e.entidade}',
+                                      e.dropdownLabel,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ))
@@ -497,7 +497,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           controller: _numeroAtaCtrl,
                           readOnly: readOnly,
                           decoration: const InputDecoration(
-                            labelText: 'Número da Ata no Sistema de Origem *',
+                            labelText: 'Número da Ata *',
                           ),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o número da ata'

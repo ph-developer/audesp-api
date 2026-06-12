@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Ata {
   final int id;
   final int editalId;
@@ -42,6 +44,17 @@ class Ata {
           (row['updated_at'] as int) * 1000,
         ),
       );
+
+  String get dropdownLabel {
+    try {
+      final doc = jsonDecode(documentoJson) as Map<String, dynamic>;
+      final numero = doc['numeroAtaRegistroPreco'] ?? '';
+      final ano = doc['anoAta'] ?? '';
+      return 'Ata de Registro $numero/$ano';
+    } catch (_) {
+      return codigoAta;
+    }
+  }
 
   Map<String, dynamic> toMap() => {
         'id': id,

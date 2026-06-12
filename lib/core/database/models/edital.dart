@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import '../../../features/edital/domain/edital_domain.dart';
+
 class Edital {
   final int id;
   final String municipio;
@@ -39,6 +43,22 @@ class Edital {
           (row['updated_at'] as int) * 1000,
         ),
       );
+
+  String get dropdownLabel {
+    try {
+      final doc = jsonDecode(documentoJson) as Map<String, dynamic>;
+      final modalidadeId = doc['modalidadeId'] as int?;
+      final modalidade = modalidadeId != null
+          ? (kModalidadesDropdown[modalidadeId] ?? '')
+          : '';
+      final numero = doc['numeroCompra'] ?? '';
+      final ano = doc['anoCompra'] ?? '';
+      final objeto = doc['objetoCompra'] ?? '';
+      return '$modalidade $numero/$ano - $objeto';
+    } catch (_) {
+      return codigoEdital;
+    }
+  }
 
   Map<String, dynamic> toMap() => {
         'id': id,

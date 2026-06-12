@@ -729,7 +729,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     .map((e) => DropdownMenuItem(
                           value: e.id,
                           child: Text(
-                            '${e.codigoEdital}  (${e.municipio} / ${e.entidade})',
+                            e.dropdownLabel,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ))

@@ -606,7 +606,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                               .map((e) => DropdownMenuItem(
                                     value: e.id,
                                     child: Text(
-                                      '${e.codigoEdital} — Mun.${e.municipio}/Ent.${e.entidade}',
+                                      e.dropdownLabel,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ))
@@ -636,7 +636,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             ..._atas.map((a) => DropdownMenuItem(
                                   value: a.id,
                                   child: Text(
-                                    '${a.codigoAta} — ${a.codigoEdital}',
+                                    a.dropdownLabel,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 )),
