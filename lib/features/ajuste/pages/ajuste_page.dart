@@ -186,6 +186,8 @@ class _AjusteCard extends ConsumerWidget {
     );
     if (confirmed == true) {
       await ref.read(ajustesDaoProvider).deleteById(ajuste.id);
+      ref.invalidate(ajustesDraftProvider);
+      ref.invalidate(ajustesEnviadosProvider);
     }
   }
 }

@@ -184,6 +184,8 @@ class _LicitacaoCard extends ConsumerWidget {
     );
     if (confirmed == true) {
       await ref.read(licitacoesDaoProvider).deleteById(licitacao.id);
+      ref.invalidate(licitacoesDraftProvider);
+      ref.invalidate(licitacoesEnviadasProvider);
     }
   }
 }

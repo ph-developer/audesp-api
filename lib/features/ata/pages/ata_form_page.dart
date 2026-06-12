@@ -12,6 +12,8 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../ata_providers.dart';
 import '../services/ata_service.dart';
 
 /// Formulário de criação/edição de Ata (Fase 6 – Módulo 3).
@@ -41,7 +43,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Descritor ─────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
   final _codigoAtaCtrl = TextEditingController();
-  final _anoCompraCtrl = TextEditingController();
+  int? _anoCompra;
   bool _retificacao = false;
 
   // ── Dados da Ata ───────────────────────────────────────────────────────
@@ -65,7 +67,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   void dispose() {
     _codigoEditalCtrl.dispose();
     _codigoAtaCtrl.dispose();
-    _anoCompraCtrl.dispose();
     _numeroAtaCtrl.dispose();
     _anoAtaCtrl.dispose();
     _itemCtrl.dispose();
@@ -93,7 +94,14 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
     if (edital != null && _codigoEditalCtrl.text.isEmpty) {
       _codigoEditalCtrl.text = edital.codigoEdital;
-      _retificacao = edital.retificacao;
+    }
+    if (edital != null) {
+      try {
+        final doc = jsonDecode(edital.documentoJson) as Map<String, dynamic>;
+        _anoCompra = doc['anoCompra'] as int?;
+      } catch (_) {
+        _anoCompra = null;
+      }
     }
   }
 
@@ -119,8 +127,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _codigoAtaCtrl.text =
         descritor['codigoAta'] as String? ?? ata.codigoAta;
     _retificacao = descritor['retificacao'] as bool? ?? ata.retificacao;
-    _anoCompraCtrl.text =
-        (descritor['anoCompra'] as int?)?.toString() ?? '';
+    _fillEditalDescriptor();
 
     _numeroAtaCtrl.text = doc['numeroAtaRegistroPreco'] as String? ?? '';
     _anoAtaCtrl.text = (doc['anoAta'] as int?)?.toString() ?? '';
@@ -156,8 +163,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         'municipio': municipio,
         'entidade': entidade,
         'codigoEdital': _codigoEditalCtrl.text.trim(),
-        'codigoAta': _codigoAtaCtrl.text.trim(),
-        'anoCompra': int.tryParse(_anoCompraCtrl.text.trim()) ?? 0,
+        'codigoAta': PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
+        'anoCompra': _anoCompra ?? 0,
         'retificacao': _retificacao,
       },
       'numeroItem': _numerosItem,
@@ -187,7 +194,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       return false;
     }
     if (_codigoAtaCtrl.text.trim().isEmpty) {
-      _showError('Informe o Código da Ata para salvar o rascunho.');
+      _showError('Informe o ID da Ata PNCP para salvar o rascunho.');
       return false;
     }
     return true;
@@ -210,7 +217,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: _codigoAtaCtrl.text.trim(),
+          codigoAta: PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -224,13 +231,16 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: _codigoAtaCtrl.text.trim(),
+          codigoAta: PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
           updatedAt: DateTime.now(),
         );
       }
+      ref.invalidate(atasDraftProvider);
+      ref.invalidate(atasEnviadasProvider);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Rascunho salvo com sucesso.')),
@@ -450,35 +460,24 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           controller: _codigoAtaCtrl,
                           readOnly: readOnly,
                           decoration: const InputDecoration(
-                            labelText: 'Código da Ata *',
+                            labelText: 'ID da Ata PNCP *',
+                            hintText: '00000000000000-0-000000/0000',
+                            counterText: '',
                           ),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Informe o código da ata'
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: 200,
-                        child: TextFormField(
-                          controller: _anoCompraCtrl,
-                          readOnly: readOnly,
-                          decoration: const InputDecoration(
-                            labelText: 'Ano da Contratação *',
-                            hintText: 'ex: 2026',
-                          ),
-                          keyboardType: TextInputType.number,                          
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
+                          maxLength: 28,
                           validator: (v) {
-                            final y = int.tryParse(v ?? '');
-                            if (y == null || y < 1950 || y > 2100) {
-                              return 'Ano inválido (1950–2100)';
+                            if (v == null || v.isEmpty) return 'Obrigatório';
+                            final raw = PcnpInputFormatter.stripMask(v);
+                            if (raw.length < 25) {
+                              return 'ID da Ata PNCP incompleto';
                             }
                             return null;
                           },
+                          inputFormatters: [
+                            PcnpInputFormatter(),
+                            LengthLimitingTextInputFormatter(28),
+                          ],
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                     ],

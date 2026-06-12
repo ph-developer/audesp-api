@@ -12,7 +12,9 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../domain/ajuste_domain.dart';
+import '../ajuste_providers.dart';
 import '../services/ajuste_service.dart';
 
 /// Formulário de criação/edição de Ajuste (Fase 7 – Módulo 4).
@@ -260,7 +262,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'entidade': entidade,
       'adesaoParticipacao': _adesaoParticipacao,
       'codigoEdital': _codigoEditalCtrl.text.trim(),
-      'codigoContrato': _codigoContratoCtrl.text.trim(),
+      'codigoContrato': PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
       'retificacao': _retificacao,
     };
     if (_adesaoParticipacao) {
@@ -277,7 +279,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
     }
     if (_codigoAtaCtrl.text.trim().isNotEmpty) {
-      descritor['codigoAta'] = _codigoAtaCtrl.text.trim();
+      descritor['codigoAta'] = PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
     }
 
     final map = <String, dynamic>{
@@ -368,7 +370,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       return false;
     }
     if (_codigoContratoCtrl.text.trim().isEmpty) {
-      _showError('Informe o Código do Contrato para salvar o rascunho.');
+      _showError('Informe o ID do Contrato PNCP para salvar o rascunho.');
       return false;
     }
     return true;
@@ -393,9 +395,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
           codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
-              ? _codigoAtaCtrl.text.trim()
+              ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
               : null,
-          codigoContrato: _codigoContratoCtrl.text.trim(),
+          codigoContrato: PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -411,15 +413,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
           codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
-              ? _codigoAtaCtrl.text.trim()
+              ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
               : null,
-          codigoContrato: _codigoContratoCtrl.text.trim(),
+          codigoContrato: PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
           updatedAt: DateTime.now(),
         );
       }
+      ref.invalidate(ajustesDraftProvider);
+      ref.invalidate(ajustesEnviadosProvider);
+
       if (mounted) {
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
@@ -683,11 +688,26 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       Expanded(
                         child: TextFormField(
                           controller: _codigoContratoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Código do Contrato *'),
                           readOnly: readOnly,
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'ID do Contrato PNCP *',
+                            hintText: '00000000000000-0-000000/0000',
+                            counterText: '',
+                          ),
+                          maxLength: 28,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Obrigatório';
+                            final raw = PcnpInputFormatter.stripMask(v);
+                            if (raw.length < 25) {
+                              return 'ID do Contrato PNCP incompleto';
+                            }
+                            return null;
+                          },
+                          inputFormatters: [
+                            PcnpInputFormatter(),
+                            LengthLimitingTextInputFormatter(28),
+                          ],
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                       const SizedBox(width: 12),

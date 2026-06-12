@@ -184,6 +184,8 @@ class _AtaCard extends ConsumerWidget {
     );
     if (confirmed == true) {
       await ref.read(atasDaoProvider).deleteById(ata.id);
+      ref.invalidate(atasDraftProvider);
+      ref.invalidate(atasEnviadasProvider);
     }
   }
 }

@@ -12,6 +12,7 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
+import '../licitacao_providers.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
@@ -321,6 +322,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           updatedAt: DateTime.now(),
         );
       }
+      ref.invalidate(licitacoesDraftProvider);
+      ref.invalidate(licitacoesEnviadasProvider);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Rascunho salvo com sucesso.')),
