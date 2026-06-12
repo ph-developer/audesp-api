@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../licitacao_providers.dart';
 
 class LicitacaoPage extends ConsumerWidget {
@@ -50,6 +51,8 @@ class _LicitacaoList extends ConsumerWidget {
         ? ref.watch(licitacoesDraftProvider)
         : ref.watch(licitacoesEnviadasProvider);
 
+    final editaisAsync = ref.watch(_editaisMapProvider);
+
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
@@ -77,20 +80,34 @@ class _LicitacaoList extends ConsumerWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: licitacoes.length,
-          itemBuilder: (context, i) =>
-              _LicitacaoCard(licitacao: licitacoes[i]),
+        return editaisAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Erro: $e')),
+          data: (editaisMap) {
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: licitacoes.length,
+              itemBuilder: (context, i) => _LicitacaoCard(
+                licitacao: licitacoes[i],
+                edital: editaisMap[licitacoes[i].editalId],
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
+final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {
+  final editais = await ref.watch(editaisDaoProvider).watchAll();
+  return {for (final e in editais) e.id: e};
+});
+
 class _LicitacaoCard extends ConsumerWidget {
   final Licitacoe licitacao;
-  const _LicitacaoCard({required this.licitacao});
+  final Edital? edital;
+  const _LicitacaoCard({required this.licitacao, this.edital});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,18 +132,28 @@ class _LicitacaoCard extends ConsumerWidget {
           ),
         ),
         title: Text(
-          licitacao.codigoEdital,
+          [
+            PcnpInputFormatter.applyMask(edital?.idContratacaoPNCP ?? licitacao.codigoEdital),
+            if (edital != null &&
+                edital!.modalidadeLabel.isNotEmpty &&
+                edital!.numeroCompra.isNotEmpty &&
+                edital!.anoCompra != 0)
+              '${edital!.modalidadeLabel} ${edital!.numeroCompra}/${edital!.anoCompra}',
+          ].join(' - '),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (edital?.objetoCompra.isNotEmpty == true)
+              Text(
+                edital!.objetoCompra,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             Text(
-              'Município: ${licitacao.municipio}  |  Entidade: ${licitacao.entidade}',
-            ),
-            Text(
-              'Atualizado: ${fmt.format(licitacao.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              'Atualizado em ${fmt.format(licitacao.updatedAt)}',
+              style: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ],
         ),

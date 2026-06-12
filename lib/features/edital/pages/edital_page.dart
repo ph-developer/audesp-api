@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../edital_providers.dart' show editaisDraftProvider, editaisEnviadosProvider;
+import '../widgets/pcnp_input_formatter.dart';
 
 class EditalPage extends ConsumerWidget {
   const EditalPage({super.key});
@@ -115,18 +116,27 @@ class _EditalCard extends ConsumerWidget {
           ),
         ),
         title: Text(
-          edital.codigoEdital,
+          [
+            PcnpInputFormatter.applyMask(edital.idContratacaoPNCP),
+            if (edital.modalidadeLabel.isNotEmpty &&
+                edital.numeroCompra.isNotEmpty &&
+                edital.anoCompra != 0)
+              '${edital.modalidadeLabel} ${edital.numeroCompra}/${edital.anoCompra}',
+          ].join(' - '),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (edital.objetoCompra.isNotEmpty)
+              Text(
+                edital.objetoCompra,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             Text(
-              'Município: ${edital.municipio}  |  Entidade: ${edital.entidade}',
-            ),
-            Text(
-              'Atualizado: ${fmt.format(edital.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              'Atualizado em ${fmt.format(edital.updatedAt)}',
+              style: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ],
         ),

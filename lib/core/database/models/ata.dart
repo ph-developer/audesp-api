@@ -56,6 +56,19 @@ class Ata {
     }
   }
 
+  Map<String, dynamic> get _doc {
+    try {
+      return jsonDecode(documentoJson) as Map<String, dynamic>;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  String get numeroAtaRegistroPreco =>
+      _doc['numeroAtaRegistroPreco']?.toString() ?? '';
+
+  int get anoAta => _doc['anoAta'] as int? ?? 0;
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'edital_id': editalId,

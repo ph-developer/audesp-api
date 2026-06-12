@@ -60,6 +60,40 @@ class Edital {
     }
   }
 
+  Map<String, dynamic> get _doc {
+    try {
+      return jsonDecode(documentoJson) as Map<String, dynamic>;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  String get idContratacaoPNCP {
+    try {
+      final publicidade = _doc['publicidade'] as Map<String, dynamic>?;
+      final publicacoes =
+          publicidade?['publicacoes'] as List<dynamic>?;
+      if (publicacoes != null && publicacoes.isNotEmpty) {
+        final id = publicacoes.first['idContratacaoPNCP'] as String?;
+        if (id != null && id.isNotEmpty) return id;
+      }
+    } catch (_) {}
+    return codigoEdital;
+  }
+
+  int? get modalidadeId => _doc['modalidadeId'] as int?;
+
+  String get modalidadeLabel {
+    final id = modalidadeId;
+    return id != null ? (kModalidadesDropdown[id] ?? '') : '';
+  }
+
+  String get numeroCompra => _doc['numeroCompra']?.toString() ?? '';
+
+  int get anoCompra => _doc['anoCompra'] as int? ?? 0;
+
+  String get objetoCompra => _doc['objetoCompra']?.toString() ?? '';
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'municipio': municipio,

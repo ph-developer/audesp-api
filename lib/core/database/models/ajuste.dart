@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Ajuste {
   final int id;
   final int editalId;
@@ -48,6 +50,19 @@ class Ajuste {
           (row['updated_at'] as int) * 1000,
         ),
       );
+
+  Map<String, dynamic> get _doc {
+    try {
+      return jsonDecode(documentoJson) as Map<String, dynamic>;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  String get numeroContratoEmpenho =>
+      _doc['numeroContratoEmpenho']?.toString() ?? '';
+
+  int get anoContrato => _doc['anoContrato'] as int? ?? 0;
 
   Map<String, dynamic> toMap() => {
         'id': id,

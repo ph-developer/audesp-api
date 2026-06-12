@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ajuste_providers.dart';
 
 class AjustePage extends ConsumerWidget {
@@ -50,6 +51,9 @@ class _AjusteList extends ConsumerWidget {
         ? ref.watch(ajustesDraftProvider)
         : ref.watch(ajustesEnviadosProvider);
 
+    final editaisAsync = ref.watch(_editaisMapProvider);
+    final atasAsync = ref.watch(_atasMapProvider);
+
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
@@ -77,19 +81,50 @@ class _AjusteList extends ConsumerWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: ajustes.length,
-          itemBuilder: (context, i) => _AjusteCard(ajuste: ajustes[i]),
+        return editaisAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Erro: $e')),
+          data: (editaisMap) {
+            return atasAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Erro: $e')),
+              data: (atasMap) {
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: ajustes.length,
+                  itemBuilder: (context, i) {
+                    final ajuste = ajustes[i];
+                    return _AjusteCard(
+                      ajuste: ajuste,
+                      edital: editaisMap[ajuste.editalId],
+                      ata: ajuste.ataId != null ? atasMap[ajuste.ataId] : null,
+                    );
+                  },
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 }
 
+final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {
+  final editais = await ref.watch(editaisDaoProvider).watchAll();
+  return {for (final e in editais) e.id: e};
+});
+
+final _atasMapProvider = FutureProvider<Map<int, Ata>>((ref) async {
+  final atas = await ref.watch(atasDaoProvider).watchAll();
+  return {for (final a in atas) a.id: a};
+});
+
 class _AjusteCard extends ConsumerWidget {
   final Ajuste ajuste;
-  const _AjusteCard({required this.ajuste});
+  final Edital? edital;
+  final Ata? ata;
+  const _AjusteCard({required this.ajuste, this.edital, this.ata});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,21 +149,45 @@ class _AjusteCard extends ConsumerWidget {
           ),
         ),
         title: Text(
-          'Contrato: ${ajuste.codigoContrato}',
+          [
+            PcnpInputFormatter.applyMask(ajuste.codigoContrato),
+            if (ajuste.numeroContratoEmpenho.isNotEmpty && ajuste.anoContrato != 0)
+              'Ajuste ${ajuste.numeroContratoEmpenho}/${ajuste.anoContrato}',
+          ].join(' - '),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Edital: ${ajuste.codigoEdital}'),
-            if (ajuste.codigoAta != null)
-              Text('Ata: ${ajuste.codigoAta}'),
+            Builder(builder: (context) {
+              final parts = <String>[
+                if (edital != null &&
+                    edital!.modalidadeLabel.isNotEmpty &&
+                    edital!.numeroCompra.isNotEmpty &&
+                    edital!.anoCompra != 0)
+                  '${edital!.modalidadeLabel} ${edital!.numeroCompra}/${edital!.anoCompra} - ${PcnpInputFormatter.applyMask(edital!.idContratacaoPNCP)}',
+                if (ajuste.codigoAta != null &&
+                    ata != null &&
+                    ata!.numeroAtaRegistroPreco.isNotEmpty &&
+                    ata!.anoAta != 0)
+                  'Ata ${ata!.numeroAtaRegistroPreco}/${ata!.anoAta} - ${PcnpInputFormatter.applyMask(ajuste.codigoAta!)}',
+              ];
+              if (parts.isEmpty) return const SizedBox.shrink();
+              return Text(
+                parts.join(' | '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              );
+            }),
+            if (edital?.objetoCompra.isNotEmpty == true)
+              Text(
+                edital!.objetoCompra,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             Text(
-              'Município: ${ajuste.municipio}  |  Entidade: ${ajuste.entidade}',
-            ),
-            Text(
-              'Atualizado: ${fmt.format(ajuste.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              'Atualizado em ${fmt.format(ajuste.updatedAt)}',
+              style: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ],
         ),
@@ -191,4 +250,3 @@ class _AjusteCard extends ConsumerWidget {
     }
   }
 }
-
