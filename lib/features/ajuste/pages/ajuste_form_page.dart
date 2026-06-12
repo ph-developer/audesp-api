@@ -598,6 +598,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
+                        flex: 2,
                         child: DropdownButtonFormField<int>(
                           initialValue: _editalId,
                           decoration: const InputDecoration(labelText: 'Edital *'),
@@ -625,6 +626,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
+                        flex: 1,
                         child: DropdownButtonFormField<int?>(
                           initialValue: _ataId,
                           decoration: const InputDecoration(
@@ -678,7 +680,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : _codigoAtaCtrl.text}',
+                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     );

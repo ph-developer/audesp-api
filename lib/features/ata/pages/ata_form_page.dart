@@ -448,7 +448,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}',
+                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     );

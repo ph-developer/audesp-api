@@ -13,6 +13,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
 import '../licitacao_providers.dart';
+import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
@@ -771,7 +772,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : _codigoEditalCtrl.text}',
+              'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
