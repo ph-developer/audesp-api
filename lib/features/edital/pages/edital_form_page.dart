@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../edital_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
@@ -677,7 +678,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Houve Publicação *'),
+          title: const Text('Houve Publicação'),
           value: _houvePublicacao,
           onChanged: readOnly
               ? null
@@ -726,7 +727,24 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 kVeiculosPublicacao[_publicacoes[i]['veiculoPublicacao']] ??
                     'Veículo ${_publicacoes[i]['veiculoPublicacao']}',
               ),
-              subtitle: Text(_toDisplayDate(_publicacoes[i]['dataPublicacao'] as String? ?? '')),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_toDisplayDate(_publicacoes[i]['dataPublicacao'] as String? ?? '')),
+                  if (_publicacoes[i]['veiculoPublicacao'] == 5 &&
+                      (_publicacoes[i]['idContratacaoPNCP'] as String? ?? '').isNotEmpty)
+                    Text(
+                      'ID PNCP: ${PcnpInputFormatter.applyMask(_publicacoes[i]['idContratacaoPNCP'])}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  if (_publicacoes[i]['veiculoPublicacao'] == 10 &&
+                      (_publicacoes[i]['veiculoPublicacaoNome'] as String? ?? '').isNotEmpty)
+                    Text(
+                      'Veículo: ${_publicacoes[i]['veiculoPublicacaoNome']}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
               trailing: readOnly
                   ? null
                   : Row(
@@ -771,7 +789,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           controller: _codigoUnidadeCtrl,
           enabled: !readOnly,
           decoration: const InputDecoration(
-            labelText: 'Código da Unidade Compradora (PNCP) – facultativo',
+            labelText: 'Código da Unidade Compradora (PNCP)',
             counterText: '',
           ),
           maxLength: 20,
@@ -895,7 +913,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           controller: _infComplementarCtrl,
           enabled: !readOnly,
           decoration: const InputDecoration(
-            labelText: 'Informações Complementares – facultativo',
+            labelText: 'Informações Complementares',
             counterText: '',
           ),
           maxLength: 5120,
@@ -919,7 +937,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 readOnly: true,
                 enabled: !readOnly,
                 decoration: const InputDecoration(
-                  labelText: 'Abertura de Propostas',
+                  labelText: 'Abertura de Propostas *',
                   hintText: 'dd/MM/yyyy HH:mm',
                   suffixIcon: Icon(Icons.event),
                   helperText:
@@ -944,7 +962,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 readOnly: true,
                 enabled: !readOnly,
                 decoration: const InputDecoration(
-                  labelText: 'Encerramento de Propostas',
+                  labelText: 'Encerramento de Propostas *',
                   hintText: 'dd/MM/yyyy HH:mm',
                   suffixIcon: Icon(Icons.event),
                   helperText:
@@ -975,7 +993,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           controller: _linkSistemaCtrl,
           enabled: !readOnly,
           decoration: const InputDecoration(
-            labelText: 'Link do Sistema de Origem – facultativo',
+            labelText: 'Link do Sistema de Origem',
             hintText: 'https://',
             counterText: '',
           ),
@@ -987,7 +1005,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           enabled: !readOnly,
           decoration: const InputDecoration(
             labelText:
-                'Justificativa para Modalidade Presencial – facultativo',
+                'Justificativa para Modalidade Presencial',
             counterText: '',
           ),
           maxLength: 500,
@@ -1069,8 +1087,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         subtitle: Text(
           '${item['materialOuServico'] == 'M' ? 'Material' : 'Serviço'}  |  '
           '$beneficio  |  '
-          'Qtd: ${item['quantidade']}  |  '
-          'VU: R\$ ${item['valorUnitarioEstimado']}',
+          'Qtd: ${formatNumberBR((item['quantidade'] as num?)?.toDouble())}  |  '
+          'VU: ${formatBRL((item['valorUnitarioEstimado'] as num?)?.toDouble())}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

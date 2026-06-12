@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
@@ -167,7 +168,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _audienciaPublica = doc['audienciaPublica'] as int?;
     _exigenciaGarantiaLicitantes = doc['exigenciaGarantiaLicitantes'] as int?;
     _percentualValorCtrl.text =
-        doc['percentualValor']?.toString() ?? '';
+        doubleToBrString(doc['percentualValor']);
     _exigenciaAmostra = doc['exigenciaAmostra'] as int?;
     _quitacaoFederal = doc['quitacaoTributosFederais'] as bool?;
     _quitacaoEstadual = doc['quitacaoTributosEstaduais'] as bool?;
@@ -239,7 +240,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _setIfNonNull(map, 'exigenciaIndicesEconomicos', _exigenciaIndicesEconomicos);
 
     final percentual =
-        double.tryParse(_percentualValorCtrl.text.trim().replaceAll(',', '.'));
+        parseBrCurrencyOrNull(_percentualValorCtrl.text.trim());
     if (percentual != null && _exigenciaGarantiaLicitantes == 1) {
       map['percentualValor'] = double.parse(percentual.toStringAsFixed(4));
     }
@@ -412,7 +413,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final nomeCtrl = TextEditingController(
         text: initial?['nomeIndice'] as String? ?? '');
     final valorCtrl = TextEditingController(
-        text: initial?['valorIndice']?.toString() ?? '');
+        text: doubleToBrString(initial?['valorIndice']));
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -470,7 +471,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     if (confirmed == true && tipoIndice != null) {
       final valor =
-          double.tryParse(valorCtrl.text.trim().replaceAll(',', '.'));
+          parseBrCurrencyOrNull(valorCtrl.text.trim());
       if (valor == null) return;
       final entry = <String, dynamic>{
         'tipoIndice': tipoIndice,
@@ -1024,7 +1025,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               validator: (v) {
                 if (_exigenciaGarantiaLicitantes != 1) return null;
                 if (v == null || v.trim().isEmpty) return null;
-                final d = double.tryParse(v.trim().replaceAll(',', '.'));
+                final d = parseBrCurrencyOrNull(v.trim());
                 if (d == null || d < 0 || d > 100) return 'Valor entre 0 e 100';
                 return null;
               },
@@ -1111,7 +1112,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           value: _contratacaoConduzida,
           onChanged:
               readOnly ? null : (v) => setState(() => _contratacaoConduzida = v),
-          title: const Text('Contratação Conduzida por Órgão Externo *'),
+          title: const Text('Contratação Conduzida por Órgão Externo'),
           contentPadding: EdgeInsets.zero,
         ),
         if (_contratacaoConduzida) ...[
@@ -1196,7 +1197,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 dense: true,
                 title: Text(kTipoIndice[idx['tipoIndice']] ?? ''),
                 subtitle: Text(
-                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${(idx['valorIndice'] as num?)?.toStringAsFixed(4) ?? ''}',
+                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${formatBRL((idx['valorIndice'] as num?)?.toDouble())}',
                 ),
                 trailing: readOnly
                     ? null

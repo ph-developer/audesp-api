@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/licitacao_domain.dart';
 
@@ -45,7 +46,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
       _niCtrl.text = d['niPessoa'] as String? ?? '';
       _nomeCtrl.text = d['nomeRazaoSocial'] as String? ?? '';
       _declaracaoME = d['declaracaoMEouEPP'] as int?;
-      _valorCtrl.text = d['valor']?.toString() ?? '';
+      _valorCtrl.text = doubleToBrString(d['valor']);
       _resultadoHabilitacao = d['resultadoHabilitacao'] as int?;
     }
   }
@@ -69,7 +70,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
     if (_nomeCtrl.text.trim().isNotEmpty) {
       map['nomeRazaoSocial'] = _nomeCtrl.text.trim();
     }
-    final valor = double.tryParse(_valorCtrl.text.replaceAll(',', '.'));
+    final valor = parseBrCurrencyOrNull(_valorCtrl.text);
     if (valor != null) {
       map['valor'] = double.parse(valor.toStringAsFixed(4));
     }
@@ -174,7 +175,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                       return 'Obrigatório para classificados (resultado 1 ou 2)';
                     }
                     if (v != null && v.trim().isNotEmpty) {
-                      final parsed = double.tryParse(v.trim().replaceAll(',', '.'));
+                      final parsed = parseBrCurrencyOrNull(v.trim());
                       if (parsed == null) return 'Valor inválido';
                     }
                     return null;

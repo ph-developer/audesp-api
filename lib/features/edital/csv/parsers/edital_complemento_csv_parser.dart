@@ -1,4 +1,5 @@
 import '../../../../core/constants/template_constants.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/csv_utils.dart';
 import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/edital_complemento_csv_mapper.dart';
@@ -94,7 +95,7 @@ class EditalComplementoCsvParser {
         }
 
         final quantidadeStr = _tryGet(row, header, 'quantidade') ?? '';
-        final quantidade = _parseBrNumber(quantidadeStr);
+        final quantidade = parseBrCurrencyOrNull(quantidadeStr);
         if (quantidade == null) {
           throw EditalCsvParseException(
             'Linha ${index + 2}: "Quantidade" inválida para o item $numeroItem: "$quantidadeStr".',
@@ -111,7 +112,7 @@ class EditalComplementoCsvParser {
         // Campos opcionais.
         final valorStr = _tryGet(row, header, 'valorunitariomenor');
         final valorUnitario =
-            valorStr != null ? _parseBrNumber(valorStr) : null;
+            valorStr != null ? parseBrCurrencyOrNull(valorStr) : null;
 
         final valorTotal = (valorUnitario != null)
             ? double.parse(
@@ -171,16 +172,6 @@ class EditalComplementoCsvParser {
     if (idx == null || idx >= row.length) return null;
     final val = row[idx].trim();
     return val.isEmpty ? null : val;
-  }
-
-  /// Converte número no formato brasileiro (ex: "1.200,50") para [double].
-  static double? _parseBrNumber(String raw) {
-    try {
-      final normalized = raw.trim().replaceAll('.', '').replaceAll(',', '.');
-      return double.parse(normalized);
-    } catch (_) {
-      return null;
-    }
   }
 
   /// Retorna o nome da coluna com capitalização original para exibição de erro.

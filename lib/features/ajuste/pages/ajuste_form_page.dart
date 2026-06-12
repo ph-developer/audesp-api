@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
@@ -226,13 +227,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     _objetoContratoCtrl.text = doc['objetoContrato'] as String? ?? '';
     _infComplementarCtrl.text = doc['informacaoComplementar'] as String? ?? '';
-    _valorInicialCtrl.text = (doc['valorInicial'] as num?)?.toString() ?? '';
+    _valorInicialCtrl.text = doubleToBrString(doc['valorInicial']);
     _numeroParcelasCtrl.text =
         (doc['numeroParcelas'] as num?)?.toString() ?? '';
-    _valorParcelaCtrl.text = (doc['valorParcela'] as num?)?.toString() ?? '';
-    _valorGlobalCtrl.text = (doc['valorGlobal'] as num?)?.toString() ?? '';
-    _valorAcumuladoCtrl.text =
-        (doc['valorAcumulado'] as num?)?.toString() ?? '';
+    _valorParcelaCtrl.text = doubleToBrString(doc['valorParcela']);
+    _valorGlobalCtrl.text = doubleToBrString(doc['valorGlobal']);
+    _valorAcumuladoCtrl.text = doubleToBrString(doc['valorAcumulado']);
 
     final assinatura = doc['dataAssinatura'] as String?;
     if (assinatura != null) _dataAssinatura = DateTime.tryParse(assinatura);
@@ -297,7 +297,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           _nomeRazaoSocialFornecedorCtrl.text.trim(),
       'objetoContrato': _objetoContratoCtrl.text.trim(),
       'valorInicial': double.parse(
-          (double.tryParse(_valorInicialCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorInicialCtrl.text.trim())
               .toStringAsFixed(4)),
       'dataAssinatura': _dataAssinatura != null
           ? isoFmt.format(_dataAssinatura!)
@@ -337,17 +337,17 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     if (_valorParcelaCtrl.text.trim().isNotEmpty) {
       map['valorParcela'] = double.parse(
-          (double.tryParse(_valorParcelaCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorParcelaCtrl.text.trim())
               .toStringAsFixed(4));
     }
     if (_valorGlobalCtrl.text.trim().isNotEmpty) {
       map['valorGlobal'] = double.parse(
-          (double.tryParse(_valorGlobalCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorGlobalCtrl.text.trim())
               .toStringAsFixed(4));
     }
     if (_valorAcumuladoCtrl.text.trim().isNotEmpty) {
       map['valorAcumulado'] = double.parse(
-          (double.tryParse(_valorAcumuladoCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorAcumuladoCtrl.text.trim())
               .toStringAsFixed(4));
     }
     if (_vigenciaMesesCtrl.text.trim().isNotEmpty) {
@@ -641,7 +641,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         child: DropdownButtonFormField<int?>(
                           initialValue: _ataId,
                           decoration: const InputDecoration(
-                              labelText: 'Ata (opcional — somente para SRP)'),
+                              labelText: 'Ata (somente para SRP)'),
                           isExpanded: true,
                           items: [
                             const DropdownMenuItem<int?>(
@@ -736,13 +736,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _codigoUnidadeCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Código da Unidade (PNCP — opcional)'),
-                    readOnly: readOnly,
-                  ),
+                  // const SizedBox(height: 12),
+                  // TextFormField(
+                  //   controller: _codigoUnidadeCtrl,
+                  //   decoration: const InputDecoration(
+                  //       labelText: 'Código da Unidade (PNCP — opcional)'),
+                  //   readOnly: readOnly,
+                  // ),
                   const SizedBox(height: 4),                  
                   SwitchListTile(
                     title: const Text('Adesão / Participação'),
@@ -1143,7 +1143,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
               // ── Subcontratado ─────────────────────────────────────────
               SectionCard(
-                title: 'Subcontratado (opcional)',
+                title: 'Subcontratado',
                 children: [
                   Row(
                     children: [
@@ -1219,7 +1219,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   TextFormField(
                     controller: _infComplementarCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Informações Complementares (opcional)'),
+                        labelText: 'Informações Complementares'),
                     readOnly: readOnly,
                     maxLines: 2,
                   ),
@@ -1238,7 +1238,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             if (v == null || v.trim().isEmpty) {
                               return 'Obrigatório';
                             }
-                            if (double.tryParse(v.trim()) == null) {
+                            if (parseBrCurrencyOrNull(v.trim()) == null) {
                               return 'Valor inválido';
                             }
                             return null;
@@ -1342,7 +1342,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   TextFormField(
                     controller: _vigenciaMesesCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Vigência em Meses (opcional)'),
+                        labelText: 'Vigência em Meses'),
                     readOnly: readOnly,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],

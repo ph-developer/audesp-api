@@ -46,8 +46,7 @@ class CsvMappers {
   ///
   /// Lança [FormatException] se a string não for um número válido após limpeza.
   static double parseBrCurrency(String raw) {
-    // Remove separadores de milhar (ponto) e converte vírgula decimal em ponto.
-    final normalized = raw.trim().replaceAll('.', '').replaceAll(',', '.');
-    return double.parse(normalized);
+    final cleaned = raw.trim().replaceAll('.', '').replaceAll(',', '.');
+    return double.parse(cleaned);
   }
 }

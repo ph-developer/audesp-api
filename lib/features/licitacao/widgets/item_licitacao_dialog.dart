@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/licitacao_domain.dart';
@@ -49,7 +50,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
     if (d != null) {
       _numeroItemCtrl.text = d['numeroItem']?.toString() ?? '';
       _tipoOrcamento = d['tipoOrcamento'] as int?;
-      _valorCtrl.text = d['valor']?.toString() ?? '';
+      _valorCtrl.text = doubleToBrString(d['valor']);
       _dataOrcamento = DateTime.tryParse(d['dataOrcamento'] as String? ?? '');
       _situacaoCompraItemId = d['situacaoCompraItemId'] != null
           ? (d['situacaoCompraItemId'] as num).toInt()
@@ -114,7 +115,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       'tipoProposta': _tipoProposta!,
       'licitantes': _licitantes,
     };
-    final valor = double.tryParse(_valorCtrl.text.trim().replaceAll(',', '.'));
+    final valor = parseBrCurrencyOrNull(_valorCtrl.text.trim());
     if (valor != null) {
       map['valor'] = double.parse(valor.toStringAsFixed(4));
     }
@@ -186,7 +187,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                             return 'Obrigatório para o tipo de orçamento selecionado';
                           }
                           if (v != null && v.trim().isNotEmpty) {
-                            if (double.tryParse(v.trim().replaceAll(',', '.')) == null) {
+                            if (parseBrCurrencyOrNull(v.trim()) == null) {
                               return 'Valor inválido';
                             }
                           }

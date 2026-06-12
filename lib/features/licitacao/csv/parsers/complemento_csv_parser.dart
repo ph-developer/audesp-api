@@ -1,4 +1,5 @@
 import '../../../../core/constants/template_constants.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/csv_utils.dart';
 import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/complemento_csv_mapper.dart';
@@ -75,7 +76,7 @@ class ComplementoCsvParser {
               ? ComplementoCsvMapper.tipoOrcamento(tipoOrcStr)
               : null,
           valorEstimado: valorEstStr != null && valorEstStr.isNotEmpty
-              ? _parseBrCurrency(valorEstStr)
+              ? parseBrCurrencyOrNull(valorEstStr)
               : null,
           dataOrcamento: dataOrcStr != null && dataOrcStr.isNotEmpty
               ? _parseDate(dataOrcStr)
@@ -116,15 +117,6 @@ class ComplementoCsvParser {
     if (idx == null || idx >= row.length) return null;
     final val = row[idx].trim();
     return val.isEmpty ? null : val;
-  }
-
-  static double? _parseBrCurrency(String raw) {
-    try {
-      final normalized = raw.trim().replaceAll('.', '').replaceAll(',', '.');
-      return double.parse(normalized);
-    } catch (_) {
-      return null;
-    }
   }
 
   /// Converte data no formato DD/MM/AAAA → yyyy-MM-dd.

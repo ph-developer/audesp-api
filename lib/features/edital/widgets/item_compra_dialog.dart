@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../domain/edital_domain.dart';
 
@@ -59,10 +60,10 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       _criterioJulgamento = ini['criterioJulgamentoId'] as int?;
       _itemCategoria = ini['itemCategoriaId'] as int?;
       _descCtrl.text = ini['descricao'] as String? ?? '';
-      _qtdCtrl.text = (ini['quantidade'] ?? '').toString();
+      _qtdCtrl.text = doubleToBrString(ini['quantidade']);
       _unidadeCtrl.text = ini['unidadeMedida'] as String? ?? '';
-      _valorUnitCtrl.text = (ini['valorUnitarioEstimado'] ?? '').toString();
-      _valorTotalCtrl.text = (ini['valorTotal'] ?? '').toString();
+      _valorUnitCtrl.text = doubleToBrString(ini['valorUnitarioEstimado']);
+      _valorTotalCtrl.text = doubleToBrString(ini['valorTotal']);
       _patrimonioCtrl.text = ini['patrimonio'] as String? ?? '';
       _registroImobCtrl.text =
           ini['codigoRegistroImobiliario'] as String? ?? '';
@@ -90,14 +91,14 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       'incentivoProdutivoBasico': _incentivoBasico,
       'descricao': _descCtrl.text.trim(),
       'quantidade': double.parse(
-          (double.tryParse(_qtdCtrl.text.trim()) ?? 0).toStringAsFixed(4)),
+          parseBrCurrency(_qtdCtrl.text.trim()).toStringAsFixed(4)),
       'unidadeMedida': _unidadeCtrl.text.trim(),
       'orcamentoSigiloso': _orcamentoSigiloso,
       'valorUnitarioEstimado': double.parse(
-          (double.tryParse(_valorUnitCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorUnitCtrl.text.trim())
               .toStringAsFixed(4)),
       'valorTotal': double.parse(
-          (double.tryParse(_valorTotalCtrl.text.trim()) ?? 0)
+          parseBrCurrency(_valorTotalCtrl.text.trim())
               .toStringAsFixed(4)),
       'criterioJulgamentoId': _criterioJulgamento,
       'itemCategoriaId': _itemCategoria,
@@ -125,9 +126,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
             children: [
               // Material ou Serviço
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  const Text('Material ou Serviço *'),
-                  const SizedBox(width: 12),
                   SegmentedButton<String>(
                     segments: const [
                       ButtonSegment(value: 'M', label: Text('Material')),
@@ -155,17 +155,26 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               ),
               const SizedBox(height: 8),
               // Switches
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Incentivo Produtivo Básico (PPB)'),
-                value: _incentivoBasico,
-                onChanged: (v) => setState(() => _incentivoBasico = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Orçamento Sigiloso'),
-                value: _orcamentoSigiloso,
-                onChanged: (v) => setState(() => _orcamentoSigiloso = v),
+              Row(
+                children: [
+                  Expanded(
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Incentivo Produtivo Básico (PPB)'),
+                      value: _incentivoBasico,
+                      onChanged: (v) => setState(() => _incentivoBasico = v),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Orçamento Sigiloso'),
+                      value: _orcamentoSigiloso,
+                      onChanged: (v) => setState(() => _orcamentoSigiloso = v),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               // Descrição
@@ -195,18 +204,18 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                           decimal: true),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.]')),
+                            RegExp(r'[0-9.,]')),
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Número inválido';
+                        if (parseBrCurrencyOrNull(v) == null) return 'Número inválido';
                         return null;
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    flex: 3,
+                    flex: 2,
                     child: TextFormField(
                       controller: _unidadeCtrl,
                       decoration: const InputDecoration(
@@ -229,18 +238,18 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                     child: TextFormField(
                       controller: _valorUnitCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Valor Unitário Est. *',
+                        labelText: 'Valor Unitário Estimado *',
                         prefixText: 'R\$ ',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.]')),
+                            RegExp(r'[0-9.,]')),
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Valor inválido';
+                        if (parseBrCurrencyOrNull(v) == null) return 'Valor inválido';
                         return null;
                       },
                     ),
@@ -250,18 +259,18 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                     child: TextFormField(
                       controller: _valorTotalCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Valor Total *',
+                        labelText: 'Valor Total Estimado *',
                         prefixText: 'R\$ ',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.]')),
+                            RegExp(r'[0-9.,]')),
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (double.tryParse(v) == null) return 'Valor inválido';
+                        if (parseBrCurrencyOrNull(v) == null) return 'Valor inválido';
                         return null;
                       },
                     ),
@@ -298,23 +307,33 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               ),
               const SizedBox(height: 12),
               // Patrimônio (opcional)
-              TextFormField(
-                controller: _patrimonioCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Patrimônio (facultativo)',
-                  counterText: '',
-                ),
-                maxLength: 255,
-              ),
-              const SizedBox(height: 12),
-              // Código de Registro Imobiliário (opcional)
-              TextFormField(
-                controller: _registroImobCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Código de Registro Imobiliário (facultativo)',
-                  counterText: '',
-                ),
-                maxLength: 255,
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _patrimonioCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Patrimônio',
+                        counterText: '',
+                      ),
+                      maxLength: 255,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Código de Registro Imobiliário (opcional)
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _registroImobCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Registro Imobiliário',
+                        counterText: '',
+                      ),
+                      maxLength: 255,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

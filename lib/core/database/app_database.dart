@@ -27,7 +27,7 @@ DatabaseService openConnection() {
     userName: user,
     password: password,
     databaseName: dbName,
-    maxConnections: 2,
+    maxConnections: 5,
   );
 
   return DatabaseService(pool);

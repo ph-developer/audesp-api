@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/template_constants.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../csv/edital_csv.dart';
@@ -444,7 +445,7 @@ class _PreviewTable extends StatelessWidget {
                     : '—',
               ),
             ),
-            DataCell(Text('${item.quantidade}')),
+            DataCell(Text(formatNumberBR(item.quantidade))),
             DataCell(Text(item.unidadeMedida)),
             DataCell(
               semValor
@@ -459,7 +460,7 @@ class _PreviewTable extends StatelessWidget {
                       ],
                     )
                   : Text(
-                      'R\$ ${item.valorUnitarioEstimado!.toStringAsFixed(4)}',
+                      formatBRL(item.valorUnitarioEstimado),
                     ),
             ),
           ],
