@@ -48,9 +48,21 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
   final _patrimonioCtrl = TextEditingController();
   final _registroImobCtrl = TextEditingController();
 
+  void _recalcularTotal() {
+    final qtd = parseBrCurrencyOrNull(_qtdCtrl.text);
+    final unit = parseBrCurrencyOrNull(_valorUnitCtrl.text);
+    if (qtd != null && unit != null) {
+      _valorTotalCtrl.text = doubleToBrString(qtd * unit);
+    } else {
+      _valorTotalCtrl.clear();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _qtdCtrl.addListener(_recalcularTotal);
+    _valorUnitCtrl.addListener(_recalcularTotal);
     final ini = widget.initial;
     if (ini != null) {
       _materialOuServico = ini['materialOuServico'] as String? ?? 'M';
@@ -72,6 +84,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
 
   @override
   void dispose() {
+    _qtdCtrl.removeListener(_recalcularTotal);
+    _valorUnitCtrl.removeListener(_recalcularTotal);
     _descCtrl.dispose();
     _qtdCtrl.dispose();
     _unidadeCtrl.dispose();
@@ -258,16 +272,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _valorTotalCtrl,
+                      readOnly: true,
                       decoration: const InputDecoration(
                         labelText: 'Valor Total Estimado *',
                         prefixText: 'R\$ ',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.,]')),
-                      ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
                         if (parseBrCurrencyOrNull(v) == null) return 'Valor inválido';
