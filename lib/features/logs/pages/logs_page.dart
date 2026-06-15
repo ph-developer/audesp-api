@@ -109,37 +109,123 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   Widget build(BuildContext context) {
     final future = ref.watch(apiLogsDaoProvider).watchAll();
 
+    final hasActiveFilters = _endpointFilter != null ||
+        _statusFilter != _StatusFilter.todos ||
+        _dateFrom != null ||
+        _dateTo != null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Histórico de Chamadas API'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<String?>(
+                  value: _endpointFilter,
+                  hint: const Text('Módulo'),
+                  underline: const SizedBox(),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                        value: null, child: Text('Todos os módulos')),
+                    ...const {
+                      'enviar-edital': 'Edital',
+                      'enviar-licitacao': 'Licitação',
+                      'enviar-ata': 'Ata',
+                      'enviar-ajuste': 'Ajuste',
+                      'enviar-empenho-contrato': 'Empenho de Contrato',
+                      'enviar-termo-contrato': 'Termo de Contrato',
+                      '/login': 'Login',
+                    }.entries.map((e) => DropdownMenuItem<String?>(
+                          value: e.key,
+                          child: Text(e.value),
+                        )),
+                  ],
+                  onChanged: (v) => setState(() => _endpointFilter = v),
+                ),
+                const SizedBox(width: 16),
+                DropdownButton<_StatusFilter>(
+                  value: _statusFilter,
+                  underline: const SizedBox(),
+                  items: const [
+                    DropdownMenuItem(
+                        value: _StatusFilter.todos, child: Text('Todos os status')),
+                    DropdownMenuItem(
+                        value: _StatusFilter.sucesso, child: Text('✓ Sucesso (2xx)')),
+                    DropdownMenuItem(
+                        value: _StatusFilter.erro, child: Text('✗ Erro (3xx+)')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _statusFilter = v);
+                  },
+                ),
+                const SizedBox(width: 16),
+                InkWell(
+                  onTap: () async {
+                    final d = await _pickDate(_dateFrom);
+                    if (d != null) setState(() => _dateFrom = d);
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today, size: 16),
+                        const SizedBox(width: 4),
+                        Text(_dateFrom != null
+                            ? 'De: ${_dateFmt.format(_dateFrom!)}'
+                            : 'Data início'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () async {
+                    final d = await _pickDate(_dateTo);
+                    if (d != null) setState(() => _dateTo = d);
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today, size: 16),
+                        const SizedBox(width: 4),
+                        Text(_dateTo != null
+                            ? 'Até: ${_dateFmt.format(_dateTo!)}'
+                            : 'Data fim'),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hasActiveFilters) ...[
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => setState(() {
+                      _endpointFilter = null;
+                      _statusFilter = _StatusFilter.todos;
+                      _dateFrom = null;
+                      _dateTo = null;
+                    }),
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text('Limpar'),
+                    style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // ── Barra de filtros ──────────────────────────────────────────
-          _FilterBar(
-            endpointFilter: _endpointFilter,
-            statusFilter: _statusFilter,
-            dateFrom: _dateFrom,
-            dateTo: _dateTo,
-            dateFmt: _dateFmt,
-            onEndpointChanged: (v) => setState(() => _endpointFilter = v),
-            onStatusChanged: (v) => setState(() => _statusFilter = v),
-            onDateFromTap: () async {
-              final d = await _pickDate(_dateFrom);
-              if (d != null) setState(() => _dateFrom = d);
-            },
-            onDateToTap: () async {
-              final d = await _pickDate(_dateTo);
-              if (d != null) setState(() => _dateTo = d);
-            },
-            onClearFilters: () => setState(() {
-              _endpointFilter = null;
-              _statusFilter = _StatusFilter.todos;
-              _dateFrom = null;
-              _dateTo = null;
-            }),
-          ),
-
           // ── Lista ─────────────────────────────────────────────────────
           Expanded(
             child: FutureBuilder<List<ApiLog>>(
@@ -161,7 +247,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) => _LogCard(
                     log: filtered[i],
@@ -179,144 +265,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter bar
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _FilterBar extends StatelessWidget {
-  final String? endpointFilter;
-  final _StatusFilter statusFilter;
-  final DateTime? dateFrom;
-  final DateTime? dateTo;
-  final DateFormat dateFmt;
-  final ValueChanged<String?> onEndpointChanged;
-  final ValueChanged<_StatusFilter> onStatusChanged;
-  final VoidCallback onDateFromTap;
-  final VoidCallback onDateToTap;
-  final VoidCallback onClearFilters;
-
-  const _FilterBar({
-    required this.endpointFilter,
-    required this.statusFilter,
-    required this.dateFrom,
-    required this.dateTo,
-    required this.dateFmt,
-    required this.onEndpointChanged,
-    required this.onStatusChanged,
-    required this.onDateFromTap,
-    required this.onDateToTap,
-    required this.onClearFilters,
-  });
-
-  bool get _hasActiveFilters =>
-      endpointFilter != null ||
-      statusFilter != _StatusFilter.todos ||
-      dateFrom != null ||
-      dateTo != null;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          // Módulo
-          DropdownButton<String?>(
-            value: endpointFilter,
-            hint: const Text('Módulo'),
-            underline: const SizedBox(),
-            items: [
-              const DropdownMenuItem<String?>(
-                  value: null, child: Text('Todos os módulos')),
-              ...const {
-                'enviar-edital': 'Edital',
-                'enviar-licitacao': 'Licitação',
-                'enviar-ata': 'Ata',
-                'enviar-ajuste': 'Ajuste',
-                'enviar-empenho-contrato': 'Empenho de Contrato',
-                'enviar-termo-contrato': 'Termo de Contrato',
-                '/login': 'Login',
-              }.entries.map((e) => DropdownMenuItem<String?>(
-                    value: e.key,
-                    child: Text(e.value),
-                  )),
-            ],
-            onChanged: onEndpointChanged,
-          ),
-
-          // Status
-          DropdownButton<_StatusFilter>(
-            value: statusFilter,
-            underline: const SizedBox(),
-            items: const [
-              DropdownMenuItem(
-                  value: _StatusFilter.todos, child: Text('Todos os status')),
-              DropdownMenuItem(
-                  value: _StatusFilter.sucesso, child: Text('✓ Sucesso (2xx)')),
-              DropdownMenuItem(
-                  value: _StatusFilter.erro, child: Text('✗ Erro (3xx+)')),
-            ],
-            onChanged: (v) {
-              if (v != null) onStatusChanged(v);
-            },
-          ),
-
-          // Data de
-          InkWell(
-            onTap: onDateFromTap,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(dateFrom != null
-                      ? 'De: ${dateFmt.format(dateFrom!)}'
-                      : 'Data início'),
-                ],
-              ),
-            ),
-          ),
-
-          // Data até
-          InkWell(
-            onTap: onDateToTap,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(dateTo != null
-                      ? 'Até: ${dateFmt.format(dateTo!)}'
-                      : 'Data fim'),
-                ],
-              ),
-            ),
-          ),
-
-          // Limpar filtros
-          if (_hasActiveFilters)
-            TextButton.icon(
-              onPressed: onClearFilters,
-              icon: const Icon(Icons.clear, size: 16),
-              label: const Text('Limpar filtros'),
-              style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Log card
@@ -349,94 +297,84 @@ class _LogCard extends StatelessWidget {
     final label = _labelFor(log.endpoint);
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              // Status badge
-              Container(
-                width: 52,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withAlpha(25),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: statusColor.withAlpha(80)),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  log.statusCode?.toString() ?? '—',
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      log.endpoint,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withAlpha(140),
-                          ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 12),
-                        const SizedBox(width: 4),
-                        Text(
-                          timeFmt.format(log.timestamp.toLocal()),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (log.userId != null) ...[
-                          const SizedBox(width: 12),
-                          const Icon(Icons.person_outline, size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Usuário #${log.userId}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Actions
-              IconButton(
-                icon: const Icon(Icons.info_outline),
-                tooltip: 'Ver detalhes',
-                onPressed: onTap,
-              ),
-              IconButton(
-                icon: Icon(Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error),
-                tooltip: 'Excluir',
-                onPressed: onDelete,
-              ),
-            ],
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: statusColor.withAlpha(25),
+            shape: BoxShape.circle,
+            border: Border.all(color: statusColor.withAlpha(80)),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            log.statusCode?.toString() ?? '—',
+            style: TextStyle(
+              color: statusColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
         ),
+        title: Text(
+          label,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 2),
+            Text(
+              log.endpoint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withAlpha(140),
+                  ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  timeFmt.format(log.timestamp.toLocal()),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (log.userId != null) ...[
+                  const SizedBox(width: 12),
+                  const Icon(Icons.person_outline, size: 12),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Usuário #${log.userId}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error),
+              tooltip: 'Excluir',
+              onPressed: onDelete,
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              tooltip: 'Abrir',
+              onPressed: onTap,
+            ),
+          ],
+        ),
+        onTap: onTap,
       ),
     );
   }
@@ -580,10 +518,10 @@ class _StatusChip extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withAlpha(80)),
       ),
       child: Text(

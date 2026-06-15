@@ -8,35 +8,46 @@ import '../../../core/database/database_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ajuste_providers.dart';
 
-class AjustePage extends ConsumerWidget {
+class AjustePage extends ConsumerStatefulWidget {
   const AjustePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Ajustes (Contratos)'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Rascunhos'),
-              Tab(text: 'Enviados'),
-            ],
+  ConsumerState<AjustePage> createState() => _AjustePageState();
+}
+
+class _AjustePageState extends ConsumerState<AjustePage> {
+  String _statusFilter = 'draft';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Ajustes (Contratos)'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<String>(
+              value: _statusFilter,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: 'draft', child: Text('Rascunhos')),
+                DropdownMenuItem(value: 'sent', child: Text('Enviados')),
+              ],
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() => _statusFilter = v);
+                }
+              },
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/ajuste/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('Novo Ajuste'),
-        ),
-        body: const TabBarView(
-          children: [
-            _AjusteList(status: 'draft'),
-            _AjusteList(status: 'sent'),
-          ],
-        ),
+        ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/ajuste/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Novo Ajuste'),
+      ),
+      body: _AjusteList(status: _statusFilter),
     );
   }
 }
@@ -154,7 +165,7 @@ class _AjusteCard extends ConsumerWidget {
             if (ajuste.numeroContratoEmpenho.isNotEmpty && ajuste.anoContrato != 0)
               'Ajuste ${ajuste.numeroContratoEmpenho}/${ajuste.anoContrato}',
           ].join(' - '),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,21 +184,45 @@ class _AjusteCard extends ConsumerWidget {
                   'Ata ${ata!.numeroAtaRegistroPreco}/${ata!.anoAta} - ${PcnpInputFormatter.applyMask(ajuste.codigoAta!)}',
               ];
               if (parts.isEmpty) return const SizedBox.shrink();
-              return Text(
-                parts.join(' | '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              return Padding(
+                padding: const EdgeInsets.only(top: 2.0),
+                child: Text(
+                  parts.join(' | '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withAlpha(140),
+                      ),
+                ),
               );
             }),
-            if (edital?.objetoCompra.isNotEmpty == true)
+            if (edital?.objetoCompra.isNotEmpty == true) ...[
+              const SizedBox(height: 2),
               Text(
                 edital!.objetoCompra,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withAlpha(140),
+                    ),
               ),
-            Text(
-              'Atualizado em ${fmt.format(ajuste.updatedAt)}',
-              style: const TextStyle(fontStyle: FontStyle.italic),
+            ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  fmt.format(ajuste.updatedAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ],
         ),
@@ -205,7 +240,8 @@ class _AjusteCard extends ConsumerWidget {
             const SizedBox(width: 4),
             if (!isSent)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error),
                 tooltip: 'Excluir',
                 onPressed: () => _confirmDelete(context, ref),
               ),

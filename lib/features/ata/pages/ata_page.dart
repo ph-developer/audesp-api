@@ -8,35 +8,46 @@ import '../../../core/database/database_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ata_providers.dart';
 
-class AtaPage extends ConsumerWidget {
+class AtaPage extends ConsumerStatefulWidget {
   const AtaPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Atas de Registro de Preço'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Rascunhos'),
-              Tab(text: 'Enviadas'),
-            ],
+  ConsumerState<AtaPage> createState() => _AtaPageState();
+}
+
+class _AtaPageState extends ConsumerState<AtaPage> {
+  String _statusFilter = 'draft';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Atas de Registro de Preço'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<String>(
+              value: _statusFilter,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: 'draft', child: Text('Rascunhos')),
+                DropdownMenuItem(value: 'sent', child: Text('Enviadas')),
+              ],
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() => _statusFilter = v);
+                }
+              },
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/ata/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('Nova Ata'),
-        ),
-        body: const TabBarView(
-          children: [
-            _AtaList(status: 'draft'),
-            _AtaList(status: 'sent'),
-          ],
-        ),
+        ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/ata/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Nova Ata'),
+      ),
+      body: _AtaList(status: _statusFilter),
     );
   }
 }
@@ -137,7 +148,7 @@ class _AtaCard extends ConsumerWidget {
             if (ata.numeroAtaRegistroPreco.isNotEmpty && ata.anoAta != 0)
               'Ata ${ata.numeroAtaRegistroPreco}/${ata.anoAta}',
           ].join(' - '),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,21 +156,44 @@ class _AtaCard extends ConsumerWidget {
             if (edital != null &&
                 edital!.modalidadeLabel.isNotEmpty &&
                 edital!.numeroCompra.isNotEmpty &&
-                edital!.anoCompra != 0)
+                edital!.anoCompra != 0) ...[
+              const SizedBox(height: 2),
               Text(
                 '${edital!.modalidadeLabel} ${edital!.numeroCompra}/${edital!.anoCompra} - ${PcnpInputFormatter.applyMask(edital!.idContratacaoPNCP)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withAlpha(140),
+                    ),
               ),
-            if (edital?.objetoCompra.isNotEmpty == true)
+            ],
+            if (edital?.objetoCompra.isNotEmpty == true) ...[
+              const SizedBox(height: 2),
               Text(
                 edital!.objetoCompra,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withAlpha(140),
+                    ),
               ),
-            Text(
-              'Atualizado em ${fmt.format(ata.updatedAt)}',
-              style: const TextStyle(fontStyle: FontStyle.italic),
+            ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  fmt.format(ata.updatedAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ],
         ),
@@ -177,7 +211,8 @@ class _AtaCard extends ConsumerWidget {
             const SizedBox(width: 4),
             if (!isSent)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error),
                 tooltip: 'Excluir',
                 onPressed: () => _confirmDelete(context, ref),
               ),

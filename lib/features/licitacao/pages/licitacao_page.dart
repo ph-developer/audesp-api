@@ -8,35 +8,46 @@ import '../../../core/database/database_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../licitacao_providers.dart';
 
-class LicitacaoPage extends ConsumerWidget {
+class LicitacaoPage extends ConsumerStatefulWidget {
   const LicitacaoPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Licitações'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Rascunhos'),
-              Tab(text: 'Enviadas'),
-            ],
+  ConsumerState<LicitacaoPage> createState() => _LicitacaoPageState();
+}
+
+class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
+  String _statusFilter = 'draft';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Licitações'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<String>(
+              value: _statusFilter,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: 'draft', child: Text('Rascunhos')),
+                DropdownMenuItem(value: 'sent', child: Text('Enviadas')),
+              ],
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() => _statusFilter = v);
+                }
+              },
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/licitacao/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('Nova Licitação'),
-        ),
-        body: const TabBarView(
-          children: [
-            _LicitacaoList(status: 'draft'),
-            _LicitacaoList(status: 'sent'),
-          ],
-        ),
+        ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/licitacao/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Nova Licitação'),
+      ),
+      body: _LicitacaoList(status: _statusFilter),
     );
   }
 }
@@ -140,20 +151,35 @@ class _LicitacaoCard extends ConsumerWidget {
                 edital!.anoCompra != 0)
               '${edital!.modalidadeLabel} ${edital!.numeroCompra}/${edital!.anoCompra}',
           ].join(' - '),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (edital?.objetoCompra.isNotEmpty == true)
+            if (edital?.objetoCompra.isNotEmpty == true) ...[
+              const SizedBox(height: 2),
               Text(
                 edital!.objetoCompra,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withAlpha(140),
+                    ),
               ),
-            Text(
-              'Atualizado em ${fmt.format(licitacao.updatedAt)}',
-              style: const TextStyle(fontStyle: FontStyle.italic),
+            ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  fmt.format(licitacao.updatedAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ],
         ),
@@ -171,7 +197,8 @@ class _LicitacaoCard extends ConsumerWidget {
             const SizedBox(width: 4),
             if (!isSent)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error),
                 tooltip: 'Excluir',
                 onPressed: () => _confirmDelete(context, ref),
               ),
