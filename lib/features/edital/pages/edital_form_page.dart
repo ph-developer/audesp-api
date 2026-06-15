@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show
-    FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +22,6 @@ import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
-
 
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
@@ -133,10 +132,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _retificacao = descritor['retificacao'] as bool? ?? edital.retificacao;
 
     _houvePublicacao = publicidade['houvePublicacao'] as bool? ?? false;
-    _publicacoes =
-        (publicidade['publicacoes'] as List<dynamic>? ?? [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+    _publicacoes = (publicidade['publicacoes'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
 
     _codigoUnidadeCtrl.text = doc['codigoUnidadeCompradora'] as String? ?? '';
     _tipoInstrumento = doc['tipoInstrumentoConvocatorioId'] as int?;
@@ -148,8 +146,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _objetoCompraCtrl.text = doc['objetoCompra'] as String? ?? '';
     _infComplementarCtrl.text = doc['informacaoComplementar'] as String? ?? '';
     _srp = doc['srp'] as bool? ?? false;
-    _dataAberturaCtrl.text = _toDisplayDateTime(doc['dataAberturaProposta'] as String? ?? '');
-    _dataEncerramentoCtrl.text = _toDisplayDateTime(doc['dataEncerramentoProposta'] as String? ?? '');
+    _dataAberturaCtrl.text = _toDisplayDateTime(
+      doc['dataAberturaProposta'] as String? ?? '',
+    );
+    _dataEncerramentoCtrl.text = _toDisplayDateTime(
+      doc['dataEncerramentoProposta'] as String? ?? '',
+    );
     _amparoLegalCtrl.text = doc['amparoLegalId']?.toString() ?? '';
     _linkSistemaCtrl.text = doc['linkSistemaOrigem'] as String? ?? '';
     _justificativaCtrl.text = doc['justificativaPresencial'] as String? ?? '';
@@ -170,7 +172,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         'municipio': municipio,
         'entidade': entidade,
         'codigoEdital': PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
-        'dataDocumento': _dataDoc != null ? DateFormat('yyyy-MM-dd').format(_dataDoc!) : '',
+        'dataDocumento': _dataDoc != null
+            ? DateFormat('yyyy-MM-dd').format(_dataDoc!)
+            : '',
         'retificacao': _retificacao,
       },
       'publicidade': {
@@ -197,10 +201,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       map['informacaoComplementar'] = _infComplementarCtrl.text.trim();
     }
     if (_dataAberturaCtrl.text.trim().isNotEmpty) {
-      map['dataAberturaProposta'] = _fromDisplayDateTime(_dataAberturaCtrl.text.trim());
+      map['dataAberturaProposta'] = _fromDisplayDateTime(
+        _dataAberturaCtrl.text.trim(),
+      );
     }
     if (_dataEncerramentoCtrl.text.trim().isNotEmpty) {
-      map['dataEncerramentoProposta'] = _fromDisplayDateTime(_dataEncerramentoCtrl.text.trim());
+      map['dataEncerramentoProposta'] = _fromDisplayDateTime(
+        _dataEncerramentoCtrl.text.trim(),
+      );
     }
     if (_linkSistemaCtrl.text.trim().isNotEmpty) {
       map['linkSistemaOrigem'] = _linkSistemaCtrl.text.trim();
@@ -308,9 +316,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
           context.go('/edital');
         }
       },
@@ -344,7 +352,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     try {
       final currentValues = <String, String>{
         'codigoEdital': _codigoEditalCtrl.text.trim(),
-        'dataDocumento': _dataDoc != null ? DateFormat('dd/MM/yyyy').format(_dataDoc!) : '',
+        'dataDocumento': _dataDoc != null
+            ? DateFormat('dd/MM/yyyy').format(_dataDoc!)
+            : '',
         'tipoInstrumentoConvocatorioId': _tipoInstrumento?.toString() ?? '',
         'modalidadeId': _modalidade?.toString() ?? '',
         'modoDisputaId': _modoDisputa?.toString() ?? '',
@@ -370,12 +380,15 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       setState(() {
         if (accepted.containsKey('dataDocumento')) {
           try {
-            _dataDoc = DateFormat('dd/MM/yyyy').parse(accepted['dataDocumento']!);
+            _dataDoc = DateFormat(
+              'dd/MM/yyyy',
+            ).parse(accepted['dataDocumento']!);
           } catch (_) {}
         }
         if (accepted.containsKey('tipoInstrumentoConvocatorioId')) {
-          _tipoInstrumento =
-              int.tryParse(accepted['tipoInstrumentoConvocatorioId']!);
+          _tipoInstrumento = int.tryParse(
+            accepted['tipoInstrumentoConvocatorioId']!,
+          );
         }
         if (accepted.containsKey('modalidadeId')) {
           _modalidade = int.tryParse(accepted['modalidadeId']!);
@@ -401,7 +414,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _srp = ['true', 'sim'].contains(accepted['srp']?.toLowerCase());
         }
         if (accepted.containsKey('amparoLegalId')) {
-          _amparoLegalCtrl.text = _sanitizeAmparoLegal(accepted['amparoLegalId']!);
+          _amparoLegalCtrl.text = _sanitizeAmparoLegal(
+            accepted['amparoLegalId']!,
+          );
         }
         if (accepted.containsKey('dataAberturaProposta')) {
           _dataAberturaCtrl.text = accepted['dataAberturaProposta']!;
@@ -452,8 +467,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   static String _toDisplayDate(String apiDate) {
     if (apiDate.isEmpty) return '';
     try {
-      return DateFormat('dd/MM/yyyy')
-          .format(DateFormat('yyyy-MM-dd').parse(apiDate));
+      return DateFormat(
+        'dd/MM/yyyy',
+      ).format(DateFormat('yyyy-MM-dd').parse(apiDate));
     } catch (_) {
       return apiDate;
     }
@@ -463,8 +479,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   static String _toDisplayDateTime(String apiDt) {
     if (apiDt.isEmpty) return '';
     try {
-      return DateFormat('dd/MM/yyyy HH:mm')
-          .format(DateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(apiDt));
+      return DateFormat(
+        'dd/MM/yyyy HH:mm',
+      ).format(DateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(apiDt));
     } catch (_) {
       return apiDt;
     }
@@ -494,16 +511,19 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       initialTime: TimeOfDay.now(),
     );
     if (time == null) return;
-    setState(() => ctrl.text =
-        '${DateFormat('dd/MM/yyyy').format(date)} '
-        '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}');
+    setState(
+      () => ctrl.text =
+          '${DateFormat('dd/MM/yyyy').format(date)} '
+          '${time.hour.toString().padLeft(2, '0')}:'
+          '${time.minute.toString().padLeft(2, '0')}',
+    );
   }
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -525,8 +545,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           _loadedId == null
               ? 'Novo Edital'
               : _isSent
-                  ? 'Edital'
-                  : 'Editar Edital',
+              ? 'Edital'
+              : 'Editar Edital',
         ),
         actions: [
           if (!_isSent) ...[
@@ -572,8 +592,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               child: Chip(
                 label: const Text('Enviado'),
                 avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               ),
             ),
         ],
@@ -633,7 +652,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Obrigatório';
                   final raw = PcnpInputFormatter.stripMask(v);
-                  if (raw.length < 25) return 'ID de Contratação PNCP incompleto';
+                  if (raw.length < 25)
+                    return 'ID de Contratação PNCP incompleto';
                   return null;
                 },
                 inputFormatters: [
@@ -661,7 +681,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Retificação'),
                 value: _retificacao,
-                onChanged: readOnly ? null : (v) => setState(() => _retificacao = v),
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _retificacao = v),
               ),
             ),
           ],
@@ -683,9 +705,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           onChanged: readOnly
               ? null
               : (v) => setState(() {
-                    _houvePublicacao = v;
-                    if (!v) _publicacoes.clear();
-                  }),
+                  _houvePublicacao = v;
+                  if (!v) _publicacoes.clear();
+                }),
         ),
         if (_houvePublicacao) ...[
           const SizedBox(height: 8),
@@ -730,15 +752,22 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_toDisplayDate(_publicacoes[i]['dataPublicacao'] as String? ?? '')),
+                  Text(
+                    _toDisplayDate(
+                      _publicacoes[i]['dataPublicacao'] as String? ?? '',
+                    ),
+                  ),
                   if (_publicacoes[i]['veiculoPublicacao'] == 5 &&
-                      (_publicacoes[i]['idContratacaoPNCP'] as String? ?? '').isNotEmpty)
+                      (_publicacoes[i]['idContratacaoPNCP'] as String? ?? '')
+                          .isNotEmpty)
                     Text(
                       'ID PNCP: ${PcnpInputFormatter.applyMask(_publicacoes[i]['idContratacaoPNCP'])}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   if (_publicacoes[i]['veiculoPublicacao'] == 10 &&
-                      (_publicacoes[i]['veiculoPublicacaoNome'] as String? ?? '').isNotEmpty)
+                      (_publicacoes[i]['veiculoPublicacaoNome'] as String? ??
+                              '')
+                          .isNotEmpty)
                     Text(
                       'Veículo: ${_publicacoes[i]['veiculoPublicacaoNome']}',
                       style: Theme.of(context).textTheme.bodySmall,
@@ -773,8 +802,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   }
 
   Future<void> _editPublicacao(int index) async {
-    final result =
-        await showPublicacaoDialog(context, initial: _publicacoes[index]);
+    final result = await showPublicacaoDialog(
+      context,
+      initial: _publicacoes[index],
+    );
     if (result != null) setState(() => _publicacoes[index] = result);
   }
 
@@ -785,6 +816,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       title: 'Dados Gerais',
       children: [
         // Código da Unidade Compradora (facultativo)
+        /*
         TextFormField(
           controller: _codigoUnidadeCtrl,
           enabled: !readOnly,
@@ -795,17 +827,20 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           maxLength: 20,
         ),
         const SizedBox(height: 12),
+        */
         // Tipo de Instrumento Convocatório
         DropdownButtonFormField<int>(
           key: ValueKey('inst_$_tipoInstrumento'),
           initialValue: _tipoInstrumento,
           decoration: const InputDecoration(
-              labelText: 'Tipo de Instrumento Convocatório *'),
+            labelText: 'Tipo de Instrumento Convocatório *',
+          ),
           items: kTipoInstrumento.entries
-              .map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
-          onChanged: readOnly ? null : (v) => setState(() => _tipoInstrumento = v),
+          onChanged: readOnly
+              ? null
+              : (v) => setState(() => _tipoInstrumento = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -813,11 +848,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         DropdownButtonFormField<int>(
           key: ValueKey('mod_$_modalidade'),
           initialValue: _modalidade,
-          decoration:
-              const InputDecoration(labelText: 'Modalidade de Contratação *'),
+          decoration: const InputDecoration(
+            labelText: 'Modalidade de Contratação *',
+          ),
           items: kModalidades.entries
-              .map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
           onChanged: readOnly ? null : (v) => setState(() => _modalidade = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
@@ -829,8 +864,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           initialValue: _modoDisputa,
           decoration: const InputDecoration(labelText: 'Modo de Disputa *'),
           items: kModoDisputa.entries
-              .map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
           onChanged: readOnly ? null : (v) => setState(() => _modoDisputa = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
@@ -892,8 +926,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             counterText: '',
           ),
           maxLength: 50,
-          validator: (v) =>
-              (v == null || v.isEmpty) ? 'Obrigatório' : null,
+          validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -905,8 +938,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           ),
           maxLength: 5120,
           maxLines: 4,
-          validator: (v) =>
-              (v == null || v.isEmpty) ? 'Obrigatório' : null,
+          validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -940,12 +972,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                   labelText: 'Abertura de Propostas *',
                   hintText: 'dd/MM/yyyy HH:mm',
                   suffixIcon: Icon(Icons.event),
-                  helperText:
-                      'Obrigatório para instrumento tipo 1 ou 2',
+                  helperText: 'Obrigatório para instrumento tipo 1 ou 2',
                 ),
-                onTap: readOnly
-                    ? null
-                    : () => _pickDateTime(_dataAberturaCtrl),
+                onTap: readOnly ? null : () => _pickDateTime(_dataAberturaCtrl),
                 validator: (v) {
                   if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
                       (v == null || v.trim().isEmpty)) {
@@ -965,8 +994,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                   labelText: 'Encerramento de Propostas *',
                   hintText: 'dd/MM/yyyy HH:mm',
                   suffixIcon: Icon(Icons.event),
-                  helperText:
-                      'Obrigatório para instrumento tipo 1 ou 2',
+                  helperText: 'Obrigatório para instrumento tipo 1 ou 2',
                 ),
                 onTap: readOnly
                     ? null
@@ -984,11 +1012,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ),
         const SizedBox(height: 12),
         // Amparo Legal
-        _AmparoLegalField(
-          controller: _amparoLegalCtrl,
-          enabled: !readOnly,
-        ),
+        _AmparoLegalField(controller: _amparoLegalCtrl, enabled: !readOnly),
         const SizedBox(height: 12),
+        /*
         TextFormField(
           controller: _linkSistemaCtrl,
           enabled: !readOnly,
@@ -1000,12 +1026,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           maxLength: 500,
         ),
         const SizedBox(height: 12),
+        */
         TextFormField(
           controller: _justificativaCtrl,
           enabled: !readOnly,
           decoration: const InputDecoration(
-            labelText:
-                'Justificativa para Modalidade Presencial',
+            labelText: 'Justificativa para Modalidade Presencial',
             counterText: '',
           ),
           maxLength: 500,
@@ -1039,17 +1065,18 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     return SectionCard(
       title: 'Itens de Compra',
       titleActions: [
-        if (!readOnly) ...[          TextButton.icon(
-              onPressed: _importItemsFromCsv,
-              icon: const Icon(Icons.upload_file_outlined),
-              label: const Text('Importar via Planilha'),
-            ),
+        if (!readOnly) ...[
+          TextButton.icon(
+            onPressed: _importItemsFromCsv,
+            icon: const Icon(Icons.upload_file_outlined),
+            label: const Text('Importar via Planilha'),
+          ),
           const SizedBox(width: 8),
           TextButton.icon(
-              onPressed: _addItem,
-              icon: const Icon(Icons.add),
-              label: const Text('Adicionar Item'),
-            ),
+            onPressed: _addItem,
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar Item'),
+          ),
         ],
       ],
       children: [
@@ -1144,8 +1171,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           TextButton.icon(
             onPressed: _pickPdf,
             icon: const Icon(Icons.upload_file),
-            label: Text(
-                _pdfPath == null ? 'Selecionar PDF' : 'Substituir PDF'),
+            label: Text(_pdfPath == null ? 'Selecionar PDF' : 'Substituir PDF'),
           ),
         ],
       ],
@@ -1153,8 +1179,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         if (_pdfPath != null)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading:
-                const Icon(Icons.picture_as_pdf, color: Colors.red, size: 32),
+            leading: const Icon(
+              Icons.picture_as_pdf,
+              color: Colors.red,
+              size: 32,
+            ),
             title: Text(
               _pdfPath!.split(RegExp(r'[/\\]')).last,
               overflow: TextOverflow.ellipsis,
@@ -1174,8 +1203,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         else
           Text(
             'Nenhum PDF selecionado.',
-            style:
-                TextStyle(color: Theme.of(context).colorScheme.outline),
+            style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
       ],
     );
@@ -1201,8 +1229,7 @@ class _AmparoLegalField extends StatelessWidget {
         if (q.isEmpty) return options;
         return options.where(
           (e) =>
-              e.key.toString().contains(q) ||
-              e.value.toLowerCase().contains(q),
+              e.key.toString().contains(q) || e.value.toLowerCase().contains(q),
         );
       },
       displayStringForOption: (e) => e.value,
@@ -1248,8 +1275,7 @@ class _AmparoLegalField extends StatelessWidget {
             elevation: 4,
             borderRadius: BorderRadius.circular(8),
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(maxHeight: 260, maxWidth: 600),
+              constraints: const BoxConstraints(maxHeight: 260, maxWidth: 600),
               child: ListView.builder(
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
@@ -1260,7 +1286,9 @@ class _AmparoLegalField extends StatelessWidget {
                     onTap: () => onSelected(option),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       child: Text(option.value),
                     ),
                   );
