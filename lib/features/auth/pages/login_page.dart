@@ -93,8 +93,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ref.read(localSessionProvider.notifier).login(user);
           LocalPrefs.setLastUser(username);
         } else {
-          setState(() => _error =
-              'Senha incorreta. Use a senha padrão fornecida pelo administrador.');
+          setState(
+            () => _error =
+                'Senha incorreta. Use a senha padrão fornecida pelo administrador.',
+          );
         }
       } else {
         // Acesso normal: verificar hash do banco
@@ -112,8 +114,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       body: Center(
         child: SizedBox(
@@ -129,22 +129,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // ── Header ──────────────────────────────────────────
-                    Icon(
-                      Icons.account_balance_outlined,
-                      size: 48,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'AUDESP API',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                      textAlign: TextAlign.center,
+                    Image.asset(
+                      'assets/logo_audesp.png',
+                      height: 80,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -166,8 +154,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       onChanged: (_) => setState(() => _error = null),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Obrigatório'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -179,12 +168,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscure
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                            _obscure ? Icons.visibility_off : Icons.visibility,
                           ),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                         errorText: _error,
                       ),

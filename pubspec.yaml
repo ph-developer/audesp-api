@@ -68,3 +68,5 @@ flutter:
 
   assets:
     - assets/.env
+    - assets/logo_audesp.png
+    - assets/logo_audesp2.png

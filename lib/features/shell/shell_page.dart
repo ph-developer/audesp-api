@@ -66,20 +66,11 @@ class ShellPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Column(
                   children: [
-                    // Logo / título compacto
-                    Icon(
-                      Icons.account_balance_outlined,
-                      color: colorScheme.primary,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'AUDESP',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
+                    // Logo compacto
+                    Image.asset(
+                      'assets/logo_audesp2.png',
+                      height: 40,
+                      fit: BoxFit.contain,
                     ),
                   ],
                 ),
