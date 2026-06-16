@@ -24,22 +24,30 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
       appBar: AppBar(
         title: const Text('Licitações'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: DropdownButton<String>(
-              value: _statusFilter,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'draft', child: Text('Rascunhos')),
-                DropdownMenuItem(value: 'sent', child: Text('Enviadas')),
-              ],
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => _statusFilter = v);
-                }
-              },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                width: 160,
+                child: DropdownButtonFormField<String>(
+                  value: _statusFilter,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    isDense: true,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'draft', child: Text('Rascunhos', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: 'sent', child: Text('Enviadas', overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _statusFilter = v);
+                    }
+                  },
+                ),
+              ),
             ),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

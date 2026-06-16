@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -44,7 +45,7 @@ class LogsPage extends ConsumerStatefulWidget {
 
 class _LogsPageState extends ConsumerState<LogsPage> {
   // ── Filtros ───────────────────────────────────────────────────────────
-  String? _endpointFilter;       // null → todos
+  String? _endpointFilter; // null → todos
   _StatusFilter _statusFilter = _StatusFilter.todos;
   DateTime? _dateFrom;
   DateTime? _dateTo;
@@ -57,8 +58,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   List<ApiLog> _applyFilters(List<ApiLog> all) {
     return all.where((log) {
       // endpoint
-      if (_endpointFilter != null &&
-          !log.endpoint.contains(_endpointFilter!)) {
+      if (_endpointFilter != null && !log.endpoint.contains(_endpointFilter!)) {
         return false;
       }
       // status
@@ -67,8 +67,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           (code == null || code < 200 || code >= 300)) {
         return false;
       }
-      if (_statusFilter == _StatusFilter.erro &&
-          (code == null || code < 300)) {
+      if (_statusFilter == _StatusFilter.erro && (code == null || code < 300)) {
         return false;
       }
       // date from
@@ -77,8 +76,14 @@ class _LogsPageState extends ConsumerState<LogsPage> {
       }
       // date to — include the full day
       if (_dateTo != null) {
-        final endOfDay =
-            DateTime(_dateTo!.year, _dateTo!.month, _dateTo!.day, 23, 59, 59);
+        final endOfDay = DateTime(
+          _dateTo!.year,
+          _dateTo!.month,
+          _dateTo!.day,
+          23,
+          59,
+          59,
+        );
         if (log.timestamp.isAfter(endOfDay)) return false;
       }
       return true;
@@ -90,11 +95,11 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   }
 
   Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
-        context: context,
-        initialDate: initial ?? DateTime.now(),
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2099),
-      );
+    context: context,
+    initialDate: initial ?? DateTime.now(),
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2099),
+  );
 
   void _openDetail(ApiLog log) {
     showDialog(
@@ -109,7 +114,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   Widget build(BuildContext context) {
     final future = ref.watch(apiLogsDaoProvider).watchAll();
 
-    final hasActiveFilters = _endpointFilter != null ||
+    final hasActiveFilters =
+        _endpointFilter != null ||
         _statusFilter != _StatusFilter.todos ||
         _dateFrom != null ||
         _dateTo != null;
@@ -118,108 +124,127 @@ class _LogsPageState extends ConsumerState<LogsPage> {
       appBar: AppBar(
         title: const Text('Histórico de Chamadas API'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButton<String?>(
-                  value: _endpointFilter,
-                  hint: const Text('Módulo'),
-                  underline: const SizedBox(),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                        value: null, child: Text('Todos os módulos')),
-                    ...const {
-                      'enviar-edital': 'Edital',
-                      'enviar-licitacao': 'Licitação',
-                      'enviar-ata': 'Ata',
-                      'enviar-ajuste': 'Ajuste',
-                      'enviar-empenho-contrato': 'Empenho de Contrato',
-                      'enviar-termo-contrato': 'Termo de Contrato',
-                      '/login': 'Login',
-                    }.entries.map((e) => DropdownMenuItem<String?>(
-                          value: e.key,
-                          child: Text(e.value),
-                        )),
-                  ],
-                  onChanged: (v) => setState(() => _endpointFilter = v),
+          Theme(
+            data: Theme.of(context).copyWith(
+              inputDecorationTheme: const InputDecorationTheme(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-                const SizedBox(width: 16),
-                DropdownButton<_StatusFilter>(
-                  value: _statusFilter,
-                  underline: const SizedBox(),
-                  items: const [
-                    DropdownMenuItem(
-                        value: _StatusFilter.todos, child: Text('Todos os status')),
-                    DropdownMenuItem(
-                        value: _StatusFilter.sucesso, child: Text('✓ Sucesso (2xx)')),
-                    DropdownMenuItem(
-                        value: _StatusFilter.erro, child: Text('✗ Erro (3xx+)')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => _statusFilter = v);
-                  },
-                ),
-                const SizedBox(width: 16),
-                InkWell(
-                  onTap: () async {
-                    final d = await _pickDate(_dateFrom);
-                    if (d != null) setState(() => _dateFrom = d);
-                  },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.calendar_today, size: 16),
-                        const SizedBox(width: 4),
-                        Text(_dateFrom != null
-                            ? 'De: ${_dateFmt.format(_dateFrom!)}'
-                            : 'Data início'),
+                isDense: true,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 220,
+                    child: DropdownButtonFormField<String?>(
+                      value: _endpointFilter,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Módulo'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(
+                            'Todos os módulos',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        ...const {
+                          'enviar-edital': 'Edital',
+                          'enviar-licitacao': 'Licitação',
+                          'enviar-ata': 'Ata',
+                          'enviar-ajuste': 'Ajuste',
+                          'enviar-empenho-contrato': 'Empenho de Contrato',
+                          'enviar-termo-contrato': 'Termo de Contrato',
+                          '/login': 'Login',
+                        }.entries.map(
+                          (e) => DropdownMenuItem<String?>(
+                            value: e.key,
+                            child: Text(
+                              e.value,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
                       ],
+                      onChanged: (v) => setState(() => _endpointFilter = v),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: () async {
-                    final d = await _pickDate(_dateTo);
-                    if (d != null) setState(() => _dateTo = d);
-                  },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.calendar_today, size: 16),
-                        const SizedBox(width: 4),
-                        Text(_dateTo != null
-                            ? 'Até: ${_dateFmt.format(_dateTo!)}'
-                            : 'Data fim'),
-                      ],
-                    ),
-                  ),
-                ),
-                if (hasActiveFilters) ...[
                   const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => setState(() {
-                      _endpointFilter = null;
-                      _statusFilter = _StatusFilter.todos;
-                      _dateFrom = null;
-                      _dateTo = null;
-                    }),
-                    icon: const Icon(Icons.clear, size: 16),
-                    label: const Text('Limpar'),
-                    style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error),
+                  SizedBox(
+                    width: 190,
+                    child: DropdownButtonFormField<_StatusFilter>(
+                      value: _statusFilter,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: _StatusFilter.todos,
+                          child: Text(
+                            'Todos os status',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: _StatusFilter.sucesso,
+                          child: Text(
+                            'Sucesso',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: _StatusFilter.erro,
+                          child: Text('Erro', overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setState(() => _statusFilter = v);
+                      },
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 140,
+                    child: AudespDatePickerField(
+                      isDense: true,
+                      label: 'Data início',
+                      value: _dateFrom,
+                      onChanged: (d) => setState(() => _dateFrom = d),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 140,
+                    child: AudespDatePickerField(
+                      isDense: true,
+                      label: 'Data fim',
+                      value: _dateTo,
+                      onChanged: (d) => setState(() => _dateTo = d),
+                    ),
+                  ),
+                  if (hasActiveFilters) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => setState(() {
+                        _endpointFilter = null;
+                        _statusFilter = _StatusFilter.todos;
+                        _dateFrom = null;
+                        _dateTo = null;
+                      }),
+                      icon: const Icon(Icons.clear, size: 16),
+                      style: IconButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 8),
                 ],
-                const SizedBox(width: 8),
-              ],
+              ),
             ),
           ),
         ],
@@ -239,15 +264,22 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
                 if (all.isEmpty) {
                   return const Center(
-                      child: Text('Nenhuma chamada registrada ainda.'));
+                    child: Text('Nenhuma chamada registrada ainda.'),
+                  );
                 }
                 if (filtered.isEmpty) {
                   return const Center(
-                      child: Text('Nenhum resultado para os filtros selecionados.'));
+                    child: Text(
+                      'Nenhum resultado para os filtros selecionados.',
+                    ),
+                  );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) => _LogCard(
                     log: filtered[i],
@@ -264,7 +296,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Log card
@@ -318,10 +349,7 @@ class _LogCard extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(
-          label,
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        title: Text(label, style: Theme.of(context).textTheme.titleSmall),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -329,11 +357,8 @@ class _LogCard extends StatelessWidget {
             Text(
               log.endpoint,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withAlpha(140),
-                  ),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(140),
+              ),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
@@ -362,8 +387,10 @@ class _LogCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error),
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
               tooltip: 'Excluir',
               onPressed: onDelete,
             ),
@@ -554,9 +581,9 @@ class _JsonPanel extends StatelessWidget {
               TextButton.icon(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$label copiado')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('$label copiado')));
                 },
                 icon: const Icon(Icons.copy, size: 16),
                 label: const Text('Copiar'),
@@ -589,4 +616,3 @@ class _JsonPanel extends StatelessWidget {
     );
   }
 }
-

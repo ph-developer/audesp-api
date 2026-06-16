@@ -21,6 +21,7 @@ import 'package:intl/intl.dart';
 /// ```
 class AudespDatePickerField extends StatefulWidget {
   final String label;
+  final bool? isDense;
   final DateTime? value;
   final bool readOnly;
   final ValueChanged<DateTime?> onChanged;
@@ -41,6 +42,7 @@ class AudespDatePickerField extends StatefulWidget {
     this.validator,
     this.firstDate,
     this.lastDate,
+    this.isDense = false,
   });
 
   @override
@@ -80,9 +82,16 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
           borderRadius: BorderRadius.circular(4),
           child: InputDecorator(
             decoration: InputDecoration(
+              isDense: widget.isDense,
+              contentPadding: widget.isDense == true 
+                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) 
+                  : null,
               labelText: widget.label,
               border: const OutlineInputBorder(),
               errorText: hasError ? state.errorText : null,
+              suffixIconConstraints: widget.isDense == true 
+                  ? const BoxConstraints(minWidth: 32, minHeight: 32)
+                  : null,
               suffixIcon: widget.readOnly
                   ? null
                   : const Icon(Icons.calendar_today_outlined, size: 18),
