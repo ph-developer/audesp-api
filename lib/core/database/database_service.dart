@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:mysql_client/mysql_client.dart';
 
 class DatabaseService {
@@ -140,6 +141,35 @@ class DatabaseService {
     if (version < 2) {
       await _ensureUniqueIndexes();
       await setSchemaVersion(2);
+    }
+
+    if (version < 3) {
+      try {
+        await pool.execute('ALTER TABLE api_logs ADD COLUMN protocolo VARCHAR(255) NULL');
+        await pool.execute('ALTER TABLE api_logs ADD COLUMN status_protocolo VARCHAR(255) NULL');
+        await pool.execute('ALTER TABLE api_logs ADD COLUMN retorno_status LONGTEXT NULL');
+      } catch (_) {}
+      await setSchemaVersion(3);
+    }
+
+    if (version < 4) {
+      final result = await pool.execute('SELECT id, response FROM api_logs WHERE response IS NOT NULL AND status_code >= 200 AND status_code < 300 AND protocolo IS NULL');
+      for (final row in result.rows) {
+        final map = row.typedAssoc();
+        final id = map['id'] as int;
+        final responseText = map['response'] as String;
+        try {
+          final json = jsonDecode(responseText);
+          if (json is Map<String, dynamic> && json.containsKey('protocolo')) {
+            final protocolo = json['protocolo']?.toString();
+            if (protocolo != null && protocolo.isNotEmpty) {
+              final stmt = await pool.prepare('UPDATE api_logs SET protocolo = ?, status_protocolo = ? WHERE id = ?');
+              await stmt.execute([protocolo, 'Pendente', id]);
+            }
+          }
+        } catch (_) {}
+      }
+      await setSchemaVersion(4);
     }
   }
 

@@ -42,15 +42,24 @@ class ApiLogsDao {
     int? statusCode,
     int? userId,
     DateTime? timestamp,
+    String? protocolo,
+    String? statusProtocolo,
   }) async {
     final ts =
         (timestamp ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'INSERT INTO api_logs (endpoint, request, response, status_code, user_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO api_logs (endpoint, request, response, status_code, user_id, timestamp, protocolo, status_protocolo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     );
     final result = await stmt
-        .execute([endpoint, request, response, statusCode, userId, ts]);
+        .execute([endpoint, request, response, statusCode, userId, ts, protocolo, statusProtocolo]);
     return result.lastInsertID.toInt();
+  }
+
+  Future<void> updateProtocoloInfo(int id, String statusProtocolo, String retornoStatus) async {
+    final stmt = await _db.pool.prepare(
+      'UPDATE api_logs SET status_protocolo = ?, retorno_status = ? WHERE id = ?',
+    );
+    await stmt.execute([statusProtocolo, retornoStatus, id]);
   }
 
   Future<int> deleteById(int id) async {

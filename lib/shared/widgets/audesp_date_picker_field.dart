@@ -84,7 +84,7 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
             decoration: InputDecoration(
               isDense: widget.isDense,
               contentPadding: widget.isDense == true
-                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 12)
+                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
                   : null,
               labelText: widget.label,
               border: const OutlineInputBorder(),

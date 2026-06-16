@@ -20,20 +20,22 @@ Future<bool> showAudespAuthDialog(
   BuildContext context,
   WidgetRef ref, {
   required Future<void> Function(String token) onConfirm,
+  String actionLabel = 'Autenticar e enviar',
 }) async {
   final result = await showAudespDialog<bool>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.small,
-    builder: (_) => _AudespAuthDialog(onConfirm: onConfirm),
+    builder: (_) => _AudespAuthDialog(onConfirm: onConfirm, actionLabel: actionLabel),
   );
   return result == true;
 }
 
 class _AudespAuthDialog extends ConsumerStatefulWidget {
   final Future<void> Function(String token) onConfirm;
+  final String actionLabel;
 
-  const _AudespAuthDialog({required this.onConfirm});
+  const _AudespAuthDialog({required this.onConfirm, required this.actionLabel});
 
   @override
   ConsumerState<_AudespAuthDialog> createState() => _AudespAuthDialogState();
@@ -153,7 +155,7 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
         AudespAsyncButton.icon(
           onPressed: _authenticate,
           icon: Icons.send_outlined,
-          label: 'Autenticar e enviar',
+          label: widget.actionLabel,
         ),
       ],
     );

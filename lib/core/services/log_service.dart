@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/database_providers.dart';
@@ -17,13 +18,31 @@ class LogService {
     required String response,
     required int statusCode,
     int? userId,
-  }) =>
-      _dao.insertLog(
-        endpoint: endpoint,
-        request: request,
-        response: response,
-        statusCode: statusCode,
-        userId: userId,
-      );
+  }) async {
+    String? protocolo;
+    String? statusProtocolo;
+
+    if (statusCode >= 200 && statusCode < 300 && response.isNotEmpty) {
+      try {
+        final json = jsonDecode(response);
+        if (json is Map<String, dynamic> && json.containsKey('protocolo')) {
+          protocolo = json['protocolo']?.toString();
+          statusProtocolo = 'Pendente'; // Status inicial
+        }
+      } catch (_) {
+        // Ignora erro de parsing
+      }
+    }
+
+    await _dao.insertLog(
+      endpoint: endpoint,
+      request: request,
+      response: response,
+      statusCode: statusCode,
+      userId: userId,
+      protocolo: protocolo,
+      statusProtocolo: statusProtocolo,
+    );
+  }
 }
 

@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../services/consulta_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -50,7 +52,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   DateTime? _dateFrom;
   DateTime? _dateTo;
 
-  final _dateFmt = DateFormat('dd/MM/yyyy');
   final _timeFmt = DateFormat('dd/MM/yy HH:mm:ss');
 
   // ─────────────────────────────────────────────────────────────────────
@@ -90,18 +91,157 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     }).toList();
   }
 
-  Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
-    context: context,
-    initialDate: initial ?? DateTime.now(),
-    firstDate: DateTime(2020),
-    lastDate: DateTime(2099),
-  );
-
   void _openDetail(ApiLog log) {
     showDialog(
       context: context,
       builder: (_) => _LogDetailDialog(log: log),
     );
+  }
+
+  Future<void> _updateStatus(ApiLog log) async {
+    if (log.protocolo == null) return;
+    
+    await showAudespAuthDialog(
+      context,
+      ref,
+      actionLabel: 'Autenticar e Atualizar',
+      onConfirm: (token) async {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+
+        try {
+          final consultaSvc = ref.read(consultaServiceProvider);
+          final jsonRetorno = await consultaSvc.consultarStatus(log.protocolo!);
+          final json = jsonDecode(jsonRetorno);
+          final novoStatus = json['status']?.toString() ?? 'Desconhecido';
+
+          final dao = ref.read(apiLogsDaoProvider);
+          await dao.updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Status atualizado para: $novoStatus')),
+            );
+            setState(() {}); // recarrega a lista
+          }
+        } catch (e) {
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao atualizar: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      },
+    );
+  }
+
+  Future<void> _updateAllUpdatable() async {
+    final allLogs = await ref.read(apiLogsDaoProvider).watchAll();
+    final updatables = allLogs.where((l) => isProtocoloUpdatable(l.statusProtocolo)).toList();
+    
+    if (updatables.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nenhum registro requer atualização no momento.')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    await showAudespAuthDialog(
+      context,
+      ref,
+      actionLabel: 'Autenticar e Atualizar Todos',
+      onConfirm: (token) async {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            content: Row(
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 24),
+                Text('Atualizando ${updatables.length} registros...'),
+              ]
+            )
+          ),
+        );
+
+        try {
+          final consultaSvc = ref.read(consultaServiceProvider);
+          final dao = ref.read(apiLogsDaoProvider);
+          int successCount = 0;
+
+          for (final log in updatables) {
+            try {
+              final jsonRetorno = await consultaSvc.consultarStatus(log.protocolo!);
+              final json = jsonDecode(jsonRetorno);
+              final novoStatus = json['status']?.toString() ?? 'Desconhecido';
+              await dao.updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+              successCount++;
+            } catch (_) {}
+          }
+
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$successCount de ${updatables.length} registros atualizados com sucesso.')),
+            );
+            setState(() {}); // recarrega a lista
+          }
+        } catch (e) {
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro durante a atualização: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      },
+    );
+  }
+
+  void _showErrors(ApiLog log) {
+    if (log.retornoStatus == null) return;
+    try {
+      final json = jsonDecode(log.retornoStatus!);
+      final erros = json['erros'] as List<dynamic>? ?? [];
+      if (erros.isEmpty) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Erros Retornados'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: erros.length,
+              itemBuilder: (ctx, i) {
+                final erro = erros[i];
+                return ListTile(
+                  title: Text(erro['mensagem']?.toString() ?? 'Erro'),
+                  subtitle: Text('Campo: ${erro['campo']} | Código: ${erro['codigoErro']}'),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {}
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -120,6 +260,14 @@ class _LogsPageState extends ConsumerState<LogsPage> {
       appBar: AppBar(
         title: const Text('Histórico de Chamadas API'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: FilledButton.icon(
+              onPressed: _updateAllUpdatable,
+              icon: const Icon(Icons.sync),
+              label: const Text('Atualizar Status'),
+            ),
+          ),
           Theme(
             data: Theme.of(context).copyWith(
               inputDecorationTheme: const InputDecorationTheme(
@@ -281,6 +429,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                     log: filtered[i],
                     timeFmt: _timeFmt,
                     onTap: () => _openDetail(filtered[i]),
+                    onUpdateStatus: () => _updateStatus(filtered[i]),
+                    onShowErrors: () => _showErrors(filtered[i]),
                   ),
                 );
               },
@@ -296,16 +446,50 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 // Log card
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers globais
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool isProtocoloUpdatable(String? status) {
+  if (status == null) return false;
+  final s = status.toLowerCase();
+  if (s.contains('rejeitado') ||
+      s.contains('arquivado') ||
+      s.contains('excluido') ||
+      s.contains('excluído') ||
+      s.contains('armazenado') ||
+      s.contains('substituido') ||
+      s.contains('substituído')) {
+    return false;
+  }
+  return true;
+}
+
 class _LogCard extends StatelessWidget {
   final ApiLog log;
   final DateFormat timeFmt;
   final VoidCallback onTap;
+  final VoidCallback onUpdateStatus;
+  final VoidCallback onShowErrors;
 
   const _LogCard({
     required this.log,
     required this.timeFmt,
     required this.onTap,
+    required this.onUpdateStatus,
+    required this.onShowErrors,
   });
+
+  bool _hasErrors() {
+    if (log.retornoStatus == null) return false;
+    try {
+      final json = jsonDecode(log.retornoStatus!);
+      final erros = json['erros'] as List<dynamic>?;
+      return erros != null && erros.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Color _statusColor(BuildContext context) {
     final code = log.statusCode;
@@ -379,6 +563,34 @@ class _LogCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (log.protocolo != null) ...[
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Protocolo: ${log.protocolo}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  const SizedBox(height: 2),
+                  InkWell(
+                    onTap: _hasErrors() ? onShowErrors : null,
+                    child: Text(
+                      log.statusProtocolo ?? '—', 
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: FontWeight.bold,
+                        color: _hasErrors() ? Colors.red : Theme.of(context).colorScheme.primary,
+                        decoration: _hasErrors() ? TextDecoration.underline : null,
+                      )
+                    ),
+                  ),
+                ]
+              ),
+              if (isProtocoloUpdatable(log.statusProtocolo))
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 16),
+                  tooltip: 'Atualizar Status',
+                  onPressed: onUpdateStatus,
+                ),
+            ],
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios, size: 16),
               tooltip: 'Abrir',
@@ -411,7 +623,7 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -492,6 +704,7 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
               tabs: const [
                 Tab(text: 'Request'),
                 Tab(text: 'Response'),
+                Tab(text: 'Consulta F4'),
               ],
             ),
 
@@ -502,6 +715,7 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
                 children: [
                   _JsonPanel(content: prettyRequest, label: 'Request'),
                   _JsonPanel(content: prettyResponse, label: 'Response'),
+                  _JsonPanel(content: _prettyJson(log.retornoStatus), label: 'Consulta F4'),
                 ],
               ),
             ),
