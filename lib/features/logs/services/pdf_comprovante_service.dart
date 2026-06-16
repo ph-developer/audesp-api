@@ -19,9 +19,10 @@ class PdfComprovanteService {
     if (raw == null || raw.trim().isEmpty) return '(vazio)';
     try {
       final obj = jsonDecode(raw);
-      return const JsonEncoder.withIndent('  ').convert(obj);
+      final pretty = const JsonEncoder.withIndent('  ').convert(obj);
+      return pretty.replaceAll('—', '-').replaceAll('–', '-');
     } catch (_) {
-      return raw;
+      return raw.replaceAll('—', '-').replaceAll('–', '-');
     }
   }
 
@@ -91,7 +92,7 @@ class PdfComprovanteService {
             _buildRow('Endpoint:', log.endpoint),
             _buildRow('Data/Hora:', dataHora),
             _buildRow('Usuário:', userDisplay),
-            _buildRow('Status Code HTTP:', log.statusCode?.toString() ?? '—'),
+            _buildRow('Status Code HTTP:', log.statusCode?.toString() ?? '-'),
             _buildRow('Protocolo:', log.protocolo ?? 'N/A'),
             _buildRow('Situação Atual:', log.statusProtocolo ?? 'N/A'),
             pw.SizedBox(height: 30),
