@@ -8,27 +8,25 @@ enum Environment { piloto, oficial }
 
 extension EnvironmentExtension on Environment {
   String get label => switch (this) {
-        Environment.piloto => 'Piloto',
-        Environment.oficial => 'Oficial',
-      };
+    Environment.piloto => 'Piloto',
+    Environment.oficial => 'Oficial',
+  };
 
   String get baseUrl => switch (this) {
-        Environment.piloto => 'https://audesp-piloto.tce.sp.gov.br',
-        Environment.oficial => '',
-        // Environment.oficial => 'https://audesp.tce.sp.gov.br',
-      };
+    Environment.piloto => 'https://audesp-piloto.tce.sp.gov.br',
+    Environment.oficial => 'https://audesp.tce.sp.gov.br',
+  };
 }
 
 /// Provider global do ambiente ativo. O valor é persistido em [AppSettings].
-final environmentProvider =
-    NotifierProvider<EnvironmentNotifier, Environment>(
-      EnvironmentNotifier.new,
+final environmentProvider = NotifierProvider<EnvironmentNotifier, Environment>(
+  EnvironmentNotifier.new,
 );
 
 class EnvironmentNotifier extends Notifier<Environment> {
-   AppSettingsDao get _dao => ref.read(appSettingsDaoProvider);
+  AppSettingsDao get _dao => ref.read(appSettingsDaoProvider);
 
-   @override
+  @override
   Environment build() {
     _load();
     return Environment.piloto;
