@@ -21,6 +21,10 @@ flutter test
 
 # Rodar a análise estática / linting
 flutter analyze
+
+# Gerar a versão final/produção (Executável para Windows)
+# O artefato ficará na pasta: build\windows\x64\runner\Release\
+flutter build windows
 ```
 
 ## Principais Funcionalidades
