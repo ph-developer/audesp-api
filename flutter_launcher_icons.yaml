@@ -1,0 +1,6 @@
+flutter_launcher_icons:
+  image_path: "assets/logo_audesp2.png"
+  windows:
+    generate: true
+    image_path: "assets/logo_audesp2.png"
+    icon_size: 256
