@@ -677,13 +677,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: SwitchListTile(
+              child: CheckboxListTile(
+                controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Retificação'),
                 value: _retificacao,
                 onChanged: readOnly
                     ? null
-                    : (v) => setState(() => _retificacao = v),
+                    : (v) => setState(() => _retificacao = v ?? false),
               ),
             ),
           ],
@@ -698,15 +699,16 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     return SectionCard(
       title: 'Publicidade',
       children: [
-        SwitchListTile(
+        CheckboxListTile(
+          controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
           title: const Text('Houve Publicação'),
           value: _houvePublicacao,
           onChanged: readOnly
               ? null
               : (v) => setState(() {
-                  _houvePublicacao = v;
-                  if (!v) _publicacoes.clear();
+                  _houvePublicacao = v ?? false;
+                  if (!(_houvePublicacao)) _publicacoes.clear();
                 }),
         ),
         if (_houvePublicacao) ...[
@@ -952,11 +954,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           maxLines: 3,
         ),
         const SizedBox(height: 8),
-        SwitchListTile(
+        CheckboxListTile(
+          controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
           title: const Text('SRP – Sistema de Registro de Preços'),
           value: _srp,
-          onChanged: readOnly ? null : (v) => setState(() => _srp = v),
+          onChanged: readOnly ? null : (v) => setState(() => _srp = v ?? false),
         ),
         const SizedBox(height: 12),
         // Datas de propostas

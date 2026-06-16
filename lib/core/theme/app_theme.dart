@@ -20,8 +20,18 @@ class AppTheme {
           elevation: 0,
         ),
         inputDecorationTheme: const InputDecorationTheme(
+          isDense: true,
           border: OutlineInputBorder(),
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          helperStyle: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+        ),
+        textTheme: const TextTheme(
+          // Forçando peso normal e mesmo tamanho/espaçamento para padronizar Dropdowns (titleMedium) e TextFields (bodyLarge)
+          titleMedium: TextStyle(fontWeight: FontWeight.w400, fontSize: 14, letterSpacing: 0.25),
+          bodyLarge: TextStyle(fontWeight: FontWeight.w400, fontSize: 14, letterSpacing: 0.25),
+        ),
+        listTileTheme: const ListTileThemeData(
+          dense: true,
         ),
         cardTheme: CardThemeData(
           elevation: 1,

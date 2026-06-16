@@ -726,11 +726,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: SwitchListTile(
+                        child: CheckboxListTile(
+                          controlAffinity: ListTileControlAffinity.leading,
                           title: const Text('Retificação'),
                           value: _retificacao,
                           onChanged:
-                              readOnly ? null : (v) => setState(() => _retificacao = v),
+                              readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -744,18 +745,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   //   readOnly: readOnly,
                   // ),
                   const SizedBox(height: 4),                  
-                  SwitchListTile(
+                  CheckboxListTile(
+                    controlAffinity: ListTileControlAffinity.leading,
                     title: const Text('Adesão / Participação'),
                     subtitle: const Text(
                         'Adesão ou participação em licitação gerenciada por outra entidade?'),
                     value: _adesaoParticipacao,
                     onChanged: readOnly
                         ? null
-                        : (v) => setState(() => _adesaoParticipacao = v),
+                        : (v) => setState(() => _adesaoParticipacao = v ?? false),
                     contentPadding: EdgeInsets.zero,
                   ),
                   if (_adesaoParticipacao) ...[
-                    SwitchListTile(
+                    CheckboxListTile(
+                      controlAffinity: ListTileControlAffinity.leading,
                       title: const Text('Gerenciadora Jurisdicionada'),
                       subtitle: const Text(
                           'A entidade gerenciadora é jurisdicionada ao TCE-SP?'),
@@ -763,7 +766,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       onChanged: readOnly
                           ? null
                           : (v) =>
-                              setState(() => _gerenciadoraJurisdicionada = v),
+                              setState(() => _gerenciadoraJurisdicionada = v ?? false),
                       contentPadding: EdgeInsets.zero,
                     ),
                     if (_gerenciadoraJurisdicionada) ...[

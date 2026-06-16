@@ -26,7 +26,11 @@ import '../widgets/ajuste_me_epp_dialog.dart';
 class LicitacaoFormPage extends ConsumerStatefulWidget {
   final int? licitacaoId;
   final int? preselectedEditalId;
-  const LicitacaoFormPage({super.key, this.licitacaoId, this.preselectedEditalId});
+  const LicitacaoFormPage({
+    super.key,
+    this.licitacaoId,
+    this.preselectedEditalId,
+  });
 
   @override
   ConsumerState<LicitacaoFormPage> createState() => _LicitacaoFormPageState();
@@ -167,8 +171,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _interposicaoRecurso = doc['interposicaoRecurso'] as int?;
     _audienciaPublica = doc['audienciaPublica'] as int?;
     _exigenciaGarantiaLicitantes = doc['exigenciaGarantiaLicitantes'] as int?;
-    _percentualValorCtrl.text =
-        doubleToBrString(doc['percentualValor']);
+    _percentualValorCtrl.text = doubleToBrString(doc['percentualValor']);
     _exigenciaAmostra = doc['exigenciaAmostra'] as int?;
     _quitacaoFederal = doc['quitacaoTributosFederais'] as bool?;
     _quitacaoEstadual = doc['quitacaoTributosEstaduais'] as bool?;
@@ -187,11 +190,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         .toList();
 
     _exigenciaIndicesEconomicos = doc['exigenciaIndicesEconomicos'] as int?;
-    _indicesEconomicos =
-        (doc['indicesEconomicos'] as List<dynamic>? ?? [])
-            .whereType<Map<String, dynamic>>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
+    _indicesEconomicos = (doc['indicesEconomicos'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
 
     _itens = (doc['itens'] as List<dynamic>? ?? [])
         .whereType<Map<String, dynamic>>()
@@ -224,10 +226,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     // Campos de BID (somente quando recursoBID == 1)
     if (_recursoBID == 1) {
-      _setIfNonNull(map, 'aberturaPreQualificacaoBID', _aberturaPreQualificacaoBID);
+      _setIfNonNull(
+        map,
+        'aberturaPreQualificacaoBID',
+        _aberturaPreQualificacaoBID,
+      );
       _setIfNonNull(map, 'editalPreQualificacaoBID', _editalPreQualificacaoBID);
       _setIfNonNull(
-          map, 'julgamentoPreQualificacaoBID', _julgamentoPreQualificacaoBID);
+        map,
+        'julgamentoPreQualificacaoBID',
+        _julgamentoPreQualificacaoBID,
+      );
       _setIfNonNull(map, 'edital2FaseBID', _edital2FaseBID);
       _setIfNonNull(map, 'julgamentoPropostasBID', _julgamentoPropostasBID);
       _setIfNonNull(map, 'julgamentoNegociacaoBID', _julgamentoNegociacaoBID);
@@ -237,19 +246,27 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _setIfNonNull(map, 'audienciaPublica', _audienciaPublica);
     _setIfNonNull(map, 'exigenciaAmostra', _exigenciaAmostra);
     _setIfNonNull(map, 'exigenciaVisitaTecnica', _exigenciaVisitaTecnica);
-    _setIfNonNull(map, 'exigenciaIndicesEconomicos', _exigenciaIndicesEconomicos);
+    _setIfNonNull(
+      map,
+      'exigenciaIndicesEconomicos',
+      _exigenciaIndicesEconomicos,
+    );
 
-    final percentual =
-        parseBrCurrencyOrNull(_percentualValorCtrl.text.trim());
+    final percentual = parseBrCurrencyOrNull(_percentualValorCtrl.text.trim());
     if (percentual != null && _exigenciaGarantiaLicitantes == 1) {
       map['percentualValor'] = double.parse(percentual.toStringAsFixed(4));
     }
 
-    if (_quitacaoFederal != null) map['quitacaoTributosFederais'] = _quitacaoFederal;
-    if (_quitacaoEstadual != null) map['quitacaoTributosEstaduais'] = _quitacaoEstadual;
-    if (_quitacaoMunicipal != null) map['quitacaoTributosMunicipais'] = _quitacaoMunicipal;
-    if (_exigenciaCurriculo != null) map['exigenciaCurriculo'] = _exigenciaCurriculo;
-    if (_exigenciaVistoCREA != null) map['exigenciaVistoCREA'] = _exigenciaVistoCREA;
+    if (_quitacaoFederal != null)
+      map['quitacaoTributosFederais'] = _quitacaoFederal;
+    if (_quitacaoEstadual != null)
+      map['quitacaoTributosEstaduais'] = _quitacaoEstadual;
+    if (_quitacaoMunicipal != null)
+      map['quitacaoTributosMunicipais'] = _quitacaoMunicipal;
+    if (_exigenciaCurriculo != null)
+      map['exigenciaCurriculo'] = _exigenciaCurriculo;
+    if (_exigenciaVistoCREA != null)
+      map['exigenciaVistoCREA'] = _exigenciaVistoCREA;
     if (_declaracaoRecursos != null) {
       map['declaracaoRecursosContratacao'] = _declaracaoRecursos;
     }
@@ -259,8 +276,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
 
     if (_contratacaoConduzida && _cpfsCondutores.isNotEmpty) {
-      map['cpfsCondutores'] =
-          _cpfsCondutores.map((c) => {'cpfCondutor': c}).toList();
+      map['cpfsCondutores'] = _cpfsCondutores
+          .map((c) => {'cpfCondutor': c})
+          .toList();
     }
 
     if (_indicesEconomicos.isNotEmpty) {
@@ -352,11 +370,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return;
     }
     if (_contratacaoConduzida && _cpfsCondutores.isEmpty) {
-      _showError('Informe ao menos um CPF condutor quando a contratação for conduzida.');
+      _showError(
+        'Informe ao menos um CPF condutor quando a contratação for conduzida.',
+      );
       return;
     }
     if (_exigenciaIndicesEconomicos == 1 && _indicesEconomicos.isEmpty) {
-      _showError('Adicione ao menos um índice econômico quando exigência for marcada como "Sim".');
+      _showError(
+        'Adicione ao menos um índice econômico quando exigência for marcada como "Sim".',
+      );
       return;
     }
     if (_itens.isEmpty) {
@@ -385,9 +407,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
           context.go('/licitacao');
         }
       },
@@ -396,9 +418,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   // ── Índices econômicos ────────────────────────────────────────────────
@@ -411,16 +433,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final initial = editIndex != null ? _indicesEconomicos[editIndex] : null;
     int? tipoIndice = initial?['tipoIndice'] as int?;
     final nomeCtrl = TextEditingController(
-        text: initial?['nomeIndice'] as String? ?? '');
+      text: initial?['nomeIndice'] as String? ?? '',
+    );
     final valorCtrl = TextEditingController(
-        text: doubleToBrString(initial?['valorIndice']));
+      text: doubleToBrString(initial?['valorIndice']),
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          title:
-              Text(editIndex == null ? 'Adicionar Índice' : 'Editar Índice'),
+          title: Text(editIndex == null ? 'Adicionar Índice' : 'Editar Índice'),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -430,8 +453,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   initialValue: tipoIndice,
                   decoration: const InputDecoration(labelText: 'Tipo *'),
                   items: kTipoIndice.entries
-                      .map((e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setS(() => tipoIndice = v),
                 ),
@@ -440,16 +467,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   TextField(
                     controller: nomeCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Nome do Índice (3–50 caracteres)'),
+                      labelText: 'Nome do Índice (3–50 caracteres)',
+                    ),
                     maxLength: 50,
                   ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: valorCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Valor *'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Valor *'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                   ],
@@ -459,19 +487,20 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancelar')),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Salvar')),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Salvar'),
+            ),
           ],
         ),
       ),
     );
 
     if (confirmed == true && tipoIndice != null) {
-      final valor =
-          parseBrCurrencyOrNull(valorCtrl.text.trim());
+      final valor = parseBrCurrencyOrNull(valorCtrl.text.trim());
       if (valor == null) return;
       final entry = <String, dynamic>{
         'tipoIndice': tipoIndice,
@@ -502,7 +531,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         builder: (ctx) => AlertDialog(
           title: const Text('Substituir itens?'),
           content: const Text(
-            'Já existem itens no formulário. Deseja substituí-los pelos itens importados?'),
+            'Já existem itens no formulário. Deseja substituí-los pelos itens importados?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
@@ -560,7 +590,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       'declaracaoMEouEPP': l.declaracaoMEouEPP,
       'resultadoHabilitacao': l.resultadoHabilitacao,
     };
-    if (l.nomeRazaoSocial.isNotEmpty) map['nomeRazaoSocial'] = l.nomeRazaoSocial;
+    if (l.nomeRazaoSocial.isNotEmpty)
+      map['nomeRazaoSocial'] = l.nomeRazaoSocial;
     if (l.valorProposta != 0) {
       map['valor'] = double.parse(l.valorProposta.toStringAsFixed(4));
     }
@@ -572,9 +603,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   // ── Ajuste ME/EPP em lote ─────────────────────────────────────────────
 
   bool get _temLicitante => _itens.any(
-        (item) =>
-            (item['licitantes'] as List<dynamic>? ?? []).isNotEmpty,
-      );
+    (item) => (item['licitantes'] as List<dynamic>? ?? []).isNotEmpty,
+  );
 
   Future<void> _abrirAjusteMeEpp() async {
     // Extrai licitantes únicos (por niPessoa), preservando status atual.
@@ -597,15 +627,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     // Aplica o status atualizado em cascata em todos os itens/licitantes.
     setState(() {
       _itens = _itens.map((item) {
-        final licitantes =
-            (item['licitantes'] as List<dynamic>? ?? [])
-                .whereType<Map<String, dynamic>>()
-                .map((l) {
-          final ni = l['niPessoa'] as String? ?? '';
-          final novoStatus = resultado[ni];
-          if (novoStatus == null) return l;
-          return {...l, 'declaracaoMEouEPP': novoStatus};
-        }).toList();
+        final licitantes = (item['licitantes'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map((l) {
+              final ni = l['niPessoa'] as String? ?? '';
+              final novoStatus = resultado[ni];
+              if (novoStatus == null) return l;
+              return {...l, 'declaracaoMEouEPP': novoStatus};
+            })
+            .toList();
         return {...item, 'licitantes': licitantes};
       }).toList();
     });
@@ -646,8 +676,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           _loadedId == null
               ? 'Nova Licitação'
               : _isSent
-                  ? 'Licitação'
-                  : 'Editar Licitação',
+              ? 'Licitação'
+              : 'Editar Licitação',
         ),
         actions: [
           if (!_isSent) ...[
@@ -733,13 +763,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 decoration: const InputDecoration(labelText: 'Edital *'),
                 isExpanded: true,
                 items: _editais
-                    .map((e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(
-                            e.dropdownLabel,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e.id,
+                        child: Text(
+                          e.dropdownLabel,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: readOnly
                     ? null
@@ -749,15 +781,19 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                           _fillEditalDescriptor();
                         });
                       },
-                validator: (v) => v == null ? 'Selecione o edital vinculado' : null,
+                validator: (v) =>
+                    v == null ? 'Selecione o edital vinculado' : null,
               ),
             ),
-                      const SizedBox(width: 12),
+            const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: SwitchListTile(
+              child: CheckboxListTile(
+                controlAffinity: ListTileControlAffinity.leading,
                 value: _retificacao,
-                onChanged: readOnly ? null : (v) => setState(() => _retificacao = v),
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _retificacao = v ?? false),
                 title: const Text('Retificação'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -799,78 +835,85 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         ),
         if (_recursoBID == 1) ...[
           const SizedBox(height: 12),
-          const Text('Fases BID (preencha conforme aplicável):',
-              style: TextStyle(fontSize: 12)),
+          const Text(
+            'Fases BID (preencha conforme aplicável):',
+            style: TextStyle(fontSize: 12),
+          ),
           const SizedBox(height: 8),
-          Row(children: [
-            Expanded(
-              child: _DropdownField(
-                label: 'Abertura Pré-Qualificação',
-                value: _aberturaPreQualificacaoBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _aberturaPreQualificacaoBID = v),
+          Row(
+            children: [
+              Expanded(
+                child: _DropdownField(
+                  label: 'Abertura Pré-Qualificação',
+                  value: _aberturaPreQualificacaoBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _aberturaPreQualificacaoBID = v),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _DropdownField(
-                label: 'Edital Pré-Qualificação',
-                value: _editalPreQualificacaoBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _editalPreQualificacaoBID = v),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DropdownField(
+                  label: 'Edital Pré-Qualificação',
+                  value: _editalPreQualificacaoBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _editalPreQualificacaoBID = v),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _DropdownField(
-                label: 'Julgamento Pré-Qualificação',
-                value: _julgamentoPreQualificacaoBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _julgamentoPreQualificacaoBID = v),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DropdownField(
+                  label: 'Julgamento Pré-Qualificação',
+                  value: _julgamentoPreQualificacaoBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) =>
+                            setState(() => _julgamentoPreQualificacaoBID = v),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 8),
-          Row(children: [
-            Expanded(
-              child: _DropdownField(
-                label: 'Edital 2ª Fase',
-                value: _edital2FaseBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _edital2FaseBID = v),
+          Row(
+            children: [
+              Expanded(
+                child: _DropdownField(
+                  label: 'Edital 2ª Fase',
+                  value: _edital2FaseBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _edital2FaseBID = v),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _DropdownField(
-                label: 'Julgamento de Propostas',
-                value: _julgamentoPropostasBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _julgamentoPropostasBID = v),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DropdownField(
+                  label: 'Julgamento de Propostas',
+                  value: _julgamentoPropostasBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _julgamentoPropostasBID = v),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _DropdownField(
-                label: 'Julgamento/Negociação',
-                value: _julgamentoNegociacaoBID,
-                items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _julgamentoNegociacaoBID = v),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DropdownField(
+                  label: 'Julgamento/Negociação',
+                  value: _julgamentoNegociacaoBID,
+                  items: kTriState,
+                  onChanged: readOnly
+                      ? null
+                      : (v) => setState(() => _julgamentoNegociacaoBID = v),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ],
       ],
     );
@@ -880,113 +923,123 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Dados Gerais',
       children: [
-        Row(children: [
-          Expanded(
-            child: _DropdownField(
-              label: 'Tipo de Natureza *',
-              value: _tipoNatureza,
-              items: kTipoNatureza,
-              onChanged: readOnly ? null : (v) => setState(() => _tipoNatureza = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
+        Row(
+          children: [
+            Expanded(
+              child: _DropdownField(
+                label: 'Tipo de Natureza *',
+                value: _tipoNatureza,
+                items: kTipoNatureza,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _tipoNatureza = v),
+                validator: (v) => v == null ? 'Obrigatório' : null,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _DropdownField(
-              label: 'Viabilidade de Contratação',
-              value: _viabilidadeContratacao,
-              items: kTriState,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _viabilidadeContratacao = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DropdownField(
+                label: 'Viabilidade de Contratação',
+                value: _viabilidadeContratacao,
+                items: kTriState,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _viabilidadeContratacao = v),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: _DropdownField(
-              label: 'Interposição de Recurso *',
-              value: _interposicaoRecurso,
-              items: kTriState,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _interposicaoRecurso = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
+        Row(
+          children: [
+            Expanded(
+              child: _DropdownField(
+                label: 'Interposição de Recurso *',
+                value: _interposicaoRecurso,
+                items: kTriState,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _interposicaoRecurso = v),
+                validator: (v) => v == null ? 'Obrigatório' : null,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _DropdownField(
-              label: 'Audiência Pública',
-              value: _audienciaPublica,
-              items: kTriState,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _audienciaPublica = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DropdownField(
+                label: 'Audiência Pública',
+                value: _audienciaPublica,
+                items: kTriState,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _audienciaPublica = v),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: _DropdownField(
-              label: 'Exigência de Amostra',
-              value: _exigenciaAmostra,
-              items: kExigenciaAmostra,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _exigenciaAmostra = v),
+        Row(
+          children: [
+            Expanded(
+              child: _DropdownField(
+                label: 'Exigência de Amostra',
+                value: _exigenciaAmostra,
+                items: kExigenciaAmostra,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _exigenciaAmostra = v),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _DropdownField(
-              label: 'Exigência de Visita Técnica',
-              value: _exigenciaVisitaTecnica,
-              items: kExigenciaVisitaTecnica,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _exigenciaVisitaTecnica = v),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DropdownField(
+                label: 'Exigência de Visita Técnica',
+                value: _exigenciaVisitaTecnica,
+                items: kExigenciaVisitaTecnica,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _exigenciaVisitaTecnica = v),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: CheckboxListTile(
-              value: _exigenciaCurriculo ?? false,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _exigenciaCurriculo = v),
-              title: const Text('Exige Currículo'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+        Row(
+          children: [
+            Expanded(
+              child: CheckboxListTile(
+                value: _exigenciaCurriculo ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _exigenciaCurriculo = v),
+                title: const Text('Exige Currículo'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-          Expanded(
-            child: CheckboxListTile(
-              value: _exigenciaVistoCREA ?? false,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _exigenciaVistoCREA = v),
-              title: const Text('Exige Visto CREA'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+            Expanded(
+              child: CheckboxListTile(
+                value: _exigenciaVistoCREA ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _exigenciaVistoCREA = v),
+                title: const Text('Exige Visto CREA'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-          Expanded(
-            child: CheckboxListTile(
-              value: _declaracaoRecursos ?? false,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _declaracaoRecursos = v),
-              title: const Text('Declaração de Recursos'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+            Expanded(
+              child: CheckboxListTile(
+                value: _declaracaoRecursos ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _declaracaoRecursos = v),
+                title: const Text('Declaração de Recursos'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ],
     );
   }
@@ -995,43 +1048,47 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Garantia de Licitantes',
       children: [
-        Row(children: [
-          Expanded(
-            child: _DropdownField(
-              label: 'Exigência de Garantia *',
-              value: _exigenciaGarantiaLicitantes,
-              items: kTriState,
-              onChanged: readOnly
-                  ? null
-                  : (v) => setState(() => _exigenciaGarantiaLicitantes = v),
-              validator: (v) => v == null ? 'Obrigatório' : null,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _percentualValorCtrl,
-              enabled: !readOnly && _exigenciaGarantiaLicitantes == 1,
-              decoration: const InputDecoration(
-                labelText: 'Percentual (%)',
-                hintText: '0 a 100',
+        Row(
+          children: [
+            Expanded(
+              child: _DropdownField(
+                label: 'Exigência de Garantia *',
+                value: _exigenciaGarantiaLicitantes,
+                items: kTriState,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _exigenciaGarantiaLicitantes = v),
+                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                LengthLimitingTextInputFormatter(3),
-              ],
-              validator: (v) {
-                if (_exigenciaGarantiaLicitantes != 1) return null;
-                if (v == null || v.trim().isEmpty) return null;
-                final d = parseBrCurrencyOrNull(v.trim());
-                if (d == null || d < 0 || d > 100) return 'Valor entre 0 e 100';
-                return null;
-              },
             ),
-          ),
-        ]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _percentualValorCtrl,
+                enabled: !readOnly && _exigenciaGarantiaLicitantes == 1,
+                decoration: const InputDecoration(
+                  labelText: 'Percentual (%)',
+                  hintText: '0 a 100',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                  LengthLimitingTextInputFormatter(3),
+                ],
+                validator: (v) {
+                  if (_exigenciaGarantiaLicitantes != 1) return null;
+                  if (v == null || v.trim().isEmpty) return null;
+                  final d = parseBrCurrencyOrNull(v.trim());
+                  if (d == null || d < 0 || d > 100)
+                    return 'Valor entre 0 e 100';
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1040,38 +1097,43 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Quitação de Tributos',
       children: [
-        Row(children: [
-          Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoFederal ?? false,
-              onChanged:
-                  readOnly ? null : (v) => setState(() => _quitacaoFederal = v),
-              title: const Text('Tributos Federais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+        Row(
+          children: [
+            Expanded(
+              child: CheckboxListTile(
+                value: _quitacaoFederal ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _quitacaoFederal = v),
+                title: const Text('Tributos Federais'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-          Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoEstadual ?? false,
-              onChanged:
-                  readOnly ? null : (v) => setState(() => _quitacaoEstadual = v),
-              title: const Text('Tributos Estaduais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+            Expanded(
+              child: CheckboxListTile(
+                value: _quitacaoEstadual ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _quitacaoEstadual = v),
+                title: const Text('Tributos Estaduais'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-          Expanded(
-            child: CheckboxListTile(
-              value: _quitacaoMunicipal ?? false,
-              onChanged:
-                  readOnly ? null : (v) => setState(() => _quitacaoMunicipal = v),
-              title: const Text('Tributos Municipais'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
+            Expanded(
+              child: CheckboxListTile(
+                value: _quitacaoMunicipal ?? false,
+                onChanged: readOnly
+                    ? null
+                    : (v) => setState(() => _quitacaoMunicipal = v),
+                title: const Text('Tributos Municipais'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ],
     );
   }
@@ -1091,12 +1153,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               onSelected: readOnly
                   ? null
                   : (v) => setState(() {
-                        if (v) {
-                          _fontesRecurso.add(e.key);
-                        } else {
-                          _fontesRecurso.remove(e.key);
-                        }
-                      }),
+                      if (v) {
+                        _fontesRecurso.add(e.key);
+                      } else {
+                        _fontesRecurso.remove(e.key);
+                      }
+                    }),
             );
           }).toList(),
         ),
@@ -1108,10 +1170,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Contratação Conduzida',
       children: [
-        SwitchListTile(
+        CheckboxListTile(
+          controlAffinity: ListTileControlAffinity.leading,
           value: _contratacaoConduzida,
-          onChanged:
-              readOnly ? null : (v) => setState(() => _contratacaoConduzida = v),
+          onChanged: readOnly
+              ? null
+              : (v) => setState(() => _contratacaoConduzida = v ?? false),
           title: const Text('Contratação Conduzida por Órgão Externo'),
           contentPadding: EdgeInsets.zero,
         ),
@@ -1147,11 +1211,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             spacing: 6,
             runSpacing: 4,
             children: _cpfsCondutores
-                .map((cpf) => Chip(
-                      label: Text(cpf),
-                      onDeleted:
-                          readOnly ? null : () => setState(() => _cpfsCondutores.remove(cpf)),
-                    ))
+                .map(
+                  (cpf) => Chip(
+                    label: Text(cpf),
+                    onDeleted: readOnly
+                        ? null
+                        : () => setState(() => _cpfsCondutores.remove(cpf)),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -1226,7 +1293,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   Widget _buildItensSection(bool readOnly) {
     return SectionCard(
       title: 'Itens de Licitação',
-      titleActions: [        
+      titleActions: [
         if (!readOnly) ...[
           TextButton.icon(
             onPressed: _openPortalImportDialog,
@@ -1252,7 +1319,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           ),
         ],
       ],
-      children: [        
+      children: [
         if (_itens.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1266,24 +1333,22 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             final item = _itens[i];
             final numItem = item['numeroItem'];
             final situacao = item['situacaoCompraItemId'] != null
-                ? kSituacaoCompraItem[
-                        (item['situacaoCompraItemId'] as num).toInt()] ??
-                    ''
+                ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
+                          .toInt()] ??
+                      ''
                 : '';
             final numLicitantes =
                 (item['licitantes'] as List<dynamic>? ?? []).length;
             return Card(
               margin: const EdgeInsets.only(top: 4),
               child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: CircleAvatar(
-                  child: Text('$numItem'),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
+                leading: CircleAvatar(child: Text('$numItem')),
                 title: Text('Item $numItem'),
-                subtitle: Text(
-                  '$situacao  |  $numLicitantes licitante(s)',
-                ),
+                subtitle: Text('$situacao  |  $numLicitantes licitante(s)'),
                 trailing: readOnly
                     ? null
                     : Row(
@@ -1305,8 +1370,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                           IconButton(
                             icon: const Icon(Icons.delete_outline),
                             tooltip: 'Remover',
-                            onPressed: () =>
-                                setState(() => _itens.removeAt(i)),
+                            onPressed: () => setState(() => _itens.removeAt(i)),
                           ),
                         ],
                       ),

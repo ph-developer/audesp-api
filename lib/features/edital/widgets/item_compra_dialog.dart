@@ -105,15 +105,16 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       'incentivoProdutivoBasico': _incentivoBasico,
       'descricao': _descCtrl.text.trim(),
       'quantidade': double.parse(
-          parseBrCurrency(_qtdCtrl.text.trim()).toStringAsFixed(4)),
+        parseBrCurrency(_qtdCtrl.text.trim()).toStringAsFixed(4),
+      ),
       'unidadeMedida': _unidadeCtrl.text.trim(),
       'orcamentoSigiloso': _orcamentoSigiloso,
       'valorUnitarioEstimado': double.parse(
-          parseBrCurrency(_valorUnitCtrl.text.trim())
-              .toStringAsFixed(4)),
+        parseBrCurrency(_valorUnitCtrl.text.trim()).toStringAsFixed(4),
+      ),
       'valorTotal': double.parse(
-          parseBrCurrency(_valorTotalCtrl.text.trim())
-              .toStringAsFixed(4)),
+        parseBrCurrency(_valorTotalCtrl.text.trim()).toStringAsFixed(4),
+      ),
       'criterioJulgamentoId': _criterioJulgamento,
       'itemCategoriaId': _itemCategoria,
     };
@@ -158,11 +159,14 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               DropdownButtonFormField<int>(
                 key: ValueKey('ben_$_tipoBeneficio'),
                 initialValue: _tipoBeneficio,
-                decoration:
-                    const InputDecoration(labelText: 'Tipo de Benefício *'),
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de Benefício *',
+                ),
                 items: kTipoBeneficio.entries
-                    .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _tipoBeneficio = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
@@ -172,20 +176,24 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: SwitchListTile(
+                    child: CheckboxListTile(
+                      controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Incentivo Produtivo Básico (PPB)'),
                       value: _incentivoBasico,
-                      onChanged: (v) => setState(() => _incentivoBasico = v),
+                      onChanged: (v) =>
+                          setState(() => _incentivoBasico = v ?? false),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: SwitchListTile(
+                    child: CheckboxListTile(
+                      controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Orçamento Sigiloso'),
                       value: _orcamentoSigiloso,
-                      onChanged: (v) => setState(() => _orcamentoSigiloso = v),
+                      onChanged: (v) =>
+                          setState(() => _orcamentoSigiloso = v ?? false),
                     ),
                   ),
                 ],
@@ -212,17 +220,19 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                     flex: 2,
                     child: TextFormField(
                       controller: _qtdCtrl,
-                      decoration:
-                          const InputDecoration(labelText: 'Quantidade *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Quantidade *',
+                      ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.,]')),
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null) return 'Número inválido';
+                        if (parseBrCurrencyOrNull(v) == null)
+                          return 'Número inválido';
                         return null;
                       },
                     ),
@@ -256,14 +266,15 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                         prefixText: 'R\$ ',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'[0-9.,]')),
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null) return 'Valor inválido';
+                        if (parseBrCurrencyOrNull(v) == null)
+                          return 'Valor inválido';
                         return null;
                       },
                     ),
@@ -279,7 +290,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null) return 'Valor inválido';
+                        if (parseBrCurrencyOrNull(v) == null)
+                          return 'Valor inválido';
                         return null;
                       },
                     ),
@@ -287,32 +299,50 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              // Critério de Julgamento
-              DropdownButtonFormField<int>(
-                key: ValueKey('crit_$_criterioJulgamento'),
-                initialValue: _criterioJulgamento,
-                decoration: const InputDecoration(
-                    labelText: 'Critério de Julgamento *'),
-                items: kCriterioJulgamento.entries
-                    .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
-                    .toList(),
-                onChanged: (v) => setState(() => _criterioJulgamento = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 12),
-              // Categoria do Item
-              DropdownButtonFormField<int>(
-                key: ValueKey('cat_$_itemCategoria'),
-                initialValue: _itemCategoria,
-                decoration:
-                    const InputDecoration(labelText: 'Categoria do Item *'),
-                items: kItemCategoria.entries
-                    .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
-                    .toList(),
-                onChanged: (v) => setState(() => _itemCategoria = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
+              Row(
+                children: [
+                  // Critério de Julgamento
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      key: ValueKey('crit_$_criterioJulgamento'),
+                      initialValue: _criterioJulgamento,
+                      decoration: const InputDecoration(
+                        labelText: 'Critério de Julgamento *',
+                      ),
+                      items: kCriterioJulgamento.entries
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _criterioJulgamento = v),
+                      validator: (v) => v == null ? 'Obrigatório' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Categoria do Item
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      key: ValueKey('cat_$_itemCategoria'),
+                      initialValue: _itemCategoria,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria do Item *',
+                      ),
+                      items: kItemCategoria.entries
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _itemCategoria = v),
+                      validator: (v) => v == null ? 'Obrigatório' : null,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               // Patrimônio (opcional)
@@ -353,10 +383,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _confirm,
-          child: const Text('Confirmar'),
-        ),
+        FilledButton(onPressed: _confirm, child: const Text('Confirmar')),
       ],
     );
   }

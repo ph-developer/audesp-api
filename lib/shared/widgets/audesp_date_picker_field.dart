@@ -42,7 +42,7 @@ class AudespDatePickerField extends StatefulWidget {
     this.validator,
     this.firstDate,
     this.lastDate,
-    this.isDense = false,
+    this.isDense = true,
   });
 
   @override
@@ -83,13 +83,13 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
           child: InputDecorator(
             decoration: InputDecoration(
               isDense: widget.isDense,
-              contentPadding: widget.isDense == true 
-                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) 
+              contentPadding: widget.isDense == true
+                  ? const EdgeInsets.symmetric(horizontal: 12, vertical: 12)
                   : null,
               labelText: widget.label,
               border: const OutlineInputBorder(),
               errorText: hasError ? state.errorText : null,
-              suffixIconConstraints: widget.isDense == true 
+              suffixIconConstraints: widget.isDense == true
                   ? const BoxConstraints(minWidth: 32, minHeight: 32)
                   : null,
               suffixIcon: widget.readOnly

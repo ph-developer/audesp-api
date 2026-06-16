@@ -433,11 +433,12 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: SwitchListTile(
+                        child: CheckboxListTile(
+                          controlAffinity: ListTileControlAffinity.leading,
                           title: const Text('Retificação'),
                           value: _retificacao,
                           onChanged:
-                              readOnly ? null : (v) => setState(() => _retificacao = v),
+                              readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
