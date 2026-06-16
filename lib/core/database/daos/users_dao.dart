@@ -36,13 +36,15 @@ class UsersDao {
     required String nome,
     required String email,
     String? passwordHash,
+    bool isAdmin = false,
+    int permissions = 0,
     DateTime? createdAt,
   }) async {
     final now = (createdAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'INSERT INTO users (nome, email, password_hash, created_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     );
-    final result = await stmt.execute([nome, email, passwordHash, now]);
+    final result = await stmt.execute([nome, email, passwordHash, isAdmin ? 1 : 0, permissions, now]);
     return result.lastInsertID.toInt();
   }
 
@@ -50,12 +52,13 @@ class UsersDao {
     required int id,
     required String nome,
     required String email,
-    String? passwordHash,
+    required bool isAdmin,
+    required int permissions,
   }) async {
     final stmt = await _db.pool.prepare(
-      'UPDATE users SET nome = ?, email = ?, password_hash = ? WHERE id = ?',
+      'UPDATE users SET nome = ?, email = ?, is_admin = ?, permissions = ? WHERE id = ?',
     );
-    final result = await stmt.execute([nome, email, passwordHash, id]);
+    final result = await stmt.execute([nome, email, isAdmin ? 1 : 0, permissions, id]);
     return result.affectedRows.toInt() > 0;
   }
 

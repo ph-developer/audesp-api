@@ -44,6 +44,8 @@ class DatabaseService {
           nome TEXT NOT NULL,
           email TEXT NOT NULL,
           password_hash TEXT NULL,
+          is_admin TINYINT NOT NULL DEFAULT 0,
+          permissions INT NOT NULL DEFAULT 0,
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
         )
       ''');
@@ -170,6 +172,24 @@ class DatabaseService {
         } catch (_) {}
       }
       await setSchemaVersion(4);
+    }
+
+    if (version < 5) {
+      try {
+        await pool.execute('ALTER TABLE users ADD COLUMN is_admin TINYINT NOT NULL DEFAULT 0');
+        await pool.execute('ALTER TABLE users ADD COLUMN permissions INT NOT NULL DEFAULT 0');
+        
+        final countResult = await pool.execute('SELECT COUNT(*) FROM users');
+        if ((countResult.rows.first.typedAssoc()['COUNT(*)'] as int) == 0) {
+          final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          await pool.execute(
+            'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) '
+            'VALUES (:nome, :email, NULL, 1, 0, :created_at)',
+            {'nome': 'Administrador', 'email': 'ti@penapolis.sp.gov.br', 'created_at': now},
+          );
+        }
+      } catch (_) {}
+      await setSchemaVersion(5);
     }
   }
 

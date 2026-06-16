@@ -3,17 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Usuário administrador virtual (não persiste no banco de dados).
-// Autenticado pela senha definida em assets/.env (ADMIN_PASSWORD).
-// ─────────────────────────────────────────────────────────────────────────────
 
-User buildAdminUser() => User(
-      id: -1,
-      nome: 'Administrador',
-      email: 'admin',
-      createdAt: DateTime.now(),
-    );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sessão local — usuário selecionado no login do app

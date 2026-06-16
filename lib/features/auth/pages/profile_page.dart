@@ -58,6 +58,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         id: _user!.id,
         nome: _nome.text.trim(),
         email: _user!.email,
+        isAdmin: _user!.isAdmin,
+        permissions: _user!.permissions,
       );
 
       final updated = await dao.findById(_user!.id);

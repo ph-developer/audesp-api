@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../services/consulta_service.dart';
@@ -100,7 +101,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
   Future<void> _updateStatus(ApiLog log) async {
     if (log.protocolo == null) return;
-    
+
     await showAudespAuthDialog(
       context,
       ref,
@@ -132,7 +133,10 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           if (mounted) {
             Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro ao atualizar: $e'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text('Erro ao atualizar: $e'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
@@ -142,12 +146,16 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
   Future<void> _updateAllUpdatable() async {
     final allLogs = await ref.read(apiLogsDaoProvider).watchAll();
-    final updatables = allLogs.where((l) => isProtocoloUpdatable(l.statusProtocolo)).toList();
-    
+    final updatables = allLogs
+        .where((l) => isProtocoloUpdatable(l.statusProtocolo))
+        .toList();
+
     if (updatables.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nenhum registro requer atualização no momento.')),
+          const SnackBar(
+            content: Text('Nenhum registro requer atualização no momento.'),
+          ),
         );
       }
       return;
@@ -169,8 +177,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 const CircularProgressIndicator(),
                 const SizedBox(width: 24),
                 Text('Atualizando ${updatables.length} registros...'),
-              ]
-            )
+              ],
+            ),
           ),
         );
 
@@ -181,7 +189,9 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
           for (final log in updatables) {
             try {
-              final jsonRetorno = await consultaSvc.consultarStatus(log.protocolo!);
+              final jsonRetorno = await consultaSvc.consultarStatus(
+                log.protocolo!,
+              );
               final json = jsonDecode(jsonRetorno);
               final novoStatus = json['status']?.toString() ?? 'Desconhecido';
               await dao.updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
@@ -192,7 +202,11 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           if (mounted) {
             Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$successCount de ${updatables.length} registros atualizados com sucesso.')),
+              SnackBar(
+                content: Text(
+                  '$successCount de ${updatables.length} registros atualizados com sucesso.',
+                ),
+              ),
             );
             setState(() {}); // recarrega a lista
           }
@@ -200,7 +214,10 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           if (mounted) {
             Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro durante a atualização: $e'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text('Erro durante a atualização: $e'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
@@ -228,7 +245,9 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 final erro = erros[i];
                 return ListTile(
                   title: Text(erro['mensagem']?.toString() ?? 'Erro'),
-                  subtitle: Text('Campo: ${erro['campo']} | Código: ${erro['codigoErro']}'),
+                  subtitle: Text(
+                    'Campo: ${erro['campo']} | Código: ${erro['codigoErro']}',
+                  ),
                 );
               },
             ),
@@ -249,6 +268,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   @override
   Widget build(BuildContext context) {
     final future = ref.watch(apiLogsDaoProvider).watchAll();
+    final user = ref.watch(localSessionProvider);
 
     final hasActiveFilters =
         _endpointFilter != null ||
@@ -298,15 +318,24 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        ...const {
-                          'enviar-edital': 'Edital',
-                          'enviar-licitacao': 'Licitação',
-                          'enviar-ata': 'Ata',
-                          'enviar-ajuste': 'Ajuste',
-                          'enviar-empenho-contrato': 'Empenho de Contrato',
-                          'enviar-termo-contrato': 'Termo de Contrato',
-                          '/login': 'Login',
-                        }.entries.map(
+                        ...[
+                          if (user == null ||
+                              user.isAdmin ||
+                              user.hasPermission(AppPermissions.edital))
+                            const MapEntry('edital', 'Edital'),
+                          if (user == null ||
+                              user.isAdmin ||
+                              user.hasPermission(AppPermissions.licitacao))
+                            const MapEntry('licitacao', 'Licitação'),
+                          if (user == null ||
+                              user.isAdmin ||
+                              user.hasPermission(AppPermissions.ata))
+                            const MapEntry('ata', 'Ata'),
+                          if (user == null ||
+                              user.isAdmin ||
+                              user.hasPermission(AppPermissions.ajuste))
+                            const MapEntry('ajuste', 'Ajuste'),
+                        ].map(
                           (e) => DropdownMenuItem<String?>(
                             value: e.key,
                             child: Text(
@@ -404,7 +433,23 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final all = snap.data ?? [];
-                final filtered = _applyFilters(all);
+                final filtered = _applyFilters(all).where((log) {
+                  if (user == null || user.isAdmin) return true;
+                  final ep = log.endpoint.toLowerCase();
+                  if (ep.contains('edital') &&
+                      !user.hasPermission(AppPermissions.edital))
+                    return false;
+                  if (ep.contains('licitacao') &&
+                      !user.hasPermission(AppPermissions.licitacao))
+                    return false;
+                  if (ep.contains('ata') &&
+                      !user.hasPermission(AppPermissions.ata))
+                    return false;
+                  if ((ep.contains('ajuste') || ep.contains('contrato')) &&
+                      !user.hasPermission(AppPermissions.ajuste))
+                    return false;
+                  return true;
+                }).toList();
 
                 if (all.isEmpty) {
                   return const Center(
@@ -568,21 +613,28 @@ class _LogCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('Protocolo: ${log.protocolo}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text(
+                    'Protocolo: ${log.protocolo}',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
                   const SizedBox(height: 2),
                   InkWell(
                     onTap: _hasErrors() ? onShowErrors : null,
                     child: Text(
-                      log.statusProtocolo ?? '—', 
+                      log.statusProtocolo ?? '—',
                       style: TextStyle(
-                        fontSize: 12, 
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: _hasErrors() ? Colors.red : Theme.of(context).colorScheme.primary,
-                        decoration: _hasErrors() ? TextDecoration.underline : null,
-                      )
+                        color: _hasErrors()
+                            ? Colors.red
+                            : Theme.of(context).colorScheme.primary,
+                        decoration: _hasErrors()
+                            ? TextDecoration.underline
+                            : null,
+                      ),
                     ),
                   ),
-                ]
+                ],
               ),
               if (isProtocoloUpdatable(log.statusProtocolo))
                 IconButton(
@@ -715,7 +767,10 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
                 children: [
                   _JsonPanel(content: prettyRequest, label: 'Request'),
                   _JsonPanel(content: prettyResponse, label: 'Response'),
-                  _JsonPanel(content: _prettyJson(log.retornoStatus), label: 'Consulta F4'),
+                  _JsonPanel(
+                    content: _prettyJson(log.retornoStatus),
+                    label: 'Consulta F4',
+                  ),
                 ],
               ),
             ),

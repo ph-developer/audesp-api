@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_env.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
-import '../../../core/utils/password_hasher.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 
@@ -33,6 +31,12 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   late final TextEditingController _nome;
   late final TextEditingController _email;
 
+  bool _isAdmin = false;
+  bool _permEdital = false;
+  bool _permLicitacao = false;
+  bool _permAta = false;
+  bool _permAjuste = false;
+
   bool get _isEdit => widget.user != null;
 
   @override
@@ -40,6 +44,23 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     super.initState();
     _nome = TextEditingController(text: widget.user?.nome ?? '');
     _email = TextEditingController(text: widget.user?.email ?? '');
+
+    if (widget.user != null) {
+      _isAdmin = widget.user!.isAdmin;
+      _permEdital = widget.user!.hasPermission(AppPermissions.edital);
+      _permLicitacao = widget.user!.hasPermission(AppPermissions.licitacao);
+      _permAta = widget.user!.hasPermission(AppPermissions.ata);
+      _permAjuste = widget.user!.hasPermission(AppPermissions.ajuste);
+    }
+  }
+
+  int _buildPermissions() {
+    int p = 0;
+    if (_permEdital) p |= AppPermissions.edital;
+    if (_permLicitacao) p |= AppPermissions.licitacao;
+    if (_permAta) p |= AppPermissions.ata;
+    if (_permAjuste) p |= AppPermissions.ajuste;
+    return p;
   }
 
   @override
@@ -58,15 +79,16 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
           id: widget.user!.id,
           nome: _nome.text.trim(),
           email: _email.text.trim(),
+          isAdmin: _isAdmin,
+          permissions: _buildPermissions(),
         );
       } else {
         await dao.insertUser(
           nome: _nome.text.trim(),
           email: _email.text.trim(),
-          passwordHash: PasswordHasher.hash(
-            _email.text.trim(),
-            AppEnv.defaultUserPassword,
-          ),
+          passwordHash: null,
+          isAdmin: _isAdmin,
+          permissions: _buildPermissions(),
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -84,53 +106,95 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     return AlertDialog(
       title: Text(_isEdit ? 'Editar usuário' : 'Novo usuário'),
       content: SizedBox(
+        width: 400,
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nome,
-                decoration: const InputDecoration(labelText: 'Nome'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _email,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail AUDESP',
-                  helperText: 'Será usado como login e nas chamadas à API',
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nome,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                 ),
-                keyboardType: TextInputType.emailAddress,
-                enabled: !_isEdit,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                  if (!v.contains('@')) return 'E-mail inválido';
-                  return null;
-                },
-              ),
-              if (!_isEdit) ...[
                 const SizedBox(height: 12),
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, size: 16),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A senha AUDESP será configurada pelo próprio usuário no primeiro login.',
-                            style: TextStyle(fontSize: 12),
+                TextFormField(
+                  controller: _email,
+                  decoration: const InputDecoration(
+                    labelText: 'E-mail AUDESP',
+                    helperText: 'Será usado como login e nas chamadas à API',
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !_isEdit,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Obrigatório';
+                    if (!v.contains('@')) return 'E-mail inválido';
+                    return null;
+                  },
+                ),
+                if (!_isEdit) ...[
+                  const SizedBox(height: 12),
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 16),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'A senha será configurada pelo próprio usuário no primeiro login.',
+                              style: TextStyle(fontSize: 12),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
+                ],
+                const SizedBox(height: 16),
+                const Divider(),
+                SwitchListTile(
+                  title: const Text('Administrador'),
+                  subtitle: const Text('Tem acesso total ao sistema'),
+                  value: _isAdmin,
+                  onChanged: (v) => setState(() => _isAdmin = v),
                 ),
+                if (!_isAdmin) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Permissões de Módulo', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Edital'),
+                    value: _permEdital,
+                    dense: true,
+                    onChanged: (v) => setState(() => _permEdital = v ?? false),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Licitação'),
+                    value: _permLicitacao,
+                    dense: true,
+                    onChanged: (v) => setState(() => _permLicitacao = v ?? false),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Ata'),
+                    value: _permAta,
+                    dense: true,
+                    onChanged: (v) => setState(() => _permAta = v ?? false),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Ajuste'),
+                    value: _permAjuste,
+                    dense: true,
+                    onChanged: (v) => setState(() => _permAjuste = v ?? false),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

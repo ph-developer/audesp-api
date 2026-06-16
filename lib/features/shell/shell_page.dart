@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/environments.dart';
 import '../../core/database/database_providers.dart';
+import '../../core/database/models/user.dart';
 import '../../features/auth/auth_providers.dart';
 import 'widgets/environment_dialog.dart';
 
@@ -28,15 +29,13 @@ class ShellPage extends ConsumerWidget {
 
   const ShellPage({super.key, required this.child});
 
-  static const _destinations = [
-    (icon: Icons.description_outlined, activeIcon: Icons.description, label: 'Edital'),
-    (icon: Icons.gavel_outlined, activeIcon: Icons.gavel, label: 'Licitação'),
-    (icon: Icons.assignment_outlined, activeIcon: Icons.assignment, label: 'Ata'),
-    (icon: Icons.handshake_outlined, activeIcon: Icons.handshake, label: 'Ajuste'),
-    (icon: Icons.history_outlined, activeIcon: Icons.history, label: 'Logs'),
+  static const _allNavItems = [
+    (icon: Icons.description_outlined, activeIcon: Icons.description, label: 'Edital', route: '/edital', perm: AppPermissions.edital),
+    (icon: Icons.gavel_outlined, activeIcon: Icons.gavel, label: 'Licitação', route: '/licitacao', perm: AppPermissions.licitacao),
+    (icon: Icons.assignment_outlined, activeIcon: Icons.assignment, label: 'Ata', route: '/ata', perm: AppPermissions.ata),
+    (icon: Icons.handshake_outlined, activeIcon: Icons.handshake, label: 'Ajuste', route: '/ajuste', perm: AppPermissions.ajuste),
+    (icon: Icons.history_outlined, activeIcon: Icons.history, label: 'Logs', route: '/logs', perm: AppPermissions.none),
   ];
-
-  static const _routes = ['/edital', '/licitacao', '/ata', '/ajuste', '/logs'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +43,9 @@ class ShellPage extends ConsumerWidget {
     final user = ref.watch(localSessionProvider);
     final env = ref.watch(environmentProvider);
     final colorScheme = Theme.of(context).colorScheme;
+
+    final allowedItems = _allNavItems.where((d) => user?.hasPermission(d.perm) ?? false).toList();
+    final validSelectedIndex = selectedIndex < allowedItems.length ? selectedIndex : 0;
 
     return Scaffold(
       body: Row(
@@ -57,10 +59,10 @@ class ShellPage extends ConsumerWidget {
             ),
             child: NavigationRail(
               extended: false,
-              selectedIndex: selectedIndex,
+              selectedIndex: validSelectedIndex,
               onDestinationSelected: (i) {
                 ref.read(selectedShellIndexProvider.notifier).setIndex(i);
-                context.go(_routes[i]);
+                context.go(allowedItems[i].route);
               },
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -75,7 +77,7 @@ class ShellPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              destinations: _destinations
+              destinations: allowedItems
                   .map(
                     (d) => NavigationRailDestination(
                       icon: Icon(d.icon),
@@ -93,7 +95,7 @@ class ShellPage extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Chip de ambiente (somente admin pode alterar)
-                        if (user?.id == -1)
+                        if (user?.isAdmin == true)
                           GestureDetector(
                             onTap: () => showEnvironmentDialog(context, ref),
                             child: _EnvironmentChip(env: env),
@@ -102,7 +104,7 @@ class ShellPage extends ConsumerWidget {
                           _EnvironmentChip(env: env),
                         const SizedBox(height: 8),
                         // Botão de admin ou perfil, conforme papel
-                        if (user?.id == -1) ...[
+                        if (user?.isAdmin == true) ...[
                           IconButton(
                             icon: const Icon(Icons.admin_panel_settings_outlined),
                             tooltip: 'Administração',

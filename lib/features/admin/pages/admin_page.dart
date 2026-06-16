@@ -25,7 +25,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -45,7 +45,6 @@ class _AdminPageState extends ConsumerState<AdminPage>
           tabs: const [
             Tab(icon: Icon(Icons.people_outlined), text: 'Usuários'),
             Tab(icon: Icon(Icons.cloud_outlined), text: 'Ambiente'),
-            Tab(icon: Icon(Icons.folder_outlined), text: 'Registros'),
             Tab(icon: Icon(Icons.auto_fix_high_outlined), text: 'IA / Gemini'),
           ],
         ),
@@ -55,7 +54,6 @@ class _AdminPageState extends ConsumerState<AdminPage>
         children: const [
           _UsersTab(),
           _EnvironmentTab(),
-          _RegistrosTab(),
           _GeminiTab(),
         ],
       ),
@@ -412,208 +410,6 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab 3 — Consulta de registros (leitura de todos os módulos)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _RegistrosTab extends ConsumerStatefulWidget {
-  const _RegistrosTab();
-
-  @override
-  ConsumerState<_RegistrosTab> createState() => _RegistrosTabState();
-}
-
-class _RegistrosTabState extends ConsumerState<_RegistrosTab> {
-  int _selectedModule = 0; // 0=Editais 1=Licitações 2=Atas 3=Ajustes
-
-  static const _moduleLabels = ['Editais', 'Licitações', 'Atas', 'Ajustes'];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Filtro de módulo
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: SegmentedButton<int>(
-            segments: List.generate(
-              _moduleLabels.length,
-              (i) => ButtonSegment(
-                value: i,
-                label: Text(_moduleLabels[i]),
-              ),
-            ),
-            selected: {_selectedModule},
-            onSelectionChanged: (s) =>
-                setState(() => _selectedModule = s.first),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Expanded(child: _buildList()),
-      ],
-    );
-  }
-
-  Widget _buildList() {
-    return switch (_selectedModule) {
-      0 => _EditaisRegistros(),
-      1 => _LicitacoesRegistros(),
-      2 => _AtasRegistros(),
-      3 => _AjustesRegistros(),
-      _ => const SizedBox(),
-    };
-  }
-}
-
-// ── Sub-listas de registros ──────────────────────────────────────────────────
-
-class _EditaisRegistros extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dao = ref.watch(editaisDaoProvider);
-    return _RecordsListView(
-      future: dao.watchAll(),
-      itemBuilder: (ctx, item) => _RecordTile(
-        title: 'Edital ${item.codigoEdital}',
-        subtitle: '${item.entidade} — ${item.municipio}',
-        status: item.status,
-        date: item.updatedAt,
-      ),
-    );
-  }
-}
-
-class _LicitacoesRegistros extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dao = ref.watch(licitacoesDaoProvider);
-    return _RecordsListView(
-      future: dao.watchAll(),
-      itemBuilder: (ctx, item) => _RecordTile(
-        title: 'Licitação ${item.codigoEdital}',
-        subtitle: '${item.entidade} — ${item.municipio}',
-        status: item.status,
-        date: item.updatedAt,
-      ),
-    );
-  }
-}
-
-class _AtasRegistros extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dao = ref.watch(atasDaoProvider);
-    return _RecordsListView(
-      future: dao.watchAll(),
-      itemBuilder: (ctx, item) => _RecordTile(
-        title: 'Ata ${item.codigoAta}',
-        subtitle: '${item.entidade} — ${item.municipio}',
-        status: item.status,
-        date: item.updatedAt,
-      ),
-    );
-  }
-}
-
-class _AjustesRegistros extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dao = ref.watch(ajustesDaoProvider);
-    return _RecordsListView(
-      future: dao.watchAll(),
-      itemBuilder: (ctx, item) => _RecordTile(
-        title: 'Ajuste #${item.id}',
-        subtitle: '${item.entidade} — ${item.municipio}',
-        status: item.status,
-        date: item.updatedAt,
-      ),
-    );
-  }
-}
-
-// ── Helpers de UI ────────────────────────────────────────────────────────────
-
-class _RecordsListView<T> extends StatelessWidget {
-  final Future<List<T>> future;
-  final Widget Function(BuildContext, T) itemBuilder;
-
-  const _RecordsListView({
-    required this.future,
-    required this.itemBuilder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<T>>(
-      future: future,
-      builder: (ctx, snap) {
-        if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final items = snap.data!;
-        if (items.isEmpty) {
-          return const Center(
-            child: Text('Nenhum registro encontrado.'),
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 6),
-          itemBuilder: (c, i) => itemBuilder(c, items[i]),
-        );
-      },
-    );
-  }
-}
-
-class _RecordTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String status;
-  final DateTime date;
-
-  const _RecordTile({
-    required this.title,
-    required this.subtitle,
-    required this.status,
-    required this.date,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSent = status == 'sent';
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Chip(
-              label: Text(isSent ? 'Enviado' : 'Rascunho'),
-              padding: EdgeInsets.zero,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              labelStyle: const TextStyle(fontSize: 11),
-              backgroundColor: isSent
-                  ? Colors.green.shade100
-                  : Colors.orange.shade100,
-            ),
-            Text(
-              '${date.day.toString().padLeft(2, '0')}/'
-              '${date.month.toString().padLeft(2, '0')}/'
-              '${date.year}',
-              style: const TextStyle(fontSize: 11),
-            ),
-          ],
         ),
       ),
     );

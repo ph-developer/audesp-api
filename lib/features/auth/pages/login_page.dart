@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_env.dart';
+
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/local_prefs.dart';
 import '../../../core/utils/password_hasher.dart';
@@ -65,18 +65,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final password = _passwordCtrl.text;
 
     try {
-      // ── Administrador ────────────────────────────────────────────────────
-      if (username == 'admin') {
-        if (password == AppEnv.adminPassword) {
-          ref.read(localSessionProvider.notifier).login(buildAdminUser());
-          LocalPrefs.setLastUser(username);
-        } else {
-          setState(() => _error = 'Senha de administrador incorreta.');
-        }
-        return;
-      }
-
-      // ── Usuário comum ────────────────────────────────────────────────────
+      // ── Usuário ──────────────────────────────────────────────────────────
       final dao = ref.read(usersDaoProvider);
 
       final user = await dao.findByEmail(username);
@@ -85,20 +74,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
 
+      if (!user.isAdmin && user.permissions == 0) {
+        setState(() => _error = 'Usuário sem permissões de acesso.');
+        return;
+      }
+
       if (user.passwordHash == null) {
-        // Primeiro acesso: aceitar senha padrão e salvar hash no banco
-        if (password == AppEnv.defaultUserPassword) {
-          final hash = PasswordHasher.hash(username, password);
+        // Primeiro acesso: forçar criação de senha via modal
+        final newPassword = await _showSetPasswordModal(context, password);
+        if (newPassword != null) {
+          final hash = PasswordHasher.hash(username, newPassword);
           await dao.setPasswordHash(user.id, hash);
-          ref.read(localSessionProvider.notifier).login(user);
+          final updatedUser = await dao.findById(user.id);
+          ref.read(localSessionProvider.notifier).login(updatedUser ?? user);
           LocalPrefs.setLastUser(username);
-        } else {
-          setState(
-            () => _error =
-                'Senha incorreta. Use a senha padrão fornecida pelo administrador.',
-          );
         }
+        return;
       } else {
+        if (password.isEmpty) {
+          setState(() => _error = 'Senha obrigatória.');
+          return;
+        }
         // Acesso normal: verificar hash do banco
         if (PasswordHasher.verify(username, password, user.passwordHash!)) {
           ref.read(localSessionProvider.notifier).login(user);
@@ -110,6 +106,79 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<String?> _showSetPasswordModal(BuildContext context, String initialPassword) async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        final ctrl = TextEditingController(text: initialPassword);
+        final confirmCtrl = TextEditingController();
+        final formKey = GlobalKey<FormState>();
+        bool obscure1 = true;
+        bool obscure2 = true;
+
+        return StatefulBuilder(builder: (ctx, setModalState) {
+          return AlertDialog(
+            title: const Text('Definir Nova Senha'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Este é o seu primeiro acesso. Por favor, defina uma senha para sua conta.'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: ctrl,
+                    obscureText: obscure1,
+                    decoration: InputDecoration(
+                      labelText: 'Nova senha',
+                      suffixIcon: IconButton(
+                        icon: Icon(obscure1 ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setModalState(() => obscure1 = !obscure1),
+                      ),
+                    ),
+                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: confirmCtrl,
+                    obscureText: obscure2,
+                    decoration: InputDecoration(
+                      labelText: 'Confirmar senha',
+                      suffixIcon: IconButton(
+                        icon: Icon(obscure2 ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setModalState(() => obscure2 = !obscure2),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obrigatório';
+                      if (v != ctrl.text) return 'As senhas não coincidem';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(ctx, ctrl.text);
+                  }
+                },
+                child: const Text('Salvar e Entrar'),
+              ),
+            ],
+          );
+        });
+      },
+    );
   }
 
   @override
@@ -176,8 +245,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _doLogin(),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                      validator: (v) => null, // Validated manually in _doLogin
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
