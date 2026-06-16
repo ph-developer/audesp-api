@@ -23,8 +23,9 @@ flutter analyze                    # lint (uses flutter_lints)
 - **State:** Riverpod (`flutter_riverpod`) — one provider file per feature, DAOs via `Provider`, services via `Provider`
 - **Router:** `go_router` with `ShellRoute` + `NavigationRail`. Shell wraps Edital/Licitação/Ata/Ajuste/Logs. Login, Profile, Admin are outside the shell.
 - **Pattern per feature:** `providers.dart`, `services/`, `pages/`, `widgets/`, optional `domain/` (domain logic) and `csv/` (import parsers)
-- **Auth:** local DB users (SHA-256 + pepper). AUDESP API token stored in memory only via `AuthService`.
+- **Auth:** local DB users (SHA-256 + pepper). Admin user is seeded on first DB initialization. AUDESP API token stored in memory only via `AuthService`.
 - **Env switching:** Piloto (`https://audesp-piloto.tce.sp.gov.br`) / Oficial (`https://audesp.tce.sp.gov.br`), persisted in `app_settings` table
+- **Reports:** Uses the `pdf` package for generating exportable PDF reports (e.g., system logs).
 
 ## Database
 
@@ -37,9 +38,10 @@ flutter analyze                    # lint (uses flutter_lints)
 
 ## Notable Conventions
 
-- **Admin user:** created on first login if not exists, seeded in `users` table.
+- **Admin user:** seeded in `users` table automatically during DB initialization.
+- **Logs:** API logs in `api_logs` are read-only in the UI. Deletion is restricted for auditing purposes. Logs can be exported to PDF.
 - **Password hashing:** SHA-256 with email + pepper (`'audesp_api_sys_2026'`), done in `PasswordHasher`
-- **Document status:** `'draft'` (editing) vs `'sent'` (submitted to AUDESP)
+- **Document status:** `'draft'` (editing) vs `'sent'` (submitted to AUDESP). Status can also be consulted via the AUDESP Protocol Status Consultation feature.
 - **Gemini default model:** hardcoded as `'gemini-3.1-flash-lite'` in `GeminiService`; API key configured via Admin UI → stored in `app_settings`
 - **AUDESP API auth:** email:password → POST `/login` → returns `access_token`, attached as `Authorization: Bearer <token>` by Dio interceptor (`ApiService`)
 - **CSV parsers** support UTF-8 (with/without BOM) and Latin-1; use `CsvUtils` (`lib/core/utils/csv_utils.dart`)
@@ -54,5 +56,5 @@ flutter analyze                    # lint (uses flutter_lints)
 
 - `config.ini` contains real DB credentials and **is tracked in git** — do not commit changes to it unless intentional
 - `freezed` / `json_serializable` are declared in `pubspec.yaml` but **no generated files exist** — all models use manual `fromMap`/`toMap`
-- On first run the DB schema auto-creates (`__schema` table), but the admin user is **not auto-created** — it's a virtual in-memory user
+- On first run the DB schema auto-creates (`__schema` table) and the default admin user is seeded automatically.
 - `flutter_secure_storage` uses DPAPI on Windows with `useBackwardCompatibility: false`
