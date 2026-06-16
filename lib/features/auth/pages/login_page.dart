@@ -69,6 +69,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final dao = ref.read(usersDaoProvider);
 
       final user = await dao.findByEmail(username);
+      if (!mounted) return;
       if (user == null) {
         setState(() => _error = 'Usuário não encontrado.');
         return;

@@ -257,16 +257,21 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       map['percentualValor'] = double.parse(percentual.toStringAsFixed(4));
     }
 
-    if (_quitacaoFederal != null)
+    if (_quitacaoFederal != null) {
       map['quitacaoTributosFederais'] = _quitacaoFederal;
-    if (_quitacaoEstadual != null)
+    }
+    if (_quitacaoEstadual != null) {
       map['quitacaoTributosEstaduais'] = _quitacaoEstadual;
-    if (_quitacaoMunicipal != null)
+    }
+    if (_quitacaoMunicipal != null) {
       map['quitacaoTributosMunicipais'] = _quitacaoMunicipal;
-    if (_exigenciaCurriculo != null)
+    }
+    if (_exigenciaCurriculo != null) {
       map['exigenciaCurriculo'] = _exigenciaCurriculo;
-    if (_exigenciaVistoCREA != null)
+    }
+    if (_exigenciaVistoCREA != null) {
       map['exigenciaVistoCREA'] = _exigenciaVistoCREA;
+    }
     if (_declaracaoRecursos != null) {
       map['declaracaoRecursosContratacao'] = _declaracaoRecursos;
     }
@@ -590,8 +595,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       'declaracaoMEouEPP': l.declaracaoMEouEPP,
       'resultadoHabilitacao': l.resultadoHabilitacao,
     };
-    if (l.nomeRazaoSocial.isNotEmpty)
+    if (l.nomeRazaoSocial.isNotEmpty) {
       map['nomeRazaoSocial'] = l.nomeRazaoSocial;
+    }
     if (l.valorProposta != 0) {
       map['valor'] = double.parse(l.valorProposta.toStringAsFixed(4));
     }
@@ -1081,8 +1087,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   if (_exigenciaGarantiaLicitantes != 1) return null;
                   if (v == null || v.trim().isEmpty) return null;
                   final d = parseBrCurrencyOrNull(v.trim());
-                  if (d == null || d < 0 || d > 100)
+                  if (d == null || d < 0 || d > 100) {
                     return 'Valor entre 0 e 100';
+                  }
                   return null;
                 },
               ),

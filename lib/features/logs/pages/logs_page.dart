@@ -307,7 +307,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   SizedBox(
                     width: 220,
                     child: DropdownButtonFormField<String?>(
-                      value: _endpointFilter,
+                      initialValue: _endpointFilter,
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Módulo'),
                       items: [
@@ -352,7 +352,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   SizedBox(
                     width: 190,
                     child: DropdownButtonFormField<_StatusFilter>(
-                      value: _statusFilter,
+                      initialValue: _statusFilter,
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: const [
@@ -437,17 +437,21 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   if (user == null || user.isAdmin) return true;
                   final ep = log.endpoint.toLowerCase();
                   if (ep.contains('edital') &&
-                      !user.hasPermission(AppPermissions.edital))
+                      !user.hasPermission(AppPermissions.edital)) {
                     return false;
+                  }
                   if (ep.contains('licitacao') &&
-                      !user.hasPermission(AppPermissions.licitacao))
+                      !user.hasPermission(AppPermissions.licitacao)) {
                     return false;
+                  }
                   if (ep.contains('ata') &&
-                      !user.hasPermission(AppPermissions.ata))
+                      !user.hasPermission(AppPermissions.ata)) {
                     return false;
+                  }
                   if ((ep.contains('ajuste') || ep.contains('contrato')) &&
-                      !user.hasPermission(AppPermissions.ajuste))
+                      !user.hasPermission(AppPermissions.ajuste)) {
                     return false;
+                  }
                   return true;
                 }).toList();
 

@@ -652,8 +652,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Obrigatório';
                   final raw = PcnpInputFormatter.stripMask(v);
-                  if (raw.length < 25)
+                  if (raw.length < 25) {
                     return 'ID de Contratação PNCP incompleto';
+                  }
                   return null;
                 },
                 inputFormatters: [

@@ -231,8 +231,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null)
+                        if (parseBrCurrencyOrNull(v) == null) {
                           return 'Número inválido';
+                        }
                         return null;
                       },
                     ),
@@ -273,8 +274,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null)
+                        if (parseBrCurrencyOrNull(v) == null) {
                           return 'Valor inválido';
+                        }
                         return null;
                       },
                     ),
@@ -290,8 +292,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null)
+                        if (parseBrCurrencyOrNull(v) == null) {
                           return 'Valor inválido';
+                        }
                         return null;
                       },
                     ),

@@ -29,7 +29,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
               child: SizedBox(
                 width: 160,
                 child: DropdownButtonFormField<String>(
-                  value: _statusFilter,
+                  initialValue: _statusFilter,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Status',
