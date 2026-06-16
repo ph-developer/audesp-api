@@ -5,7 +5,6 @@ Flutter Windows desktop app for sending data to AUDESP (TCE-SP).
 ## Prerequisites
 
 - **MySQL 8.0** — `docker compose up -d` provides it (user `audesp`/`audesp`, DB `audesp`)
-- **`assets/.env`** — must exist with `ADMIN_PASSWORD` and `DEFAULT_USER_PASSWORD`
 - **`config.ini`** (root, tracked in git) — read at runtime for DB connection alongside the executable or CWD
 
 ## Commands
@@ -24,7 +23,7 @@ flutter analyze                    # lint (uses flutter_lints)
 - **State:** Riverpod (`flutter_riverpod`) — one provider file per feature, DAOs via `Provider`, services via `Provider`
 - **Router:** `go_router` with `ShellRoute` + `NavigationRail`. Shell wraps Edital/Licitação/Ata/Ajuste/Logs. Login, Profile, Admin are outside the shell.
 - **Pattern per feature:** `providers.dart`, `services/`, `pages/`, `widgets/`, optional `domain/` (domain logic) and `csv/` (import parsers)
-- **Auth:** local DB users (SHA-256 + pepper) + virtual admin (id=`-1`, pw from `.env`). AUDESP API token stored in memory only via `AuthService`.
+- **Auth:** local DB users (SHA-256 + pepper). AUDESP API token stored in memory only via `AuthService`.
 - **Env switching:** Piloto (`https://audesp-piloto.tce.sp.gov.br`) / Oficial (`https://audesp.tce.sp.gov.br`), persisted in `app_settings` table
 
 ## Database
@@ -38,7 +37,7 @@ flutter analyze                    # lint (uses flutter_lints)
 
 ## Notable Conventions
 
-- **Admin user:** hardcoded id = `-1` (sentinel), email = `'admin'`, password from `assets/.env`
+- **Admin user:** created on first login if not exists, seeded in `users` table.
 - **Password hashing:** SHA-256 with email + pepper (`'audesp_api_sys_2026'`), done in `PasswordHasher`
 - **Document status:** `'draft'` (editing) vs `'sent'` (submitted to AUDESP)
 - **Gemini default model:** hardcoded as `'gemini-3.1-flash-lite'` in `GeminiService`; API key configured via Admin UI → stored in `app_settings`

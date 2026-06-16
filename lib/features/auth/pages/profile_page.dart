@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_env.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/password_hasher.dart';
@@ -108,12 +107,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       // Verifica senha atual
-      bool ok;
       if (_user!.passwordHash == null) {
-        ok = current == AppEnv.defaultUserPassword;
-      } else {
-        ok = PasswordHasher.verify(_user!.email, current, _user!.passwordHash!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Usuário sem senha definida no banco de dados.')),
+          );
+        }
+        return;
       }
+      
+      bool ok = PasswordHasher.verify(_user!.email, current, _user!.passwordHash!);
 
       if (!ok) {
         if (mounted) {

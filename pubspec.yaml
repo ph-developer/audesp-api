@@ -30,8 +30,7 @@ dependencies:
   # Formatação de datas
   intl: ^0.20.2
 
-  # Variáveis de ambiente (.env)
-  flutter_dotenv: ^6.0.0
+
 
   # Hash de senhas
   crypto: ^3.0.5
@@ -69,6 +68,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/.env
     - assets/logo_audesp.png
     - assets/logo_audesp2.png

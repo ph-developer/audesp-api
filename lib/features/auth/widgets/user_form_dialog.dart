@@ -16,7 +16,6 @@ Future<bool?> showUserFormDialog(BuildContext context, {User? user}) {
 }
 
 /// Diálogo para criar ou editar um cadastro de usuário local.
-/// Na criação, já define a senha padrão do .env.
 class UserFormDialog extends ConsumerStatefulWidget {
   final User? user;
 
