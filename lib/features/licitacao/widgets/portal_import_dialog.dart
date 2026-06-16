@@ -78,6 +78,14 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
     try {
       final bytes = TemplateGenerator.generate(templateItens);
       await File(path).writeAsBytes(bytes);
+
+      if (Platform.isWindows) {
+        Process.run('cmd', ['/c', 'start', '""', path]);
+      } else if (Platform.isMacOS) {
+        Process.run('open', [path]);
+      } else if (Platform.isLinux) {
+        Process.run('xdg-open', [path]);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = 'Erro ao salvar template: $e');
