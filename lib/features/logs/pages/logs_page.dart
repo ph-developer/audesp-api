@@ -90,10 +90,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
     }).toList();
   }
 
-  Future<void> _deleteLog(int id) async {
-    await ref.read(apiLogsDaoProvider).deleteById(id);
-  }
-
   Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
     context: context,
     initialDate: initial ?? DateTime.now(),
@@ -285,7 +281,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                     log: filtered[i],
                     timeFmt: _timeFmt,
                     onTap: () => _openDetail(filtered[i]),
-                    onDelete: () => _deleteLog(filtered[i].id),
                   ),
                 );
               },
@@ -305,13 +300,11 @@ class _LogCard extends StatelessWidget {
   final ApiLog log;
   final DateFormat timeFmt;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
 
   const _LogCard({
     required this.log,
     required this.timeFmt,
     required this.onTap,
-    required this.onDelete,
   });
 
   Color _statusColor(BuildContext context) {
@@ -386,14 +379,6 @@ class _LogCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              tooltip: 'Excluir',
-              onPressed: onDelete,
-            ),
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios, size: 16),
               tooltip: 'Abrir',
