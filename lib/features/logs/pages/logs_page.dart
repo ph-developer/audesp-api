@@ -11,6 +11,7 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../services/consulta_service.dart';
+import '../services/pdf_comprovante_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -514,7 +515,7 @@ bool isProtocoloUpdatable(String? status) {
   return true;
 }
 
-class _LogCard extends StatelessWidget {
+class _LogCard extends ConsumerWidget {
   final ApiLog log;
   final DateFormat timeFmt;
   final VoidCallback onTap;
@@ -549,7 +550,7 @@ class _LogCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _statusColor(context);
     final label = _labelFor(log.endpoint);
 
@@ -645,6 +646,14 @@ class _LogCard extends StatelessWidget {
                   icon: const Icon(Icons.refresh, size: 16),
                   tooltip: 'Atualizar Status',
                   onPressed: onUpdateStatus,
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                  tooltip: 'Gerar Comprovante (PDF)',
+                  color: Theme.of(context).colorScheme.primary,
+                  onPressed: () =>
+                      PdfComprovanteService.gerarComprovante(context, ref, log),
                 ),
             ],
             IconButton(

@@ -52,6 +52,7 @@ dependencies:
   # Manipulação de caminhos de arquivos
   path: ^1.9.1
   ini: ^2.1.0
+  pdf: ^3.12.0
 
 dev_dependencies:
   flutter_test:
