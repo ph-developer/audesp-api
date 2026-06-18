@@ -17,6 +17,8 @@ import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../domain/ajuste_domain.dart';
 import '../ajuste_providers.dart';
 import '../services/ajuste_service.dart';
+import '../widgets/gemini_ajuste_import_dialog.dart';
+import 'package:file_picker/file_picker.dart';
 
 /// Formulário de criação/edição de Ajuste (Fase 7 – Módulo 4).
 ///
@@ -41,6 +43,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
+  bool _importingGemini = false;
   int? _loadedId;
 
   // ── Vínculo com Edital e Ata ──────────────────────────────────────────
@@ -454,11 +457,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Informe ao menos um item contratado.');
       return;
     }
-    if (_tipoContratoId == 7 && !_receita && _despesas.isEmpty) {
-      _showError('Para empenho (tipo 7), informe ao menos uma classificação de despesa.');
-      return;
+    final isEmpenho = _tipoContratoId == 7;
+    
+    if (isEmpenho || !_receita) {
+      if (_despesas.isEmpty) {
+        _showError('A classificação de despesa é obrigatória (exigida para despesas ou empenhos).');
+        return;
+      }
     }
-    if (_tipoContratoId == 7 && !_receita && _despesas.length > 1) {
+    if (isEmpenho && _despesas.length > 1) {
       _showError('Para empenho (tipo 7), informe apenas uma classificação de despesa.');
       return;
     }
@@ -537,6 +544,127 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     });
   }
 
+  // ── Importação via Gemini ─────────────────────────────────────────────
+
+  Future<void> _importFromDocx() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['doc', 'docx'],
+    );
+    if (result == null || result.files.single.path == null) return;
+    if (!mounted) return;
+
+    setState(() => _importingGemini = true);
+    try {
+      final currentValues = <String, String>{
+        'tipoContratoId': _tipoContratoId?.toString() ?? '',
+        'numeroContratoEmpenho': _numeroContratoEmpenhoCtrl.text.trim(),
+        'anoContrato': _anoContratoCtrl.text.trim(),
+        'processo': _processoCtrl.text.trim(),
+        'categoriaProcessoId': _categoriaProcessoId?.toString() ?? '',
+        'niFornecedor': _niFornecedorCtrl.text.trim(),
+        'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
+        'tipoObjetoContrato': _tipoObjetoContrato?.toString() ?? '',
+        'objetoContrato': _objetoContratoCtrl.text.trim(),
+        'valorInicial': _valorInicialCtrl.text.trim(),
+        'itens': _itens.join(', '),
+        'dataAssinatura': _dataAssinatura != null ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!) : '',
+        'dataVigenciaInicio': _dataVigenciaInicio != null ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!) : '',
+        'dataVigenciaFim': _dataVigenciaFim != null ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!) : '',
+      };
+
+      final accepted = await showGeminiAjusteImportDialog(
+        context: context,
+        ref: ref,
+        filePath: result.files.single.path!,
+        currentValues: currentValues,
+      );
+
+      if (!mounted || accepted == null || accepted.isEmpty) return;
+
+      setState(() {
+        if (accepted.containsKey('tipoContratoId')) {
+          final match = RegExp(r'\d+').firstMatch(accepted['tipoContratoId']!);
+          if (match != null) _tipoContratoId = int.tryParse(match.group(0)!);
+        }
+        if (accepted.containsKey('numeroContratoEmpenho')) {
+          _numeroContratoEmpenhoCtrl.text = accepted['numeroContratoEmpenho']!;
+        }
+        if (accepted.containsKey('anoContrato')) {
+          _anoContratoCtrl.text = accepted['anoContrato']!;
+        }
+        if (accepted.containsKey('processo')) {
+          _processoCtrl.text = accepted['processo']!;
+        }
+        if (accepted.containsKey('niFornecedor')) {
+          final ni = accepted['niFornecedor']!.replaceAll(RegExp(r'\D'), '');
+          _niFornecedorCtrl.text = accepted['niFornecedor']!;
+          if (ni.length == 11) {
+            _tipoPessoaFornecedor = 'PF';
+          } else if (ni.length == 14) {
+            _tipoPessoaFornecedor = 'PJ';
+          } else if (ni.isNotEmpty) {
+            _tipoPessoaFornecedor = 'PE';
+          }
+        }
+        if (accepted.containsKey('itens')) {
+          final itemsRaw = accepted['itens']!;
+          final regex = RegExp(r'\d+');
+          _itens.clear();
+          for (final match in regex.allMatches(itemsRaw)) {
+            final val = int.tryParse(match.group(0)!);
+            if (val != null && !_itens.contains(val)) {
+              _itens.add(val);
+            }
+          }
+          _itens.sort();
+        }
+        if (accepted.containsKey('categoriaProcessoId')) {
+          final match = RegExp(r'\d+').firstMatch(accepted['categoriaProcessoId']!);
+          if (match != null) _categoriaProcessoId = int.tryParse(match.group(0)!);
+        }
+        if (accepted.containsKey('nomeRazaoSocialFornecedor')) {
+          _nomeRazaoSocialFornecedorCtrl.text = accepted['nomeRazaoSocialFornecedor']!;
+        }
+        if (accepted.containsKey('tipoObjetoContrato')) {
+          final match = RegExp(r'\d+').firstMatch(accepted['tipoObjetoContrato']!);
+          if (match != null) _tipoObjetoContrato = int.tryParse(match.group(0)!);
+        }
+        if (accepted.containsKey('objetoContrato')) {
+          _objetoContratoCtrl.text = accepted['objetoContrato']!;
+        }
+        if (accepted.containsKey('valorInicial')) {
+          _valorInicialCtrl.text = accepted['valorInicial']!;
+        }
+        if (accepted.containsKey('dataAssinatura')) {
+          try {
+            _dataAssinatura = DateFormat('dd/MM/yyyy').parse(accepted['dataAssinatura']!);
+          } catch (_) {}
+        }
+        if (accepted.containsKey('dataVigenciaInicio')) {
+          try {
+            _dataVigenciaInicio = DateFormat('dd/MM/yyyy').parse(accepted['dataVigenciaInicio']!);
+          } catch (_) {}
+        }
+        if (accepted.containsKey('dataVigenciaFim')) {
+          try {
+            _dataVigenciaFim = DateFormat('dd/MM/yyyy').parse(accepted['dataVigenciaFim']!);
+          } catch (_) {}
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${accepted.length} campo(s) preenchido(s) pelo Gemini.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _importingGemini = false);
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────
 
   @override
@@ -569,6 +697,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     child: CircularProgressIndicator(strokeWidth: 2)),
               )
             else ...[
+              TextButton.icon(
+                onPressed: _importingGemini ? null : _importFromDocx,
+                icon: _importingGemini
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.auto_fix_high),
+                label: const Text('Importar do Word'),
+              ),
+              const SizedBox(width: 4),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
@@ -915,7 +1055,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 title: 'Dados do Contrato',
                 children: [
                   DropdownButtonFormField<int>(
-                    initialValue: _tipoContratoId,
+                    value: _tipoContratoId,
                     decoration: const InputDecoration(
                         labelText: 'Tipo de Contrato *'),
                     isExpanded: true,
@@ -984,16 +1124,25 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _SearchableIntField(
-                          items: kCategoriaProcesso,
+                        child: DropdownButtonFormField<int>(
                           value: _categoriaProcessoId,
-                          label: 'Categoria do Processo *',
-                          enabled: !readOnly,
-                          onChanged: (v) => setState(
-                              () => _categoriaProcessoId = v != null ? int.tryParse(v) : null),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Selecione a categoria do processo'
-                              : null,
+                          decoration: const InputDecoration(
+                              labelText: 'Categoria do Processo *'),
+                          isExpanded: true,
+                          items: kCategoriaProcesso.entries
+                              .map((e) => DropdownMenuItem(
+                                    value: e.key,
+                                    child: Text(
+                                      e.value,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: readOnly
+                              ? null
+                              : (v) => setState(() => _categoriaProcessoId = v),
+                          validator: (v) =>
+                              v == null ? 'Selecione a categoria do processo' : null,
                         ),
                       ),
                     ],
@@ -1197,16 +1346,25 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Objeto e Valores',
                 children: [
-                  _SearchableIntField(
-                    items: kTipoObjetoContrato,
+                  DropdownButtonFormField<int>(
                     value: _tipoObjetoContrato,
-                    label: 'Tipo de Objeto do Contrato *',
-                    enabled: !readOnly,
-                    onChanged: (v) => setState(() =>
-                        _tipoObjetoContrato = v != null ? int.tryParse(v) : null),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Selecione o tipo de objeto'
-                        : null,
+                    decoration: const InputDecoration(
+                        labelText: 'Tipo de Objeto do Contrato *'),
+                    isExpanded: true,
+                    items: kTipoObjetoContrato.entries
+                        .map((e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(
+                                e.value,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: readOnly
+                        ? null
+                        : (v) => setState(() => _tipoObjetoContrato = v),
+                    validator: (v) =>
+                        v == null ? 'Selecione o tipo de objeto' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

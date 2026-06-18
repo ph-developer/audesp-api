@@ -38,6 +38,9 @@ dependencies:
   # Integração com Google Gemini (importação de PDF via IA)
   google_generative_ai: ^0.4.6
 
+  # Extração de texto de DOC/DOCX para envio ao Gemini
+  docx_to_text: ^1.0.1
+
   # Modelos imutáveis + serialização
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0

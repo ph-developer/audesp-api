@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:docx_to_text/docx_to_text.dart';
 
 import '../database/daos/app_settings_dao.dart';
 
@@ -36,11 +37,21 @@ class GeminiService {
   GeminiService(this._settings);
 
   /// Extrai campos de [pdfPath] usando o modelo e chave configurados.
-  ///
-  /// Retorna [GeminiExtractionResult] com um valor por campo (null = não
-  /// encontrado) ou lança [GeminiException] em caso de erro.
+  /// Deprecated: Utilize [extractFromFile] para suporte a múltiplos formatos.
   Future<GeminiExtractionResult> extractFromPdf({
     required String pdfPath,
+    required List<GeminiField> fields,
+  }) async {
+    return extractFromFile(filePath: pdfPath, fields: fields);
+  }
+
+  /// Extrai campos de um arquivo usando o modelo e chave configurados.
+  ///
+  /// Suporta arquivos PDF, DOC e DOCX.
+  /// Retorna [GeminiExtractionResult] com um valor por campo (null = não
+  /// encontrado) ou lança [GeminiException] em caso de erro.
+  Future<GeminiExtractionResult> extractFromFile({
+    required String filePath,
     required List<GeminiField> fields,
   }) async {
     final apiKey = await _settings.get(SettingsKeys.geminiApiKey);
@@ -56,8 +67,6 @@ class GeminiService {
         ? modelName.trim()
         : 'gemini-3.1-flash-lite';
 
-    final pdfBytes = await File(pdfPath).readAsBytes();
-
     final fieldDescriptions = fields.map((f) {
       final hint = f.hint != null ? ' (${f.hint})' : '';
       return '- "${f.key}": ${f.label}$hint';
@@ -65,7 +74,7 @@ class GeminiService {
 
     final prompt = '''
 Você é um assistente especializado em licitações públicas brasileiras.
-Analise o PDF fornecido e extraia os seguintes campos no formato JSON.
+Analise o documento fornecido e extraia os seguintes campos no formato JSON.
 Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional.
 Se um campo não for encontrado ou não puder ser determinado, use null como valor.
 
@@ -84,9 +93,22 @@ Exemplo de resposta esperada:
       apiKey: apiKey.trim(),
     );
 
+    final lowerPath = filePath.toLowerCase();
+    final isWordDoc = lowerPath.endsWith('.docx') || lowerPath.endsWith('.doc');
+
+    Part filePart;
+    if (isWordDoc) {
+      final bytes = await File(filePath).readAsBytes();
+      final text = docxToText(bytes);
+      filePart = TextPart(text);
+    } else {
+      final pdfBytes = await File(filePath).readAsBytes();
+      filePart = DataPart('application/pdf', pdfBytes);
+    }
+
     final content = [
       Content.multi([
-        DataPart('application/pdf', pdfBytes),
+        filePart,
         TextPart(prompt),
       ]),
     ];
