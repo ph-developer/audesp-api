@@ -416,11 +416,18 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                       ),
                     ),
                   ],
-                  const SizedBox(width: 8),
                 ],
               ),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Atualizar',
+            onPressed: () {
+              setState(() {});
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(

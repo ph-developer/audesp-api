@@ -25,7 +25,7 @@ class _EditalPageState extends ConsumerState<EditalPage> {
         title: const Text('Editais'),
         actions: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.only(left: 16.0, right: 8.0),
               child: SizedBox(
                 width: 160,
                 child: DropdownButtonFormField<String>(
@@ -48,6 +48,15 @@ class _EditalPageState extends ConsumerState<EditalPage> {
                 ),
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Atualizar',
+              onPressed: () {
+                ref.invalidate(editaisDraftProvider);
+                ref.invalidate(editaisEnviadosProvider);
+              },
+            ),
+            const SizedBox(width: 8),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
