@@ -1055,7 +1055,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 title: 'Dados do Contrato',
                 children: [
                   DropdownButtonFormField<int>(
-                    value: _tipoContratoId,
+                    initialValue: _tipoContratoId,
                     decoration: const InputDecoration(
                         labelText: 'Tipo de Contrato *'),
                     isExpanded: true,
@@ -1125,7 +1125,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: _categoriaProcessoId,
+                          initialValue: _categoriaProcessoId,
                           decoration: const InputDecoration(
                               labelText: 'Categoria do Processo *'),
                           isExpanded: true,
@@ -1347,7 +1347,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 title: 'Objeto e Valores',
                 children: [
                   DropdownButtonFormField<int>(
-                    value: _tipoObjetoContrato,
+                    initialValue: _tipoObjetoContrato,
                     decoration: const InputDecoration(
                         labelText: 'Tipo de Objeto do Contrato *'),
                     isExpanded: true,
@@ -1519,88 +1519,3 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 }
 
-/// Campo pesquisável para seleção de itens de um mapa `int → String`.
-/// Funciona como o campo de Amparo Legal no Edital.
-class _SearchableIntField extends StatelessWidget {
-  final Map<int, String> items;
-  final int? value;
-  final String label;
-  final bool enabled;
-  final ValueChanged<String?> onChanged;
-  final FormFieldValidator<String?>? validator;
-
-  const _SearchableIntField({
-    required this.items,
-    required this.value,
-    required this.label,
-    required this.enabled,
-    required this.onChanged,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final options = items.entries.toList();
-
-    return Autocomplete<MapEntry<int, String>>(
-      initialValue: value != null && items.containsKey(value)
-          ? TextEditingValue(text: items[value]!)
-          : TextEditingValue.empty,
-      optionsBuilder: (textEditingValue) {
-        final q = textEditingValue.text.toLowerCase();
-        if (q.isEmpty) return options;
-        return options.where(
-          (e) =>
-              e.key.toString().contains(q) ||
-              e.value.toLowerCase().contains(q),
-        );
-      },
-      displayStringForOption: (e) => e.value,
-      onSelected: (e) => onChanged(e.key.toString()),
-      fieldViewBuilder: (context, textController, focusNode, onSubmitted) {
-        return TextFormField(
-          controller: textController,
-          focusNode: focusNode,
-          enabled: enabled,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: 'Digite o código ou pesquise a descrição',
-            suffixIcon: const Icon(Icons.arrow_drop_down),
-          ),
-          onFieldSubmitted: (_) => onSubmitted(),
-          validator: (_) => validator?.call(
-            value?.toString(),
-          ),
-        );
-      },
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 260, maxWidth: 600),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final option = options.elementAt(index);
-                  return InkWell(
-                    onTap: () => onSelected(option),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Text(option.value),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
