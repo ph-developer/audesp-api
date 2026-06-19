@@ -59,6 +59,7 @@ const kFonteRecurso = <int, String>{
   96: '96 – Outras Fontes de Recursos - Exercícios Anteriores',
   97: '97 – Operações de Crédito - Exercícios Anteriores',
   98: '98 – Emendas Parlamentares Individuais - Exercícios Anteriores',
+  99: '99 – Não foi emitida declaração de existência de recursos',
 };
 
 /// `tipoOrcamento` — Domínio AUDESP: Orçamento ou Proposta.

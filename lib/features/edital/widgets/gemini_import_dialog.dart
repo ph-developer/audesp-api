@@ -27,7 +27,9 @@ final _kEditalFields = <GeminiField>[
     hint: '1=Leilão Eletrônico, 2=Diálogo Competitivo, 3=Concurso, 4=Concorrência Eletrônica, '
         '5=Concorrência Presencial, 6=Pregão Eletrônico, 7=Pregão Presencial, '
         '8=Dispensa, 9=Inexigibilidade, 12=Credenciamento, 13=Leilão Presencial, '
-        '14=Inaplicabilidade, 997=RDC, 998=Convite, 999=Tomada de Preços',
+        '14=Inaplicabilidade, 15=Chamada pública, 16=Concorrência Eletrônica Internacional, '
+        '17=Concorrência Presencial Internacional, 18=Pregão Eletrônico Internacional, '
+        '19=Pregão Presencial Internacional, 997=RDC, 998=Convite, 999=Tomada de Preços',
   ),
   GeminiField(
     key: 'modoDisputaId',
