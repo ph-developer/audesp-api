@@ -22,6 +22,7 @@ import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
+import '../../estimativa/widgets/estimativa_import_dialog.dart';
 
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
@@ -1063,6 +1064,56 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
   }
 
+  Future<void> _importFromEstimativa() async {
+    final est = await showEstimativaImportDialog(context);
+    if (est == null || !mounted) return;
+
+    final baseItens = est.tipoEstimativa == 'lote'
+        ? est.lotes.expand((l) => l.itens).toList()
+        : est.itens;
+
+    if (baseItens.isEmpty) return;
+
+    final limpar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Substituir itens?'),
+        content: Text('Já existem ${_itens.length} itens. Deseja substituí-los pelos itens da estimativa?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Adicionar aos existentes')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Substituir')),
+        ],
+      ),
+    );
+
+    if (limpar == null) return;
+
+    final novosItens = baseItens.map((item) {
+      return <String, dynamic>{
+        'numeroItem': item.numero,
+        'materialOuServico': 'M',
+        'descricao': item.descricao,
+        'quantidade': item.quantidade,
+        'unidadeMedida': item.unidade,
+        'orcamentoSigiloso': false,
+        'valorUnitarioEstimado': item.getValorReferenciaUnitario(est.calculoGlobal),
+        'valorTotal': item.getValorTotal(est.calculoGlobal),
+      };
+    }).toList();
+
+    setState(() {
+      if (limpar) {
+        _itens = novosItens;
+      } else {
+        _itens.addAll(novosItens);
+      }
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${novosItens.length} itens importados da estimativa.')));
+    }
+  }
+
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
   Widget _buildItensSection(bool readOnly) {
@@ -1070,6 +1121,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       title: 'Itens de Compra',
       titleActions: [
         if (!readOnly) ...[
+          TextButton.icon(
+            onPressed: _importFromEstimativa,
+            icon: const Icon(Icons.calculate_outlined),
+            label: const Text('Importar da Estimativa'),
+          ),
+          const SizedBox(width: 8),
           TextButton.icon(
             onPressed: _importItemsFromCsv,
             icon: const Icon(Icons.upload_file_outlined),

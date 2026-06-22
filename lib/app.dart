@@ -16,6 +16,8 @@ import 'features/edital/pages/edital_form_page.dart';
 import 'features/edital/pages/edital_page.dart';
 import 'features/licitacao/pages/licitacao_form_page.dart';
 import 'features/licitacao/pages/licitacao_page.dart';
+import 'features/estimativa/pages/estimativas_list_page.dart';
+import 'features/estimativa/pages/estimativa_form_page.dart';
 import 'features/logs/pages/logs_page.dart';
 import 'features/shell/shell_page.dart';
 
@@ -152,6 +154,24 @@ final _routerProvider = Provider<GoRouter>((ref) {
                   final id =
                       int.tryParse(state.pathParameters['id'] ?? '');
                   return AjusteFormPage(ajusteId: id);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/estimativa',
+            builder: (context, _) => const EstimativasListPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, _) => const EstimativaFormPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id =
+                      int.tryParse(state.pathParameters['id'] ?? '');
+                  return EstimativaFormPage(estimativaId: id);
                 },
               ),
             ],

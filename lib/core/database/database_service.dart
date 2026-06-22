@@ -191,6 +191,21 @@ class DatabaseService {
       } catch (_) {}
       await setSchemaVersion(5);
     }
+
+    if (version < 6) {
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS estimativas (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          numero INT NOT NULL,
+          ano INT NOT NULL,
+          objeto TEXT NOT NULL,
+          documento_json LONGTEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+      await setSchemaVersion(6);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

@@ -19,6 +19,7 @@ import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
+import '../../estimativa/widgets/estimativa_import_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -528,6 +529,56 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   // ── Importação de CSV ─────────────────────────────────────────────────
+
+  Future<void> _importFromEstimativa() async {
+    final est = await showEstimativaImportDialog(context);
+    if (est == null || !mounted) return;
+
+    final baseItens = est.tipoEstimativa == 'lote'
+        ? est.lotes.expand((l) => l.itens).toList()
+        : est.itens;
+
+    if (baseItens.isEmpty) return;
+
+    final limpar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Substituir itens?'),
+        content: Text('Já existem ${_itens.length} itens. Deseja substituí-los pelos itens da estimativa?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Adicionar aos existentes')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Substituir')),
+        ],
+      ),
+    );
+
+    if (limpar == null) return;
+
+    final novosItens = baseItens.map((item) {
+      return <String, dynamic>{
+        'numeroItem': item.numero,
+        'tipoOrcamento': 1, // Global / Estimado Padrão
+        'situacaoCompraItemId': 1, // Em andamento / Classificado Padrão
+        'dataSituacaoItem': DateTime.now().toIso8601String().substring(0, 10),
+        'tipoValor': 'V',
+        'tipoProposta': 1, // Menor Preço Padrão
+        'valor': item.getValorReferenciaUnitario(est.calculoGlobal), // Usando Unitário como referência padrão
+        'licitantes': <Map<String, dynamic>>[],
+      };
+    }).toList();
+
+    setState(() {
+      if (limpar) {
+        _itens = novosItens;
+      } else {
+        _itens.addAll(novosItens);
+      }
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${novosItens.length} itens importados da estimativa.')));
+    }
+  }
 
   Future<void> _openPortalImportDialog() async {
     if (_itens.isNotEmpty) {
@@ -1302,6 +1353,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       title: 'Itens de Licitação',
       titleActions: [
         if (!readOnly) ...[
+          TextButton.icon(
+            onPressed: _importFromEstimativa,
+            icon: const Icon(Icons.calculate_outlined, size: 18),
+            label: const Text('Importar da Estimativa'),
+          ),
+          const SizedBox(width: 8),
           TextButton.icon(
             onPressed: _openPortalImportDialog,
             icon: const Icon(Icons.download_outlined, size: 18),
