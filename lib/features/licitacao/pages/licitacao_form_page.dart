@@ -19,6 +19,7 @@ import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
+import '../widgets/ajuste_situacao_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -651,6 +652,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         return {...item, 'licitantes': licitantes};
       }).toList();
     });
+  }
+
+  Future<void> _abrirAjusteSituacao() async {
+    if (_itens.isEmpty || !mounted) return;
+
+    final novosItens = await showAjusteSituacaoDialog(context, _itens);
+    if (novosItens != null && mounted) {
+      setState(() {
+        _itens = novosItens;
+      });
+    }
   }
 
   void _addCpf() {
@@ -1320,6 +1332,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 : null,
             icon: const Icon(Icons.tune_outlined, size: 18),
             label: const Text('Ajustar ME/EPP'),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _itens.isNotEmpty ? _abrirAjusteSituacao : null,
+            icon: const Icon(Icons.rule_outlined, size: 18),
+            label: const Text('Ajustar Situação'),
           ),
           const SizedBox(width: 8),
           TextButton.icon(
