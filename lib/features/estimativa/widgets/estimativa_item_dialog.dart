@@ -12,10 +12,11 @@ Future<EstimativaItem?> showEstimativaItemDialog({
   EstimativaItem? item,
   required String estimativaTipo, // 'item' ou 'lote'
   required String calculoGlobal,
+  int? nextNumero,
 }) {
   return showDialog<EstimativaItem>(
     context: context,
-    builder: (ctx) => _ItemDialog(item: item, estimativaTipo: estimativaTipo, calculoGlobal: calculoGlobal),
+    builder: (ctx) => _ItemDialog(item: item, estimativaTipo: estimativaTipo, calculoGlobal: calculoGlobal, nextNumero: nextNumero),
   );
 }
 
@@ -23,8 +24,9 @@ class _ItemDialog extends StatefulWidget {
   final EstimativaItem? item;
   final String estimativaTipo;
   final String calculoGlobal;
+  final int? nextNumero;
 
-  const _ItemDialog({this.item, required this.estimativaTipo, required this.calculoGlobal});
+  const _ItemDialog({this.item, required this.estimativaTipo, required this.calculoGlobal, this.nextNumero});
 
   @override
   State<_ItemDialog> createState() => _ItemDialogState();
@@ -61,6 +63,8 @@ class _ItemDialogState extends State<_ItemDialog> {
       _quantidadeMesesCtrl.text = i.quantidadeMeses.toString();
       _exclusivoMeEpp = i.exclusivoMeEpp;
       _orcamentos = List.from(i.orcamentos);
+    } else if (widget.nextNumero != null) {
+      _numeroCtrl.text = widget.nextNumero.toString();
     }
   }
 
@@ -158,9 +162,8 @@ class _ItemDialogState extends State<_ItemDialog> {
                                   flex: 1,
                                   child: TextFormField(
                                     controller: _numeroCtrl,
-                                    decoration: const InputDecoration(labelText: 'Item Nº *'),
-                                    keyboardType: TextInputType.number,
-                                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                                    decoration: const InputDecoration(labelText: 'Item Nº'),
+                                    readOnly: true,
                                   ),
                                 ),
                                 const SizedBox(width: 8),

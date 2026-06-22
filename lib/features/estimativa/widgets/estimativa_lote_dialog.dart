@@ -14,18 +14,24 @@ Future<EstimativaLote?> showEstimativaLoteDialog({
   required BuildContext context,
   EstimativaLote? lote,
   required String calculoGlobal,
+  int? nextNumero,
 }) {
   return showDialog<EstimativaLote>(
     context: context,
-    builder: (ctx) => _LoteDialog(lote: lote, calculoGlobal: calculoGlobal),
+    builder: (ctx) => _LoteDialog(
+      lote: lote,
+      calculoGlobal: calculoGlobal,
+      nextNumero: nextNumero,
+    ),
   );
 }
 
 class _LoteDialog extends StatefulWidget {
   final EstimativaLote? lote;
   final String calculoGlobal;
+  final int? nextNumero;
 
-  const _LoteDialog({this.lote, required this.calculoGlobal});
+  const _LoteDialog({this.lote, required this.calculoGlobal, this.nextNumero});
 
   @override
   State<_LoteDialog> createState() => _LoteDialogState();
@@ -57,6 +63,8 @@ class _LoteDialogState extends State<_LoteDialog> {
       _itemCategoriaId = l.itemCategoriaId;
       _exclusivoMeEpp = l.exclusivoMeEpp;
       _itens = List.from(l.itens);
+    } else if (widget.nextNumero != null) {
+      _numeroCtrl.text = widget.nextNumero.toString();
     }
   }
 
@@ -71,11 +79,13 @@ class _LoteDialogState extends State<_LoteDialog> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final result = EstimativaLote(
       numero: int.tryParse(_numeroCtrl.text.trim()) ?? 0,
       descricao: _descricaoCtrl.text.trim(),
-      quantidade: double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ?? 1.0,
+      quantidade:
+          double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ??
+          1.0,
       unidade: _unidadeCtrl.text.trim().toUpperCase(),
       materialOuServico: _materialOuServico,
       itemCategoriaId: _itemCategoriaId,
@@ -91,6 +101,7 @@ class _LoteDialogState extends State<_LoteDialog> {
       context: context,
       estimativaTipo: 'lote',
       calculoGlobal: widget.calculoGlobal,
+      nextNumero: _itens.length + 1,
     );
     if (res != null) {
       setState(() {
@@ -116,7 +127,7 @@ class _LoteDialogState extends State<_LoteDialog> {
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    
+
     final dummyLote = EstimativaLote(
       numero: 0,
       descricao: '',
@@ -150,16 +161,20 @@ class _LoteDialogState extends State<_LoteDialog> {
                         children: [
                           TextFormField(
                             controller: _numeroCtrl,
-                            decoration: const InputDecoration(labelText: 'Lote Nº *'),
-                            keyboardType: TextInputType.number,
-                            validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                            decoration: const InputDecoration(
+                              labelText: 'Lote Nº',
+                            ),
+                            readOnly: true,
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _descricaoCtrl,
-                            decoration: const InputDecoration(labelText: 'Descrição *'),
+                            decoration: const InputDecoration(
+                              labelText: 'Descrição *',
+                            ),
                             maxLines: 2,
-                            validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? 'Obrigatório' : null,
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -168,12 +183,21 @@ class _LoteDialogState extends State<_LoteDialog> {
                                 flex: 2,
                                 child: TextFormField(
                                   controller: _quantidadeCtrl,
-                                  decoration: const InputDecoration(labelText: 'Quantidade *'),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Quantidade *',
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   inputFormatters: [
-                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[0-9.,]'),
+                                    ),
                                   ],
-                                  validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                                  validator: (v) => (v == null || v.isEmpty)
+                                      ? 'Obrigatório'
+                                      : null,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -181,9 +205,14 @@ class _LoteDialogState extends State<_LoteDialog> {
                                 flex: 1,
                                 child: TextFormField(
                                   controller: _unidadeCtrl,
-                                  decoration: const InputDecoration(labelText: 'Unidade *'),
-                                  textCapitalization: TextCapitalization.characters,
-                                  validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Unidade *',
+                                  ),
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                  validator: (v) => (v == null || v.isEmpty)
+                                      ? 'Obrigatório'
+                                      : null,
                                 ),
                               ),
                             ],
@@ -191,39 +220,65 @@ class _LoteDialogState extends State<_LoteDialog> {
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
                             initialValue: _materialOuServico,
-                            decoration: const InputDecoration(labelText: 'Material/Serviço *'),
+                            decoration: const InputDecoration(
+                              labelText: 'Material/Serviço *',
+                            ),
                             items: const [
-                              DropdownMenuItem(value: 'M', child: Text('Material')),
-                              DropdownMenuItem(value: 'S', child: Text('Serviço')),
+                              DropdownMenuItem(
+                                value: 'M',
+                                child: Text('Material'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'S',
+                                child: Text('Serviço'),
+                              ),
                             ],
-                            onChanged: (v) => setState(() => _materialOuServico = v!),
+                            onChanged: (v) =>
+                                setState(() => _materialOuServico = v!),
                             validator: (v) => v == null ? 'Obrigatório' : null,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<int>(
                             initialValue: _itemCategoriaId,
-                            decoration: const InputDecoration(labelText: 'Categoria do Lote *'),
-                            items: kItemCategoria.entries.map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            )).toList(),
+                            decoration: const InputDecoration(
+                              labelText: 'Categoria do Lote *',
+                            ),
+                            items: kItemCategoria.entries
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e.key,
+                                    child: Text(e.value),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (v) {
-                              if (v != null) setState(() => _itemCategoriaId = v);
+                              if (v != null) {
+                                setState(() => _itemCategoriaId = v);
+                              }
                             },
                             validator: (v) => v == null ? 'Obrigatório' : null,
                           ),
 
                           const Spacer(),
                           Card(
-                            color: Theme.of(context).colorScheme.primaryContainer,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
                                 children: [
-                                  const Text('Valor de Referência TOTAL do Lote:'),
+                                  const Text('Valor de Referência do Lote'),
                                   Text(
-                                    fmt.format(dummyLote.getValorTotal(widget.calculoGlobal)),
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                    fmt.format(
+                                      dummyLote.getValorTotal(
+                                        widget.calculoGlobal,
+                                      ),
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -242,7 +297,10 @@ class _LoteDialogState extends State<_LoteDialog> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Itens do Lote', style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              'Itens do Lote',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             TextButton.icon(
                               onPressed: _addItem,
                               icon: const Icon(Icons.add, size: 18),
@@ -253,17 +311,37 @@ class _LoteDialogState extends State<_LoteDialog> {
                         const Divider(),
                         Expanded(
                           child: _itens.isEmpty
-                              ? const Center(child: Text('Nenhum item adicionado ao lote.'))
-                              : ListView.builder(
+                              ? const Center(
+                                  child: Text(
+                                    'Nenhum item adicionado ao lote.',
+                                  ),
+                                )
+                              : ReorderableListView.builder(
+                                  buildDefaultDragHandles: false,
                                   itemCount: _itens.length,
+                                  onReorderItem: (oldIndex, newIndex) {
+                                    setState(() {
+                                      final item = _itens.removeAt(oldIndex);
+                                      _itens.insert(newIndex, item);
+                                      for (int i = 0; i < _itens.length; i++) {
+                                        _itens[i] = _itens[i].copyWith(
+                                          numero: i + 1,
+                                        );
+                                      }
+                                    });
+                                  },
                                   itemBuilder: (context, index) {
                                     final item = _itens[index];
-                                    final isMensal = item.tipoFornecimento == 'mensal';
+                                    final isMensal =
+                                        item.tipoFornecimento == 'mensal';
                                     return Card(
+                                      key: ValueKey(item.numero),
                                       margin: const EdgeInsets.only(bottom: 8),
                                       child: ListTile(
                                         dense: true,
-                                        title: Text('Item ${item.numero} - ${item.descricao}'),
+                                        title: Text(
+                                          'Item ${item.numero} - ${item.descricao}',
+                                        ),
                                         subtitle: Text(
                                           '${item.quantidade} ${item.unidade} | '
                                           '${isMensal ? "Mensal (${item.quantidadeMeses}m)" : "Única"} | '
@@ -274,17 +352,48 @@ class _LoteDialogState extends State<_LoteDialog> {
                                           children: [
                                             if (item.orcamentos.length < 3)
                                               const Tooltip(
-                                                message: 'Menos de 3 orçamentos',
-                                                child: Icon(Icons.warning_amber, color: Colors.amber, size: 20),
+                                                message:
+                                                    'Menos de 3 orçamentos',
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(10.0),
+                                                  child: Icon(
+                                                    Icons.warning_amber,
+                                                    color: Colors.amber,
+                                                    size: 20,
+                                                  ),
+                                                ),
                                               ),
                                             IconButton(
-                                              icon: const Icon(Icons.edit, size: 16),
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                size: 16,
+                                              ),
                                               onPressed: () => _editItem(index),
                                             ),
                                             IconButton(
-                                              icon: const Icon(Icons.delete, size: 16),
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                size: 16,
+                                              ),
                                               color: Colors.red,
-                                              onPressed: () => setState(() => _itens.removeAt(index)),
+                                              onPressed: () => setState(
+                                                () => _itens.removeAt(index),
+                                              ),
+                                            ),
+                                            ReorderableDragStartListener(
+                                              index: index,
+                                              child: const MouseRegion(
+                                                cursor: SystemMouseCursors.move,
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.0,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.drag_handle,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -313,7 +422,7 @@ class _LoteDialogState extends State<_LoteDialog> {
                   child: const Text('Salvar Lote'),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

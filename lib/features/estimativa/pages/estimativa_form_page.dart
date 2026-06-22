@@ -8,10 +8,13 @@ import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_lote_model.dart';
+import '../models/estimativa_orcamento_model.dart';
 import '../widgets/estimativa_item_dialog.dart';
 import '../widgets/estimativa_lote_dialog.dart';
+import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 
 class EstimativaFormPage extends ConsumerStatefulWidget {
   final int? estimativaId;
@@ -239,7 +242,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         builder: (ctx) => AlertDialog(
                           title: const Text('Alterar Tipo de Estimativa?'),
                           content: const Text(
-                              'Ao alterar o tipo de estimativa, todos os itens e lotes já adicionados serão apagados. Deseja continuar?'),
+                            'Ao alterar o tipo de estimativa, todos os itens e lotes já adicionados serão apagados. Deseja continuar?',
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
@@ -280,7 +284,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   ),
                   DropdownMenuItem(value: 'avg', child: Text('Média')),
                   DropdownMenuItem(value: 'median', child: Text('Mediana')),
-                  DropdownMenuItem(value: 'desc', child: Text('Maior Desconto')),
+                  DropdownMenuItem(
+                    value: 'desc',
+                    child: Text('Maior Desconto'),
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);
@@ -467,6 +474,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ),
           const SizedBox(width: 8),
         ],
+        if (_itens.isNotEmpty || _lotes.any((l) => l.itens.isNotEmpty)) ...[
+          TextButton.icon(
+            onPressed: _importarOrcamentoIa,
+            icon: const Icon(Icons.auto_fix_high),
+            label: const Text('Importar Orçamento via IA'),
+          ),
+          const SizedBox(width: 8),
+        ],
         TextButton.icon(
           onPressed: isLote ? _addLote : _addItem,
           icon: const Icon(Icons.add),
@@ -483,20 +498,34 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             )
           else
-            ListView.builder(
+            ReorderableListView.builder(
+              buildDefaultDragHandles: false,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _lotes.length,
+              onReorderItem: (oldIndex, newIndex) {
+                setState(() {
+                  final item = _lotes.removeAt(oldIndex);
+                  _lotes.insert(newIndex, item);
+                  for (int i = 0; i < _lotes.length; i++) {
+                    _lotes[i] = _lotes[i].copyWith(numero: i + 1);
+                  }
+                });
+              },
               itemBuilder: (ctx, i) {
                 final lote = _lotes[i];
                 return Card(
+                  key: ValueKey(lote.numero),
                   margin: const EdgeInsets.only(bottom: 6),
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: ListTile(
                     dense: true,
                     leading: CircleAvatar(
                       radius: 14,
-                      child: Text('${lote.numero}', style: const TextStyle(fontSize: 12)),
+                      child: Text(
+                        '${lote.numero}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
                     title: Text(
                       lote.descricao,
@@ -519,6 +548,16 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           icon: const Icon(Icons.delete, size: 18),
                           onPressed: () => setState(() => _lotes.removeAt(i)),
                         ),
+                        ReorderableDragStartListener(
+                          index: i,
+                          child: const MouseRegion(
+                            cursor: SystemMouseCursors.move,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Icon(Icons.drag_handle, size: 20),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -534,21 +573,35 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             )
           else
-            ListView.builder(
+            ReorderableListView.builder(
+              buildDefaultDragHandles: false,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _itens.length,
+              onReorderItem: (oldIndex, newIndex) {
+                setState(() {
+                  final item = _itens.removeAt(oldIndex);
+                  _itens.insert(newIndex, item);
+                  for (int i = 0; i < _itens.length; i++) {
+                    _itens[i] = _itens[i].copyWith(numero: i + 1);
+                  }
+                });
+              },
               itemBuilder: (ctx, i) {
                 final item = _itens[i];
                 final isMensal = item.tipoFornecimento == 'mensal';
                 return Card(
+                  key: ValueKey(item.numero),
                   margin: const EdgeInsets.only(bottom: 6),
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: ListTile(
                     dense: true,
                     leading: CircleAvatar(
                       radius: 14,
-                      child: Text('${item.numero}', style: const TextStyle(fontSize: 12)),
+                      child: Text(
+                        '${item.numero}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
                     title: Text(
                       item.descricao,
@@ -568,10 +621,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         if (item.orcamentos.length < 3)
                           const Tooltip(
                             message: 'Menos de 3 orçamentos',
-                            child: Icon(
-                              Icons.warning_amber,
-                              color: Colors.amber,
-                              size: 18,
+                            child: Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: Icon(
+                                Icons.warning_amber,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
                             ),
                           ),
                         IconButton(
@@ -581,6 +637,16 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         IconButton(
                           icon: const Icon(Icons.delete, size: 18),
                           onPressed: () => setState(() => _itens.removeAt(i)),
+                        ),
+                        ReorderableDragStartListener(
+                          index: i,
+                          child: const MouseRegion(
+                            cursor: SystemMouseCursors.move,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Icon(Icons.drag_handle, size: 20),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -595,59 +661,73 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
   Future<void> _showExclusividadeDialog() async {
     final isLote = _tipoEstimativa == 'lote';
-    
+
     await showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              title: Text('Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos'),
+              title: Text(
+                'Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos',
+              ),
               content: SizedBox(
                 width: 400,
                 child: isLote
                     ? _lotes.isEmpty
-                        ? const Text('Nenhum lote adicionado.')
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: _lotes.length,
-                            itemBuilder: (context, index) {
-                              final lote = _lotes[index];
-                              return CheckboxListTile(
-                                title: Text('Lote ${lote.numero} - ${lote.descricao}'),
-                                value: lote.exclusivoMeEpp,
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    _lotes[index] = lote.copyWith(exclusivoMeEpp: v ?? false);
-                                  });
-                                  setState(() {
-                                    _lotes[index] = _lotes[index].copyWith(exclusivoMeEpp: v ?? false);
-                                  });
-                                },
-                              );
-                            },
-                          )
+                          ? const Text('Nenhum lote adicionado.')
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _lotes.length,
+                              itemBuilder: (context, index) {
+                                final lote = _lotes[index];
+                                return CheckboxListTile(
+                                  title: Text(
+                                    'Lote ${lote.numero} - ${lote.descricao}',
+                                  ),
+                                  value: lote.exclusivoMeEpp,
+                                  onChanged: (v) {
+                                    setModalState(() {
+                                      _lotes[index] = lote.copyWith(
+                                        exclusivoMeEpp: v ?? false,
+                                      );
+                                    });
+                                    setState(() {
+                                      _lotes[index] = _lotes[index].copyWith(
+                                        exclusivoMeEpp: v ?? false,
+                                      );
+                                    });
+                                  },
+                                );
+                              },
+                            )
                     : _itens.isEmpty
-                        ? const Text('Nenhum item adicionado.')
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: _itens.length,
-                            itemBuilder: (context, index) {
-                              final item = _itens[index];
-                              return CheckboxListTile(
-                                title: Text('Item ${item.numero} - ${item.descricao}'),
-                                value: item.exclusivoMeEpp,
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    _itens[index] = item.copyWith(exclusivoMeEpp: v ?? false);
-                                  });
-                                  setState(() {
-                                    _itens[index] = _itens[index].copyWith(exclusivoMeEpp: v ?? false);
-                                  });
-                                },
-                              );
+                    ? const Text('Nenhum item adicionado.')
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _itens.length,
+                        itemBuilder: (context, index) {
+                          final item = _itens[index];
+                          return CheckboxListTile(
+                            title: Text(
+                              'Item ${item.numero} - ${item.descricao}',
+                            ),
+                            value: item.exclusivoMeEpp,
+                            onChanged: (v) {
+                              setModalState(() {
+                                _itens[index] = item.copyWith(
+                                  exclusivoMeEpp: v ?? false,
+                                );
+                              });
+                              setState(() {
+                                _itens[index] = _itens[index].copyWith(
+                                  exclusivoMeEpp: v ?? false,
+                                );
+                              });
                             },
-                          ),
+                          );
+                        },
+                      ),
               ),
               actions: [
                 TextButton(
@@ -666,6 +746,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     final res = await showEstimativaLoteDialog(
       context: context,
       calculoGlobal: _calculoGlobal,
+      nextNumero: _lotes.length + 1,
     );
     if (res != null) setState(() => _lotes.add(res));
   }
@@ -684,6 +765,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       context: context,
       estimativaTipo: 'item',
       calculoGlobal: _calculoGlobal,
+      nextNumero: _itens.length + 1,
     );
     if (res != null) setState(() => _itens.add(res));
   }
@@ -696,6 +778,104 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       calculoGlobal: _calculoGlobal,
     );
     if (res != null) setState(() => _itens[i] = res);
+  }
+
+  Future<void> _importarOrcamentoIa() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final path = result.files.single.path;
+    if (path == null) return;
+
+    final isLote = _tipoEstimativa == 'lote';
+
+    // Preparar lista de itens para o Gemini
+    final List<Map<String, dynamic>> itensEstimativa = [];
+    if (isLote) {
+      for (final lote in _lotes) {
+        for (final item in lote.itens) {
+          itensEstimativa.add({
+            'id': '${lote.numero}-${item.numero}',
+            'descricao': item.descricao,
+            'unidade': item.unidade,
+            'quantidade': item.quantidade,
+          });
+        }
+      }
+    } else {
+      for (final item in _itens) {
+        itensEstimativa.add({
+          'id': '${item.numero}',
+          'descricao': item.descricao,
+          'unidade': item.unidade,
+          'quantidade': item.quantidade,
+        });
+      }
+    }
+
+    if (!mounted) return;
+
+    final orcamentoResult = await showGeminiOrcamentoImportDialog(
+      context: context,
+      ref: ref,
+      pdfPath: path,
+      itensEstimativa: itensEstimativa,
+    );
+
+    if (orcamentoResult == null) return;
+
+    // Aplicar os resultados
+    setState(() {
+      if (isLote) {
+        for (int l = 0; l < _lotes.length; l++) {
+          final lote = _lotes[l];
+          final novosItens = <EstimativaItem>[];
+          for (final item in lote.itens) {
+            final val = orcamentoResult.itens['${lote.numero}-${item.numero}'];
+            if (val != null) {
+              final newOrcamento = EstimativaOrcamento(
+                razaoSocial: orcamentoResult.razaoSocial ?? '',
+                cnpj: orcamentoResult.cnpj ?? '',
+                data: orcamentoResult.data ?? '',
+                valorUnitario: val,
+              );
+              novosItens.add(
+                item.copyWith(orcamentos: [...item.orcamentos, newOrcamento]),
+              );
+            } else {
+              novosItens.add(item);
+            }
+          }
+          _lotes[l] = lote.copyWith(itens: novosItens);
+        }
+      } else {
+        for (int i = 0; i < _itens.length; i++) {
+          final item = _itens[i];
+          final val = orcamentoResult.itens['${item.numero}'];
+          if (val != null) {
+            final newOrcamento = EstimativaOrcamento(
+              razaoSocial: orcamentoResult.razaoSocial ?? '',
+              cnpj: orcamentoResult.cnpj ?? '',
+              data: orcamentoResult.data ?? '',
+              valorUnitario: val,
+            );
+            _itens[i] = item.copyWith(
+              orcamentos: [...item.orcamentos, newOrcamento],
+            );
+          }
+        }
+      }
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Orçamento importado com sucesso!')),
+      );
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
