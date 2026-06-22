@@ -7,14 +7,19 @@ import '../../../core/constants/template_constants.dart';
 import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../estimativa/models/estimativa_model.dart';
+import '../../estimativa/widgets/estimativa_import_dialog.dart';
 import '../csv/csv.dart';
 
 enum PortalType { bll, brConectado }
 
+enum ComplementoType { planilha, estimativa }
+
 /// Abre o diálogo de importação de CSV e retorna a lista de itens parseados,
 /// ou null se o usuário cancelou.
 Future<List<LicitacaoItemCsvModel>?> showPortalImportDialog(
-    BuildContext context) {
+  BuildContext context,
+) {
   return showAudespDialog<List<LicitacaoItemCsvModel>>(
     context: context,
     size: DialogSize.large,
@@ -31,6 +36,7 @@ class _PortalImportDialog extends StatefulWidget {
 
 class _PortalImportDialogState extends State<_PortalImportDialog> {
   PortalType _portal = PortalType.bll;
+  ComplementoType _complementoType = ComplementoType.planilha;
 
   PlatformFile? _bllClassificacao;
 
@@ -38,9 +44,19 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   PlatformFile? _brPropostas;
 
   PlatformFile? _complemento;
+  EstimativaModel? _estimativaSelecionada;
 
   bool _loading = false;
   String? _errorMessage;
+
+  Future<void> _pickEstimativa() async {
+    final est = await showEstimativaImportDialog(context);
+    if (est == null) return;
+    setState(() {
+      _estimativaSelecionada = est;
+      _errorMessage = null;
+    });
+  }
 
   Future<void> _pickFile(String fileKey) async {
     final result = await FilePicker.pickFiles(
@@ -99,18 +115,34 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
     // Validação antes de iniciar o trabalho pesado
     if (_portal == PortalType.bll) {
       if (_bllClassificacao?.bytes == null) {
-        setState(() => _errorMessage = 'Selecione o arquivo do portal BLL para importar.');
+        setState(
+          () => _errorMessage =
+              'Selecione o arquivo do portal BLL para importar.',
+        );
         return;
       }
     } else {
       if (_brRelatClassificacao?.bytes == null || _brPropostas?.bytes == null) {
-        setState(() => _errorMessage = 'Selecione os dois arquivos do portal BRConectado para importar.');
+        setState(
+          () => _errorMessage =
+              'Selecione os dois arquivos do portal BRConectado para importar.',
+        );
         return;
       }
     }
-    if (_complemento?.bytes == null) {
-      setState(() => _errorMessage = 'Selecione a planilha de itens complementar para importar.');
-      return;
+    if (_complementoType == ComplementoType.planilha) {
+      if (_complemento?.bytes == null) {
+        setState(
+          () => _errorMessage =
+              'Selecione a planilha complementar para importar.',
+        );
+        return;
+      }
+    } else {
+      if (_estimativaSelecionada == null) {
+        setState(() => _errorMessage = 'Selecione a estimativa para importar.');
+        return;
+      }
     }
 
     setState(() => _loading = true);
@@ -132,7 +164,91 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
       await Future.delayed(const Duration(milliseconds: 300));
       List<LicitacaoItemCsvModel> itens = parser.parse(csvFiles);
 
-      final complementoMap = const ComplementoCsvParser().parse(_complemento!.bytes!);
+      final Map<int, LicitacaoItemCsvModel> complementoMap;
+
+      if (_complementoType == ComplementoType.planilha) {
+        complementoMap = const ComplementoCsvParser().parse(
+          _complemento!.bytes!,
+        );
+      } else {
+        complementoMap = {};
+
+        int tipoOrcamentoBase = 2; // item
+        if (_estimativaSelecionada!.calculoGlobal == 'desc') {
+          tipoOrcamentoBase = 3; // maior desconto
+        } else if (_estimativaSelecionada!.tipoEstimativa == 'lote') {
+          tipoOrcamentoBase = 1; // lote
+        }
+
+        final tipoValorBase = tipoOrcamentoBase == 3 ? 'P' : 'M';
+        final tipoPropostaBase = tipoOrcamentoBase;
+        final calculoGlobal = _estimativaSelecionada!.calculoGlobal;
+
+        if (_estimativaSelecionada!.tipoEstimativa == 'lote') {
+          for (final lote in _estimativaSelecionada!.lotes) {
+            String dataOrcamento = DateTime.now().toIso8601String().substring(
+              0,
+              10,
+            );
+            final datas = lote.itens
+                .expand((i) => i.orcamentos)
+                .map((o) => o.data)
+                .toList();
+            if (datas.isNotEmpty) {
+              datas.sort();
+              dataOrcamento = datas.first;
+            }
+
+            complementoMap[lote.numero] = LicitacaoItemCsvModel(
+              numeroItem: lote.numero,
+              licitantes: const [],
+              tipoOrcamento: tipoOrcamentoBase,
+              valorEstimado: lote.itens.fold<double>(
+                0.0,
+                (sum, i) => sum + i.getValorTotal(calculoGlobal),
+              ),
+              dataOrcamento: dataOrcamento,
+              situacaoCompraItemId:
+                  1, // Em andamento / Classificado Padrão // TODO
+              dataSituacao: DateTime.now().toIso8601String().substring(
+                0,
+                10,
+              ), // TODO
+              tipoValor: tipoValorBase,
+              tipoProposta: tipoPropostaBase,
+            );
+          }
+        } else {
+          for (final item in _estimativaSelecionada!.itens) {
+            String dataOrcamento = DateTime.now().toIso8601String().substring(
+              0,
+              10,
+            );
+            final datas = item.orcamentos.map((o) => o.data).toList();
+            if (datas.isNotEmpty) {
+              datas.sort();
+              dataOrcamento = datas.first;
+            }
+
+            complementoMap[item.numero] = LicitacaoItemCsvModel(
+              numeroItem: item.numero,
+              licitantes: const [],
+              tipoOrcamento: tipoOrcamentoBase,
+              valorEstimado: item.getValorReferenciaUnitario(calculoGlobal),
+              dataOrcamento: dataOrcamento,
+              situacaoCompraItemId:
+                  1, // Em andamento / Classificado Padrão // TODO
+              dataSituacao: DateTime.now().toIso8601String().substring(
+                0,
+                10,
+              ), // TODO
+              tipoValor: tipoValorBase,
+              tipoProposta: tipoPropostaBase,
+            );
+          }
+        }
+      }
+
       itens = itens.map((item) {
         final extra = complementoMap[item.numeroItem];
         if (extra == null) return item;
@@ -151,7 +267,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
     } on CsvParseException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = 'Erro inesperado ao processar o arquivo: $e');
+      setState(
+        () => _errorMessage = 'Erro inesperado ao processar o arquivo: $e',
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -160,7 +278,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Importar do Portal'),
+      title: const Text('Importar Itens'),
       content: SizedBox(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -184,9 +302,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                 onSelectionChanged: _loading
                     ? null
                     : (s) => setState(() {
-                          _portal = s.first;
-                          _errorMessage = null;
-                        }),
+                        _portal = s.first;
+                        _errorMessage = null;
+                      }),
               ),
             ),
             const SizedBox(height: 24),
@@ -194,8 +312,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               _FilePickerRow(
                 label: 'Classificação com itens',
                 fileName: _bllClassificacao?.name,
-                onPick:
-                    _loading ? null : () => _pickFile(CsvFileKeys.bllClassificacao),
+                onPick: _loading
+                    ? null
+                    : () => _pickFile(CsvFileKeys.bllClassificacao),
               ),
             ] else ...[
               _FilePickerRow(
@@ -209,49 +328,82 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               _FilePickerRow(
                 label: 'Propostas',
                 fileName: _brPropostas?.name,
-                onPick:
-                    _loading ? null : () => _pickFile(CsvFileKeys.brPropostas),
+                onPick: _loading
+                    ? null
+                    : () => _pickFile(CsvFileKeys.brPropostas),
               ),
             ],
             const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _FilePickerRow(
-                    label: 'Planilha de Itens',
-                    fileName: _complemento?.name,
-                    onPick: _loading
-                        ? null
-                        : () => _pickFile(_complementoKey),
+            Center(
+              child: SegmentedButton<ComplementoType>(
+                segments: const [
+                  ButtonSegment(
+                    value: ComplementoType.planilha,
+                    label: Text('Planilha'),
+                    icon: Icon(Icons.upload_file_outlined),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: 'Baixar Template',
-                  child: IconButton.outlined(
-                    icon: const Icon(Icons.download_outlined, size: 18),
-                    onPressed: _loading ? null : _downloadTemplate,
+                  ButtonSegment(
+                    value: ComplementoType.estimativa,
+                    label: Text('Estimativa'),
+                    icon: Icon(Icons.calculate_outlined),
                   ),
-                ),
-              ],
+                ],
+                selected: {_complementoType},
+                onSelectionChanged: _loading
+                    ? null
+                    : (s) => setState(() {
+                        _complementoType = s.first;
+                        _errorMessage = null;
+                      }),
+              ),
             ),
+            const SizedBox(height: 24),
+            if (_complementoType == ComplementoType.planilha) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _FilePickerRow(
+                      label: 'Planilha Complementar',
+                      fileName: _complemento?.name,
+                      onPick: _loading
+                          ? null
+                          : () => _pickFile(_complementoKey),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'Baixar Template',
+                    child: IconButton.outlined(
+                      icon: const Icon(Icons.download_outlined, size: 18),
+                      onPressed: _loading ? null : _downloadTemplate,
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              _EstimativaPickerRow(
+                estimativa: _estimativaSelecionada,
+                onPick: _loading ? null : _pickEstimativa,
+              ),
+            ],
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.error),
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _errorMessage!,
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontSize: 13),
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -301,16 +453,65 @@ class _FilePickerRow extends StatelessWidget {
                 Text(
                   fileName!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 )
               else
                 Text(
                   'Nenhum arquivo selecionado',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton.icon(
+          icon: Icon(hasFile ? Icons.swap_horiz : Icons.attach_file, size: 16),
+          label: Text(hasFile ? 'Trocar' : 'Selecionar'),
+          onPressed: onPick,
+        ),
+      ],
+    );
+  }
+}
+
+class _EstimativaPickerRow extends StatelessWidget {
+  final EstimativaModel? estimativa;
+  final VoidCallback? onPick;
+
+  const _EstimativaPickerRow({required this.estimativa, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasEst = estimativa != null;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estimativa Base',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 2),
+              if (hasEst)
+                Text(
+                  'Estimativa ${estimativa!.numero}/${estimativa!.ano} - ${estimativa!.tipoEstimativa}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                )
+              else
+                Text(
+                  'Nenhuma estimativa selecionada',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),
@@ -318,10 +519,10 @@ class _FilePickerRow extends StatelessWidget {
         const SizedBox(width: 12),
         OutlinedButton.icon(
           icon: Icon(
-            hasFile ? Icons.swap_horiz : Icons.attach_file,
+            hasEst ? Icons.swap_horiz : Icons.calculate_outlined,
             size: 16,
           ),
-          label: Text(hasFile ? 'Trocar' : 'Selecionar'),
+          label: Text(hasEst ? 'Trocar' : 'Selecionar'),
           onPressed: onPick,
         ),
       ],

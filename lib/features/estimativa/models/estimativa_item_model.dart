@@ -12,6 +12,8 @@ class EstimativaItem {
   
   // Configurações e Dados
   // Configurações e Dados
+  final String materialOuServico; // 'M' ou 'S'
+  final int? itemCategoriaId;
   final bool exclusivoMeEpp; // Aplicável apenas quando a estimativa é "Por Item"
   final List<EstimativaOrcamento> orcamentos;
 
@@ -23,6 +25,8 @@ class EstimativaItem {
     this.tipoFornecimento = 'unica',
     this.quantidadeMeses = 1,
 
+    this.materialOuServico = 'M',
+    this.itemCategoriaId,
     this.exclusivoMeEpp = false,
     this.orcamentos = const [],
   });
@@ -35,7 +39,8 @@ class EstimativaItem {
       'quantidade': quantidade,
       'tipoFornecimento': tipoFornecimento,
       'quantidadeMeses': quantidadeMeses,
-
+      'materialOuServico': materialOuServico,
+      'itemCategoriaId': itemCategoriaId,
       'exclusivoMeEpp': exclusivoMeEpp,
       'orcamentos': orcamentos.map((x) => x.toMap()).toList(),
     };
@@ -49,7 +54,8 @@ class EstimativaItem {
       quantidade: (map['quantidade'] as num?)?.toDouble() ?? 0.0,
       tipoFornecimento: map['tipoFornecimento'] ?? 'unica',
       quantidadeMeses: map['quantidadeMeses']?.toInt() ?? 1,
-
+      materialOuServico: map['materialOuServico'] ?? 'M',
+      itemCategoriaId: map['itemCategoriaId']?.toInt(),
       exclusivoMeEpp: map['exclusivoMeEpp'] ?? false,
       orcamentos: List<EstimativaOrcamento>.from(
         (map['orcamentos'] as List<dynamic>? ?? []).map((x) => EstimativaOrcamento.fromMap(x)),
@@ -64,7 +70,8 @@ class EstimativaItem {
     double? quantidade,
     String? tipoFornecimento,
     int? quantidadeMeses,
-
+    String? materialOuServico,
+    int? itemCategoriaId,
     bool? exclusivoMeEpp,
     List<EstimativaOrcamento>? orcamentos,
   }) {
@@ -75,7 +82,8 @@ class EstimativaItem {
       quantidade: quantidade ?? this.quantidade,
       tipoFornecimento: tipoFornecimento ?? this.tipoFornecimento,
       quantidadeMeses: quantidadeMeses ?? this.quantidadeMeses,
-
+      materialOuServico: materialOuServico ?? this.materialOuServico,
+      itemCategoriaId: itemCategoriaId ?? this.itemCategoriaId,
       exclusivoMeEpp: exclusivoMeEpp ?? this.exclusivoMeEpp,
       orcamentos: orcamentos ?? this.orcamentos,
     );
@@ -109,6 +117,8 @@ class EstimativaItem {
       } else {
         return (valores[middle - 1] + valores[middle]) / 2.0;
       }
+    } else if (strategy == 'desc') {
+      return valores.reduce((a, b) => a > b ? a : b);
     }
     
     // Default to min

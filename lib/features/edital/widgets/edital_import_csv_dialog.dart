@@ -7,8 +7,12 @@ import '../../../core/constants/template_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../estimativa/models/estimativa_model.dart';
+import '../../estimativa/widgets/estimativa_import_dialog.dart';
 import '../csv/edital_csv.dart';
 import '../domain/edital_domain.dart';
+
+enum ImportSource { planilha, estimativa }
 
 /// Abre o diálogo de importação de itens do Edital via planilha CSV.
 ///
@@ -35,7 +39,9 @@ class _EditalImportCsvDialog extends StatefulWidget {
 }
 
 class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
+  ImportSource _source = ImportSource.planilha;
   PlatformFile? _csvFile;
+  EstimativaModel? _estimativaSelecionada;
   bool _loading = false;
   String? _errorMessage;
 
@@ -70,7 +76,9 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
     } on EditalCsvParseException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = 'Erro inesperado ao processar o arquivo: $e');
+      setState(
+        () => _errorMessage = 'Erro inesperado ao processar o arquivo: $e',
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -96,7 +104,9 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
         Process.run('xdg-open', [path]);
       }
     } catch (e) {
-      if (mounted) setState(() => _errorMessage = 'Erro ao salvar template: $e');
+      if (mounted) {
+        setState(() => _errorMessage = 'Erro ao salvar template: $e');
+      }
     }
   }
 
@@ -129,41 +139,141 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
     Navigator.of(context).pop(maps);
   }
 
+  Future<void> _pickEstimativa() async {
+    final est = await showEstimativaImportDialog(context);
+    if (est == null || !mounted) return;
+
+    setState(() {
+      _estimativaSelecionada = est;
+      _errorMessage = null;
+      _loading = true;
+    });
+
+    int deriveTipoBeneficio(bool exclusivoItem, String exclusividadeGlobal) {
+      if (exclusividadeGlobal == 'exclusiva') return 1; // Cota exclusiva
+      if (exclusividadeGlobal == 'reservada' && exclusivoItem) return 3; // Cota reservada
+      return 4; // Sem benefício
+    }
+
+    final List<EditalItemCsvModel> novosItens = [];
+
+    if (est.tipoEstimativa == 'lote') {
+      for (final lote in est.lotes) {
+        novosItens.add(EditalItemCsvModel(
+          numeroItem: lote.numero,
+          materialOuServico: lote.materialOuServico,
+          descricao: lote.descricao,
+          quantidade: lote.quantidade,
+          unidadeMedida: lote.unidade,
+          // Unitário do lote = soma do valor total dos itens do lote
+          valorUnitarioEstimado: lote.itens.fold<double>(0.0, (sum, i) => sum + i.getValorTotal(est.calculoGlobal)),
+          // Total é unitário * quantidade
+          valorTotal: lote.itens.fold<double>(0.0, (sum, i) => sum + i.getValorTotal(est.calculoGlobal)) * lote.quantidade,
+          criterioJulgamentoId: null,
+          tipoBeneficioId: deriveTipoBeneficio(lote.exclusivoMeEpp, est.exclusividadeMeEpp),
+          itemCategoriaId: lote.itemCategoriaId,
+        ));
+      }
+    } else {
+      for (final item in est.itens) {
+        novosItens.add(EditalItemCsvModel(
+          numeroItem: item.numero,
+          materialOuServico: item.materialOuServico,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          unidadeMedida: item.unidade,
+          valorUnitarioEstimado: item.getValorReferenciaUnitario(est.calculoGlobal),
+          valorTotal: item.getValorTotal(est.calculoGlobal),
+          criterioJulgamentoId: null,
+          tipoBeneficioId: deriveTipoBeneficio(item.exclusivoMeEpp, est.exclusividadeMeEpp),
+          itemCategoriaId: item.itemCategoriaId,
+        ));
+      }
+    }
+
+    if (novosItens.isEmpty) {
+      setState(() {
+        _errorMessage = 'A estimativa selecionada não possui itens.';
+        _loading = false;
+        _preview = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _preview = novosItens;
+      _loading = false;
+    });
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final preview = _preview;
-    final withValue = preview?.where((i) => i.valorUnitarioEstimado != null).length ?? 0;
+    final withValue =
+        preview?.where((i) => i.valorUnitarioEstimado != null).length ?? 0;
     final withoutValue = (preview?.length ?? 0) - withValue;
 
     return AlertDialog(
-      title: const Text('Importar Itens via Planilha'),
+      title: const Text('Importar Itens'),
       content: SizedBox(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Seletor de arquivo ───────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _FilePickerRow(
-                    label: 'Planilha de Itens do Edital',
-                    fileName: _csvFile?.name,
-                    onPick: _loading ? null : _pickFile,
+            Center(
+              child: SegmentedButton<ImportSource>(
+                segments: const [
+                  ButtonSegment(
+                    value: ImportSource.planilha,
+                    label: Text('Planilha'),
+                    icon: Icon(Icons.upload_file_outlined),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: 'Baixar Template',
-                  child: IconButton.outlined(
-                    icon: const Icon(Icons.download_outlined, size: 18),
-                    onPressed: _loading ? null : _downloadTemplate,
+                  ButtonSegment(
+                    value: ImportSource.estimativa,
+                    label: Text('Estimativa'),
+                    icon: Icon(Icons.calculate_outlined),
                   ),
-                ),
-              ],
+                ],
+                selected: {_source},
+                onSelectionChanged: _loading
+                    ? null
+                    : (s) => setState(() {
+                        _source = s.first;
+                        _errorMessage = null;
+                        _preview = null;
+                      }),
+              ),
             ),
+            const SizedBox(height: 24),
+            // ── Seletor ───────────────────────────────────────
+            if (_source == ImportSource.planilha) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _FilePickerRow(
+                      label: 'Planilha de Itens do Edital',
+                      fileName: _csvFile?.name,
+                      onPick: _loading ? null : _pickFile,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'Baixar Template',
+                    child: IconButton.outlined(
+                      icon: const Icon(Icons.download_outlined, size: 18),
+                      onPressed: _loading ? null : _downloadTemplate,
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              _EstimativaPickerRow(
+                estimativa: _estimativaSelecionada,
+                onPick: _loading ? null : _pickEstimativa,
+              ),
+            ],
 
             // ── Mensagem de erro ─────────────────────────────────────────
             if (_errorMessage != null) ...[
@@ -171,15 +281,19 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline,
-                      size: 16, color: Theme.of(context).colorScheme.error),
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _errorMessage!,
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontSize: 13),
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -204,9 +318,11 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.tertiary),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -214,8 +330,9 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
                         'serão importados com valor zerado para '
                         'preenchimento manual posterior.',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.tertiary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -226,9 +343,11 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.secondary),
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -299,26 +418,23 @@ class _FilePickerRow extends StatelessWidget {
                 Text(
                   fileName!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 )
               else
                 Text(
                   'Nenhum arquivo selecionado',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
-          icon: Icon(
-            hasFile ? Icons.swap_horiz : Icons.attach_file,
-            size: 16,
-          ),
+          icon: Icon(hasFile ? Icons.swap_horiz : Icons.attach_file, size: 16),
           label: Text(hasFile ? 'Trocar' : 'Selecionar'),
           onPressed: onPick,
         ),
@@ -395,9 +511,7 @@ class _Chip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(fontSize: 12, color: textColor),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: textColor)),
         ],
       ),
     );
@@ -460,20 +574,72 @@ class _PreviewTable extends StatelessWidget {
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.warning_amber_rounded,
-                            size: 14,
-                            color: Theme.of(context).colorScheme.tertiary),
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
                         const SizedBox(width: 4),
                         const Text('—'),
                       ],
                     )
-                  : Text(
-                      formatBRL(item.valorUnitarioEstimado),
-                    ),
+                  : Text(formatBRL(item.valorUnitarioEstimado)),
             ),
           ],
         );
       }).toList(),
+    );
+  }
+}
+
+class _EstimativaPickerRow extends StatelessWidget {
+  final EstimativaModel? estimativa;
+  final VoidCallback? onPick;
+
+  const _EstimativaPickerRow({required this.estimativa, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasEst = estimativa != null;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estimativa Base',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 2),
+              if (hasEst)
+                Text(
+                  'Estimativa ${estimativa!.numero}/${estimativa!.ano} - ${estimativa!.tipoEstimativa}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                )
+              else
+                Text(
+                  'Nenhuma estimativa selecionada',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton.icon(
+          icon: Icon(
+            hasEst ? Icons.swap_horiz : Icons.calculate_outlined,
+            size: 16,
+          ),
+          label: Text(hasEst ? 'Trocar' : 'Selecionar'),
+          onPressed: onPick,
+        ),
+      ],
     );
   }
 }

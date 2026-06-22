@@ -37,7 +37,6 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
   int? _tipoBeneficio;
   bool _incentivoBasico = false;
   bool _orcamentoSigiloso = false;
-  int? _criterioJulgamento;
   int? _itemCategoria;
 
   final _descCtrl = TextEditingController();
@@ -69,7 +68,6 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       _tipoBeneficio = ini['tipoBeneficioId'] as int?;
       _incentivoBasico = ini['incentivoProdutivoBasico'] as bool? ?? false;
       _orcamentoSigiloso = ini['orcamentoSigiloso'] as bool? ?? false;
-      _criterioJulgamento = ini['criterioJulgamentoId'] as int?;
       _itemCategoria = ini['itemCategoriaId'] as int?;
       _descCtrl.text = ini['descricao'] as String? ?? '';
       _qtdCtrl.text = doubleToBrString(ini['quantidade']);
@@ -115,7 +113,6 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
       'valorTotal': double.parse(
         parseBrCurrency(_valorTotalCtrl.text.trim()).toStringAsFixed(4),
       ),
-      'criterioJulgamentoId': _criterioJulgamento,
       'itemCategoriaId': _itemCategoria,
     };
     if (_patrimonioCtrl.text.trim().isNotEmpty) {
@@ -302,50 +299,23 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  // Critério de Julgamento
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      key: ValueKey('crit_$_criterioJulgamento'),
-                      initialValue: _criterioJulgamento,
-                      decoration: const InputDecoration(
-                        labelText: 'Critério de Julgamento *',
+              // Categoria do Item
+              DropdownButtonFormField<int>(
+                key: ValueKey('cat_$_itemCategoria'),
+                initialValue: _itemCategoria,
+                decoration: const InputDecoration(
+                  labelText: 'Categoria do Item *',
+                ),
+                items: kItemCategoria.entries
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value),
                       ),
-                      items: kCriterioJulgamento.entries
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _criterioJulgamento = v),
-                      validator: (v) => v == null ? 'Obrigatório' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Categoria do Item
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      key: ValueKey('cat_$_itemCategoria'),
-                      initialValue: _itemCategoria,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria do Item *',
-                      ),
-                      items: kItemCategoria.entries
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _itemCategoria = v),
-                      validator: (v) => v == null ? 'Obrigatório' : null,
-                    ),
-                  ),
-                ],
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _itemCategoria = v),
+                validator: (v) => v == null ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 12),
               // Patrimônio (opcional)

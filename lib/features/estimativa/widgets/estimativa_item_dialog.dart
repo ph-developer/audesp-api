@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../edital/domain/edital_domain.dart';
+
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_orcamento_model.dart';
 import 'estimativa_orcamento_dialog.dart';
@@ -38,6 +40,8 @@ class _ItemDialogState extends State<_ItemDialog> {
   final _quantidadeMesesCtrl = TextEditingController();
 
   String _tipoFornecimento = 'unica';
+  String _materialOuServico = 'M';
+  int? _itemCategoriaId;
   bool _exclusivoMeEpp = false;
 
   List<EstimativaOrcamento> _orcamentos = [];
@@ -52,6 +56,8 @@ class _ItemDialogState extends State<_ItemDialog> {
       _unidadeCtrl.text = i.unidade;
       _quantidadeCtrl.text = i.quantidade.toString();
       _tipoFornecimento = i.tipoFornecimento;
+      _materialOuServico = i.materialOuServico;
+      _itemCategoriaId = i.itemCategoriaId;
       _quantidadeMesesCtrl.text = i.quantidadeMeses.toString();
       _exclusivoMeEpp = i.exclusivoMeEpp;
       _orcamentos = List.from(i.orcamentos);
@@ -78,6 +84,8 @@ class _ItemDialogState extends State<_ItemDialog> {
       quantidade: double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ?? 0.0,
       tipoFornecimento: _tipoFornecimento,
       quantidadeMeses: int.tryParse(_quantidadeMesesCtrl.text.trim()) ?? 1,
+      materialOuServico: _materialOuServico,
+      itemCategoriaId: _itemCategoriaId,
       exclusivoMeEpp: _exclusivoMeEpp,
       orcamentos: _orcamentos,
     );
@@ -220,6 +228,43 @@ class _ItemDialogState extends State<_ItemDialog> {
                               ],
                             ),
 
+                            if (widget.estimativaTipo == 'item') ...[
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: DropdownButtonFormField<String>(
+                                      initialValue: _materialOuServico,
+                                      decoration: const InputDecoration(labelText: 'Material/Serviço *'),
+                                      items: const [
+                                        DropdownMenuItem(value: 'M', child: Text('Material')),
+                                        DropdownMenuItem(value: 'S', child: Text('Serviço')),
+                                      ],
+                                      onChanged: (v) {
+                                        if (v != null) setState(() => _materialOuServico = v);
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 2,
+                                    child: DropdownButtonFormField<int>(
+                                      initialValue: _itemCategoriaId,
+                                      decoration: const InputDecoration(labelText: 'Categoria do Item *'),
+                                      items: kItemCategoria.entries.map((e) => DropdownMenuItem(
+                                        value: e.key,
+                                        child: Text(e.value),
+                                      )).toList(),
+                                      onChanged: (v) {
+                                        if (v != null) setState(() => _itemCategoriaId = v);
+                                      },
+                                      validator: (v) => v == null ? 'Obrigatório' : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
 
                             const SizedBox(height: 16),
                             Card(

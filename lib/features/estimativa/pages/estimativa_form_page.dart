@@ -280,6 +280,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   ),
                   DropdownMenuItem(value: 'avg', child: Text('Média')),
                   DropdownMenuItem(value: 'median', child: Text('Mediana')),
+                  DropdownMenuItem(value: 'desc', child: Text('Maior Desconto')),
                 ],
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);

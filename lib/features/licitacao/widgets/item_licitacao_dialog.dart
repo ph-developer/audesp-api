@@ -57,6 +57,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
           : null;
       _dataSituacao = DateTime.tryParse(d['dataSituacaoItem'] as String? ?? '');
       _tipoValor = d['tipoValor'] as String?;
+      if (_tipoValor != null && !kTipoValor.containsKey(_tipoValor)) {
+        _tipoValor = 'M';
+      }
       _tipoProposta = d['tipoProposta'] != null
           ? (d['tipoProposta'] as num).toInt()
           : null;

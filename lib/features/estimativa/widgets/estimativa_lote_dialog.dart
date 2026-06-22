@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../../core/utils/currency_formatter.dart';
+
+import 'package:intl/intl.dart';
+
+import '../../edital/domain/edital_domain.dart';
 import '../models/estimativa_lote_model.dart';
 import '../models/estimativa_item_model.dart';
 import 'estimativa_item_dialog.dart';
-import 'package:intl/intl.dart';
 
 Future<EstimativaLote?> showEstimativaLoteDialog({
   required BuildContext context,
@@ -31,6 +36,10 @@ class _LoteDialogState extends State<_LoteDialog> {
 
   final _numeroCtrl = TextEditingController();
   final _descricaoCtrl = TextEditingController();
+  final _quantidadeCtrl = TextEditingController(text: '1.0');
+  final _unidadeCtrl = TextEditingController(text: 'UN');
+  String _materialOuServico = 'M';
+  int? _itemCategoriaId;
   bool _exclusivoMeEpp = false;
 
   List<EstimativaItem> _itens = [];
@@ -42,6 +51,10 @@ class _LoteDialogState extends State<_LoteDialog> {
       final l = widget.lote!;
       _numeroCtrl.text = l.numero.toString();
       _descricaoCtrl.text = l.descricao;
+      _quantidadeCtrl.text = doubleToBrString(l.quantidade);
+      _unidadeCtrl.text = l.unidade;
+      _materialOuServico = l.materialOuServico;
+      _itemCategoriaId = l.itemCategoriaId;
       _exclusivoMeEpp = l.exclusivoMeEpp;
       _itens = List.from(l.itens);
     }
@@ -51,6 +64,8 @@ class _LoteDialogState extends State<_LoteDialog> {
   void dispose() {
     _numeroCtrl.dispose();
     _descricaoCtrl.dispose();
+    _quantidadeCtrl.dispose();
+    _unidadeCtrl.dispose();
     super.dispose();
   }
 
@@ -60,6 +75,10 @@ class _LoteDialogState extends State<_LoteDialog> {
     final result = EstimativaLote(
       numero: int.tryParse(_numeroCtrl.text.trim()) ?? 0,
       descricao: _descricaoCtrl.text.trim(),
+      quantidade: double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ?? 1.0,
+      unidade: _unidadeCtrl.text.trim().toUpperCase(),
+      materialOuServico: _materialOuServico,
+      itemCategoriaId: _itemCategoriaId,
       exclusivoMeEpp: _exclusivoMeEpp,
       itens: _itens,
     );
@@ -141,6 +160,57 @@ class _LoteDialogState extends State<_LoteDialog> {
                             decoration: const InputDecoration(labelText: 'Descrição *'),
                             maxLines: 2,
                             validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: _quantidadeCtrl,
+                                  decoration: const InputDecoration(labelText: 'Quantidade *'),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                                  ],
+                                  validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                  controller: _unidadeCtrl,
+                                  decoration: const InputDecoration(labelText: 'Unidade *'),
+                                  textCapitalization: TextCapitalization.characters,
+                                  validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            initialValue: _materialOuServico,
+                            decoration: const InputDecoration(labelText: 'Material/Serviço *'),
+                            items: const [
+                              DropdownMenuItem(value: 'M', child: Text('Material')),
+                              DropdownMenuItem(value: 'S', child: Text('Serviço')),
+                            ],
+                            onChanged: (v) => setState(() => _materialOuServico = v!),
+                            validator: (v) => v == null ? 'Obrigatório' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<int>(
+                            initialValue: _itemCategoriaId,
+                            decoration: const InputDecoration(labelText: 'Categoria do Lote *'),
+                            items: kItemCategoria.entries.map((e) => DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            )).toList(),
+                            onChanged: (v) {
+                              if (v != null) setState(() => _itemCategoriaId = v);
+                            },
+                            validator: (v) => v == null ? 'Obrigatório' : null,
                           ),
 
                           const Spacer(),

@@ -22,7 +22,6 @@ import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../widgets/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
-import '../../estimativa/widgets/estimativa_import_dialog.dart';
 
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
@@ -59,6 +58,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   int? _tipoInstrumento;
   int? _modalidade;
   int? _modoDisputa;
+  int? _criterioJulgamentoId;
   final _numeroCompraCtrl = TextEditingController();
   final _anoCompraCtrl = TextEditingController();
   final _numeroProcessoCtrl = TextEditingController();
@@ -141,6 +141,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _tipoInstrumento = doc['tipoInstrumentoConvocatorioId'] as int?;
     _modalidade = doc['modalidadeId'] as int?;
     _modoDisputa = doc['modoDisputaId'] as int?;
+    _criterioJulgamentoId = doc['criterioJulgamentoId'] as int?;
     _numeroCompraCtrl.text = doc['numeroCompra'] as String? ?? '';
     _anoCompraCtrl.text = doc['anoCompra']?.toString() ?? '';
     _numeroProcessoCtrl.text = doc['numeroProcesso'] as String? ?? '';
@@ -186,6 +187,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'tipoInstrumentoConvocatorioId': _tipoInstrumento,
       'modalidadeId': _modalidade,
       'modoDisputaId': _modoDisputa,
+      'criterioJulgamentoId': _criterioJulgamentoId,
       'numeroCompra': _numeroCompraCtrl.text.trim(),
       'anoCompra': int.tryParse(_anoCompraCtrl.text.trim()) ?? 0,
       'numeroProcesso': _numeroProcessoCtrl.text.trim(),
@@ -874,6 +876,18 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
+        // Critério de Julgamento
+        DropdownButtonFormField<int>(
+          key: ValueKey('crit_$_criterioJulgamentoId'),
+          initialValue: _criterioJulgamentoId,
+          decoration: const InputDecoration(labelText: 'Critério de Julgamento *'),
+          items: kCriterioJulgamento.entries
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .toList(),
+          onChanged: readOnly ? null : (v) => setState(() => _criterioJulgamentoId = v),
+          validator: (v) => v == null ? 'Obrigatório' : null,
+        ),
+        const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1064,56 +1078,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
   }
 
-  Future<void> _importFromEstimativa() async {
-    final est = await showEstimativaImportDialog(context);
-    if (est == null || !mounted) return;
-
-    final baseItens = est.tipoEstimativa == 'lote'
-        ? est.lotes.expand((l) => l.itens).toList()
-        : est.itens;
-
-    if (baseItens.isEmpty) return;
-
-    final limpar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Substituir itens?'),
-        content: Text('Já existem ${_itens.length} itens. Deseja substituí-los pelos itens da estimativa?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Adicionar aos existentes')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Substituir')),
-        ],
-      ),
-    );
-
-    if (limpar == null) return;
-
-    final novosItens = baseItens.map((item) {
-      return <String, dynamic>{
-        'numeroItem': item.numero,
-        'materialOuServico': 'M',
-        'descricao': item.descricao,
-        'quantidade': item.quantidade,
-        'unidadeMedida': item.unidade,
-        'orcamentoSigiloso': false,
-        'valorUnitarioEstimado': item.getValorReferenciaUnitario(est.calculoGlobal),
-        'valorTotal': item.getValorTotal(est.calculoGlobal),
-      };
-    }).toList();
-
-    setState(() {
-      if (limpar) {
-        _itens = novosItens;
-      } else {
-        _itens.addAll(novosItens);
-      }
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${novosItens.length} itens importados da estimativa.')));
-    }
-  }
-
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
   Widget _buildItensSection(bool readOnly) {
@@ -1122,15 +1086,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       titleActions: [
         if (!readOnly) ...[
           TextButton.icon(
-            onPressed: _importFromEstimativa,
-            icon: const Icon(Icons.calculate_outlined),
-            label: const Text('Importar da Estimativa'),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
             onPressed: _importItemsFromCsv,
-            icon: const Icon(Icons.upload_file_outlined),
-            label: const Text('Importar via Planilha'),
+            icon: const Icon(Icons.download),
+            label: const Text('Importar'),
           ),
           const SizedBox(width: 8),
           TextButton.icon(
