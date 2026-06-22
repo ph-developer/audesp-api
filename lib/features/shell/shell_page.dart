@@ -34,7 +34,7 @@ class ShellPage extends ConsumerWidget {
     (icon: Icons.gavel_outlined, activeIcon: Icons.gavel, label: 'Licitação', route: '/licitacao', perm: AppPermissions.licitacao),
     (icon: Icons.assignment_outlined, activeIcon: Icons.assignment, label: 'Ata', route: '/ata', perm: AppPermissions.ata),
     (icon: Icons.handshake_outlined, activeIcon: Icons.handshake, label: 'Ajuste', route: '/ajuste', perm: AppPermissions.ajuste),
-    (icon: Icons.calculate_outlined, activeIcon: Icons.calculate, label: 'Estimativa', route: '/estimativa', perm: AppPermissions.none),
+    (icon: Icons.calculate_outlined, activeIcon: Icons.calculate, label: 'Estimativa', route: '/estimativa', perm: AppPermissions.estimativa),
     (icon: Icons.history_outlined, activeIcon: Icons.history, label: 'Logs', route: '/logs', perm: AppPermissions.none),
   ];
 

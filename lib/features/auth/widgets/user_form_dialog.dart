@@ -35,6 +35,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
   bool _permLicitacao = false;
   bool _permAta = false;
   bool _permAjuste = false;
+  bool _permEstimativa = false;
 
   bool get _isEdit => widget.user != null;
 
@@ -50,6 +51,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
       _permLicitacao = widget.user!.hasPermission(AppPermissions.licitacao);
       _permAta = widget.user!.hasPermission(AppPermissions.ata);
       _permAjuste = widget.user!.hasPermission(AppPermissions.ajuste);
+      _permEstimativa = widget.user!.hasPermission(AppPermissions.estimativa);
     }
   }
 
@@ -59,6 +61,7 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     if (_permLicitacao) p |= AppPermissions.licitacao;
     if (_permAta) p |= AppPermissions.ata;
     if (_permAjuste) p |= AppPermissions.ajuste;
+    if (_permEstimativa) p |= AppPermissions.estimativa;
     return p;
   }
 
@@ -190,6 +193,12 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                     value: _permAjuste,
                     dense: true,
                     onChanged: (v) => setState(() => _permAjuste = v ?? false),
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Estimativa'),
+                    value: _permEstimativa,
+                    dense: true,
+                    onChanged: (v) => setState(() => _permEstimativa = v ?? false),
                   ),
                 ],
               ],

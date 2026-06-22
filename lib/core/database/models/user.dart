@@ -4,6 +4,7 @@ class AppPermissions {
   static const int licitacao = 2;
   static const int ata = 4;
   static const int ajuste = 8;
+  static const int estimativa = 16;
 }
 
 class User {
