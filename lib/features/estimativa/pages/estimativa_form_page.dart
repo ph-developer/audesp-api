@@ -34,6 +34,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Cabeçalho ────────────────────────────────────────────────────────────
   final _objetoCtrl = TextEditingController();
   String _tipoEstimativa = 'item'; // 'item' ou 'lote'
+  final _tipoEstimativaKey = GlobalKey<FormFieldState<String>>();
   String _calculoGlobal = 'min'; // 'min', 'avg', 'median'
 
   // ── Textos PDF (Agora Automáticos) ──────────────────────────────────────
@@ -221,6 +222,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
+                key: _tipoEstimativaKey,
                 initialValue: _tipoEstimativa,
                 decoration: const InputDecoration(
                   labelText: 'Tipo de Estimativa *',
@@ -229,8 +231,38 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   DropdownMenuItem(value: 'item', child: Text('Por Item')),
                   DropdownMenuItem(value: 'lote', child: Text('Por Lote')),
                 ],
-                onChanged: (v) {
-                  if (v != null) setState(() => _tipoEstimativa = v);
+                onChanged: (v) async {
+                  if (v != null && v != _tipoEstimativa) {
+                    if (_itens.isNotEmpty || _lotes.isNotEmpty) {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Alterar Tipo de Estimativa?'),
+                          content: const Text(
+                              'Ao alterar o tipo de estimativa, todos os itens e lotes já adicionados serão apagados. Deseja continuar?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Confirmar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true) {
+                        _tipoEstimativaKey.currentState?.reset();
+                        return;
+                      }
+                    }
+                    setState(() {
+                      _tipoEstimativa = v;
+                      _itens.clear();
+                      _lotes.clear();
+                    });
+                  }
                 },
               ),
             ),
@@ -347,60 +379,65 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
             DropdownMenuItem(
               value: 'reservada',
-              child: Text('Itens reservados para ME/EPP (Art. 48, III)'),
+              child: Text('Itens/Lotes reservados para ME/EPP (Art. 48, III)'),
             ),
           ],
           onChanged: (v) =>
               setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'Fontes de Recurso/Aplicação',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _fonteRecursoInputCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nova Fonte (ex: xx/xxxxx)',
-                  border: OutlineInputBorder(),
-                ),
-                onFieldSubmitted: (v) {
-                  if (v.trim().isNotEmpty) {
-                    setState(() {
-                      _fontesRecurso.add(v.trim());
-                      _fonteRecursoInputCtrl.clear();
-                    });
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.add_circle, color: Colors.green, size: 36),
+      ],
+    );
+  }
+
+  Widget _buildFontesRecursoSection() {
+    return SectionCard(
+      title: 'Fontes de Recurso/Aplicação',
+      children: [
+        TextFormField(
+          controller: _fonteRecursoInputCtrl,
+          decoration: InputDecoration(
+            labelText: 'Nova Fonte (ex: xx/xxxxx)',
+            suffixIcon: IconButton(
               onPressed: () {
                 final v = _fonteRecursoInputCtrl.text.trim();
-                if (v.isNotEmpty) {
+                if (v.isNotEmpty && !_fontesRecurso.contains(v)) {
                   setState(() {
                     _fontesRecurso.add(v);
                     _fonteRecursoInputCtrl.clear();
                   });
                 }
               },
+              icon: const Icon(Icons.add),
+              tooltip: 'Adicionar',
+              iconSize: 18,
             ),
-          ],
+          ),
+          onFieldSubmitted: (v) {
+            if (v.trim().isNotEmpty && !_fontesRecurso.contains(v.trim())) {
+              setState(() {
+                _fontesRecurso.add(v.trim());
+                _fonteRecursoInputCtrl.clear();
+              });
+            }
+          },
         ),
-        if (_fontesRecurso.isNotEmpty) ...[
+        if (_fontesRecurso.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Nenhuma fonte adicionada.',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+          )
+        else ...[
           const SizedBox(height: 8),
           Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
+            spacing: 8,
+            runSpacing: 4,
             children: _fontesRecurso.map((fonte) {
               return Chip(
                 label: Text(fonte),
+                deleteIcon: const Icon(Icons.close, size: 16),
                 onDeleted: () {
                   setState(() {
                     _fontesRecurso.remove(fonte);
@@ -420,23 +457,22 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     return SectionCard(
       title: isLote ? 'Lotes da Estimativa' : 'Itens da Estimativa',
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              isLote
-                  ? 'Adicione os lotes (e dentro de cada lote, seus respectivos itens).'
-                  : 'Adicione os itens que farão parte desta estimativa.',
-            ),
-            TextButton.icon(
-              onPressed: isLote ? _addLote : _addItem,
-              icon: const Icon(Icons.add),
-              label: Text(isLote ? 'Adicionar Lote' : 'Adicionar Item'),
-            ),
-          ],
+      titleActions: [
+        if (_exclusividadeMeEpp == 'reservada') ...[
+          TextButton.icon(
+            onPressed: _showExclusividadeDialog,
+            icon: const Icon(Icons.checklist),
+            label: const Text('Selecionar Exclusivos'),
+          ),
+          const SizedBox(width: 8),
+        ],
+        TextButton.icon(
+          onPressed: isLote ? _addLote : _addItem,
+          icon: const Icon(Icons.add),
+          label: Text(isLote ? 'Adicionar Lote' : 'Adicionar Item'),
         ),
-        const SizedBox(height: 16),
+      ],
+      children: [
         if (isLote) ...[
           if (_lotes.isEmpty)
             const Center(
@@ -453,31 +489,33 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               itemBuilder: (ctx, i) {
                 final lote = _lotes[i];
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: ListTile(
-                    title: Text('Lote ${lote.numero} - ${lote.descricao}'),
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 14,
+                      child: Text('${lote.numero}', style: const TextStyle(fontSize: 12)),
+                    ),
+                    title: Text(
+                      lote.descricao,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       '${lote.itens.length} itens | Total do Lote: ${fmt.format(lote.getValorTotal(_calculoGlobal))}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (lote.exclusivoMeEpp)
-                          const Tooltip(
-                            message: 'Lote Exclusivo ME/EPP',
-                            child: Icon(
-                              Icons.verified,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                          ),
                         IconButton(
                           icon: const Icon(Icons.edit, size: 18),
                           onPressed: () => _editLote(i),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, size: 18),
-                          color: Colors.red,
                           onPressed: () => setState(() => _lotes.removeAt(i)),
                         ),
                       ],
@@ -503,13 +541,25 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 final item = _itens[i];
                 final isMensal = item.tipoFornecimento == 'mensal';
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: ListTile(
-                    title: Text('Item ${item.numero} - ${item.descricao}'),
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 14,
+                      child: Text('${item.numero}', style: const TextStyle(fontSize: 12)),
+                    ),
+                    title: Text(
+                      item.descricao,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       '${item.quantidade} ${item.unidade} | '
                       '${isMensal ? "Mensal (${item.quantidadeMeses}m)" : "Única"} | '
                       'Total: ${fmt.format(item.getValorTotal(_calculoGlobal))}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -520,16 +570,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                             child: Icon(
                               Icons.warning_amber,
                               color: Colors.amber,
-                              size: 20,
-                            ),
-                          ),
-                        if (item.exclusivoMeEpp)
-                          const Tooltip(
-                            message: 'Item Exclusivo ME/EPP',
-                            child: Icon(
-                              Icons.verified,
-                              color: Colors.green,
-                              size: 20,
+                              size: 18,
                             ),
                           ),
                         IconButton(
@@ -538,7 +579,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, size: 18),
-                          color: Colors.red,
                           onPressed: () => setState(() => _itens.removeAt(i)),
                         ),
                       ],
@@ -549,6 +589,75 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
         ],
       ],
+    );
+  }
+
+  Future<void> _showExclusividadeDialog() async {
+    final isLote = _tipoEstimativa == 'lote';
+    
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: Text('Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos'),
+              content: SizedBox(
+                width: 400,
+                child: isLote
+                    ? _lotes.isEmpty
+                        ? const Text('Nenhum lote adicionado.')
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _lotes.length,
+                            itemBuilder: (context, index) {
+                              final lote = _lotes[index];
+                              return CheckboxListTile(
+                                title: Text('Lote ${lote.numero} - ${lote.descricao}'),
+                                value: lote.exclusivoMeEpp,
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    _lotes[index] = lote.copyWith(exclusivoMeEpp: v ?? false);
+                                  });
+                                  setState(() {
+                                    _lotes[index] = _lotes[index].copyWith(exclusivoMeEpp: v ?? false);
+                                  });
+                                },
+                              );
+                            },
+                          )
+                    : _itens.isEmpty
+                        ? const Text('Nenhum item adicionado.')
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _itens.length,
+                            itemBuilder: (context, index) {
+                              final item = _itens[index];
+                              return CheckboxListTile(
+                                title: Text('Item ${item.numero} - ${item.descricao}'),
+                                value: item.exclusivoMeEpp,
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    _itens[index] = item.copyWith(exclusivoMeEpp: v ?? false);
+                                  });
+                                  setState(() {
+                                    _itens[index] = _itens[index].copyWith(exclusivoMeEpp: v ?? false);
+                                  });
+                                },
+                              );
+                            },
+                          ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Concluído'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -636,6 +745,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildCabecalho(),
+              const SizedBox(height: 16),
+              _buildFontesRecursoSection(),
               const SizedBox(height: 16),
               _buildItensOuLotesSection(),
             ],

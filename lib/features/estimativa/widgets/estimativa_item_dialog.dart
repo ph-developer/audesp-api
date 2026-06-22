@@ -220,16 +220,7 @@ class _ItemDialogState extends State<_ItemDialog> {
                               ],
                             ),
 
-                            if (widget.estimativaTipo == 'item') ...[
-                              const SizedBox(height: 12),
-                              CheckboxListTile(
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity: ListTileControlAffinity.leading,
-                                title: const Text('Exclusivo ME/EPP'),
-                                value: _exclusivoMeEpp,
-                                onChanged: (v) => setState(() => _exclusivoMeEpp = v ?? false),
-                              ),
-                            ],
+
                             const SizedBox(height: 16),
                             Card(
                               color: Theme.of(context).colorScheme.primaryContainer,

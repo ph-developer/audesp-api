@@ -142,14 +142,7 @@ class _LoteDialogState extends State<_LoteDialog> {
                             maxLines: 2,
                             validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
                           ),
-                          const SizedBox(height: 12),
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            title: const Text('Exclusivo ME/EPP'),
-                            value: _exclusivoMeEpp,
-                            onChanged: (v) => setState(() => _exclusivoMeEpp = v ?? false),
-                          ),
+
                           const Spacer(),
                           Card(
                             color: Theme.of(context).colorScheme.primaryContainer,

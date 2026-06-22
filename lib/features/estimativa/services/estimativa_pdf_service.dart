@@ -91,7 +91,11 @@ class EstimativaPdfService {
             if (estimativa.tipoEstimativa == 'lote')
               ..._buildLotes(estimativa)
             else
-              ..._buildItens(estimativa.itens, estimativa.calculoGlobal),
+              ..._buildItens(
+                estimativa.itens, 
+                estimativa.calculoGlobal,
+                exclusividadeGlobal: estimativa.exclusividadeMeEpp,
+              ),
 
             pw.SizedBox(height: 20),
             pw.Divider(),
@@ -225,10 +229,10 @@ class EstimativaPdfService {
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-              if (lote.exclusivoMeEpp) ...[
+              if (estimativa.exclusividadeMeEpp == 'exclusiva' || (lote.exclusivoMeEpp && estimativa.exclusividadeMeEpp == 'reservada')) ...[
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  '(Exclusivo ME/EPP)',
+                  estimativa.exclusividadeMeEpp == 'exclusiva' ? '(Exclusivo ME/EPP)' : '(Reservado ME/EPP)',
                   style: pw.TextStyle(color: PdfColors.green700, fontSize: 10),
                 ),
               ],
@@ -237,6 +241,7 @@ class EstimativaPdfService {
                 lote.itens,
                 estimativa.calculoGlobal,
                 isInsideLote: true,
+                exclusividadeGlobal: estimativa.exclusividadeMeEpp,
               ),
               pw.SizedBox(height: 10),
               pw.Align(
@@ -258,6 +263,7 @@ class EstimativaPdfService {
     List<EstimativaItem> itens,
     String globalCalculo, {
     bool isInsideLote = false,
+    String exclusividadeGlobal = 'nenhuma',
   }) {
     final widgets = <pw.Widget>[];
 
@@ -291,9 +297,9 @@ class EstimativaPdfService {
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ),
-                  if (item.exclusivoMeEpp && !isInsideLote)
+                  if (!isInsideLote && (exclusividadeGlobal == 'exclusiva' || (item.exclusivoMeEpp && exclusividadeGlobal == 'reservada')))
                     pw.Text(
-                      '(Exclusivo ME/EPP)',
+                      exclusividadeGlobal == 'exclusiva' ? '(Exclusivo ME/EPP)' : '(Reservado ME/EPP)',
                       style: pw.TextStyle(
                         color: PdfColors.green700,
                         fontSize: 10,
