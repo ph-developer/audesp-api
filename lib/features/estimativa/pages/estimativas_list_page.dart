@@ -11,7 +11,8 @@ class EstimativasListPage extends ConsumerStatefulWidget {
   const EstimativasListPage({super.key});
 
   @override
-  ConsumerState<EstimativasListPage> createState() => _EstimativasListPageState();
+  ConsumerState<EstimativasListPage> createState() =>
+      _EstimativasListPageState();
 }
 
 class _EstimativasListPageState extends ConsumerState<EstimativasListPage> {
@@ -58,7 +59,7 @@ class _EstimativaList extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.request_quote_outlined,
+                  Icons.calculate_outlined,
                   size: 64,
                   color: Theme.of(context).colorScheme.outlineVariant,
                 ),
@@ -74,7 +75,8 @@ class _EstimativaList extends ConsumerWidget {
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: estimativas.length,
-          itemBuilder: (context, i) => _EstimativaCard(estimativa: estimativas[i]),
+          itemBuilder: (context, i) =>
+              _EstimativaCard(estimativa: estimativas[i]),
         );
       },
     );
@@ -89,9 +91,14 @@ class _EstimativaCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final fmt = DateFormat('dd/MM/yyyy HH:mm');
-    
-    final updateDate = DateTime.fromMillisecondsSinceEpoch(estimativa.updatedAt * 1000);
-    final valorTotalFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(estimativa.valorTotalGlobal);
+
+    final updateDate = DateTime.fromMillisecondsSinceEpoch(
+      estimativa.updatedAt * 1000,
+    );
+    final valorTotalFmt = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    ).format(estimativa.valorTotalGlobal);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -118,8 +125,8 @@ class _EstimativaCard extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withAlpha(140),
-                    ),
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(140),
+                ),
               ),
             ],
             const SizedBox(height: 4),
@@ -146,7 +153,10 @@ class _EstimativaCard extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             IconButton(
-              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
               tooltip: 'Excluir',
               onPressed: () => _confirmDelete(context, ref),
             ),
@@ -168,7 +178,8 @@ class _EstimativaCard extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir Estimativa'),
         content: Text(
-            'Deseja excluir a Estimativa ${estimativa.numero}/${estimativa.ano}? Esta ação não pode ser desfeita.'),
+          'Deseja excluir a Estimativa ${estimativa.numero}/${estimativa.ano}? Esta ação não pode ser desfeita.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
