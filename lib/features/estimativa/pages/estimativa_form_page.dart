@@ -11,6 +11,7 @@ import '../models/estimativa_lote_model.dart';
 import '../models/estimativa_orcamento_model.dart';
 import '../widgets/estimativa_item_dialog.dart';
 import '../widgets/estimativa_lote_dialog.dart';
+import '../widgets/estimativa_matriz_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
@@ -476,6 +477,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         ],
         if (_itens.isNotEmpty || _lotes.any((l) => l.itens.isNotEmpty)) ...[
           TextButton.icon(
+            onPressed: _showMatrizDialog,
+            icon: const Icon(Icons.table_chart),
+            label: const Text('Matriz de Valores'),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
             onPressed: _importarOrcamentoIa,
             icon: const Icon(Icons.auto_fix_high),
             label: const Text('Importar Orçamento via IA'),
@@ -778,6 +785,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       calculoGlobal: _calculoGlobal,
     );
     if (res != null) setState(() => _itens[i] = res);
+  }
+
+  Future<void> _showMatrizDialog() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => EstimativaMatrizDialog(
+        tipoEstimativa: _tipoEstimativa,
+        lotes: _lotes,
+        itens: _itens,
+      ),
+    );
   }
 
   Future<void> _importarOrcamentoIa() async {
