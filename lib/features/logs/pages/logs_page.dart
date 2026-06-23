@@ -235,14 +235,14 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Erros Retornados'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
               itemCount: erros.length,
-              itemBuilder: (ctx, i) {
+              itemBuilder: (itemCtx, i) {
                 final erro = erros[i];
                 return ListTile(
                   title: Text(erro['mensagem']?.toString() ?? 'Erro'),
@@ -255,7 +255,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Fechar'),
             ),
           ],
