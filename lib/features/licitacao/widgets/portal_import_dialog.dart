@@ -192,7 +192,10 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
             );
             final datas = lote.itens
                 .expand((i) => i.orcamentos)
-                .map((o) => o.data)
+                .map((o) => _estimativaSelecionada!.fornecedores
+                    .where((f) => f.id == o.fornecedorId)
+                    .firstOrNull?.data ?? '')
+                .where((d) => d.isNotEmpty)
                 .toList();
             if (datas.isNotEmpty) {
               datas.sort();
@@ -224,7 +227,12 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               0,
               10,
             );
-            final datas = item.orcamentos.map((o) => o.data).toList();
+            final datas = item.orcamentos
+                .map((o) => _estimativaSelecionada!.fornecedores
+                    .where((f) => f.id == o.fornecedorId)
+                    .firstOrNull?.data ?? '')
+                .where((d) => d.isNotEmpty)
+                .toList();
             if (datas.isNotEmpty) {
               datas.sort();
               dataOrcamento = datas.first;

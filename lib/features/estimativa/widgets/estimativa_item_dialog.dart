@@ -5,7 +5,6 @@ import '../../edital/domain/edital_domain.dart';
 
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_orcamento_model.dart';
-import 'estimativa_orcamento_dialog.dart';
 
 Future<EstimativaItem?> showEstimativaItemDialog({
   required BuildContext context,
@@ -97,24 +96,6 @@ class _ItemDialogState extends State<_ItemDialog> {
     Navigator.pop(context, result);
   }
 
-  Future<void> _addOrcamento() async {
-    final res = await showEstimativaOrcamentoDialog(context: context);
-    if (res != null) {
-      setState(() {
-        _orcamentos.add(res);
-      });
-    }
-  }
-
-  Future<void> _editOrcamento(int index) async {
-    final res = await showEstimativaOrcamentoDialog(context: context, orcamento: _orcamentos[index]);
-    if (res != null) {
-      setState(() {
-        _orcamentos[index] = res;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isMensal = _tipoFornecimento == 'mensal';
@@ -133,7 +114,7 @@ class _ItemDialogState extends State<_ItemDialog> {
 
     return Dialog(
       child: Container(
-        width: 800,
+        width: 500,
         height: 600,
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -144,236 +125,162 @@ class _ItemDialogState extends State<_ItemDialog> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Lado Esquerdo: Formulário
-                  Expanded(
-                    flex: 1,
-                    child: Form(
-                      key: _formKey,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: TextFormField(
-                                    controller: _numeroCtrl,
-                                    decoration: const InputDecoration(labelText: 'Item Nº'),
-                                    readOnly: true,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 3,
-                                  child: TextFormField(
-                                    controller: _descricaoCtrl,
-                                    decoration: const InputDecoration(labelText: 'Descrição *'),
-                                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                                  ),
-                                ),
-                              ],
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: TextFormField(
+                              controller: _numeroCtrl,
+                              decoration: const InputDecoration(labelText: 'Item Nº'),
+                              readOnly: true,
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _unidadeCtrl,
-                                    decoration: const InputDecoration(labelText: 'Unidade *', hintText: 'UN, M2, KG...'),
-                                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue: _tipoFornecimento,
-                                    decoration: const InputDecoration(labelText: 'Fornecimento *'),
-                                    items: const [
-                                      DropdownMenuItem(value: 'unica', child: Text('Compra Única')),
-                                      DropdownMenuItem(value: 'mensal', child: Text('Mensal')),
-                                    ],
-                                    onChanged: (v) {
-                                      if (v != null) setState(() => _tipoFornecimento = v);
-                                    },
-                                  ),
-                                ),
-                              ],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: _descricaoCtrl,
+                              decoration: const InputDecoration(labelText: 'Descrição *'),
+                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _quantidadeCtrl,
-                                    decoration: InputDecoration(
-                                      labelText: isMensal ? 'Qtd (Mensal) *' : 'Quantidade *',
-                                    ),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    onChanged: (_) => setState((){}),
-                                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _quantidadeMesesCtrl,
-                                    enabled: isMensal,
-                                    decoration: const InputDecoration(labelText: 'Meses *'),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (_) => setState((){}),
-                                    validator: (v) => (isMensal && (v == null || v.isEmpty)) ? 'Obrigatório' : null,
-                                  ),
-                                ),
-                              ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _unidadeCtrl,
+                              decoration: const InputDecoration(labelText: 'Unidade *', hintText: 'UN, M2, KG...'),
+                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _tipoFornecimento,
+                              decoration: const InputDecoration(labelText: 'Fornecimento *'),
+                              items: const [
+                                DropdownMenuItem(value: 'unica', child: Text('Compra Única')),
+                                DropdownMenuItem(value: 'mensal', child: Text('Mensal')),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) setState(() => _tipoFornecimento = v);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _quantidadeCtrl,
+                              decoration: InputDecoration(
+                                labelText: isMensal ? 'Qtd (Mensal) *' : 'Quantidade *',
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (_) => setState((){}),
+                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _quantidadeMesesCtrl,
+                              enabled: isMensal,
+                              decoration: const InputDecoration(labelText: 'Meses *'),
+                              keyboardType: TextInputType.number,
+                              onChanged: (_) => setState((){}),
+                              validator: (v) => (isMensal && (v == null || v.isEmpty)) ? 'Obrigatório' : null,
+                            ),
+                          ),
+                        ],
+                      ),
 
-                            if (widget.estimativaTipo == 'item') ...[
-                              const SizedBox(height: 12),
+                      if (widget.estimativaTipo == 'item') ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _materialOuServico,
+                                decoration: const InputDecoration(labelText: 'Material/Serviço *'),
+                                items: const [
+                                  DropdownMenuItem(value: 'M', child: Text('Material')),
+                                  DropdownMenuItem(value: 'S', child: Text('Serviço')),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) setState(() => _materialOuServico = v);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 2,
+                              child: DropdownButtonFormField<int>(
+                                initialValue: _itemCategoriaId,
+                                decoration: const InputDecoration(labelText: 'Categoria do Item *'),
+                                items: kItemCategoria.entries.map((e) => DropdownMenuItem(
+                                  value: e.key,
+                                  child: Text(e.value),
+                                )).toList(),
+                                onChanged: (v) {
+                                  if (v != null) setState(() => _itemCategoriaId = v);
+                                },
+                                validator: (v) => v == null ? 'Obrigatório' : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+                      Card(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    flex: 1,
-                                    child: DropdownButtonFormField<String>(
-                                      initialValue: _materialOuServico,
-                                      decoration: const InputDecoration(labelText: 'Material/Serviço *'),
-                                      items: const [
-                                        DropdownMenuItem(value: 'M', child: Text('Material')),
-                                        DropdownMenuItem(value: 'S', child: Text('Serviço')),
-                                      ],
-                                      onChanged: (v) {
-                                        if (v != null) setState(() => _materialOuServico = v);
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    flex: 2,
-                                    child: DropdownButtonFormField<int>(
-                                      initialValue: _itemCategoriaId,
-                                      decoration: const InputDecoration(labelText: 'Categoria do Item *'),
-                                      items: kItemCategoria.entries.map((e) => DropdownMenuItem(
-                                        value: e.key,
-                                        child: Text(e.value),
-                                      )).toList(),
-                                      onChanged: (v) {
-                                        if (v != null) setState(() => _itemCategoriaId = v);
-                                      },
-                                      validator: (v) => v == null ? 'Obrigatório' : null,
-                                    ),
-                                  ),
+                                  const Text('V. Referência Unitário:'),
+                                  Text(fmt.format(dummyItem.getValorReferenciaUnitario(widget.calculoGlobal))),
+                                ],
+                              ),
+                              if (isMensal)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('V. Referência Mensal:'),
+                                    Text(fmt.format(dummyItem.getValorMensal(widget.calculoGlobal))),
+                                  ],
+                                ),
+                              const Divider(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('V. Referência TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(fmt.format(dummyItem.getValorTotal(widget.calculoGlobal)), style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ],
-
-                            const SizedBox(height: 16),
-                            Card(
-                              color: Theme.of(context).colorScheme.primaryContainer,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('V. Referência Unitário:'),
-                                        Text(fmt.format(dummyItem.getValorReferenciaUnitario(widget.calculoGlobal))),
-                                      ],
-                                    ),
-                                    if (isMensal)
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text('V. Referência Mensal:'),
-                                          Text(fmt.format(dummyItem.getValorMensal(widget.calculoGlobal))),
-                                        ],
-                                      ),
-                                    const Divider(),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('V. Referência TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                        Text(fmt.format(dummyItem.getValorTotal(widget.calculoGlobal)), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 24),
-                  // Lado Direito: Orçamentos
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Orçamentos', style: Theme.of(context).textTheme.titleMedium),
-                            TextButton.icon(
-                              onPressed: _addOrcamento,
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Adicionar'),
-                            ),
-                          ],
-                        ),
-                        if (_orcamentos.length < 3)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            color: Colors.amber.shade100,
-                            child: const Row(
-                              children: [
-                                Icon(Icons.warning_amber, color: Colors.amber, size: 20),
-                                SizedBox(width: 8),
-                                Expanded(child: Text('Menos de 3 orçamentos cadastrados.', style: TextStyle(fontSize: 12))),
-                              ],
-                            ),
-                          ),
-                        const Divider(),
-                        Expanded(
-                          child: _orcamentos.isEmpty
-                              ? const Center(child: Text('Nenhum orçamento adicionado.'))
-                              : ListView.builder(
-                                  itemCount: _orcamentos.length,
-                                  itemBuilder: (context, index) {
-                                    final o = _orcamentos[index];
-                                    return Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      child: ListTile(
-                                        dense: true,
-                                        title: Text(o.razaoSocial),
-                                        subtitle: Text('${o.cnpj}  |  ${fmt.format(o.valorUnitario)}'),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit, size: 16),
-                                              onPressed: () => _editOrcamento(index),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete, size: 16),
-                                              color: Colors.red,
-                                              onPressed: () => setState(() => _orcamentos.removeAt(index)),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 16),

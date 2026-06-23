@@ -124,8 +124,6 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
             'unidadeMedida': item.unidadeMedida,
             'valorUnitarioEstimado': item.valorUnitarioEstimado ?? 0.0,
             'valorTotal': item.valorTotal ?? 0.0,
-            if (item.criterioJulgamentoId != null)
-              'criterioJulgamentoId': item.criterioJulgamentoId,
             if (item.tipoBeneficioId != null)
               'tipoBeneficioId': item.tipoBeneficioId,
             if (item.itemCategoriaId != null)

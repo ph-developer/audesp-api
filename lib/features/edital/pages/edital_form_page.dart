@@ -187,14 +187,21 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'tipoInstrumentoConvocatorioId': _tipoInstrumento,
       'modalidadeId': _modalidade,
       'modoDisputaId': _modoDisputa,
-      'criterioJulgamentoId': _criterioJulgamentoId,
       'numeroCompra': _numeroCompraCtrl.text.trim(),
       'anoCompra': int.tryParse(_anoCompraCtrl.text.trim()) ?? 0,
       'numeroProcesso': _numeroProcessoCtrl.text.trim(),
       'objetoCompra': _objetoCompraCtrl.text.trim(),
       'srp': _srp,
       'amparoLegalId': int.tryParse(_amparoLegalCtrl.text.trim()),
-      'itensCompra': _itens,
+      'itensCompra': _itens.map((item) {
+        if (_criterioJulgamentoId != null) {
+          return <String, dynamic>{
+            ...item,
+            'criterioJulgamentoId': _criterioJulgamentoId,
+          };
+        }
+        return item;
+      }).toList(),
     };
 
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
@@ -880,11 +887,15 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         DropdownButtonFormField<int>(
           key: ValueKey('crit_$_criterioJulgamentoId'),
           initialValue: _criterioJulgamentoId,
-          decoration: const InputDecoration(labelText: 'Critério de Julgamento *'),
+          decoration: const InputDecoration(
+            labelText: 'Critério de Julgamento *',
+          ),
           items: kCriterioJulgamento.entries
               .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
-          onChanged: readOnly ? null : (v) => setState(() => _criterioJulgamentoId = v),
+          onChanged: readOnly
+              ? null
+              : (v) => setState(() => _criterioJulgamentoId = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),

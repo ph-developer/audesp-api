@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
+import '../models/estimativa_fornecedor_model.dart';
 
 class EstimativaPdfService {
   static final _fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -93,6 +94,7 @@ class EstimativaPdfService {
             else
               ..._buildItens(
                 estimativa.itens, 
+                estimativa.fornecedores,
                 estimativa.calculoGlobal,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
               ),
@@ -239,6 +241,7 @@ class EstimativaPdfService {
               pw.SizedBox(height: 10),
               ..._buildItens(
                 lote.itens,
+                estimativa.fornecedores,
                 estimativa.calculoGlobal,
                 isInsideLote: true,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
@@ -261,6 +264,7 @@ class EstimativaPdfService {
 
   static List<pw.Widget> _buildItens(
     List<EstimativaItem> itens,
+    List<EstimativaFornecedor> fornecedores,
     String globalCalculo, {
     bool isInsideLote = false,
     String exclusividadeGlobal = 'nenhuma',
@@ -333,12 +337,15 @@ class EstimativaPdfService {
                 headers: ['Razão Social', 'CNPJ', 'Data', 'V. Unitário'],
                 data: item.orcamentos
                     .map(
-                      (o) => [
-                        o.razaoSocial,
-                        o.cnpj,
-                        o.data,
-                        _fmt.format(o.valorUnitario),
-                      ],
+                      (o) {
+                        final fornecedor = fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
+                        return [
+                          fornecedor?.razaoSocial ?? '-',
+                          fornecedor?.cnpj ?? '-',
+                          fornecedor?.data ?? '-',
+                          _fmt.format(o.valorUnitario),
+                        ];
+                      },
                     )
                     .toList(),
               ),

@@ -63,7 +63,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
     if (!_formKey.currentState!.validate()) return;
     final map = <String, dynamic>{
       'tipoPessoaId': _tipoPessoa,
-      'niPessoa': _niCtrl.text.trim(),
+      'niPessoa': _niCtrl.text.replaceAll(RegExp(r'\D'), ''),
       'declaracaoMEouEPP': _declaracaoME!,
       'resultadoHabilitacao': _resultadoHabilitacao!,
     };
@@ -80,7 +80,9 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Adicionar Licitante' : 'Editar Licitante'),
+      title: Text(
+        widget.initial == null ? 'Adicionar Licitante' : 'Editar Licitante',
+      ),
       content: SizedBox(
         child: Form(
           key: _formKey,
@@ -92,9 +94,16 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 // Tipo de pessoa
                 DropdownButtonFormField<String>(
                   initialValue: _tipoPessoa,
-                  decoration: const InputDecoration(labelText: 'Tipo de Pessoa *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de Pessoa *',
+                  ),
                   items: kTipoPessoa.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _tipoPessoa = v!),
                   validator: (v) => v == null ? 'Obrigatório' : null,
@@ -107,8 +116,8 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                     labelText: _tipoPessoa == 'PJ'
                         ? 'CNPJ *'
                         : _tipoPessoa == 'PF'
-                            ? 'CPF *'
-                            : 'Identificação Estrangeira *',
+                        ? 'CPF *'
+                        : 'Identificação Estrangeira *',
                     hintText: '3 a 30 caracteres',
                   ),
                   inputFormatters: [
@@ -133,10 +142,13 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                   ),
                   maxLength: 50,
                   validator: (v) {
-                    if (_tipoPessoa == 'PE' && (v == null || v.trim().length < 3)) {
+                    if (_tipoPessoa == 'PE' &&
+                        (v == null || v.trim().length < 3)) {
                       return 'Obrigatório para pessoa estrangeira (mín. 3 caracteres)';
                     }
-                    if (v != null && v.trim().isNotEmpty && v.trim().length < 3) {
+                    if (v != null &&
+                        v.trim().isNotEmpty &&
+                        v.trim().length < 3) {
                       return 'Mínimo 3 caracteres';
                     }
                     return null;
@@ -146,9 +158,16 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 // Declaração ME/EPP
                 DropdownButtonFormField<int>(
                   initialValue: _declaracaoME,
-                  decoration: const InputDecoration(labelText: 'Declaração ME/EPP *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Declaração ME/EPP *',
+                  ),
                   items: kDeclaracaoMEouEPP.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _declaracaoME = v),
                   validator: (v) => v == null ? 'Obrigatório' : null,
@@ -158,13 +177,16 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 TextFormField(
                   controller: _valorCtrl,
                   decoration: InputDecoration(
-                    labelText: (_resultadoHabilitacao == 1 ||
+                    labelText:
+                        (_resultadoHabilitacao == 1 ||
                             _resultadoHabilitacao == 2)
                         ? 'Valor Proposto (R\$) *'
                         : 'Valor Proposto (R\$)',
                     hintText: 'Ex.: 12345.55',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                   ],
@@ -185,9 +207,16 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 // Resultado de habilitação
                 DropdownButtonFormField<int>(
                   initialValue: _resultadoHabilitacao,
-                  decoration: const InputDecoration(labelText: 'Resultado de Habilitação *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Resultado de Habilitação *',
+                  ),
                   items: kResultadoHabilitacao.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _resultadoHabilitacao = v),
                   validator: (v) => v == null ? 'Obrigatório' : null,

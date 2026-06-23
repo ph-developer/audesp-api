@@ -9,9 +9,9 @@ import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_lote_model.dart';
 import '../models/estimativa_orcamento_model.dart';
+import '../models/estimativa_fornecedor_model.dart';
 import '../widgets/estimativa_item_dialog.dart';
 import '../widgets/estimativa_lote_dialog.dart';
-import '../widgets/estimativa_matriz_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
@@ -56,6 +56,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Conteúdo ─────────────────────────────────────────────────────────────
   List<EstimativaLote> _lotes = [];
   List<EstimativaItem> _itens = []; // Usado quando tipoEstimativa == 'item'
+  List<EstimativaFornecedor> _fornecedores = [];
 
   @override
   void initState() {
@@ -111,6 +112,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     _lotes = List.from(est.lotes);
     _itens = List.from(est.itens);
+    _fornecedores = List.from(est.fornecedores);
 
     if (mounted) setState(() => _loading = false);
   }
@@ -137,6 +139,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         formaPagamento: _formaPagamentoCtrl.text.trim(),
         exclusividadeMeEpp: _exclusividadeMeEpp,
         fontesRecurso: _fontesRecurso,
+        fornecedores: _fornecedores,
         lotes: _tipoEstimativa == 'lote' ? _lotes : [],
         itens: _tipoEstimativa == 'item' ? _itens : [],
       );
@@ -477,12 +480,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         ],
         if (_itens.isNotEmpty || _lotes.any((l) => l.itens.isNotEmpty)) ...[
           TextButton.icon(
-            onPressed: _showMatrizDialog,
-            icon: const Icon(Icons.table_chart),
-            label: const Text('Matriz de Valores'),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
             onPressed: _importarOrcamentoIa,
             icon: const Icon(Icons.auto_fix_high),
             label: const Text('Importar Orçamento via IA'),
@@ -490,181 +487,81 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           const SizedBox(width: 8),
         ],
         TextButton.icon(
-          onPressed: isLote ? _addLote : _addItem,
-          icon: const Icon(Icons.add),
-          label: Text(isLote ? 'Adicionar Lote' : 'Adicionar Item'),
+          onPressed: _showFornecedorDialog,
+          icon: const Icon(Icons.person_add),
+          label: const Text('Incluir Fornecedor'),
         ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: _addItem,
+          icon: const Icon(Icons.add),
+          label: const Text('Incluir Item'),
+        ),
+        if (isLote) ...[
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _addLote,
+            icon: const Icon(Icons.add_to_photos),
+            label: const Text('Incluir Lote'),
+          ),
+        ],
       ],
       children: [
-        if (isLote) ...[
-          if (_lotes.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Nenhum lote adicionado.'),
+        if ((isLote && _lotes.isEmpty) || (!isLote && _itens.isEmpty))
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Nenhum item ou lote adicionado.'),
+            ),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              border: TableBorder.all(color: Theme.of(context).dividerColor),
+              headingRowColor: WidgetStateProperty.resolveWith(
+                (states) => Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
-            )
-          else
-            ReorderableListView.builder(
-              buildDefaultDragHandles: false,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _lotes.length,
-              onReorderItem: (oldIndex, newIndex) {
-                setState(() {
-                  final item = _lotes.removeAt(oldIndex);
-                  _lotes.insert(newIndex, item);
-                  for (int i = 0; i < _lotes.length; i++) {
-                    _lotes[i] = _lotes[i].copyWith(numero: i + 1);
-                  }
-                });
-              },
-              itemBuilder: (ctx, i) {
-                final lote = _lotes[i];
-                return Card(
-                  key: ValueKey(lote.numero),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: ListTile(
-                    dense: true,
-                    leading: CircleAvatar(
-                      radius: 14,
-                      child: Text(
-                        '${lote.numero}',
-                        style: const TextStyle(fontSize: 12),
+              dataRowMinHeight: 48,
+              dataRowMaxHeight: double.infinity,
+              columnSpacing: 16,
+              columns: [
+                if (isLote)
+                  const DataColumn(label: Text('Lote', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Descrição', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Qtd(s)', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Unid.', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                ..._fornecedores.map((f) {
+                  return DataColumn(
+                    label: InkWell(
+                      onTap: () => _showFornecedorDialog(f),
+                      child: Tooltip(
+                        message: 'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                        child: Text(
+                          f.razaoSocial.isNotEmpty ? f.razaoSocial : 'Novo Fornecedor',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationStyle: TextDecorationStyle.dotted,
+                          ),
+                        ),
                       ),
                     ),
-                    title: Text(
-                      lote.descricao,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${lote.itens.length} itens | Total do Lote: ${fmt.format(lote.getValorTotal(_calculoGlobal))}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 18),
-                          onPressed: () => _editLote(i),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 18),
-                          onPressed: () => setState(() => _lotes.removeAt(i)),
-                        ),
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: const MouseRegion(
-                            cursor: SystemMouseCursors.move,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Icon(Icons.drag_handle, size: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                  );
+                }),
+                const DataColumn(label: Text('Menor', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Média', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Mediana', style: TextStyle(fontWeight: FontWeight.bold))),
+              ],
+              rows: _buildTableRows(fmt),
             ),
-        ] else ...[
-          if (_itens.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Nenhum item adicionado.'),
-              ),
-            )
-          else
-            ReorderableListView.builder(
-              buildDefaultDragHandles: false,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _itens.length,
-              onReorderItem: (oldIndex, newIndex) {
-                setState(() {
-                  final item = _itens.removeAt(oldIndex);
-                  _itens.insert(newIndex, item);
-                  for (int i = 0; i < _itens.length; i++) {
-                    _itens[i] = _itens[i].copyWith(numero: i + 1);
-                  }
-                });
-              },
-              itemBuilder: (ctx, i) {
-                final item = _itens[i];
-                final isMensal = item.tipoFornecimento == 'mensal';
-                return Card(
-                  key: ValueKey(item.numero),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: ListTile(
-                    dense: true,
-                    leading: CircleAvatar(
-                      radius: 14,
-                      child: Text(
-                        '${item.numero}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    title: Text(
-                      item.descricao,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${item.quantidade} ${item.unidade} | '
-                      '${isMensal ? "Mensal (${item.quantidadeMeses}m)" : "Única"} | '
-                      'Total: ${fmt.format(item.getValorTotal(_calculoGlobal))}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (item.orcamentos.length < 3)
-                          const Tooltip(
-                            message: 'Menos de 3 orçamentos',
-                            child: Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: Icon(
-                                Icons.warning_amber,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 18),
-                          onPressed: () => _editItem(i),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 18),
-                          onPressed: () => setState(() => _itens.removeAt(i)),
-                        ),
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: const MouseRegion(
-                            cursor: SystemMouseCursors.move,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Icon(Icons.drag_handle, size: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
+          ),
       ],
     );
   }
+
 
   Future<void> _showExclusividadeDialog() async {
     final isLote = _tipoEstimativa == 'lote';
@@ -787,15 +684,321 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (res != null) setState(() => _itens[i] = res);
   }
 
-  Future<void> _showMatrizDialog() async {
+  List<DataRow> _buildTableRows(NumberFormat fmt) {
+    final isLote = _tipoEstimativa == 'lote';
+    final rows = <DataRow>[];
+
+    if (isLote) {
+      for (int l = 0; l < _lotes.length; l++) {
+        final lote = _lotes[l];
+        for (int i = 0; i < lote.itens.length; i++) {
+          rows.add(_buildDataRow(
+            item: lote.itens[i],
+            loteIndex: l,
+            itemIndex: i,
+            fmt: fmt,
+            isLote: true,
+          ));
+        }
+      }
+    } else {
+      for (int i = 0; i < _itens.length; i++) {
+        rows.add(_buildDataRow(
+          item: _itens[i],
+          loteIndex: null,
+          itemIndex: i,
+          fmt: fmt,
+          isLote: false,
+        ));
+      }
+    }
+    return rows;
+  }
+
+  DataRow _buildDataRow({
+    required EstimativaItem item,
+    required int? loteIndex,
+    required int itemIndex,
+    required NumberFormat fmt,
+    required bool isLote,
+  }) {
+    final statusIcon = item.orcamentos.length >= 3
+        ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+        : item.orcamentos.isNotEmpty
+            ? const Icon(Icons.warning, color: Colors.amber, size: 20)
+            : const Icon(Icons.cancel, color: Colors.red, size: 20);
+
+    return DataRow(
+      cells: [
+        if (isLote)
+          DataCell(
+            InkWell(
+              onTap: () => _editLote(loteIndex ?? 0),
+              child: Text(
+                '${_lotes[loteIndex ?? 0].numero}',
+                style: const TextStyle(
+                  decoration: TextDecoration.underline,
+                  decorationStyle: TextDecorationStyle.dotted,
+                ),
+              ),
+            ),
+          ),
+        DataCell(
+          InkWell(
+            onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
+            child: Text(
+              '${item.numero}',
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                decorationStyle: TextDecorationStyle.dotted,
+              ),
+            ),
+          ),
+        ),
+        DataCell(
+          InkWell(
+            onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
+            child: SizedBox(
+              width: 200,
+              child: Text(
+                item.descricao,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+        DataCell(Text(
+          '${item.quantidade}${item.tipoFornecimento == 'mensal' ? ' (${item.quantidadeMeses}m)' : ''}',
+        )),
+        DataCell(Text(item.unidade)),
+        DataCell(Center(child: statusIcon)),
+        ..._fornecedores.map((f) {
+          final orc = item.orcamentos.where((o) => o.fornecedorId == f.id).firstOrNull;
+          return DataCell(
+            InkWell(
+              onTap: () => _showValorDialog(
+                loteIndex: loteIndex,
+                itemIndex: itemIndex,
+                fornecedor: f,
+                atual: orc,
+              ),
+              child: Container(
+                alignment: Alignment.center,
+                width: 80,
+                color: Colors.transparent, // to expand touch area
+                child: Text(
+                  orc != null ? fmt.format(orc.valorUnitario) : '-',
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    decorationStyle: TextDecorationStyle.dotted,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('min')))),
+        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('avg')))),
+        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('median')))),
+      ],
+    );
+  }
+
+  Future<void> _editLoteItem(int loteIndex, int itemIndex) async {
+    final lote = _lotes[loteIndex];
+    final res = await showEstimativaItemDialog(
+      context: context,
+      item: lote.itens[itemIndex],
+      estimativaTipo: 'lote',
+      calculoGlobal: _calculoGlobal,
+    );
+    if (res != null) {
+      setState(() {
+        final newItens = List<EstimativaItem>.from(lote.itens);
+        newItens[itemIndex] = res;
+        _lotes[loteIndex] = lote.copyWith(itens: newItens);
+      });
+    }
+  }
+
+  Future<void> _showFornecedorDialog([EstimativaFornecedor? fornecedor]) async {
+    final razaoSocialCtrl = TextEditingController(text: fornecedor?.razaoSocial);
+    final cnpjCtrl = TextEditingController(text: fornecedor?.cnpj);
+    final dataCtrl = TextEditingController(text: fornecedor?.data);
+
+    await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(fornecedor == null ? 'Incluir Fornecedor' : 'Editar Fornecedor'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: razaoSocialCtrl,
+                decoration: const InputDecoration(labelText: 'Razão Social'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: cnpjCtrl,
+                decoration: const InputDecoration(labelText: 'CNPJ'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dataCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Data do Orçamento',
+                  hintText: 'DD/MM/AAAA',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            if (fornecedor != null)
+              TextButton(
+                onPressed: () {
+                  // Excluir fornecedor
+                  setState(() {
+                    _fornecedores.removeWhere((f) => f.id == fornecedor.id);
+                    // Also remove orcamentos associated with this supplier
+                    if (_tipoEstimativa == 'lote') {
+                      for (int i = 0; i < _lotes.length; i++) {
+                        final newItens = _lotes[i].itens.map((it) {
+                          return it.copyWith(orcamentos: it.orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList());
+                        }).toList();
+                        _lotes[i] = _lotes[i].copyWith(itens: newItens);
+                      }
+                    } else {
+                      for (int i = 0; i < _itens.length; i++) {
+                        _itens[i] = _itens[i].copyWith(
+                          orcamentos: _itens[i].orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList(),
+                        );
+                      }
+                    }
+                  });
+                  Navigator.pop(ctx, false);
+                },
+                child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (razaoSocialCtrl.text.trim().isEmpty) return;
+                
+                setState(() {
+                  if (fornecedor == null) {
+                    _fornecedores.add(EstimativaFornecedor(
+                      razaoSocial: razaoSocialCtrl.text.trim(),
+                      cnpj: cnpjCtrl.text.trim(),
+                      data: dataCtrl.text.trim(),
+                    ));
+                  } else {
+                    final index = _fornecedores.indexWhere((f) => f.id == fornecedor.id);
+                    if (index != -1) {
+                      _fornecedores[index] = fornecedor.copyWith(
+                        razaoSocial: razaoSocialCtrl.text.trim(),
+                        cnpj: cnpjCtrl.text.trim(),
+                        data: dataCtrl.text.trim(),
+                      );
+                    }
+                  }
+                });
+                Navigator.pop(ctx, true);
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    razaoSocialCtrl.dispose();
+    cnpjCtrl.dispose();
+    dataCtrl.dispose();
+  }
+
+  Future<void> _showValorDialog({
+    required int? loteIndex,
+    required int itemIndex,
+    required EstimativaFornecedor fornecedor,
+    required EstimativaOrcamento? atual,
+  }) async {
+    final valorStr = atual != null ? atual.valorUnitario.toStringAsFixed(2).replaceAll('.', ',') : '';
+    final valorCtrl = TextEditingController(text: valorStr);
+
     await showDialog(
       context: context,
-      builder: (ctx) => EstimativaMatrizDialog(
-        tipoEstimativa: _tipoEstimativa,
-        lotes: _lotes,
-        itens: _itens,
-      ),
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Valor - ${fornecedor.razaoSocial}'),
+          content: TextField(
+            controller: valorCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Valor Unitário (R\$)',
+              hintText: '0,00',
+            ),
+          ),
+          actions: [
+            if (atual != null)
+              TextButton(
+                onPressed: () {
+                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, null);
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Remover Valor', style: TextStyle(color: Colors.red)),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final vStr = valorCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+                final v = double.tryParse(vStr);
+                if (v != null) {
+                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, v);
+                } else if (valorCtrl.text.trim().isEmpty) {
+                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, null);
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
     );
+    valorCtrl.dispose();
+  }
+
+  void _updateItemOrcamento(int? loteIndex, int itemIndex, String fornecedorId, double? novoValor) {
+    setState(() {
+      if (loteIndex != null) {
+        final lote = _lotes[loteIndex];
+        final item = lote.itens[itemIndex];
+        final orcs = List<EstimativaOrcamento>.from(item.orcamentos);
+        orcs.removeWhere((o) => o.fornecedorId == fornecedorId);
+        if (novoValor != null) {
+          orcs.add(EstimativaOrcamento(fornecedorId: fornecedorId, valorUnitario: novoValor));
+        }
+        final newItens = List<EstimativaItem>.from(lote.itens);
+        newItens[itemIndex] = item.copyWith(orcamentos: orcs);
+        _lotes[loteIndex] = lote.copyWith(itens: newItens);
+      } else {
+        final item = _itens[itemIndex];
+        final orcs = List<EstimativaOrcamento>.from(item.orcamentos);
+        orcs.removeWhere((o) => o.fornecedorId == fornecedorId);
+        if (novoValor != null) {
+          orcs.add(EstimativaOrcamento(fornecedorId: fornecedorId, valorUnitario: novoValor));
+        }
+        _itens[itemIndex] = item.copyWith(orcamentos: orcs);
+      }
+    });
   }
 
   Future<void> _importarOrcamentoIa() async {
@@ -848,6 +1051,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     // Aplicar os resultados
     setState(() {
+      final novoFornecedor = EstimativaFornecedor(
+        razaoSocial: orcamentoResult.razaoSocial ?? '',
+        cnpj: orcamentoResult.cnpj ?? '',
+        data: orcamentoResult.data ?? '',
+      );
+      _fornecedores.add(novoFornecedor);
+
       if (isLote) {
         for (int l = 0; l < _lotes.length; l++) {
           final lote = _lotes[l];
@@ -856,9 +1066,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             final val = orcamentoResult.itens['${lote.numero}-${item.numero}'];
             if (val != null) {
               final newOrcamento = EstimativaOrcamento(
-                razaoSocial: orcamentoResult.razaoSocial ?? '',
-                cnpj: orcamentoResult.cnpj ?? '',
-                data: orcamentoResult.data ?? '',
+                fornecedorId: novoFornecedor.id,
                 valorUnitario: val,
               );
               novosItens.add(
@@ -876,9 +1084,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           final val = orcamentoResult.itens['${item.numero}'];
           if (val != null) {
             final newOrcamento = EstimativaOrcamento(
-              razaoSocial: orcamentoResult.razaoSocial ?? '',
-              cnpj: orcamentoResult.cnpj ?? '',
-              data: orcamentoResult.data ?? '',
+              fornecedorId: novoFornecedor.id,
               valorUnitario: val,
             );
             _itens[i] = item.copyWith(

@@ -1,5 +1,6 @@
 import 'estimativa_item_model.dart';
 import 'estimativa_lote_model.dart';
+import 'estimativa_fornecedor_model.dart';
 
 class EstimativaModel {
   final int id;
@@ -26,6 +27,7 @@ class EstimativaModel {
   final String exclusividadeMeEpp;
   
   // Conteúdo
+  final List<EstimativaFornecedor> fornecedores;
   final List<EstimativaLote> lotes;
   final List<EstimativaItem> itens; // usado quando tipoEstimativa == 'item'
   
@@ -47,6 +49,7 @@ class EstimativaModel {
     this.formaPagamento = '',
     this.fontesRecurso = const [],
     this.exclusividadeMeEpp = 'nenhuma',
+    this.fornecedores = const [],
     this.lotes = const [],
     this.itens = const [],
     this.createdAt = 0,
@@ -69,6 +72,7 @@ class EstimativaModel {
       'formaPagamento': formaPagamento,
       'fontesRecurso': fontesRecurso,
       'exclusividadeMeEpp': exclusividadeMeEpp,
+      'fornecedores': fornecedores.map((x) => x.toMap()).toList(),
       'lotes': lotes.map((x) => x.toMap()).toList(),
       'itens': itens.map((x) => x.toMap()).toList(),
       'createdAt': createdAt,
@@ -92,6 +96,9 @@ class EstimativaModel {
       formaPagamento: map['formaPagamento'] ?? '',
       fontesRecurso: List<String>.from(map['fontesRecurso'] ?? []),
       exclusividadeMeEpp: map['exclusividadeMeEpp'] ?? 'nenhuma',
+      fornecedores: List<EstimativaFornecedor>.from(
+        (map['fornecedores'] as List<dynamic>? ?? []).map((x) => EstimativaFornecedor.fromMap(x)),
+      ),
       lotes: List<EstimativaLote>.from(
         (map['lotes'] as List<dynamic>? ?? []).map((x) => EstimativaLote.fromMap(x)),
       ),
@@ -118,6 +125,7 @@ class EstimativaModel {
     String? formaPagamento,
     List<String>? fontesRecurso,
     String? exclusividadeMeEpp,
+    List<EstimativaFornecedor>? fornecedores,
     List<EstimativaLote>? lotes,
     List<EstimativaItem>? itens,
     int? createdAt,
@@ -138,6 +146,7 @@ class EstimativaModel {
       formaPagamento: formaPagamento ?? this.formaPagamento,
       fontesRecurso: fontesRecurso ?? this.fontesRecurso,
       exclusividadeMeEpp: exclusividadeMeEpp ?? this.exclusividadeMeEpp,
+      fornecedores: fornecedores ?? this.fornecedores,
       lotes: lotes ?? this.lotes,
       itens: itens ?? this.itens,
       createdAt: createdAt ?? this.createdAt,

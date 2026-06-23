@@ -210,6 +210,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final municipio = int.tryParse(ref.read(codigoMunicipioProvider)) ?? 0;
     final entidade = int.tryParse(ref.read(codigoEntidadeProvider)) ?? 0;
 
+    final itensLimpos = _itens.map((item) {
+      final licitantes = (item['licitantes'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((l) {
+            final ni = l['niPessoa'] as String? ?? '';
+            return {...l, 'niPessoa': ni.replaceAll(RegExp(r'\D'), '')};
+          })
+          .toList();
+      return {...item, 'licitantes': licitantes};
+    }).toList();
+
     final map = <String, dynamic>{
       'descritor': {
         'municipio': municipio,
@@ -222,7 +233,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       'interposicaoRecurso': _interposicaoRecurso,
       'exigenciaGarantiaLicitantes': _exigenciaGarantiaLicitantes,
       'contratacaoConduzida': _contratacaoConduzida,
-      'itens': _itens,
+      'itens': itensLimpos,
     };
 
     // Campos de BID (somente quando recursoBID == 1)
