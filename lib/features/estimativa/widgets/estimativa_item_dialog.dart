@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+
+import '../../../core/utils/currency_formatter.dart';
 
 import '../../edital/domain/edital_domain.dart';
 
@@ -15,7 +17,12 @@ Future<EstimativaItem?> showEstimativaItemDialog({
 }) {
   return showDialog<EstimativaItem>(
     context: context,
-    builder: (ctx) => _ItemDialog(item: item, estimativaTipo: estimativaTipo, calculoGlobal: calculoGlobal, nextNumero: nextNumero),
+    builder: (ctx) => _ItemDialog(
+      item: item,
+      estimativaTipo: estimativaTipo,
+      calculoGlobal: calculoGlobal,
+      nextNumero: nextNumero,
+    ),
   );
 }
 
@@ -25,7 +32,12 @@ class _ItemDialog extends StatefulWidget {
   final String calculoGlobal;
   final int? nextNumero;
 
-  const _ItemDialog({this.item, required this.estimativaTipo, required this.calculoGlobal, this.nextNumero});
+  const _ItemDialog({
+    this.item,
+    required this.estimativaTipo,
+    required this.calculoGlobal,
+    this.nextNumero,
+  });
 
   @override
   State<_ItemDialog> createState() => _ItemDialogState();
@@ -55,7 +67,7 @@ class _ItemDialogState extends State<_ItemDialog> {
       _numeroCtrl.text = i.numero.toString();
       _descricaoCtrl.text = i.descricao;
       _unidadeCtrl.text = i.unidade;
-      _quantidadeCtrl.text = i.quantidade.toString();
+      _quantidadeCtrl.text = doubleToBrString(i.quantidade);
       _tipoFornecimento = i.tipoFornecimento;
       _materialOuServico = i.materialOuServico;
       _itemCategoriaId = i.itemCategoriaId;
@@ -79,14 +91,18 @@ class _ItemDialogState extends State<_ItemDialog> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final result = EstimativaItem(
       numero: int.tryParse(_numeroCtrl.text.trim()) ?? 0,
       descricao: _descricaoCtrl.text.trim(),
       unidade: _unidadeCtrl.text.trim(),
-      quantidade: double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ?? 0.0,
+      quantidade:
+          double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ??
+          0.0,
       tipoFornecimento: _tipoFornecimento,
-      quantidadeMeses: int.tryParse(_quantidadeMesesCtrl.text.trim()) ?? 1,
+      quantidadeMeses: _tipoFornecimento == 'mensal'
+          ? (int.tryParse(_quantidadeMesesCtrl.text.trim()) ?? 12)
+          : 1,
       materialOuServico: _materialOuServico,
       itemCategoriaId: _itemCategoriaId,
       exclusivoMeEpp: _exclusivoMeEpp,
@@ -99,32 +115,27 @@ class _ItemDialogState extends State<_ItemDialog> {
   @override
   Widget build(BuildContext context) {
     final isMensal = _tipoFornecimento == 'mensal';
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    
-    // Calcula na hora para visualização
-    final dummyItem = EstimativaItem(
-      numero: 0,
-      descricao: '',
-      unidade: '',
-      quantidade: double.tryParse(_quantidadeCtrl.text.trim().replaceAll(',', '.')) ?? 0.0,
-      tipoFornecimento: _tipoFornecimento,
-      quantidadeMeses: int.tryParse(_quantidadeMesesCtrl.text.trim()) ?? 1,
-      orcamentos: _orcamentos,
-    );
+    final labelQtd = _tipoFornecimento == 'mensal'
+        ? 'Quantidade Mensal *'
+        : _tipoFornecimento == 'anual'
+        ? 'Quantidade Anual *'
+        : 'Quantidade *';
 
     return Dialog(
       child: Container(
-        width: 500,
-        height: 600,
+        width: 800,
         padding: const EdgeInsets.all(24.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.item == null ? 'Novo Item' : 'Editar Item',
+              widget.item == null
+                  ? 'Novo Item ${widget.nextNumero != null ? '(nº ${widget.nextNumero})' : ''}'
+                  : 'Editar Item nº ${widget.item!.numero}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            Expanded(
+            Flexible(
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -132,64 +143,121 @@ class _ItemDialogState extends State<_ItemDialog> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 1,
-                            child: TextFormField(
-                              controller: _numeroCtrl,
-                              decoration: const InputDecoration(labelText: 'Item Nº'),
-                              readOnly: true,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 3,
-                            child: TextFormField(
-                              controller: _descricaoCtrl,
-                              decoration: const InputDecoration(labelText: 'Descrição *'),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _unidadeCtrl,
-                              decoration: const InputDecoration(labelText: 'Unidade *', hintText: 'UN, M2, KG...'),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               initialValue: _tipoFornecimento,
-                              decoration: const InputDecoration(labelText: 'Fornecimento *'),
+                              decoration: const InputDecoration(
+                                labelText: 'Fornecimento *',
+                              ),
                               items: const [
-                                DropdownMenuItem(value: 'unica', child: Text('Compra Única')),
-                                DropdownMenuItem(value: 'mensal', child: Text('Mensal')),
+                                DropdownMenuItem(
+                                  value: 'unica',
+                                  child: Text('Compra Única'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'mensal',
+                                  child: Text('Mensal'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'anual',
+                                  child: Text('Anual'),
+                                ),
                               ],
                               onChanged: (v) {
-                                if (v != null) setState(() => _tipoFornecimento = v);
+                                if (v != null) {
+                                  setState(() => _tipoFornecimento = v);
+                                }
                               },
                             ),
                           ),
+                          if (widget.estimativaTipo == 'item') ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _materialOuServico,
+                                decoration: const InputDecoration(
+                                  labelText: 'Material/Serviço *',
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'M',
+                                    child: Text('Material'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'S',
+                                    child: Text('Serviço'),
+                                  ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setState(() => _materialOuServico = v);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                initialValue: _itemCategoriaId,
+                                decoration: const InputDecoration(
+                                  labelText: 'Categoria do Item *',
+                                ),
+                                items: kItemCategoria.entries
+                                    .map(
+                                      (e) => DropdownMenuItem(
+                                        value: e.key,
+                                        child: Text(e.value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setState(() => _itemCategoriaId = v);
+                                  }
+                                },
+                                validator: (v) =>
+                                    v == null ? 'Obrigatório' : null,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _quantidadeCtrl,
-                              decoration: InputDecoration(
-                                labelText: isMensal ? 'Qtd (Mensal) *' : 'Quantidade *',
+                              decoration: InputDecoration(labelText: labelQtd),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9.,]'),
+                                ),
+                              ],
+                              onChanged: (_) => setState(() {}),
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'Obrigatório'
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _unidadeCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Unidade *',
+                                hintText: 'UN, M2...',
                               ),
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              onChanged: (_) => setState((){}),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'Obrigatório'
+                                  : null,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -197,86 +265,31 @@ class _ItemDialogState extends State<_ItemDialog> {
                             child: TextFormField(
                               controller: _quantidadeMesesCtrl,
                               enabled: isMensal,
-                              decoration: const InputDecoration(labelText: 'Meses *'),
+                              decoration: const InputDecoration(
+                                labelText: 'Meses *',
+                              ),
                               keyboardType: TextInputType.number,
-                              onChanged: (_) => setState((){}),
-                              validator: (v) => (isMensal && (v == null || v.isEmpty)) ? 'Obrigatório' : null,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (_) => setState(() {}),
+                              validator: (v) =>
+                                  (isMensal && (v == null || v.isEmpty))
+                                  ? 'Obrigatório'
+                                  : null,
                             ),
                           ),
                         ],
                       ),
-
-                      if (widget.estimativaTipo == 'item') ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: DropdownButtonFormField<String>(
-                                initialValue: _materialOuServico,
-                                decoration: const InputDecoration(labelText: 'Material/Serviço *'),
-                                items: const [
-                                  DropdownMenuItem(value: 'M', child: Text('Material')),
-                                  DropdownMenuItem(value: 'S', child: Text('Serviço')),
-                                ],
-                                onChanged: (v) {
-                                  if (v != null) setState(() => _materialOuServico = v);
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 2,
-                              child: DropdownButtonFormField<int>(
-                                initialValue: _itemCategoriaId,
-                                decoration: const InputDecoration(labelText: 'Categoria do Item *'),
-                                items: kItemCategoria.entries.map((e) => DropdownMenuItem(
-                                  value: e.key,
-                                  child: Text(e.value),
-                                )).toList(),
-                                onChanged: (v) {
-                                  if (v != null) setState(() => _itemCategoriaId = v);
-                                },
-                                validator: (v) => v == null ? 'Obrigatório' : null,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _descricaoCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Descrição *',
                         ),
-                      ],
-
-                      const SizedBox(height: 16),
-                      Card(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text('V. Referência Unitário:'),
-                                  Text(fmt.format(dummyItem.getValorReferenciaUnitario(widget.calculoGlobal))),
-                                ],
-                              ),
-                              if (isMensal)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('V. Referência Mensal:'),
-                                    Text(fmt.format(dummyItem.getValorMensal(widget.calculoGlobal))),
-                                  ],
-                                ),
-                              const Divider(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text('V. Referência TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  Text(fmt.format(dummyItem.getValorTotal(widget.calculoGlobal)), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                        maxLines: 3,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Obrigatório' : null,
                       ),
                     ],
                   ),
@@ -297,7 +310,7 @@ class _ItemDialogState extends State<_ItemDialog> {
                   child: const Text('Salvar Item'),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

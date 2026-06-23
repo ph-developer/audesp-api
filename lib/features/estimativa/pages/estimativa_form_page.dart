@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +17,7 @@ import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class EstimativaFormPage extends ConsumerStatefulWidget {
   final int? estimativaId;
@@ -518,42 +520,36 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              border: TableBorder.all(color: Theme.of(context).dividerColor),
+              horizontalMargin: 12,
               headingRowColor: WidgetStateProperty.resolveWith(
-                (states) => Theme.of(context).colorScheme.surfaceContainerHighest,
+                (states) => Colors.transparent,
               ),
               dataRowMinHeight: 48,
               dataRowMaxHeight: double.infinity,
-              columnSpacing: 16,
+              columnSpacing: 24,
               columns: [
                 if (isLote)
                   const DataColumn(label: Text('Lote', style: TextStyle(fontWeight: FontWeight.bold))),
                 const DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
                 const DataColumn(label: Text('Descrição', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Qtd(s)', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Unid.', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Quantidade', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Text('Unidade', style: TextStyle(fontWeight: FontWeight.bold))),
                 ..._fornecedores.map((f) {
                   return DataColumn(
-                    label: InkWell(
-                      onTap: () => _showFornecedorDialog(f),
-                      child: Tooltip(
-                        message: 'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
-                        child: Text(
-                          f.razaoSocial.isNotEmpty ? f.razaoSocial : 'Novo Fornecedor',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationStyle: TextDecorationStyle.dotted,
-                          ),
-                        ),
+                    label: Expanded(
+                      child: HoverCellText(
+                        text: f.razaoSocial.isNotEmpty ? f.razaoSocial : 'Novo Fornecedor',
+                        onTap: () => _showFornecedorDialog(f),
+                        tooltip: 'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   );
                 }),
-                const DataColumn(label: Text('Menor', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Média', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Mediana', style: TextStyle(fontWeight: FontWeight.bold))),
+                const DataColumn(label: Expanded(child: Text('Valor Unitário', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)))),
+                const DataColumn(label: Expanded(child: Text('Valor Total', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)))),
+                const DataColumn(label: Text('')),
               ],
               rows: _buildTableRows(fmt),
             ),
@@ -696,7 +692,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             item: lote.itens[i],
             loteIndex: l,
             itemIndex: i,
-            fmt: fmt,
             isLote: true,
           ));
         }
@@ -707,7 +702,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           item: _itens[i],
           loteIndex: null,
           itemIndex: i,
-          fmt: fmt,
           isLote: false,
         ));
       }
@@ -719,90 +713,143 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required EstimativaItem item,
     required int? loteIndex,
     required int itemIndex,
-    required NumberFormat fmt,
     required bool isLote,
   }) {
     final statusIcon = item.orcamentos.length >= 3
-        ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+        ? const Tooltip(message: '3 ou mais orçamentos', child: Icon(Icons.check_circle, color: Colors.green, size: 16))
         : item.orcamentos.isNotEmpty
-            ? const Icon(Icons.warning, color: Colors.amber, size: 20)
-            : const Icon(Icons.cancel, color: Colors.red, size: 20);
+            ? const Tooltip(message: 'Menos de 3 orçamentos', child: Icon(Icons.warning, color: Colors.amber, size: 16))
+            : const Tooltip(message: 'Sem orçamentos', child: Icon(Icons.cancel, color: Colors.red, size: 16));
 
     return DataRow(
       cells: [
         if (isLote)
           DataCell(
-            InkWell(
+            HoverCellText(
+              text: '${_lotes[loteIndex ?? 0].numero}',
               onTap: () => _editLote(loteIndex ?? 0),
-              child: Text(
-                '${_lotes[loteIndex ?? 0].numero}',
-                style: const TextStyle(
-                  decoration: TextDecoration.underline,
-                  decorationStyle: TextDecorationStyle.dotted,
-                ),
-              ),
+              textAlign: TextAlign.center,
+              alignment: Alignment.center,
             ),
           ),
         DataCell(
-          InkWell(
+          HoverCellText(
+            text: '${item.numero}',
             onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
-            child: Text(
-              '${item.numero}',
-              style: const TextStyle(
-                decoration: TextDecoration.underline,
-                decorationStyle: TextDecorationStyle.dotted,
-              ),
-            ),
+            textAlign: TextAlign.center,
+            alignment: Alignment.center,
           ),
         ),
         DataCell(
-          InkWell(
+          HoverCellText(
+            text: item.descricao,
             onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
-            child: SizedBox(
-              width: 200,
-              child: Text(
-                item.descricao,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            width: 200,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.justify,
           ),
         ),
-        DataCell(Text(
-          '${item.quantidade}${item.tipoFornecimento == 'mensal' ? ' (${item.quantidadeMeses}m)' : ''}',
-        )),
-        DataCell(Text(item.unidade)),
-        DataCell(Center(child: statusIcon)),
+        DataCell(
+          Center(
+            child: item.tipoFornecimento == 'mensal'
+                ? Tooltip(
+                    message: '${formatNumberBR(item.quantidade)}/mês',
+                    child: Text(
+                      '${formatNumberBR(item.quantidade * item.quantidadeMeses)} *',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : Text(
+                    formatNumberBR(item.quantidade),
+                    textAlign: TextAlign.center,
+                  ),
+          ),
+        ),
+        DataCell(Center(child: Text(item.unidade, textAlign: TextAlign.center))),
         ..._fornecedores.map((f) {
           final orc = item.orcamentos.where((o) => o.fornecedorId == f.id).firstOrNull;
           return DataCell(
-            InkWell(
-              onTap: () => _showValorDialog(
-                loteIndex: loteIndex,
-                itemIndex: itemIndex,
-                fornecedor: f,
-                atual: orc,
-              ),
-              child: Container(
+            Center(
+              child: HoverCellText(
+                text: orc != null ? formatBRL(orc.valorUnitario) : '-',
+                onTap: () => _showValorDialog(
+                  loteIndex: loteIndex,
+                  itemIndex: itemIndex,
+                  fornecedor: f,
+                  atual: orc,
+                ),
+                textAlign: TextAlign.center,
                 alignment: Alignment.center,
                 width: 80,
-                color: Colors.transparent, // to expand touch area
-                child: Text(
-                  orc != null ? fmt.format(orc.valorUnitario) : '-',
-                  style: const TextStyle(
-                    decoration: TextDecoration.underline,
-                    decorationStyle: TextDecorationStyle.dotted,
-                  ),
-                ),
               ),
             ),
           );
         }),
-        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('min')))),
-        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('avg')))),
-        DataCell(Text(fmt.format(item.getValorReferenciaUnitario('median')))),
+        DataCell(Center(child: Tooltip(
+          message: 'Cálculo atual: ${_calculoGlobal == 'min' ? 'Menor' : _calculoGlobal == 'avg' ? 'Média' : 'Mediana'}',
+          child: Text(formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)), textAlign: TextAlign.center),
+        ))),
+        DataCell(Center(child: Text(formatBRL(item.getValorTotal(_calculoGlobal)), textAlign: TextAlign.center))),
+        DataCell(
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                statusIcon,
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  tooltip: 'Excluir Item',
+                  onPressed: () => _confirmDeleteItem(loteIndex, itemIndex),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _confirmDeleteItem(int? loteIndex, int itemIndex) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Excluir Item'),
+          content: const Text('Deseja excluir este item e todos os seus orçamentos?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      setState(() {
+        if (loteIndex != null) {
+          final lote = _lotes[loteIndex];
+          final newItens = List<EstimativaItem>.from(lote.itens)..removeAt(itemIndex);
+          for (int i = 0; i < newItens.length; i++) {
+            newItens[i] = newItens[i].copyWith(numero: i + 1);
+          }
+          _lotes[loteIndex] = lote.copyWith(itens: newItens);
+        } else {
+          _itens.removeAt(itemIndex);
+          for (int i = 0; i < _itens.length; i++) {
+            _itens[i] = _itens[i].copyWith(numero: i + 1);
+          }
+        }
+      });
+    }
   }
 
   Future<void> _editLoteItem(int loteIndex, int itemIndex) async {
@@ -832,27 +879,51 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       builder: (ctx) {
         return AlertDialog(
           title: Text(fornecedor == null ? 'Incluir Fornecedor' : 'Editar Fornecedor'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+          content: SizedBox(
+            width: 500,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
                 controller: razaoSocialCtrl,
                 decoration: const InputDecoration(labelText: 'Razão Social'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: cnpjCtrl,
-                decoration: const InputDecoration(labelText: 'CNPJ'),
+                decoration: const InputDecoration(labelText: 'CNPJ (apenas números)'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: dataCtrl,
+                readOnly: true,
+                onTap: () async {
+                  DateTime initialDate = DateTime.now();
+                  try {
+                    if (dataCtrl.text.isNotEmpty) {
+                      initialDate = DateFormat('dd/MM/yyyy').parseLoose(dataCtrl.text);
+                    }
+                  } catch (_) {}
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: initialDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) {
+                    dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
+                  }
+                },
                 decoration: const InputDecoration(
                   labelText: 'Data do Orçamento',
                   hintText: 'DD/MM/AAAA',
+                  suffixIcon: Icon(Icons.calendar_today),
                 ),
               ),
             ],
+          ),
           ),
           actions: [
             if (fornecedor != null)
@@ -927,7 +998,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required EstimativaFornecedor fornecedor,
     required EstimativaOrcamento? atual,
   }) async {
-    final valorStr = atual != null ? atual.valorUnitario.toStringAsFixed(2).replaceAll('.', ',') : '';
+    final valorStr = atual != null ? doubleToBrString(atual.valorUnitario) : '';
     final valorCtrl = TextEditingController(text: valorStr);
 
     await showDialog(
@@ -938,6 +1009,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           content: TextField(
             controller: valorCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
             decoration: const InputDecoration(
               labelText: 'Valor Unitário (R\$)',
               hintText: '0,00',
@@ -1157,6 +1231,75 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class HoverCellText extends StatefulWidget {
+  final String text;
+  final TextStyle? style;
+  final VoidCallback onTap;
+  final String? tooltip;
+  final int? maxLines;
+  final TextOverflow? overflow;
+  final Alignment? alignment;
+  final double? width;
+  final TextAlign? textAlign;
+
+  const HoverCellText({
+    super.key,
+    required this.text,
+    required this.onTap,
+    this.style,
+    this.tooltip,
+    this.maxLines,
+    this.overflow,
+    this.alignment,
+    this.width,
+    this.textAlign,
+  });
+
+  @override
+  State<HoverCellText> createState() => _HoverCellTextState();
+}
+
+class _HoverCellTextState extends State<HoverCellText> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = Text(
+      widget.text,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
+      textAlign: widget.textAlign,
+      style: (widget.style ?? const TextStyle()).copyWith(
+        decoration: _hovering ? TextDecoration.underline : TextDecoration.none,
+        decorationStyle: TextDecorationStyle.dotted,
+      ),
+    );
+
+    if (widget.alignment != null || widget.width != null) {
+      child = Container(
+        alignment: widget.alignment,
+        width: widget.width,
+        color: Colors.transparent,
+        child: child,
+      );
+    }
+
+    if (widget.tooltip != null) {
+      child = Tooltip(message: widget.tooltip!, child: child);
+    }
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: child,
       ),
     );
   }

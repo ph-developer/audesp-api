@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -171,7 +172,7 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
   void initState() {
     super.initState();
     _razaoSocialCtrl.text = widget.suggestedValues.razaoSocial ?? '';
-    _cnpjCtrl.text = widget.suggestedValues.cnpj ?? '';
+    _cnpjCtrl.text = widget.suggestedValues.cnpj?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
     _dataCtrl.text = widget.suggestedValues.data ?? '';
 
     // Pré-seleciona todos os itens que tiveram valor retornado.
@@ -261,6 +262,8 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                     child: TextFormField(
                       controller: _cnpjCtrl,
                       decoration: const InputDecoration(labelText: 'CNPJ', isDense: true),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
@@ -268,7 +271,29 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                   Expanded(
                     child: TextFormField(
                       controller: _dataCtrl,
-                      decoration: const InputDecoration(labelText: 'Data (dd/MM/yyyy)', isDense: true),
+                      readOnly: true,
+                      onTap: () async {
+                        DateTime initialDate = DateTime.now();
+                        try {
+                          if (_dataCtrl.text.isNotEmpty) {
+                            initialDate = DateFormat('dd/MM/yyyy').parseLoose(_dataCtrl.text);
+                          }
+                        } catch (_) {}
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: initialDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          _dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Data (dd/MM/yyyy)', 
+                        isDense: true,
+                        suffixIcon: Icon(Icons.calendar_today, size: 18),
+                      ),
                       validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
