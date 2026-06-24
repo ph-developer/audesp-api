@@ -29,10 +29,10 @@ class LicitacaoService {
     required LogService logService,
     required LicitacoesDao licitacoesDao,
     required Environment currentEnv,
-  })  : _api = apiService,
-        _log = logService,
-        _licitacoesDao = licitacoesDao,
-        _currentEnv = currentEnv;
+  }) : _api = apiService,
+       _log = logService,
+       _licitacoesDao = licitacoesDao,
+       _currentEnv = currentEnv;
 
   /// Envia licitação ao AUDESP via multipart/form-data.
   /// Retorna a mensagem de sucesso do servidor.

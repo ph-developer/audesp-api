@@ -192,9 +192,14 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
             );
             final datas = lote.itens
                 .expand((i) => i.orcamentos)
-                .map((o) => _estimativaSelecionada!.fornecedores
-                    .where((f) => f.id == o.fornecedorId)
-                    .firstOrNull?.data ?? '')
+                .map(
+                  (o) =>
+                      _estimativaSelecionada!.fornecedores
+                          .where((f) => f.id == o.fornecedorId)
+                          .firstOrNull
+                          ?.data ??
+                      '',
+                )
                 .where((d) => d.isNotEmpty)
                 .toList();
             if (datas.isNotEmpty) {
@@ -228,9 +233,14 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               10,
             );
             final datas = item.orcamentos
-                .map((o) => _estimativaSelecionada!.fornecedores
-                    .where((f) => f.id == o.fornecedorId)
-                    .firstOrNull?.data ?? '')
+                .map(
+                  (o) =>
+                      _estimativaSelecionada!.fornecedores
+                          .where((f) => f.id == o.fornecedorId)
+                          .firstOrNull
+                          ?.data ??
+                      '',
+                )
                 .where((d) => d.isNotEmpty)
                 .toList();
             if (datas.isNotEmpty) {

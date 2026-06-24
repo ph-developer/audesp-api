@@ -7,30 +7,30 @@ class EstimativaModel {
   final int numero;
   final int ano;
   final String objeto;
-  
+
   // Configurações Globais
   final String tipoEstimativa; // 'item' ou 'lote'
   final String calculoGlobal; // 'min', 'avg', 'median'
-  
+
   // Textos para o PDF (mantido para retrocompatibilidade do JSON)
   final Map<String, String> textosPdf;
-  
+
   // Novas propriedades solicitadas
   final String prazoVigencia;
   final String formaPagamento;
-  
+
   // Novas propriedades solicitadas
   final bool registroPrecos;
   final bool temGarantia;
   final String periodoGarantia;
   final List<String> fontesRecurso;
   final String exclusividadeMeEpp;
-  
+
   // Conteúdo
   final List<EstimativaFornecedor> fornecedores;
   final List<EstimativaLote> lotes;
   final List<EstimativaItem> itens; // usado quando tipoEstimativa == 'item'
-  
+
   final int createdAt;
   final int updatedAt;
 
@@ -97,13 +97,19 @@ class EstimativaModel {
       fontesRecurso: List<String>.from(map['fontesRecurso'] ?? []),
       exclusividadeMeEpp: map['exclusividadeMeEpp'] ?? 'nenhuma',
       fornecedores: List<EstimativaFornecedor>.from(
-        (map['fornecedores'] as List<dynamic>? ?? []).map((x) => EstimativaFornecedor.fromMap(x)),
+        (map['fornecedores'] as List<dynamic>? ?? []).map(
+          (x) => EstimativaFornecedor.fromMap(x),
+        ),
       ),
       lotes: List<EstimativaLote>.from(
-        (map['lotes'] as List<dynamic>? ?? []).map((x) => EstimativaLote.fromMap(x)),
+        (map['lotes'] as List<dynamic>? ?? []).map(
+          (x) => EstimativaLote.fromMap(x),
+        ),
       ),
       itens: List<EstimativaItem>.from(
-        (map['itens'] as List<dynamic>? ?? []).map((x) => EstimativaItem.fromMap(x)),
+        (map['itens'] as List<dynamic>? ?? []).map(
+          (x) => EstimativaItem.fromMap(x),
+        ),
       ),
       createdAt: map['createdAt']?.toInt() ?? 0,
       updatedAt: map['updatedAt']?.toInt() ?? 0,
@@ -156,9 +162,15 @@ class EstimativaModel {
 
   double get valorTotalGlobal {
     if (tipoEstimativa == 'lote') {
-      return lotes.fold(0.0, (sum, lote) => sum + lote.getValorTotal(calculoGlobal));
+      return lotes.fold(
+        0.0,
+        (sum, lote) => sum + lote.getValorTotal(calculoGlobal),
+      );
     } else {
-      return itens.fold(0.0, (sum, item) => sum + item.getValorTotal(calculoGlobal));
+      return itens.fold(
+        0.0,
+        (sum, item) => sum + item.getValorTotal(calculoGlobal),
+      );
     }
   }
 }

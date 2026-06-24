@@ -30,12 +30,48 @@ class ShellPage extends ConsumerWidget {
   const ShellPage({super.key, required this.child});
 
   static const _allNavItems = [
-    (icon: Icons.description_outlined, activeIcon: Icons.description, label: 'Edital', route: '/edital', perm: AppPermissions.edital),
-    (icon: Icons.gavel_outlined, activeIcon: Icons.gavel, label: 'Licitação', route: '/licitacao', perm: AppPermissions.licitacao),
-    (icon: Icons.assignment_outlined, activeIcon: Icons.assignment, label: 'Ata', route: '/ata', perm: AppPermissions.ata),
-    (icon: Icons.handshake_outlined, activeIcon: Icons.handshake, label: 'Ajuste', route: '/ajuste', perm: AppPermissions.ajuste),
-    (icon: Icons.calculate_outlined, activeIcon: Icons.calculate, label: 'Estimativa', route: '/estimativa', perm: AppPermissions.estimativa),
-    (icon: Icons.history_outlined, activeIcon: Icons.history, label: 'Logs', route: '/logs', perm: AppPermissions.none),
+    (
+      icon: Icons.description_outlined,
+      activeIcon: Icons.description,
+      label: 'Edital',
+      route: '/edital',
+      perm: AppPermissions.edital,
+    ),
+    (
+      icon: Icons.gavel_outlined,
+      activeIcon: Icons.gavel,
+      label: 'Licitação',
+      route: '/licitacao',
+      perm: AppPermissions.licitacao,
+    ),
+    (
+      icon: Icons.assignment_outlined,
+      activeIcon: Icons.assignment,
+      label: 'Ata',
+      route: '/ata',
+      perm: AppPermissions.ata,
+    ),
+    (
+      icon: Icons.handshake_outlined,
+      activeIcon: Icons.handshake,
+      label: 'Ajuste',
+      route: '/ajuste',
+      perm: AppPermissions.ajuste,
+    ),
+    (
+      icon: Icons.calculate_outlined,
+      activeIcon: Icons.calculate,
+      label: 'Estimativa',
+      route: '/estimativa',
+      perm: AppPermissions.estimativa,
+    ),
+    (
+      icon: Icons.history_outlined,
+      activeIcon: Icons.history,
+      label: 'Logs',
+      route: '/logs',
+      perm: AppPermissions.none,
+    ),
   ];
 
   @override
@@ -45,8 +81,12 @@ class ShellPage extends ConsumerWidget {
     final env = ref.watch(environmentProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    final allowedItems = _allNavItems.where((d) => user?.hasPermission(d.perm) ?? false).toList();
-    final validSelectedIndex = selectedIndex < allowedItems.length ? selectedIndex : 0;
+    final allowedItems = _allNavItems
+        .where((d) => user?.hasPermission(d.perm) ?? false)
+        .toList();
+    final validSelectedIndex = selectedIndex < allowedItems.length
+        ? selectedIndex
+        : 0;
 
     return Scaffold(
       body: Row(
@@ -107,7 +147,9 @@ class ShellPage extends ConsumerWidget {
                         // Botão de admin ou perfil, conforme papel
                         if (user?.isAdmin == true) ...[
                           IconButton(
-                            icon: const Icon(Icons.admin_panel_settings_outlined),
+                            icon: const Icon(
+                              Icons.admin_panel_settings_outlined,
+                            ),
                             tooltip: 'Administração',
                             onPressed: () => context.go('/admin'),
                           ),
@@ -175,16 +217,14 @@ class _UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials =
-        user?.nome?.isNotEmpty == true ? user.nome[0].toUpperCase() : '?';
+    final initials = user?.nome?.isNotEmpty == true
+        ? user.nome[0].toUpperCase()
+        : '?';
 
     return PopupMenuButton<String>(
       tooltip: '${user?.nome ?? 'Perfil'}\n${user?.email ?? ''}',
       offset: const Offset(60, 0),
-      child: CircleAvatar(
-        radius: 18,
-        child: Text(initials),
-      ),
+      child: CircleAvatar(radius: 18, child: Text(initials)),
       itemBuilder: (ctx) => [
         PopupMenuItem(
           enabled: false,
@@ -195,10 +235,7 @@ class _UserAvatar extends StatelessWidget {
                 user?.nome ?? '—',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text(
-                user?.email ?? '',
-                style: const TextStyle(fontSize: 12),
-              ),
+              Text(user?.email ?? '', style: const TextStyle(fontSize: 12)),
               Text(
                 '${ref.watch(codigoMunicipioProvider)} — ${ref.watch(codigoEntidadeProvider)}',
                 style: const TextStyle(fontSize: 12),

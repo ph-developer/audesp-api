@@ -95,10 +95,9 @@ class CodigoEntidadeNotifier extends StringSettingNotifier {
 
 final codigoMunicipioProvider =
     NotifierProvider<CodigoMunicipioNotifier, String>(
-  CodigoMunicipioNotifier.new,
-);
+      CodigoMunicipioNotifier.new,
+    );
 
-final codigoEntidadeProvider =
-    NotifierProvider<CodigoEntidadeNotifier, String>(
+final codigoEntidadeProvider = NotifierProvider<CodigoEntidadeNotifier, String>(
   CodigoEntidadeNotifier.new,
 );

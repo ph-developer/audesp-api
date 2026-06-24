@@ -25,10 +25,7 @@ class TemplateDefinition {
   final String sheetName;
   final List<TemplateColumn> columns;
 
-  const TemplateDefinition({
-    required this.sheetName,
-    required this.columns,
-  });
+  const TemplateDefinition({required this.sheetName, required this.columns});
 
   int get columnCount => columns.length;
 

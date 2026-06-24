@@ -29,10 +29,10 @@ class AtaService {
     required LogService logService,
     required AtasDao atasDao,
     required Environment currentEnv,
-  })  : _api = apiService,
-        _log = logService,
-        _atasDao = atasDao,
-        _currentEnv = currentEnv;
+  }) : _api = apiService,
+       _log = logService,
+       _atasDao = atasDao,
+       _currentEnv = currentEnv;
 
   /// Envia ata ao AUDESP via multipart/form-data.
   /// Retorna a mensagem de sucesso do servidor.

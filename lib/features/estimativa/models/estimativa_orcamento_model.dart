@@ -8,10 +8,7 @@ class EstimativaOrcamento {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'fornecedorId': fornecedorId,
-      'valorUnitario': valorUnitario,
-    };
+    return {'fornecedorId': fornecedorId, 'valorUnitario': valorUnitario};
   }
 
   factory EstimativaOrcamento.fromMap(Map<String, dynamic> map) {
@@ -21,10 +18,7 @@ class EstimativaOrcamento {
     );
   }
 
-  EstimativaOrcamento copyWith({
-    String? fornecedorId,
-    double? valorUnitario,
-  }) {
+  EstimativaOrcamento copyWith({String? fornecedorId, double? valorUnitario}) {
     return EstimativaOrcamento(
       fornecedorId: fornecedorId ?? this.fornecedorId,
       valorUnitario: valorUnitario ?? this.valorUnitario,

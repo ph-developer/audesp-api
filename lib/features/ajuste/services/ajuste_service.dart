@@ -29,10 +29,10 @@ class AjusteService {
     required LogService logService,
     required AjustesDao ajustesDao,
     required Environment currentEnv,
-  })  : _api = apiService,
-        _log = logService,
-        _ajustesDao = ajustesDao,
-        _currentEnv = currentEnv;
+  }) : _api = apiService,
+       _log = logService,
+       _ajustesDao = ajustesDao,
+       _currentEnv = currentEnv;
 
   /// Envia ajuste ao AUDESP via multipart/form-data.
   Future<String> enviarAjuste({
@@ -40,8 +40,7 @@ class AjusteService {
     required String documentoJson,
     int? userId,
   }) async {
-    final endpoint =
-        '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-ajuste';
+    final endpoint = '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-ajuste';
 
     final formData = FormData.fromMap({
       'documentoJSON': MultipartFile.fromString(

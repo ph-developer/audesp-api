@@ -55,8 +55,8 @@ class AudespDropdown<T> extends StatelessWidget {
     this.readOnly = false,
     this.enabled = true,
     this.validator,
-  })  : _itemsMap = items,
-        _itemsList = null;
+  }) : _itemsMap = items,
+       _itemsList = null;
 
   /// Cria um dropdown a partir de uma lista de [DropdownMenuItem].
   const AudespDropdown.items({
@@ -68,16 +68,18 @@ class AudespDropdown<T> extends StatelessWidget {
     this.readOnly = false,
     this.enabled = true,
     this.validator,
-  })  : _itemsMap = null,
-        _itemsList = items;
+  }) : _itemsMap = null,
+       _itemsList = items;
 
   List<DropdownMenuItem<T>> _buildItems() {
     if (_itemsList != null) return _itemsList;
     return _itemsMap!.entries
-        .map((e) => DropdownMenuItem(
-              value: e.key,
-              child: Text(e.value, overflow: TextOverflow.ellipsis),
-            ))
+        .map(
+          (e) => DropdownMenuItem(
+            value: e.key,
+            child: Text(e.value, overflow: TextOverflow.ellipsis),
+          ),
+        )
         .toList();
   }
 

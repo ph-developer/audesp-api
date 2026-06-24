@@ -8,7 +8,12 @@ class SectionCard extends StatelessWidget {
   final List<Widget> titleActions;
   final List<Widget> children;
 
-  const SectionCard({super.key, required this.title, this.titleActions = const [], required this.children});
+  const SectionCard({
+    super.key,
+    required this.title,
+    this.titleActions = const [],
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +29,12 @@ class SectionCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                Row(                  
-                  children: titleActions,
-                ),
+                Row(children: titleActions),
               ],
             ),
             const Divider(height: 16),

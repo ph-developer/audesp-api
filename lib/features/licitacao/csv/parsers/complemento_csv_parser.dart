@@ -61,10 +61,15 @@ class ComplementoCsvParser {
         final tipoOrcStr = _tryGet(row, header, 'tipoorcamento');
         // Aceita tanto 'ValorEstimado' (template antigo) quanto
         // 'ValorEstimadoMedia' (template estendido) para retrocompatibilidade.
-        final valorEstStr = _tryGet(row, header, 'valorestimadimedia') ??
+        final valorEstStr =
+            _tryGet(row, header, 'valorestimadimedia') ??
             _tryGet(row, header, 'valorestimado');
         final dataOrcStr = _tryGet(row, header, 'dataorcamento');
-        final situacaoCompraItemStr = _tryGet(row, header, 'situacaocompraitem');
+        final situacaoCompraItemStr = _tryGet(
+          row,
+          header,
+          'situacaocompraitem',
+        );
         final dataSitStr = _tryGet(row, header, 'datasituacao');
         final tipoValStr = _tryGet(row, header, 'tipovalor');
         final tipoPropStr = _tryGet(row, header, 'tipoproposta');
@@ -81,7 +86,8 @@ class ComplementoCsvParser {
           dataOrcamento: dataOrcStr != null && dataOrcStr.isNotEmpty
               ? _parseDate(dataOrcStr)
               : null,
-          situacaoCompraItemId: situacaoCompraItemStr != null && situacaoCompraItemStr.isNotEmpty
+          situacaoCompraItemId:
+              situacaoCompraItemStr != null && situacaoCompraItemStr.isNotEmpty
               ? ComplementoCsvMapper.situacaoCompraItemId(situacaoCompraItemStr)
               : null,
           dataSituacao: dataSitStr != null && dataSitStr.isNotEmpty

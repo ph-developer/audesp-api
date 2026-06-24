@@ -21,9 +21,7 @@ class AuthService {
     final dio = Dio();
     final response = await dio.post(
       '$baseUrl/login',
-      options: Options(
-        headers: {'x-authorization': '$email:$password'},
-      ),
+      options: Options(headers: {'x-authorization': '$email:$password'}),
     );
     final token = response.data['access_token'] as String;
     _bearerToken = token;
@@ -34,4 +32,3 @@ class AuthService {
     _bearerToken = null;
   }
 }
-

@@ -193,7 +193,8 @@ class _LoteDialogState extends State<_LoteDialog> {
                                 child: AudespTextField(
                                   label: 'Unidade *',
                                   controller: _unidadeCtrl,
-                                  textCapitalization: TextCapitalization.characters,
+                                  textCapitalization:
+                                      TextCapitalization.characters,
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Obrigatório'
                                       : null,
@@ -205,10 +206,7 @@ class _LoteDialogState extends State<_LoteDialog> {
                           AudespDropdown<String>(
                             label: 'Material/Serviço *',
                             value: _materialOuServico,
-                            items: const {
-                              'M': 'Material',
-                              'S': 'Serviço',
-                            },
+                            items: const {'M': 'Material', 'S': 'Serviço'},
                             onChanged: (v) =>
                                 setState(() => _materialOuServico = v!),
                             validator: (v) => v == null ? 'Obrigatório' : null,

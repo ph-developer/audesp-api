@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/local_prefs.dart';
 import '../../../core/utils/password_hasher.dart';
@@ -110,7 +109,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<String?> _showSetPasswordModal(BuildContext context, String initialPassword) async {
+  Future<String?> _showSetPasswordModal(
+    BuildContext context,
+    String initialPassword,
+  ) async {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -121,60 +123,71 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         bool obscure1 = true;
         bool obscure2 = true;
 
-        return StatefulBuilder(builder: (ctx, setModalState) {
-          return AlertDialog(
-            title: const Text('Definir Nova Senha'),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Este é o seu primeiro acesso. Por favor, defina uma senha para sua conta.'),
-                  const SizedBox(height: 16),
-                  AudespTextField(
-                    label: 'Nova senha',
-                    controller: ctrl,
-                    obscureText: obscure1,
-                    suffixIcon: IconButton(
-                      icon: Icon(obscure1 ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setModalState(() => obscure1 = !obscure1),
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return AlertDialog(
+              title: const Text('Definir Nova Senha'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Este é o seu primeiro acesso. Por favor, defina uma senha para sua conta.',
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  AudespTextField(
-                    label: 'Confirmar senha',
-                    controller: confirmCtrl,
-                    obscureText: obscure2,
-                    suffixIcon: IconButton(
-                      icon: Icon(obscure2 ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setModalState(() => obscure2 = !obscure2),
+                    const SizedBox(height: 16),
+                    AudespTextField(
+                      label: 'Nova senha',
+                      controller: ctrl,
+                      obscureText: obscure1,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscure1 ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setModalState(() => obscure1 = !obscure1),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Obrigatório' : null,
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Obrigatório';
-                      if (v != ctrl.text) return 'As senhas não coincidem';
-                      return null;
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    AudespTextField(
+                      label: 'Confirmar senha',
+                      controller: confirmCtrl,
+                      obscureText: obscure2,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscure2 ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setModalState(() => obscure2 = !obscure2),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Obrigatório';
+                        if (v != ctrl.text) return 'As senhas não coincidem';
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, null),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    Navigator.pop(ctx, ctrl.text);
-                  }
-                },
-                child: const Text('Salvar e Entrar'),
-              ),
-            ],
-          );
-        });
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, null),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(ctx, ctrl.text);
+                    }
+                  },
+                  child: const Text('Salvar e Entrar'),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
   }

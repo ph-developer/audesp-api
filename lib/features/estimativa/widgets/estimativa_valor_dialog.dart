@@ -34,7 +34,10 @@ Future<double?> showEstimativaValorDialog({
           if (atual != null)
             TextButton(
               onPressed: () => Navigator.pop(ctx, -1.0),
-              child: const Text('Remover Valor', style: TextStyle(color: Colors.red)),
+              child: const Text(
+                'Remover Valor',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -42,7 +45,9 @@ Future<double?> showEstimativaValorDialog({
           ),
           FilledButton(
             onPressed: () {
-              final vStr = valorCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+              final vStr = valorCtrl.text
+                  .replaceAll('.', '')
+                  .replaceAll(',', '.');
               final v = double.tryParse(vStr);
               if (v != null) {
                 Navigator.pop(ctx, v);

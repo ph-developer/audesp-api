@@ -16,9 +16,11 @@ import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ata_providers.dart';
 import '../services/ata_service.dart';
@@ -250,9 +252,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       ref.invalidate(atasEnviadasProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -301,9 +301,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+          AudespSnackBar.success(context, msg);
           context.go('/ata');
         }
       },
@@ -312,9 +310,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    AudespSnackBar.error(context, msg);
   }
 
   // ── Itens ─────────────────────────────────────────────────────────────
@@ -390,11 +386,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           if (_isSent)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Chip(
-                label: const Text('Enviada'),
-                avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              ),
+              child: StatusChip.document('sent'),
             ),
         ],
       ),

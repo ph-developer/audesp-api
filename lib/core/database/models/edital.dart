@@ -28,21 +28,21 @@ class Edital {
   });
 
   factory Edital.fromMap(Map<String, dynamic> row) => Edital(
-        id: row['id'] as int,
-        municipio: row['municipio'] as String,
-        entidade: row['entidade'] as String,
-        codigoEdital: row['codigo_edital'] as String,
-        retificacao: (row['retificacao'] as int) == 1,
-        status: row['status'] as String,
-        pdfPath: row['pdf_path'] as String?,
-        documentoJson: row['documento_json'] as String,
-        createdAt: DateTime.fromMillisecondsSinceEpoch(
-          (row['created_at'] as int) * 1000,
-        ),
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(
-          (row['updated_at'] as int) * 1000,
-        ),
-      );
+    id: row['id'] as int,
+    municipio: row['municipio'] as String,
+    entidade: row['entidade'] as String,
+    codigoEdital: row['codigo_edital'] as String,
+    retificacao: (row['retificacao'] as int) == 1,
+    status: row['status'] as String,
+    pdfPath: row['pdf_path'] as String?,
+    documentoJson: row['documento_json'] as String,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(
+      (row['created_at'] as int) * 1000,
+    ),
+    updatedAt: DateTime.fromMillisecondsSinceEpoch(
+      (row['updated_at'] as int) * 1000,
+    ),
+  );
 
   String get dropdownLabel {
     try {
@@ -71,8 +71,7 @@ class Edital {
   String get idContratacaoPNCP {
     try {
       final publicidade = _doc['publicidade'] as Map<String, dynamic>?;
-      final publicacoes =
-          publicidade?['publicacoes'] as List<dynamic>?;
+      final publicacoes = publicidade?['publicacoes'] as List<dynamic>?;
       if (publicacoes != null && publicacoes.isNotEmpty) {
         final id = publicacoes.first['idContratacaoPNCP'] as String?;
         if (id != null && id.isNotEmpty) return id;
@@ -95,15 +94,15 @@ class Edital {
   String get objetoCompra => _doc['objetoCompra']?.toString() ?? '';
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'municipio': municipio,
-        'entidade': entidade,
-        'codigo_edital': codigoEdital,
-        'retificacao': retificacao ? 1 : 0,
-        'status': status,
-        'pdf_path': pdfPath,
-        'documento_json': documentoJson,
-        'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
-        'updated_at': updatedAt.millisecondsSinceEpoch ~/ 1000,
-      };
+    'id': id,
+    'municipio': municipio,
+    'entidade': entidade,
+    'codigo_edital': codigoEdital,
+    'retificacao': retificacao ? 1 : 0,
+    'status': status,
+    'pdf_path': pdfPath,
+    'documento_json': documentoJson,
+    'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
+    'updated_at': updatedAt.millisecondsSinceEpoch ~/ 1000,
+  };
 }

@@ -14,26 +14,26 @@ final _kAjusteFields = <GeminiField>[
   GeminiField(
     key: 'tipoContratoId',
     label: 'Tipo de Contrato',
-    hint: 'Código numérico: 1=Contrato, 2=Comodato, 3=Arrendamento, 4=Concessão, 5=Termo Adesão, 7=Empenho, 8=Outros, 12=Carta Contrato',
+    hint:
+        'Código numérico: 1=Contrato, 2=Comodato, 3=Arrendamento, 4=Concessão, 5=Termo Adesão, 7=Empenho, 8=Outros, 12=Carta Contrato',
   ),
   GeminiField(
     key: 'numeroContratoEmpenho',
     label: 'Número do Contrato/Empenho',
-    hint: 'Apenas o número SEQUENCIAL do contrato, SEM o ano. Exemplo: se no texto estiver "184/2026", retorne apenas "184".',
+    hint:
+        'Apenas o número SEQUENCIAL do contrato, SEM o ano. Exemplo: se no texto estiver "184/2026", retorne apenas "184".',
   ),
   GeminiField(
     key: 'anoContrato',
     label: 'Ano do Contrato',
     hint: 'formato YYYY',
   ),
-  GeminiField(
-    key: 'processo',
-    label: 'Número do Processo',
-  ),
+  GeminiField(key: 'processo', label: 'Número do Processo'),
   GeminiField(
     key: 'categoriaProcessoId',
     label: 'Categoria do Processo',
-    hint: 'Retorne o código numérico: 1=Cessão, 2=Compras, 3=TIC, 4=Internacional, 5=Locação Imóveis, 6=Mão de Obra, 7=Obras, 8=Serviços, 9=Serviços Engenharia, 10=Saúde, 11=Alienação.',
+    hint:
+        'Retorne o código numérico: 1=Cessão, 2=Compras, 3=TIC, 4=Internacional, 5=Locação Imóveis, 6=Mão de Obra, 7=Obras, 8=Serviços, 9=Serviços Engenharia, 10=Saúde, 11=Alienação.',
   ),
   GeminiField(
     key: 'niFornecedor',
@@ -47,7 +47,8 @@ final _kAjusteFields = <GeminiField>[
   GeminiField(
     key: 'tipoObjetoContrato',
     label: 'Tipo de Objeto do Contrato',
-    hint: 'Retorne o código numérico: 1=Permissão, 2=Concessão, 3=Equipamentos, 4=Mat Expediente, 5=Medicamentos, 6=Mat Hospitalar, 7=Mat Escolar, 8=Uniforme, 9=Alimentos, 10=Combustíveis, 11=Outros Materiais, 12=Compras TIC, 13=Serviços TIC, 14=SIAFIC, 15=Internacional, 16=Locação imóveis, 17=Locação mão de obra, 18=Aterro, 19=Obras/Engenharia, 20=Coleta Lixo, 21=Limpeza urbana, 22=Transporte escolar, 23=Publicidade, 24=Passagens, 25=Consultoria, 26=Op Crédito, 27=Outros serviços, 28=Serv Saúde, 29=Alienação.',
+    hint:
+        'Retorne o código numérico: 1=Permissão, 2=Concessão, 3=Equipamentos, 4=Mat Expediente, 5=Medicamentos, 6=Mat Hospitalar, 7=Mat Escolar, 8=Uniforme, 9=Alimentos, 10=Combustíveis, 11=Outros Materiais, 12=Compras TIC, 13=Serviços TIC, 14=SIAFIC, 15=Internacional, 16=Locação imóveis, 17=Locação mão de obra, 18=Aterro, 19=Obras/Engenharia, 20=Coleta Lixo, 21=Limpeza urbana, 22=Transporte escolar, 23=Publicidade, 24=Passagens, 25=Consultoria, 26=Op Crédito, 27=Outros serviços, 28=Serv Saúde, 29=Alienação.',
   ),
   GeminiField(
     key: 'objetoContrato',
@@ -57,12 +58,14 @@ final _kAjusteFields = <GeminiField>[
   GeminiField(
     key: 'itens',
     label: 'Itens Contratados',
-    hint: 'Lista de números sequenciais dos itens contratados separados por vírgula (Ex: 1, 2, 3)',
+    hint:
+        'Lista de números sequenciais dos itens contratados separados por vírgula (Ex: 1, 2, 3)',
   ),
   GeminiField(
     key: 'valorInicial',
     label: 'Valor Inicial (R\$)',
-    hint: 'Apenas os números formatados no padrão brasileiro. Exemplo: 15.000,00',
+    hint:
+        'Apenas os números formatados no padrão brasileiro. Exemplo: 15.000,00',
   ),
   GeminiField(
     key: 'dataAssinatura',
@@ -116,10 +119,7 @@ Future<Map<String, String>?> showGeminiAjusteImportDialog({
     context: context,
     barrierDismissible: false,
     size: DialogSize.medium,
-    builder: (_) => _GeminiLoadingDialog(
-      ref: ref,
-      filePath: filePath,
-    ),
+    builder: (_) => _GeminiLoadingDialog(ref: ref, filePath: filePath),
   );
 
   if (result == null || !context.mounted) return null;
@@ -144,10 +144,7 @@ class _GeminiLoadingDialog extends StatefulWidget {
   final WidgetRef ref;
   final String filePath;
 
-  const _GeminiLoadingDialog({
-    required this.ref,
-    required this.filePath,
-  });
+  const _GeminiLoadingDialog({required this.ref, required this.filePath});
 
   @override
   State<_GeminiLoadingDialog> createState() => _GeminiLoadingDialogState();
@@ -199,8 +196,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 const SizedBox(height: 8),
                 Text(
                   _errorMessage!,
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.error),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
             )
@@ -211,7 +207,9 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 SizedBox(height: 8),
                 LinearProgressIndicator(),
                 SizedBox(height: 16),
-                Text('O Gemini está lendo o documento e extraindo os campos do ajuste. Aguarde…'),
+                Text(
+                  'O Gemini está lendo o documento e extraindo os campos do ajuste. Aguarde…',
+                ),
               ],
             ),
       actions: [
@@ -257,20 +255,17 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
     super.initState();
     _accepted = {
       for (final f in widget.fields)
-        f.key: widget.suggestedValues[f.key] != null &&
+        f.key:
+            widget.suggestedValues[f.key] != null &&
             (widget.currentValues[f.key] ?? '').isEmpty,
     };
   }
 
   void _acceptAll() => setState(
-        () => _accepted.updateAll(
-          (k, _) => widget.suggestedValues[k] != null,
-        ),
-      );
+    () => _accepted.updateAll((k, _) => widget.suggestedValues[k] != null),
+  );
 
-  void _rejectAll() => setState(
-        () => _accepted.updateAll((_, _) => false),
-      );
+  void _rejectAll() => setState(() => _accepted.updateAll((_, _) => false));
 
   Map<String, String> _buildResult() {
     final result = <String, String>{};
@@ -283,8 +278,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
     return result;
   }
 
-  int get _acceptedCount =>
-      _accepted.values.where((v) => v).length;
+  int get _acceptedCount => _accepted.values.where((v) => v).length;
 
   @override
   Widget build(BuildContext context) {
@@ -385,17 +379,12 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
 
     return TableRow(
       decoration: BoxDecoration(
-        color: isAccepted
-            ? colorScheme.primaryContainer.withAlpha(80)
-            : null,
+        color: isAccepted ? colorScheme.primaryContainer.withAlpha(80) : null,
       ),
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Text(
-            field.label,
-            style: const TextStyle(fontSize: 12),
-          ),
+          child: Text(field.label, style: const TextStyle(fontSize: 12)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -429,10 +418,10 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
   }
 
   static Widget _tableHeader(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+    ),
+  );
 }

@@ -29,10 +29,10 @@ class EditalService {
     required LogService logService,
     required EditaisDao editaisDao,
     required Environment currentEnv,
-  })  : _api = apiService,
-        _log = logService,
-        _editaisDao = editaisDao,
-        _currentEnv = currentEnv;
+  }) : _api = apiService,
+       _log = logService,
+       _editaisDao = editaisDao,
+       _currentEnv = currentEnv;
 
   /// Envia edital ao AUDESP via multipart/form-data.
   /// Retorna a mensagem de sucesso do servidor.
@@ -42,8 +42,7 @@ class EditalService {
     required String? pdfPath,
     int? userId,
   }) async {
-    final endpoint =
-        '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-edital';
+    final endpoint = '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-edital';
 
     final fields = <String, dynamic>{
       'documentoJSON': MultipartFile.fromString(

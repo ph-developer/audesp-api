@@ -47,7 +47,8 @@ class AudespQuantityField extends StatelessWidget {
       enabled: enabled,
       decimals: true,
       hintText: hintText,
-      validator: validator ??
+      validator:
+          validator ??
           (v) {
             if (v == null || v.isEmpty) return 'Obrigatório';
             if (fmt.parseBrCurrencyOrNull(v) == null) {

@@ -55,11 +55,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
       ),
       body: TabBarView(
         controller: _tab,
-        children: const [
-          _UsersTab(),
-          _EnvironmentTab(),
-          _GeminiTab(),
-        ],
+        children: const [_UsersTab(), _EnvironmentTab(), _GeminiTab()],
       ),
     );
   }
@@ -112,18 +108,16 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               itemCount: users.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
-               itemBuilder: (ctx, i) {
-                 final u = users[i];
-                 return DocumentCard(
-                   leading: CircleAvatar(
-                     child: Text(u.nome[0].toUpperCase()),
-                   ),
-                   title: u.nome,
-                   subtitle: Text(u.email),
-                   onDelete: () => _confirmDelete(u),
-                   onEdit: () => _openForm(u),
-                 );
-               },
+              itemBuilder: (ctx, i) {
+                final u = users[i];
+                return DocumentCard(
+                  leading: CircleAvatar(child: Text(u.nome[0].toUpperCase())),
+                  title: u.nome,
+                  subtitle: Text(u.email),
+                  onDelete: () => _confirmDelete(u),
+                  onEdit: () => _openForm(u),
+                );
+              },
             );
           },
         ),
@@ -154,7 +148,8 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
     if (session?.id == user.id) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Não é possível excluir o usuário logado.')),
+          content: Text('Não é possível excluir o usuário logado.'),
+        ),
       );
       return;
     }
@@ -323,7 +318,9 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                                   'A seleção de ambiente é persistida e aplica-se a todas as chamadas API.',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.outline,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
                                   ),
                                 ),
                               ),
@@ -379,7 +376,8 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2),
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.save_outlined),
                         label: const Text('Salvar'),
@@ -509,8 +507,7 @@ class _GeminiTabState extends ConsumerState<_GeminiTab> {
                   label: 'Chave de API do Gemini',
                   controller: _apiKeyCtrl,
                   hintText: 'AIza...',
-                  helperText:
-                      'Obtenha em https://aistudio.google.com/apikey',
+                  helperText: 'Obtenha em https://aistudio.google.com/apikey',
                   obscureText: _obscureKey,
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -519,8 +516,7 @@ class _GeminiTabState extends ConsumerState<_GeminiTab> {
                           : Icons.visibility_off_outlined,
                     ),
                     tooltip: _obscureKey ? 'Mostrar' : 'Ocultar',
-                    onPressed: () =>
-                        setState(() => _obscureKey = !_obscureKey),
+                    onPressed: () => setState(() => _obscureKey = !_obscureKey),
                   ),
                 ),
                 const SizedBox(height: 16),

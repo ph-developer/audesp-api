@@ -75,9 +75,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar perfil: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao salvar perfil: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -98,7 +98,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (next.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('A nova senha deve ter ao menos 6 caracteres.')),
+          content: Text('A nova senha deve ter ao menos 6 caracteres.'),
+        ),
       );
       return;
     }
@@ -111,13 +112,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (_user!.passwordHash == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuário sem senha definida no banco de dados.')),
+            const SnackBar(
+              content: Text('Usuário sem senha definida no banco de dados.'),
+            ),
           );
         }
         return;
       }
-      
-      bool ok = PasswordHasher.verify(_user!.email, current, _user!.passwordHash!);
+
+      bool ok = PasswordHasher.verify(
+        _user!.email,
+        current,
+        _user!.passwordHash!,
+      );
 
       if (!ok) {
         if (mounted) {
@@ -148,9 +155,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar senha: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar senha: $e')));
       }
     } finally {
       if (mounted) setState(() => _savingSysPw = false);
@@ -208,7 +215,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     height: 14,
                                     width: 14,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2),
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Salvar dados'),
                           ),
@@ -248,11 +256,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         controller: _sysPwAtualCtrl,
                         obscureText: _obscureSysPwAtual,
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureSysPwAtual
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _obscureSysPwAtual
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () => setState(
-                              () => _obscureSysPwAtual = !_obscureSysPwAtual),
+                            () => _obscureSysPwAtual = !_obscureSysPwAtual,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -262,11 +273,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         obscureText: _obscureSysPwNova,
                         helperText: 'Mínimo de 6 caracteres',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureSysPwNova
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _obscureSysPwNova
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () => setState(
-                              () => _obscureSysPwNova = !_obscureSysPwNova),
+                            () => _obscureSysPwNova = !_obscureSysPwNova,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -279,7 +293,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   height: 14,
                                   width: 14,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2),
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text('Alterar senha do sistema'),
                         ),
@@ -288,7 +303,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
@@ -296,4 +310,3 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 }
-

@@ -3,14 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Sessão local — usuário selecionado no login do app
 // ─────────────────────────────────────────────────────────────────────────────
 
-final localSessionProvider =
-    NotifierProvider<LocalSessionNotifier, User?>(
+final localSessionProvider = NotifierProvider<LocalSessionNotifier, User?>(
   LocalSessionNotifier.new,
 );
 
@@ -29,6 +26,9 @@ class LocalSessionNotifier extends Notifier<User?> {
 
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(Ref ref) {
-    ref.listen<User?>(localSessionProvider, (previous, next) => notifyListeners());
+    ref.listen<User?>(
+      localSessionProvider,
+      (previous, next) => notifyListeners(),
+    );
   }
 }

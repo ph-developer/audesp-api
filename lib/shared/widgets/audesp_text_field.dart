@@ -86,18 +86,16 @@ class AudespTextField extends StatelessWidget {
       textCapitalization: textCapitalization,
       onFieldSubmitted: onFieldSubmitted,
       textInputAction: textInputAction,
-      decoration: const InputDecoration(
-        counterText: '',
-        isDense: true,
-      ).copyWith(
-        labelText: label,
-        hintText: hintText,
-        prefixText: prefixText,
-        suffixText: suffixText,
-        helperText: helperText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-      ),
+      decoration: const InputDecoration(counterText: '', isDense: true)
+          .copyWith(
+            labelText: label,
+            hintText: hintText,
+            prefixText: prefixText,
+            suffixText: suffixText,
+            helperText: helperText,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
+          ),
     );
   }
 }

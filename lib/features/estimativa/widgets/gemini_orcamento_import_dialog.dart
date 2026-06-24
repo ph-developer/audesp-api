@@ -125,7 +125,9 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 SizedBox(height: 8),
                 LinearProgressIndicator(),
                 SizedBox(height: 16),
-                Text('O Gemini está lendo o orçamento e buscando os itens da estimativa. Aguarde…'),
+                Text(
+                  'O Gemini está lendo o orçamento e buscando os itens da estimativa. Aguarde…',
+                ),
               ],
             ),
       actions: [
@@ -158,10 +160,12 @@ class _GeminiOrcamentoReviewDialog extends StatefulWidget {
   });
 
   @override
-  State<_GeminiOrcamentoReviewDialog> createState() => _GeminiOrcamentoReviewDialogState();
+  State<_GeminiOrcamentoReviewDialog> createState() =>
+      _GeminiOrcamentoReviewDialogState();
 }
 
-class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDialog> {
+class _GeminiOrcamentoReviewDialogState
+    extends State<_GeminiOrcamentoReviewDialog> {
   final _formKey = GlobalKey<FormState>();
   final _razaoSocialCtrl = TextEditingController();
   final _cnpjCtrl = TextEditingController();
@@ -173,13 +177,15 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
   void initState() {
     super.initState();
     _razaoSocialCtrl.text = widget.suggestedValues.razaoSocial ?? '';
-    _cnpjCtrl.text = widget.suggestedValues.cnpj?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+    _cnpjCtrl.text =
+        widget.suggestedValues.cnpj?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
     _dataCtrl.text = widget.suggestedValues.data ?? '';
 
     // Pré-seleciona todos os itens que tiveram valor retornado.
     _acceptedItems = {
       for (final item in widget.itensEstimativa)
-        if (item['id'] != null && widget.suggestedValues.itens.containsKey(item['id']))
+        if (item['id'] != null &&
+            widget.suggestedValues.itens.containsKey(item['id']))
           item['id'] as String: true,
     };
   }
@@ -192,13 +198,10 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
     super.dispose();
   }
 
-  void _acceptAll() => setState(
-        () => _acceptedItems.updateAll((k, v) => true),
-      );
+  void _acceptAll() => setState(() => _acceptedItems.updateAll((k, v) => true));
 
-  void _rejectAll() => setState(
-        () => _acceptedItems.updateAll((k, v) => false),
-      );
+  void _rejectAll() =>
+      setState(() => _acceptedItems.updateAll((k, v) => false));
 
   int get _acceptedCount => _acceptedItems.values.where((v) => v).length;
 
@@ -255,7 +258,8 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                     child: AudespTextField(
                       label: 'Razão Social',
                       controller: _razaoSocialCtrl,
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -265,7 +269,8 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                       controller: _cnpjCtrl,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -278,7 +283,9 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                         DateTime initialDate = DateTime.now();
                         try {
                           if (_dataCtrl.text.isNotEmpty) {
-                            initialDate = DateFormat('dd/MM/yyyy').parseLoose(_dataCtrl.text);
+                            initialDate = DateFormat(
+                              'dd/MM/yyyy',
+                            ).parseLoose(_dataCtrl.text);
                           }
                         } catch (_) {}
                         final picked = await showDatePicker(
@@ -288,11 +295,14 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                           lastDate: DateTime(2100),
                         );
                         if (picked != null) {
-                          _dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
+                          _dataCtrl.text = DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(picked);
                         }
                       },
                       suffixIcon: const Icon(Icons.calendar_today, size: 18),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
                 ],
@@ -301,10 +311,7 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 8),
-            Text(
-              'Itens Encontrados no PDF',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Itens Encontrados no PDF', style: theme.textTheme.titleSmall),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -339,7 +346,8 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                       ],
                     ),
                     for (final item in widget.itensEstimativa)
-                      if (item['id'] != null && widget.suggestedValues.itens.containsKey(item['id']))
+                      if (item['id'] != null &&
+                          widget.suggestedValues.itens.containsKey(item['id']))
                         _buildRow(item, colorScheme, fmt),
                   ],
                 ),
@@ -375,7 +383,11 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
     );
   }
 
-  TableRow _buildRow(Map<String, dynamic> item, ColorScheme colorScheme, NumberFormat fmt) {
+  TableRow _buildRow(
+    Map<String, dynamic> item,
+    ColorScheme colorScheme,
+    NumberFormat fmt,
+  ) {
     final id = item['id'] as String?;
     final desc = item['descricao'] as String? ?? '';
     final suggested = id != null ? widget.suggestedValues.itens[id] : null;
@@ -384,9 +396,7 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
 
     return TableRow(
       decoration: BoxDecoration(
-        color: isAccepted
-            ? colorScheme.primaryContainer.withAlpha(80)
-            : null,
+        color: isAccepted ? colorScheme.primaryContainer.withAlpha(80) : null,
       ),
       children: [
         Padding(
@@ -418,10 +428,10 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
   }
 
   static Widget _tableHeader(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+    ),
+  );
 }

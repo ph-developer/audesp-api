@@ -44,7 +44,9 @@ class EstimativaLote {
       itemCategoriaId: map['itemCategoriaId']?.toInt(),
       exclusivoMeEpp: map['exclusivoMeEpp'] ?? false,
       itens: List<EstimativaItem>.from(
-        (map['itens'] as List<dynamic>? ?? []).map((x) => EstimativaItem.fromMap(x)),
+        (map['itens'] as List<dynamic>? ?? []).map(
+          (x) => EstimativaItem.fromMap(x),
+        ),
       ),
     );
   }
@@ -72,6 +74,9 @@ class EstimativaLote {
   }
 
   double getValorTotal(String calculoGlobal) {
-    return itens.fold(0.0, (sum, item) => sum + item.getValorTotal(calculoGlobal));
+    return itens.fold(
+      0.0,
+      (sum, item) => sum + item.getValorTotal(calculoGlobal),
+    );
   }
 }

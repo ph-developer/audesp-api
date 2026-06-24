@@ -35,7 +35,11 @@ class PdfComprovanteService {
     return '${name.substring(0, 3.clamp(1, name.length))}***@$domain';
   }
 
-  static Future<void> gerarComprovante(BuildContext context, WidgetRef ref, ApiLog log) async {
+  static Future<void> gerarComprovante(
+    BuildContext context,
+    WidgetRef ref,
+    ApiLog log,
+  ) async {
     String userDisplay = log.userId?.toString() ?? 'N/A';
     if (log.userId != null) {
       final user = await ref.read(usersDaoProvider).findById(log.userId!);
@@ -69,10 +73,7 @@ class PdfComprovanteService {
                   ),
                   pw.Text(
                     'AUDESP API',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      color: PdfColors.grey700,
-                    ),
+                    style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
                   ),
                 ],
               ),
@@ -82,10 +83,7 @@ class PdfComprovanteService {
             // Resumo
             pw.Text(
               'Resumo dos Dados',
-              style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.Divider(),
             _buildRow('Módulo:', label),
@@ -107,7 +105,9 @@ class PdfComprovanteService {
                 ),
               ),
               pw.Divider(),
-              ..._prettyJson(log.retornoStatus).split('\n').map(
+              ..._prettyJson(log.retornoStatus)
+                  .split('\n')
+                  .map(
                     (line) => pw.Text(
                       line,
                       style: const pw.TextStyle(
@@ -122,13 +122,12 @@ class PdfComprovanteService {
             // Request Body
             pw.Text(
               'Payload Enviado (Request)',
-              style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.Divider(),
-            ..._prettyJson(log.request).split('\n').map(
+            ..._prettyJson(log.request)
+                .split('\n')
+                .map(
                   (line) => pw.Text(
                     line,
                     style: const pw.TextStyle(
@@ -149,7 +148,9 @@ class PdfComprovanteService {
                 ),
               ),
               pw.Divider(),
-              ..._prettyJson(log.response).split('\n').map(
+              ..._prettyJson(log.response)
+                  .split('\n')
+                  .map(
                     (line) => pw.Text(
                       line,
                       style: const pw.TextStyle(
@@ -211,9 +212,7 @@ class PdfComprovanteService {
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(value),
-          ),
+          pw.Expanded(child: pw.Text(value)),
         ],
       ),
     );

@@ -56,7 +56,10 @@ class DocumentCard extends StatelessWidget {
                   if (chips.isNotEmpty) const SizedBox(width: 4),
                   if (onDelete != null)
                     IconButton(
-                      icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: colorScheme.error,
+                      ),
                       tooltip: 'Excluir',
                       onPressed: onDelete,
                     ),

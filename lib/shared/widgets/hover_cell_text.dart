@@ -61,10 +61,7 @@ class _HoverCellTextState extends State<HoverCellText> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: child,
-      ),
+      child: GestureDetector(onTap: widget.onTap, child: child),
     );
   }
 }

@@ -27,7 +27,8 @@ Future<bool> showAudespAuthDialog(
     context: context,
     barrierDismissible: false,
     size: DialogSize.small,
-    builder: (_) => _AudespAuthDialog(onConfirm: onConfirm, actionLabel: actionLabel),
+    builder: (_) =>
+        _AudespAuthDialog(onConfirm: onConfirm, actionLabel: actionLabel),
   );
   return result == true;
 }
@@ -128,9 +129,7 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
             obscureText: _obscure,
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
-              icon: Icon(
-                _obscure ? Icons.visibility_off : Icons.visibility,
-              ),
+              icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
               onPressed: () => setState(() => _obscure = !_obscure),
             ),
             onChanged: (_) {

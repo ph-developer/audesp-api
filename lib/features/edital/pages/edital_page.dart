@@ -7,8 +7,10 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../edital_providers.dart'
     show editaisDraftProvider, editaisEnviadosProvider;
 import '../widgets/pcnp_input_formatter.dart';
@@ -150,17 +152,7 @@ class _EditalList extends ConsumerWidget {
                   ),
                 ],
               ),
-              chips: [
-                if (edital.retificacao)
-                  Chip(
-                    label: const Text('Retificação'),
-                    backgroundColor: colorScheme.tertiaryContainer,
-                    labelStyle: TextStyle(
-                      color: colorScheme.onTertiaryContainer,
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-              ],
+              chips: [if (edital.retificacao) StatusChip.retificacao()],
               onDelete: isSent
                   ? null
                   : () => _confirmDelete(context, ref, edital),
@@ -192,12 +184,7 @@ Future<void> _confirmDelete(
       ref.invalidate(editaisEnviadosProvider);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao excluir: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AudespSnackBar.error(context, 'Erro ao excluir: $e');
     }
   }
 }

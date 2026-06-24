@@ -7,7 +7,9 @@ class EstimativasDao {
   EstimativasDao(this._db);
 
   Future<List<EstimativaModel>> watchAll() async {
-    final result = await _db.pool.execute('SELECT * FROM estimativas ORDER BY ano DESC, numero DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM estimativas ORDER BY ano DESC, numero DESC',
+    );
     return result.rows.map((r) {
       final map = r.typedAssoc();
       final id = map['id'] as int;
@@ -36,7 +38,9 @@ class EstimativasDao {
   }
 
   Future<EstimativaModel?> findById(int id) async {
-    final stmt = await _db.pool.prepare('SELECT * FROM estimativas WHERE id = (?)');
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM estimativas WHERE id = (?)',
+    );
     final result = await stmt.execute([id]);
     final rows = result.rows;
     if (rows.isEmpty) return null;
@@ -65,7 +69,9 @@ class EstimativasDao {
   }
 
   Future<int> getNextNumero(int ano) async {
-    final stmt = await _db.pool.prepare('SELECT MAX(numero) as max_num FROM estimativas WHERE ano = ?');
+    final stmt = await _db.pool.prepare(
+      'SELECT MAX(numero) as max_num FROM estimativas WHERE ano = ?',
+    );
     final result = await stmt.execute([ano]);
     final rows = result.rows;
     if (rows.isEmpty || rows.first.typedAssoc()['max_num'] == null) {
@@ -76,7 +82,7 @@ class EstimativasDao {
 
   Future<int> insertEstimativa(EstimativaModel estimativa) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    
+
     // Obter o próximo número do ano caso não tenha (ex: numero == 0)
     int numero = estimativa.numero;
     int ano = estimativa.ano;
@@ -87,7 +93,12 @@ class EstimativasDao {
       numero = await getNextNumero(ano);
     }
 
-    final estimativaToSave = estimativa.copyWith(numero: numero, ano: ano, createdAt: now, updatedAt: now);
+    final estimativaToSave = estimativa.copyWith(
+      numero: numero,
+      ano: ano,
+      createdAt: now,
+      updatedAt: now,
+    );
     final jsonStr = jsonEncode(estimativaToSave.toMap());
 
     final stmt = await _db.pool.prepare(

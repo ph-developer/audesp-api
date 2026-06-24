@@ -5,7 +5,8 @@ import 'package:path/path.dart' as p;
 class LocalPrefs {
   LocalPrefs._();
 
-  static String get _dir => p.join(Platform.environment['APPDATA'] ?? '', 'audesp_api');
+  static String get _dir =>
+      p.join(Platform.environment['APPDATA'] ?? '', 'audesp_api');
   static String get _file => p.join(_dir, 'last_user.txt');
 
   static Future<String?> getLastUser() async {

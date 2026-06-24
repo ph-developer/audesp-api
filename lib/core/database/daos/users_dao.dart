@@ -11,8 +11,7 @@ class UsersDao {
   }
 
   Future<User?> findById(int id) async {
-    final stmt =
-        await _db.pool.prepare('SELECT * FROM users WHERE id = (?)');
+    final stmt = await _db.pool.prepare('SELECT * FROM users WHERE id = (?)');
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : User.fromMap(rows.first.typedAssoc());
@@ -44,7 +43,14 @@ class UsersDao {
     final stmt = await _db.pool.prepare(
       'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     );
-    final result = await stmt.execute([nome, email, passwordHash, isAdmin ? 1 : 0, permissions, now]);
+    final result = await stmt.execute([
+      nome,
+      email,
+      passwordHash,
+      isAdmin ? 1 : 0,
+      permissions,
+      now,
+    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -58,7 +64,13 @@ class UsersDao {
     final stmt = await _db.pool.prepare(
       'UPDATE users SET nome = ?, email = ?, is_admin = ?, permissions = ? WHERE id = ?',
     );
-    final result = await stmt.execute([nome, email, isAdmin ? 1 : 0, permissions, id]);
+    final result = await stmt.execute([
+      nome,
+      email,
+      isAdmin ? 1 : 0,
+      permissions,
+      id,
+    ]);
     return result.affectedRows.toInt() > 0;
   }
 

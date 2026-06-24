@@ -169,10 +169,7 @@ class _ItemDialogState extends State<_ItemDialog> {
                               child: AudespDropdown<String>(
                                 label: 'Material/Serviço *',
                                 value: _materialOuServico,
-                                items: const {
-                                  'M': 'Material',
-                                  'S': 'Serviço',
-                                },
+                                items: const {'M': 'Material', 'S': 'Serviço'},
                                 onChanged: (v) {
                                   if (v != null) {
                                     setState(() => _materialOuServico = v);

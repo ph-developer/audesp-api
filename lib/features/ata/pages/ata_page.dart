@@ -7,8 +7,10 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ata_providers.dart';
 
@@ -171,17 +173,7 @@ class _AtaList extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  chips: [
-                    if (ata.retificacao)
-                      Chip(
-                        label: const Text('Retificação'),
-                        backgroundColor: colorScheme.tertiaryContainer,
-                        labelStyle: TextStyle(
-                          color: colorScheme.onTertiaryContainer,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                  ],
+                  chips: [if (ata.retificacao) StatusChip.retificacao()],
                   onDelete: isSent
                       ? null
                       : () => _confirmDelete(context, ref, ata),
@@ -220,12 +212,7 @@ Future<void> _confirmDelete(
       ref.invalidate(atasEnviadasProvider);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao excluir: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AudespSnackBar.error(context, 'Erro ao excluir: $e');
     }
   }
 }

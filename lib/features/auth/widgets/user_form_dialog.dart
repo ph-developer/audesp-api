@@ -98,9 +98,9 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e')));
       }
     }
   }
@@ -168,7 +168,10 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 if (!_isAdmin) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Permissões de Módulo', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Permissões de Módulo',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   AudespCheckbox(
                     label: 'Edital',
@@ -178,7 +181,8 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                   AudespCheckbox(
                     label: 'Licitação',
                     value: _permLicitacao,
-                    onChanged: (v) => setState(() => _permLicitacao = v ?? false),
+                    onChanged: (v) =>
+                        setState(() => _permLicitacao = v ?? false),
                   ),
                   AudespCheckbox(
                     label: 'Ata',
@@ -193,7 +197,8 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                   AudespCheckbox(
                     label: 'Estimativa',
                     value: _permEstimativa,
-                    onChanged: (v) => setState(() => _permEstimativa = v ?? false),
+                    onChanged: (v) =>
+                        setState(() => _permEstimativa = v ?? false),
                   ),
                 ],
               ],
@@ -214,7 +219,6 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
     );
   }
 }
-
 
 /// Diálogo para criar ou editar um perfil de usuário local.
 /// Ao confirmar, persiste no SQLite e armazena a senha no secure storage.

@@ -487,26 +487,70 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               columnSpacing: 24,
               columns: [
                 if (isLote)
-                  const DataColumn(label: Text('Lote', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Descrição', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Quantidade', style: TextStyle(fontWeight: FontWeight.bold))),
-                const DataColumn(label: Text('Unidade', style: TextStyle(fontWeight: FontWeight.bold))),
+                  const DataColumn(
+                    label: Text(
+                      'Lote',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                const DataColumn(
+                  label: Text(
+                    'Item',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const DataColumn(
+                  label: Text(
+                    'Descrição',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const DataColumn(
+                  label: Text(
+                    'Quantidade',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const DataColumn(
+                  label: Text(
+                    'Unidade',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
                 ..._fornecedores.map((f) {
                   return DataColumn(
                     label: Expanded(
                       child: HoverCellText(
-                        text: f.razaoSocial.isNotEmpty ? f.razaoSocial : 'Novo Fornecedor',
+                        text: f.razaoSocial.isNotEmpty
+                            ? f.razaoSocial
+                            : 'Novo Fornecedor',
                         onTap: () => _showFornecedorDialog(f),
-                        tooltip: 'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                        tooltip:
+                            'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   );
                 }),
-                const DataColumn(label: Expanded(child: Text('Valor Unitário', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)))),
-                const DataColumn(label: Expanded(child: Text('Valor Total', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)))),
+                const DataColumn(
+                  label: Expanded(
+                    child: Text(
+                      'Valor Unitário',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const DataColumn(
+                  label: Expanded(
+                    child: Text(
+                      'Valor Total',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
                 const DataColumn(label: Text('')),
               ],
               rows: _buildTableRows(fmt),
@@ -515,7 +559,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       ],
     );
   }
-
 
   Future<void> _showExclusividadeDialog() async {
     final result = await showEstimativaExclusividadeDialog(
@@ -578,22 +621,26 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       for (int l = 0; l < _lotes.length; l++) {
         final lote = _lotes[l];
         for (int i = 0; i < lote.itens.length; i++) {
-          rows.add(_buildDataRow(
-            item: lote.itens[i],
-            loteIndex: l,
-            itemIndex: i,
-            isLote: true,
-          ));
+          rows.add(
+            _buildDataRow(
+              item: lote.itens[i],
+              loteIndex: l,
+              itemIndex: i,
+              isLote: true,
+            ),
+          );
         }
       }
     } else {
       for (int i = 0; i < _itens.length; i++) {
-        rows.add(_buildDataRow(
-          item: _itens[i],
-          loteIndex: null,
-          itemIndex: i,
-          isLote: false,
-        ));
+        rows.add(
+          _buildDataRow(
+            item: _itens[i],
+            loteIndex: null,
+            itemIndex: i,
+            isLote: false,
+          ),
+        );
       }
     }
     return rows;
@@ -606,10 +653,19 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required bool isLote,
   }) {
     final statusIcon = item.orcamentos.length >= 3
-        ? const Tooltip(message: '3 ou mais orçamentos', child: Icon(Icons.check_circle, color: Colors.green, size: 16))
+        ? const Tooltip(
+            message: '3 ou mais orçamentos',
+            child: Icon(Icons.check_circle, color: Colors.green, size: 16),
+          )
         : item.orcamentos.isNotEmpty
-            ? const Tooltip(message: 'Menos de 3 orçamentos', child: Icon(Icons.warning, color: Colors.amber, size: 16))
-            : const Tooltip(message: 'Sem orçamentos', child: Icon(Icons.cancel, color: Colors.red, size: 16));
+        ? const Tooltip(
+            message: 'Menos de 3 orçamentos',
+            child: Icon(Icons.warning, color: Colors.amber, size: 16),
+          )
+        : const Tooltip(
+            message: 'Sem orçamentos',
+            child: Icon(Icons.cancel, color: Colors.red, size: 16),
+          );
 
     return DataRow(
       cells: [
@@ -625,7 +681,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         DataCell(
           HoverCellText(
             text: '${item.numero}',
-            onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
+            onTap: () => isLote
+                ? _editLoteItem(loteIndex ?? 0, itemIndex)
+                : _editItem(itemIndex),
             textAlign: TextAlign.center,
             alignment: Alignment.center,
           ),
@@ -633,7 +691,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         DataCell(
           HoverCellText(
             text: item.descricao,
-            onTap: () => isLote ? _editLoteItem(loteIndex ?? 0, itemIndex) : _editItem(itemIndex),
+            onTap: () => isLote
+                ? _editLoteItem(loteIndex ?? 0, itemIndex)
+                : _editItem(itemIndex),
             width: 200,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -656,9 +716,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   ),
           ),
         ),
-        DataCell(Center(child: Text(item.unidade, textAlign: TextAlign.center))),
+        DataCell(
+          Center(child: Text(item.unidade, textAlign: TextAlign.center)),
+        ),
         ..._fornecedores.map((f) {
-          final orc = item.orcamentos.where((o) => o.fornecedorId == f.id).firstOrNull;
+          final orc = item.orcamentos
+              .where((o) => o.fornecedorId == f.id)
+              .firstOrNull;
           return DataCell(
             Center(
               child: HoverCellText(
@@ -676,11 +740,30 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
           );
         }),
-        DataCell(Center(child: Tooltip(
-          message: 'Cálculo atual: ${_calculoGlobal == 'min' ? 'Menor' : _calculoGlobal == 'avg' ? 'Média' : 'Mediana'}',
-          child: Text(formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)), textAlign: TextAlign.center),
-        ))),
-        DataCell(Center(child: Text(formatBRL(item.getValorTotal(_calculoGlobal)), textAlign: TextAlign.center))),
+        DataCell(
+          Center(
+            child: Tooltip(
+              message:
+                  'Cálculo atual: ${_calculoGlobal == 'min'
+                      ? 'Menor'
+                      : _calculoGlobal == 'avg'
+                      ? 'Média'
+                      : 'Mediana'}',
+              child: Text(
+                formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              formatBRL(item.getValorTotal(_calculoGlobal)),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
         DataCell(
           Center(
             child: Row(
@@ -712,7 +795,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       setState(() {
         if (loteIndex != null) {
           final lote = _lotes[loteIndex];
-          final newItens = List<EstimativaItem>.from(lote.itens)..removeAt(itemIndex);
+          final newItens = List<EstimativaItem>.from(lote.itens)
+            ..removeAt(itemIndex);
           for (int i = 0; i < newItens.length; i++) {
             newItens[i] = newItens[i].copyWith(numero: i + 1);
           }
@@ -758,14 +842,20 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         if (_tipoEstimativa == 'lote') {
           for (int i = 0; i < _lotes.length; i++) {
             final newItens = _lotes[i].itens.map((it) {
-              return it.copyWith(orcamentos: it.orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList());
+              return it.copyWith(
+                orcamentos: it.orcamentos
+                    .where((o) => o.fornecedorId != fornecedor.id)
+                    .toList(),
+              );
             }).toList();
             _lotes[i] = _lotes[i].copyWith(itens: newItens);
           }
         } else {
           for (int i = 0; i < _itens.length; i++) {
             _itens[i] = _itens[i].copyWith(
-              orcamentos: _itens[i].orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList(),
+              orcamentos: _itens[i].orcamentos
+                  .where((o) => o.fornecedorId != fornecedor.id)
+                  .toList(),
             );
           }
         }
@@ -803,7 +893,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     }
   }
 
-  void _updateItemOrcamento(int? loteIndex, int itemIndex, String fornecedorId, double? novoValor) {
+  void _updateItemOrcamento(
+    int? loteIndex,
+    int itemIndex,
+    String fornecedorId,
+    double? novoValor,
+  ) {
     setState(() {
       if (loteIndex != null) {
         final lote = _lotes[loteIndex];
@@ -811,7 +906,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         final orcs = List<EstimativaOrcamento>.from(item.orcamentos);
         orcs.removeWhere((o) => o.fornecedorId == fornecedorId);
         if (novoValor != null) {
-          orcs.add(EstimativaOrcamento(fornecedorId: fornecedorId, valorUnitario: novoValor));
+          orcs.add(
+            EstimativaOrcamento(
+              fornecedorId: fornecedorId,
+              valorUnitario: novoValor,
+            ),
+          );
         }
         final newItens = List<EstimativaItem>.from(lote.itens);
         newItens[itemIndex] = item.copyWith(orcamentos: orcs);
@@ -821,7 +921,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         final orcs = List<EstimativaOrcamento>.from(item.orcamentos);
         orcs.removeWhere((o) => o.fornecedorId == fornecedorId);
         if (novoValor != null) {
-          orcs.add(EstimativaOrcamento(fornecedorId: fornecedorId, valorUnitario: novoValor));
+          orcs.add(
+            EstimativaOrcamento(
+              fornecedorId: fornecedorId,
+              valorUnitario: novoValor,
+            ),
+          );
         }
         _itens[itemIndex] = item.copyWith(orcamentos: orcs);
       }

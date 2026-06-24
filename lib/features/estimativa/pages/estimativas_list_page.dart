@@ -93,8 +93,8 @@ class _EstimativaList extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withAlpha(140),
-                          ),
+                        color: colorScheme.onSurface.withAlpha(140),
+                      ),
                     ),
                   ],
                   const SizedBox(height: 4),
@@ -114,7 +114,9 @@ class _EstimativaList extends ConsumerWidget {
                 Chip(
                   label: Text(valorTotalFmt),
                   backgroundColor: colorScheme.secondaryContainer,
-                  labelStyle: TextStyle(color: colorScheme.onSecondaryContainer),
+                  labelStyle: TextStyle(
+                    color: colorScheme.onSecondaryContainer,
+                  ),
                   padding: EdgeInsets.zero,
                 ),
               ],
@@ -129,7 +131,11 @@ class _EstimativaList extends ConsumerWidget {
   }
 }
 
-Future<void> _confirmDelete(BuildContext context, WidgetRef ref, EstimativaModel estimativa) async {
+Future<void> _confirmDelete(
+  BuildContext context,
+  WidgetRef ref,
+  EstimativaModel estimativa,
+) async {
   final confirmed = await showAudespDeleteDialog(
     context: context,
     title: 'Excluir Estimativa',

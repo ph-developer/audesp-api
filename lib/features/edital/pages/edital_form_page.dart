@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,9 +17,11 @@ import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
@@ -293,9 +295,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ref.invalidate(editaisEnviadosProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -336,9 +336,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+          AudespSnackBar.success(context, msg);
           context.go('/edital');
         }
       },
@@ -541,9 +539,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    AudespSnackBar.error(context, msg);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -609,11 +605,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           if (_isSent)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Chip(
-                label: const Text('Enviado'),
-                avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              ),
+              child: StatusChip.document('sent'),
             ),
         ],
       ),
@@ -1004,10 +996,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (imported == null || imported.isEmpty) return;
     setState(() => _itens = imported);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${imported.length} item(s) importado(s) com sucesso.'),
-        ),
+      AudespSnackBar.success(
+        context,
+        '${imported.length} item(s) importado(s) com sucesso.',
       );
     }
   }
@@ -1165,7 +1156,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
 // ── Widgets auxiliares ─────────────────────────────────────────────────────
 
-/// Campo de autocomplete para Amparo Legal (100+ valores).
+/// Campo de seleção para Amparo Legal.
 class _AmparoLegalField extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
@@ -1174,83 +1165,19 @@ class _AmparoLegalField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = kAmparosLegais.entries.toList();
+    final selectedCode = int.tryParse(controller.text);
 
-    return Autocomplete<MapEntry<int, String>>(
-      optionsBuilder: (textEditingValue) {
-        final q = textEditingValue.text.toLowerCase();
-        if (q.isEmpty) return options;
-        return options.where(
-          (e) =>
-              e.key.toString().contains(q) || e.value.toLowerCase().contains(q),
-        );
-      },
-      displayStringForOption: (e) => e.value,
-      onSelected: (e) => controller.text = e.key.toString(),
-      fieldViewBuilder: (context, textController, focusNode, onSubmitted) {
-        // Sync with external controller
-        if (textController.text.isEmpty && controller.text.isNotEmpty) {
-          final code = int.tryParse(controller.text);
-          if (code != null && kAmparosLegais.containsKey(code)) {
-            textController.text = kAmparosLegais[code]!;
-          } else {
-            textController.text = controller.text;
-          }
+    return AudespDropdown<int>(
+      label: 'Amparo Legal *',
+      value: kAmparosLegaisValidos.contains(selectedCode) ? selectedCode : null,
+      items: kAmparosLegais.map((key, value) => MapEntry(key, value)),
+      enabled: enabled,
+      onChanged: (value) {
+        if (value != null) {
+          controller.text = value.toString();
         }
-        textController.addListener(() {
-          final v = int.tryParse(textController.text);
-          if (v != null) controller.text = textController.text;
-        });
-        return TextFormField(
-          controller: textController,
-          focusNode: focusNode,
-          enabled: enabled,
-          decoration: const InputDecoration(
-            labelText: 'Amparo Legal *',
-            hintText: 'Digite o código ou pesquise a descrição',
-            suffixIcon: Icon(Icons.arrow_drop_down),
-          ),
-          onFieldSubmitted: (_) => onSubmitted(),
-          validator: (_) {
-            final v = int.tryParse(controller.text);
-            if (v == null) return 'Obrigatório';
-            if (!kAmparosLegaisValidos.contains(v)) {
-              return 'Código inválido';
-            }
-            return null;
-          },
-        );
       },
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 260, maxWidth: 600),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final option = options.elementAt(index);
-                  return InkWell(
-                    onTap: () => onSelected(option),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Text(option.value),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
+      validator: (value) => value == null ? 'Obrigatório' : null,
     );
   }
 }

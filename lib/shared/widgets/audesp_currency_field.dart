@@ -48,7 +48,8 @@ class AudespCurrencyField extends StatelessWidget {
       enabled: enabled,
       decimals: true,
       prefixText: prefixText,
-      validator: validator ??
+      validator:
+          validator ??
           (v) {
             if (v == null || v.isEmpty) return 'Obrigatório';
             if (fmt.parseBrCurrencyOrNull(v) == null) return 'Valor inválido';

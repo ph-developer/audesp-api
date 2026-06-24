@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'audesp_snack_bar.dart';
 import 'package:flutter/services.dart';
 
 import 'audesp_text_field.dart';
@@ -77,8 +79,10 @@ class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
 
     final error = widget.validateInput?.call(value);
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), duration: const Duration(seconds: 2)),
+      AudespSnackBar.show(
+        context,
+        message: error,
+        duration: const Duration(seconds: 2),
       );
       return;
     }

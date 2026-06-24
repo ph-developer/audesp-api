@@ -14,12 +14,7 @@ class EstimativaFornecedor {
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'razaoSocial': razaoSocial,
-      'cnpj': cnpj,
-      'data': data,
-    };
+    return {'id': id, 'razaoSocial': razaoSocial, 'cnpj': cnpj, 'data': data};
   }
 
   factory EstimativaFornecedor.fromMap(Map<String, dynamic> map) {

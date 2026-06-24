@@ -6,8 +6,9 @@ class AjustesDao {
   AjustesDao(this._db);
 
   Future<List<Ajuste>> watchAll() async {
-    final result = await _db.pool
-        .execute('SELECT * FROM ajustes ORDER BY updated_at DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM ajustes ORDER BY updated_at DESC',
+    );
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
@@ -28,8 +29,7 @@ class AjustesDao {
   }
 
   Future<Ajuste?> findById(int id) async {
-    final stmt =
-        await _db.pool.prepare('SELECT * FROM ajustes WHERE id = (?)');
+    final stmt = await _db.pool.prepare('SELECT * FROM ajustes WHERE id = (?)');
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : Ajuste.fromMap(rows.first.typedAssoc());
@@ -112,8 +112,9 @@ class AjustesDao {
   }
 
   Future<List<Ajuste>> getAll() async {
-    final result = await _db.pool
-        .execute('SELECT * FROM ajustes ORDER BY updated_at DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM ajustes ORDER BY updated_at DESC',
+    );
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 

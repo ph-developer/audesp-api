@@ -19,8 +19,8 @@ class ConsultaService {
   ConsultaService({
     required ApiService apiService,
     required Environment currentEnv,
-  })  : _api = apiService,
-        _currentEnv = currentEnv;
+  }) : _api = apiService,
+       _currentEnv = currentEnv;
 
   Future<String> consultarStatus(String protocolo) async {
     final endpoint = '${_currentEnv.baseUrl}/f4/consulta/$protocolo';

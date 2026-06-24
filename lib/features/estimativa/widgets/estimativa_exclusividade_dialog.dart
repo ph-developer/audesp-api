@@ -8,7 +8,10 @@ class EstimativaExclusividadeResult {
   final List<EstimativaItem> itens;
   final List<EstimativaLote> lotes;
 
-  const EstimativaExclusividadeResult({required this.itens, required this.lotes});
+  const EstimativaExclusividadeResult({
+    required this.itens,
+    required this.lotes,
+  });
 }
 
 Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
@@ -27,9 +30,7 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
       return StatefulBuilder(
         builder: (context, setModalState) {
           return AlertDialog(
-            title: Text(
-              'Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos',
-            ),
+            title: Text('Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos'),
             content: SizedBox(
               width: 400,
               child: isLote
@@ -41,7 +42,8 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                             itemBuilder: (context, index) {
                               final lote = tempLotes[index];
                               return AudespCheckbox(
-                                label: 'Lote ${lote.numero} - ${lote.descricao}',
+                                label:
+                                    'Lote ${lote.numero} - ${lote.descricao}',
                                 value: lote.exclusivoMeEpp,
                                 onChanged: (v) {
                                   setModalState(() {
@@ -54,25 +56,25 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                             },
                           )
                   : tempItens.isEmpty
-                      ? const Text('Nenhum item adicionado.')
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: tempItens.length,
-                          itemBuilder: (context, index) {
-                            final item = tempItens[index];
-                            return AudespCheckbox(
-                              label: 'Item ${item.numero} - ${item.descricao}',
-                              value: item.exclusivoMeEpp,
-                              onChanged: (v) {
-                                setModalState(() {
-                                  tempItens[index] = item.copyWith(
-                                    exclusivoMeEpp: v ?? false,
-                                  );
-                                });
-                              },
-                            );
+                  ? const Text('Nenhum item adicionado.')
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: tempItens.length,
+                      itemBuilder: (context, index) {
+                        final item = tempItens[index];
+                        return AudespCheckbox(
+                          label: 'Item ${item.numero} - ${item.descricao}',
+                          value: item.exclusivoMeEpp,
+                          onChanged: (v) {
+                            setModalState(() {
+                              tempItens[index] = item.copyWith(
+                                exclusivoMeEpp: v ?? false,
+                              );
+                            });
                           },
-                        ),
+                        );
+                      },
+                    ),
             ),
             actions: [
               TextButton(

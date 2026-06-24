@@ -85,8 +85,9 @@ class EditalComplementoCsvParser {
 
         final materialOuServicoRaw =
             _tryGet(row, header, 'materialouservico') ?? '';
-        final materialOuServico =
-            EditalComplementoCsvMapper.materialOuServico(materialOuServicoRaw);
+        final materialOuServico = EditalComplementoCsvMapper.materialOuServico(
+          materialOuServicoRaw,
+        );
         if (materialOuServico == null) {
           throw EditalCsvParseException(
             'Linha ${index + 2}: valor inválido para "MaterialOuServico": '
@@ -111,13 +112,12 @@ class EditalComplementoCsvParser {
 
         // Campos opcionais.
         final valorStr = _tryGet(row, header, 'valorunitariomenor');
-        final valorUnitario =
-            valorStr != null ? parseBrCurrencyOrNull(valorStr) : null;
+        final valorUnitario = valorStr != null
+            ? parseBrCurrencyOrNull(valorStr)
+            : null;
 
         final valorTotal = (valorUnitario != null)
-            ? double.parse(
-                (quantidade * valorUnitario).toStringAsFixed(4),
-              )
+            ? double.parse((quantidade * valorUnitario).toStringAsFixed(4))
             : null;
 
         final criterioStr = _tryGet(row, header, 'criteriojulgamento');
@@ -135,18 +135,20 @@ class EditalComplementoCsvParser {
             ? EditalComplementoCsvMapper.itemCategoriaId(categoriaStr)
             : null;
 
-        result.add(EditalItemCsvModel(
-          numeroItem: numeroItem,
-          descricao: descricao,
-          materialOuServico: materialOuServico,
-          quantidade: quantidade,
-          unidadeMedida: unidadeMedida.toUpperCase(),
-          valorUnitarioEstimado: valorUnitario,
-          valorTotal: valorTotal,
-          criterioJulgamentoId: criterioId,
-          tipoBeneficioId: beneficioId,
-          itemCategoriaId: categoriaId,
-        ));
+        result.add(
+          EditalItemCsvModel(
+            numeroItem: numeroItem,
+            descricao: descricao,
+            materialOuServico: materialOuServico,
+            quantidade: quantidade,
+            unidadeMedida: unidadeMedida.toUpperCase(),
+            valorUnitarioEstimado: valorUnitario,
+            valorTotal: valorTotal,
+            criterioJulgamentoId: criterioId,
+            tipoBeneficioId: beneficioId,
+            itemCategoriaId: categoriaId,
+          ),
+        );
       } on EditalCsvParseException {
         rethrow;
       } catch (e) {

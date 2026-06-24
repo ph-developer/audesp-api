@@ -37,5 +37,6 @@ class PcnpInputFormatter extends TextInputFormatter {
   }
 
   /// Remove a máscara, retornando apenas dígitos.
-  static String stripMask(String masked) => masked.replaceAll(RegExp(r'\D'), '');
+  static String stripMask(String masked) =>
+      masked.replaceAll(RegExp(r'\D'), '');
 }

@@ -1,4 +1,4 @@
-import '../../../../core/utils/csv_utils.dart';
+﻿import '../../../../core/utils/csv_utils.dart';
 import '../../../../core/utils/sheet_utils.dart';
 import '../mappers/br_conectado_mapper.dart';
 import '../mappers/csv_mappers.dart';
@@ -69,7 +69,9 @@ class BrConectadoCsvParser implements PortalCsvParser {
       try {
         final itemStr = CsvUtils.getField(row, header, 'lote/item');
 
-        if (itemStr.trim().isEmpty) continue; // Ignora linhas sem número de item
+        if (itemStr.trim().isEmpty) {
+          continue; // Ignora linhas sem número de item
+        }
 
         final cnpjStr = CsvUtils.getField(row, header, 'cnpj');
         final meStr = CsvUtils.getField(row, header, 'me/epp');
@@ -110,7 +112,9 @@ class BrConectadoCsvParser implements PortalCsvParser {
       try {
         final itemStr = CsvUtils.getField(row, header, 'lote/item');
 
-        if (itemStr.trim().isEmpty) continue; // Ignora linhas sem número de item
+        if (itemStr.trim().isEmpty) {
+          continue; // Ignora linhas sem número de item
+        }
 
         final razaoSocial = CsvUtils.getField(row, header, 'razão social');
         final cnpjStr = CsvUtils.getField(row, header, 'cnpj');
@@ -127,14 +131,12 @@ class BrConectadoCsvParser implements PortalCsvParser {
           nomeRazaoSocial: razaoSocial,
           declaracaoMEouEPP: meEpp,
           valorProposta: CsvMappers.parseBrCurrency(valorStr),
-          resultadoHabilitacao:
-              BrConectadoMapper.resultadoHabilitacao(situacaoStr),
+          resultadoHabilitacao: BrConectadoMapper.resultadoHabilitacao(
+            situacaoStr,
+          ),
         );
 
-        final acc = itensMapa.putIfAbsent(
-          itemNum,
-          () => _ItemAccumulator(),
-        );
+        final acc = itensMapa.putIfAbsent(itemNum, () => _ItemAccumulator());
         acc.licitantes.add(licitante);
       } catch (e) {
         throw CsvParseException(
@@ -144,10 +146,12 @@ class BrConectadoCsvParser implements PortalCsvParser {
     }
 
     return itensMapa.entries
-        .map((e) => LicitacaoItemCsvModel(
-              numeroItem: e.key,
-              licitantes: e.value.licitantes,
-            ))
+        .map(
+          (e) => LicitacaoItemCsvModel(
+            numeroItem: e.key,
+            licitantes: e.value.licitantes,
+          ),
+        )
         .toList()
       ..sort((a, b) => a.numeroItem.compareTo(b.numeroItem));
   }

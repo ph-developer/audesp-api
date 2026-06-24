@@ -6,8 +6,9 @@ class LicitacoesDao {
   LicitacoesDao(this._db);
 
   Future<List<Licitacoe>> watchAll() async {
-    final result = await _db.pool
-        .execute('SELECT * FROM licitacoes ORDER BY updated_at DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM licitacoes ORDER BY updated_at DESC',
+    );
     return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
   }
 
@@ -28,8 +29,9 @@ class LicitacoesDao {
   }
 
   Future<Licitacoe?> findById(int id) async {
-    final stmt =
-        await _db.pool.prepare('SELECT * FROM licitacoes WHERE id = (?)');
+    final stmt = await _db.pool.prepare(
+      'SELECT * FROM licitacoes WHERE id = (?)',
+    );
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : Licitacoe.fromMap(rows.first.typedAssoc());
@@ -108,8 +110,7 @@ class LicitacoesDao {
   }
 
   Future<int> deleteById(int id) async {
-    final stmt =
-        await _db.pool.prepare('DELETE FROM licitacoes WHERE id = ?');
+    final stmt = await _db.pool.prepare('DELETE FROM licitacoes WHERE id = ?');
     final result = await stmt.execute([id]);
     return result.affectedRows.toInt();
   }

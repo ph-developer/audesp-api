@@ -39,18 +39,16 @@ class UsersPage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: users.length,
             separatorBuilder: (context, _) => const SizedBox(height: 8),
-             itemBuilder: (context, i) {
-               final u = users[i];
-               return DocumentCard(
-                 leading: CircleAvatar(
-                   child: Text(u.nome[0].toUpperCase()),
-                 ),
-                 title: u.nome,
-                 subtitle: Text(u.email),
-                 onDelete: () => _confirmDelete(context, ref, u),
-                 onEdit: () => _openForm(context, ref, u),
-               );
-             },
+            itemBuilder: (context, i) {
+              final u = users[i];
+              return DocumentCard(
+                leading: CircleAvatar(child: Text(u.nome[0].toUpperCase())),
+                title: u.nome,
+                subtitle: Text(u.email),
+                onDelete: () => _confirmDelete(context, ref, u),
+                onEdit: () => _openForm(context, ref, u),
+              );
+            },
           );
         },
       ),
@@ -58,7 +56,10 @@ class UsersPage extends ConsumerWidget {
   }
 
   Future<void> _openForm(
-      BuildContext context, WidgetRef ref, User? user) async {
+    BuildContext context,
+    WidgetRef ref,
+    User? user,
+  ) async {
     await showDialog<bool>(
       context: context,
       builder: (_) => UserFormDialog(user: user),
@@ -66,7 +67,10 @@ class UsersPage extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, User user) async {
+    BuildContext context,
+    WidgetRef ref,
+    User user,
+  ) async {
     final confirmed = await showAudespDeleteDialog(
       context: context,
       title: 'Excluir perfil',

@@ -94,6 +94,4 @@ const kFonteRecursoAjuste = <int, String>{
 
 /// `tipoTermoContratoId` — Domínio PNCP: Tipo Termo Contrato.
 /// A AUDESP permite apenas o valor 2 (Termo Aditivo).
-const kTipoTermoContrato = <int, String>{
-  2: '2 – Termo Aditivo',
-};
+const kTipoTermoContrato = <int, String>{2: '2 – Termo Aditivo'};

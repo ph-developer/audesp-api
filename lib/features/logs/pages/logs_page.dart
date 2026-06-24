@@ -12,6 +12,7 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../services/consulta_service.dart';
 import '../services/pdf_comprovante_service.dart';
 
@@ -729,7 +730,7 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(width: 10),
-                            _StatusChip(code: log.statusCode),
+                            StatusChip.httpCode(log.statusCode),
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -778,42 +779,6 @@ class _LogDetailDialogState extends State<_LogDetailDialog>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final int? code;
-  const _StatusChip({this.code});
-
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    if (code == null) {
-      color = Colors.grey;
-    } else if (code! >= 200 && code! < 300) {
-      color = Colors.green.shade700;
-    } else if (code! >= 400 && code! < 500) {
-      color = Colors.orange.shade800;
-    } else {
-      color = Colors.red.shade700;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(80)),
-      ),
-      child: Text(
-        code?.toString() ?? '—',
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
         ),
       ),
     );

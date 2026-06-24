@@ -41,16 +41,13 @@ class AudespSegmentedButton<T> extends StatelessWidget {
             child: Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         SegmentedButton<T>(
           segments: segments.entries
-              .map((e) => ButtonSegment(
-                    value: e.key,
-                    label: Text(e.value),
-                  ))
+              .map((e) => ButtonSegment(value: e.key, label: Text(e.value)))
               .toList(),
           selected: selected,
           onSelectionChanged: readOnly ? null : onSelectionChanged,

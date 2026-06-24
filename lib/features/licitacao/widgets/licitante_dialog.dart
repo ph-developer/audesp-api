@@ -156,8 +156,8 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 const SizedBox(height: 12),
                 // Valor proposto (obrigatório para habilitados 1 e 2)
                 AudespNumberField(
-                  label: (_resultadoHabilitacao == 1 ||
-                          _resultadoHabilitacao == 2)
+                  label:
+                      (_resultadoHabilitacao == 1 || _resultadoHabilitacao == 2)
                       ? 'Valor Proposto (R\$) *'
                       : 'Valor Proposto (R\$)',
                   controller: _valorCtrl,

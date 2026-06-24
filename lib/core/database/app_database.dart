@@ -15,8 +15,7 @@ DatabaseService openConnection() {
   final config = DbConfigHelper.loadConfigSync();
 
   final host = config?.get('MariaDB', 'Host') ?? 'localhost';
-  final port =
-      int.tryParse(config?.get('MariaDB', 'Port') ?? '3306') ?? 3306;
+  final port = int.tryParse(config?.get('MariaDB', 'Port') ?? '3306') ?? 3306;
   final dbName = config?.get('MariaDB', 'Database') ?? 'audesp';
   final user = config?.get('MariaDB', 'User') ?? 'root';
   final password = config?.get('MariaDB', 'Password') ?? '';

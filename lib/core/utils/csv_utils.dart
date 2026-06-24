@@ -15,7 +15,8 @@ class CsvUtils {
   /// Tenta UTF-8 (com remoção de BOM se presente); se falhar, usa Latin-1.
   static String decodeBytes(List<int> bytes) {
     // Remove BOM UTF-8 (EF BB BF) se presente.
-    final data = (bytes.length >= 3 &&
+    final data =
+        (bytes.length >= 3 &&
             bytes[0] == 0xEF &&
             bytes[1] == 0xBB &&
             bytes[2] == 0xBF)
@@ -41,10 +42,7 @@ class CsvUtils {
   ///
   /// **Não lida com quebras de linha dentro de campos entre aspas** —
   /// os CSVs dos portais BLL e BRConectado não usam essa construção.
-  static List<List<String>> parseCsv(
-    String content, {
-    String delimiter = ',',
-  }) {
+  static List<List<String>> parseCsv(String content, {String delimiter = ','}) {
     final result = <List<String>>[];
     for (final rawLine in content.split('\n')) {
       final line = rawLine.trimRight(); // remove \r residual do Windows

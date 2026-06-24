@@ -13,8 +13,9 @@ class AppSettingsDao {
   AppSettingsDao(this._db);
 
   Future<String?> get(String key) async {
-    final stmt =
-        await _db.pool.prepare('SELECT value FROM app_settings WHERE `key` = (?)');
+    final stmt = await _db.pool.prepare(
+      'SELECT value FROM app_settings WHERE `key` = (?)',
+    );
     final result = await stmt.execute([key]);
     final rows = result.rows;
     return rows.isEmpty ? null : rows.first.typedAssoc()['value'] as String?;
@@ -29,8 +30,9 @@ class AppSettingsDao {
   }
 
   Future<void> delete(String key) async {
-    final stmt =
-        await _db.pool.prepare('DELETE FROM app_settings WHERE `key` = (?)');
+    final stmt = await _db.pool.prepare(
+      'DELETE FROM app_settings WHERE `key` = (?)',
+    );
     await stmt.execute([key]);
   }
 }

@@ -57,22 +57,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       // Rota de autenticação (sem shell)
-      GoRoute(
-        path: '/login',
-        builder: (context, _) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, _) => const LoginPage()),
 
       // Perfil do usuário (sem shell, acessível a todos após login)
-      GoRoute(
-        path: '/profile',
-        builder: (context, _) => const ProfilePage(),
-      ),
+      GoRoute(path: '/profile', builder: (context, _) => const ProfilePage()),
 
       // Painel de administração (sem shell, admin only — guard no redirect)
-      GoRoute(
-        path: '/admin',
-        builder: (context, _) => const AdminPage(),
-      ),
+      GoRoute(path: '/admin', builder: (context, _) => const AdminPage()),
 
       // Shell com NavigationRail envolvendo os módulos principais
       ShellRoute(
@@ -89,8 +80,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) {
-                  final id =
-                      int.tryParse(state.pathParameters['id'] ?? '');
+                  final id = int.tryParse(state.pathParameters['id'] ?? '');
                   return EditalFormPage(editalId: id);
                 },
               ),
@@ -103,16 +93,16 @@ final _routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'new',
                 builder: (context, state) {
-                  final editalId =
-                      int.tryParse(state.uri.queryParameters['editalId'] ?? '');
+                  final editalId = int.tryParse(
+                    state.uri.queryParameters['editalId'] ?? '',
+                  );
                   return LicitacaoFormPage(preselectedEditalId: editalId);
                 },
               ),
               GoRoute(
                 path: ':id',
                 builder: (context, state) {
-                  final id =
-                      int.tryParse(state.pathParameters['id'] ?? '');
+                  final id = int.tryParse(state.pathParameters['id'] ?? '');
                   return LicitacaoFormPage(licitacaoId: id);
                 },
               ),
@@ -125,16 +115,16 @@ final _routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'new',
                 builder: (context, state) {
-                  final editalId =
-                      int.tryParse(state.uri.queryParameters['editalId'] ?? '');
+                  final editalId = int.tryParse(
+                    state.uri.queryParameters['editalId'] ?? '',
+                  );
                   return AtaFormPage(preselectedEditalId: editalId);
                 },
               ),
               GoRoute(
                 path: ':id',
                 builder: (context, state) {
-                  final id =
-                      int.tryParse(state.pathParameters['id'] ?? '');
+                  final id = int.tryParse(state.pathParameters['id'] ?? '');
                   return AtaFormPage(ataId: id);
                 },
               ),
@@ -151,8 +141,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) {
-                  final id =
-                      int.tryParse(state.pathParameters['id'] ?? '');
+                  final id = int.tryParse(state.pathParameters['id'] ?? '');
                   return AjusteFormPage(ajusteId: id);
                 },
               ),
@@ -169,17 +158,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) {
-                  final id =
-                      int.tryParse(state.pathParameters['id'] ?? '');
+                  final id = int.tryParse(state.pathParameters['id'] ?? '');
                   return EstimativaFormPage(estimativaId: id);
                 },
               ),
             ],
           ),
-          GoRoute(
-            path: '/logs',
-            builder: (context, _) => const LogsPage(),
-          ),
+          GoRoute(path: '/logs', builder: (context, _) => const LogsPage()),
         ],
       ),
     ],
@@ -212,4 +197,3 @@ class App extends ConsumerWidget {
     );
   }
 }
-

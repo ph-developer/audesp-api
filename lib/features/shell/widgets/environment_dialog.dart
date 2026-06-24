@@ -23,7 +23,9 @@ class _EnvironmentDialog extends ConsumerWidget {
       content: RadioGroup<Environment>(
         groupValue: current,
         onChanged: (v) {
-          if (v != null) ref.read(environmentProvider.notifier).setEnvironment(v);
+          if (v != null) {
+            ref.read(environmentProvider.notifier).setEnvironment(v);
+          }
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,

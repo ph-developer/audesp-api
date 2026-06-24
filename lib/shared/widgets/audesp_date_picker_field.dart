@@ -81,13 +81,17 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
           child: InputDecorator(
             decoration: InputDecoration(
               isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               labelText: widget.label,
               border: const OutlineInputBorder(),
               errorText: hasError ? state.errorText : null,
-              suffixIconConstraints:
-                  const BoxConstraints(minWidth: 32, minHeight: 32),
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
               suffixIcon: widget.readOnly
                   ? null
                   : const Icon(Icons.calendar_today_outlined, size: 18),

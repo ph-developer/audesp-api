@@ -86,10 +86,9 @@ class BllCsvParser implements PortalCsvParser {
 
     // Monta a lista final ordenada por numeroItem.
     return itensMapa.entries
-        .map((e) => LicitacaoItemCsvModel(
-              numeroItem: e.key,
-              licitantes: e.value,
-            ))
+        .map(
+          (e) => LicitacaoItemCsvModel(numeroItem: e.key, licitantes: e.value),
+        )
         .toList()
       ..sort((a, b) => a.numeroItem.compareTo(b.numeroItem));
   }

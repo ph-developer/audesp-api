@@ -63,13 +63,17 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
 
   void _confirm() {
     if (!_formKey.currentState!.validate()) return;
-    final apiDate = _date != null ? _date!.toIso8601String().substring(0, 10) : '';
+    final apiDate = _date != null
+        ? _date!.toIso8601String().substring(0, 10)
+        : '';
     final result = <String, dynamic>{
       'dataPublicacao': apiDate,
       'veiculoPublicacao': _veiculo,
     };
     if (_veiculo == 5) {
-      result['idContratacaoPNCP'] = PcnpInputFormatter.stripMask(_pncpCtrl.text);
+      result['idContratacaoPNCP'] = PcnpInputFormatter.stripMask(
+        _pncpCtrl.text,
+      );
     }
     if (_veiculo == 10) {
       result['veiculoPublicacaoNome'] = _outrosCtrl.text.trim();
@@ -80,8 +84,9 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title:
-          Text(widget.initial == null ? 'Adicionar Publicação' : 'Editar Publicação'),
+      title: Text(
+        widget.initial == null ? 'Adicionar Publicação' : 'Editar Publicação',
+      ),
       content: SizedBox(
         child: Form(
           key: _formKey,
@@ -132,10 +137,7 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _confirm,
-          child: const Text('Confirmar'),
-        ),
+        FilledButton(onPressed: _confirm, child: const Text('Confirmar')),
       ],
     );
   }

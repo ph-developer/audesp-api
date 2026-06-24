@@ -149,7 +149,9 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
 
     int deriveTipoBeneficio(bool exclusivoItem, String exclusividadeGlobal) {
       if (exclusividadeGlobal == 'exclusiva') return 1; // Cota exclusiva
-      if (exclusividadeGlobal == 'reservada' && exclusivoItem) return 3; // Cota reservada
+      if (exclusividadeGlobal == 'reservada' && exclusivoItem) {
+        return 3; // Cota reservada
+      }
       return 4; // Sem benefício
     }
 
@@ -157,35 +159,55 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
 
     if (est.tipoEstimativa == 'lote') {
       for (final lote in est.lotes) {
-        novosItens.add(EditalItemCsvModel(
-          numeroItem: lote.numero,
-          materialOuServico: lote.materialOuServico,
-          descricao: lote.descricao,
-          quantidade: lote.quantidade,
-          unidadeMedida: lote.unidade,
-          // Unitário do lote = soma do valor total dos itens do lote
-          valorUnitarioEstimado: lote.itens.fold<double>(0.0, (sum, i) => sum + i.getValorTotal(est.calculoGlobal)),
-          // Total é unitário * quantidade
-          valorTotal: lote.itens.fold<double>(0.0, (sum, i) => sum + i.getValorTotal(est.calculoGlobal)) * lote.quantidade,
-          criterioJulgamentoId: null,
-          tipoBeneficioId: deriveTipoBeneficio(lote.exclusivoMeEpp, est.exclusividadeMeEpp),
-          itemCategoriaId: lote.itemCategoriaId,
-        ));
+        novosItens.add(
+          EditalItemCsvModel(
+            numeroItem: lote.numero,
+            materialOuServico: lote.materialOuServico,
+            descricao: lote.descricao,
+            quantidade: lote.quantidade,
+            unidadeMedida: lote.unidade,
+            // Unitário do lote = soma do valor total dos itens do lote
+            valorUnitarioEstimado: lote.itens.fold<double>(
+              0.0,
+              (sum, i) => sum + i.getValorTotal(est.calculoGlobal),
+            ),
+            // Total é unitário * quantidade
+            valorTotal:
+                lote.itens.fold<double>(
+                  0.0,
+                  (sum, i) => sum + i.getValorTotal(est.calculoGlobal),
+                ) *
+                lote.quantidade,
+            criterioJulgamentoId: null,
+            tipoBeneficioId: deriveTipoBeneficio(
+              lote.exclusivoMeEpp,
+              est.exclusividadeMeEpp,
+            ),
+            itemCategoriaId: lote.itemCategoriaId,
+          ),
+        );
       }
     } else {
       for (final item in est.itens) {
-        novosItens.add(EditalItemCsvModel(
-          numeroItem: item.numero,
-          materialOuServico: item.materialOuServico,
-          descricao: item.descricao,
-          quantidade: item.quantidade,
-          unidadeMedida: item.unidade,
-          valorUnitarioEstimado: item.getValorReferenciaUnitario(est.calculoGlobal),
-          valorTotal: item.getValorTotal(est.calculoGlobal),
-          criterioJulgamentoId: null,
-          tipoBeneficioId: deriveTipoBeneficio(item.exclusivoMeEpp, est.exclusividadeMeEpp),
-          itemCategoriaId: item.itemCategoriaId,
-        ));
+        novosItens.add(
+          EditalItemCsvModel(
+            numeroItem: item.numero,
+            materialOuServico: item.materialOuServico,
+            descricao: item.descricao,
+            quantidade: item.quantidade,
+            unidadeMedida: item.unidade,
+            valorUnitarioEstimado: item.getValorReferenciaUnitario(
+              est.calculoGlobal,
+            ),
+            valorTotal: item.getValorTotal(est.calculoGlobal),
+            criterioJulgamentoId: null,
+            tipoBeneficioId: deriveTipoBeneficio(
+              item.exclusivoMeEpp,
+              est.exclusividadeMeEpp,
+            ),
+            itemCategoriaId: item.itemCategoriaId,
+          ),
+        );
       }
     }
 

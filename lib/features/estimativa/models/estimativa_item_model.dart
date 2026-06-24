@@ -5,16 +5,17 @@ class EstimativaItem {
   final String descricao;
   final String unidade;
   final double quantidade;
-  
+
   // Periodicidade
   final String tipoFornecimento; // 'unica' ou 'mensal'
   final int quantidadeMeses; // Relevante se tipoFornecimento == 'mensal'
-  
+
   // Configurações e Dados
   // Configurações e Dados
   final String materialOuServico; // 'M' ou 'S'
   final int? itemCategoriaId;
-  final bool exclusivoMeEpp; // Aplicável apenas quando a estimativa é "Por Item"
+  final bool
+  exclusivoMeEpp; // Aplicável apenas quando a estimativa é "Por Item"
   final List<EstimativaOrcamento> orcamentos;
 
   EstimativaItem({
@@ -58,7 +59,9 @@ class EstimativaItem {
       itemCategoriaId: map['itemCategoriaId']?.toInt(),
       exclusivoMeEpp: map['exclusivoMeEpp'] ?? false,
       orcamentos: List<EstimativaOrcamento>.from(
-        (map['orcamentos'] as List<dynamic>? ?? []).map((x) => EstimativaOrcamento.fromMap(x)),
+        (map['orcamentos'] as List<dynamic>? ?? []).map(
+          (x) => EstimativaOrcamento.fromMap(x),
+        ),
       ),
     );
   }
@@ -91,7 +94,7 @@ class EstimativaItem {
 
   double get valorReferenciaUnitarioBase {
     if (orcamentos.isEmpty) return 0.0;
-    
+
     // Fallback to min if no specific config logic is applied yet.
     // In actual usage, pass the global calc to a method, or do it outside.
     // We will provide a helper method to calculate based on the chosen strategy.
@@ -100,10 +103,10 @@ class EstimativaItem {
 
   double getValorReferenciaUnitario(String calculoGlobal) {
     if (orcamentos.isEmpty) return 0.0;
-    
+
     final strategy = calculoGlobal;
     final valores = orcamentos.map((e) => e.valorUnitario).toList();
-    
+
     if (strategy == 'min') {
       return valores.reduce((a, b) => a < b ? a : b);
     } else if (strategy == 'avg') {
@@ -120,7 +123,7 @@ class EstimativaItem {
     } else if (strategy == 'desc') {
       return valores.reduce((a, b) => a > b ? a : b);
     }
-    
+
     // Default to min
     return valores.reduce((a, b) => a < b ? a : b);
   }

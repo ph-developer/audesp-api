@@ -19,12 +19,14 @@ final _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'tipoInstrumentoConvocatorioId',
     label: 'Tipo de Instrumento Convocatório',
-    hint: '1=Edital, 2=Aviso Contratação Direta, 3=Ato Contratação Direta, 4=Chamamento Público',
+    hint:
+        '1=Edital, 2=Aviso Contratação Direta, 3=Ato Contratação Direta, 4=Chamamento Público',
   ),
   GeminiField(
     key: 'modalidadeId',
     label: 'Modalidade',
-    hint: '1=Leilão Eletrônico, 2=Diálogo Competitivo, 3=Concurso, 4=Concorrência Eletrônica, '
+    hint:
+        '1=Leilão Eletrônico, 2=Diálogo Competitivo, 3=Concurso, 4=Concorrência Eletrônica, '
         '5=Concorrência Presencial, 6=Pregão Eletrônico, 7=Pregão Presencial, '
         '8=Dispensa, 9=Inexigibilidade, 12=Credenciamento, 13=Leilão Presencial, '
         '14=Inaplicabilidade, 15=Chamada pública, 16=Concorrência Eletrônica Internacional, '
@@ -34,22 +36,17 @@ final _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'modoDisputaId',
     label: 'Modo de Disputa',
-    hint: '1=Aberto, 2=Fechado, 3=Aberto-Fechado, 4=Dispensa com Disputa, 5=Não se aplica, 6=Fechado-Aberto',
+    hint:
+        '1=Aberto, 2=Fechado, 3=Aberto-Fechado, 4=Dispensa com Disputa, 5=Não se aplica, 6=Fechado-Aberto',
   ),
   GeminiField(
     key: 'numeroCompra',
     label: 'Número da Compra',
-    hint: 'apenas o número sequencial, sem o ano. Ex.: se for "14/2024", extraia "14"',
+    hint:
+        'apenas o número sequencial, sem o ano. Ex.: se for "14/2024", extraia "14"',
   ),
-  GeminiField(
-    key: 'anoCompra',
-    label: 'Ano da Compra',
-    hint: 'formato YYYY',
-  ),
-  GeminiField(
-    key: 'numeroProcesso',
-    label: 'Número do Processo',
-  ),
+  GeminiField(key: 'anoCompra', label: 'Ano da Compra', hint: 'formato YYYY'),
+  GeminiField(key: 'numeroProcesso', label: 'Número do Processo'),
   GeminiField(
     key: 'objetoCompra',
     label: 'Objeto da Contratação',
@@ -63,7 +60,8 @@ final _kEditalFields = <GeminiField>[
   GeminiField(
     key: 'amparoLegalId',
     label: 'Amparo Legal',
-    hint: 'código numérico APENAS, sem texto. Use o mapeamento abaixo para '
+    hint:
+        'código numérico APENAS, sem texto. Use o mapeamento abaixo para '
         'encontrar o código que corresponde ao dispositivo legal mencionado no edital:\n'
         '${kAmparosLegais.entries.map((e) => '${e.key} = ${e.value}').join('\n')}',
   ),
@@ -129,10 +127,7 @@ Future<Map<String, String>?> showGeminiImportDialog({
     context: context,
     barrierDismissible: false,
     size: DialogSize.medium,
-    builder: (_) => _GeminiLoadingDialog(
-      ref: ref,
-      pdfPath: pdfPath,
-    ),
+    builder: (_) => _GeminiLoadingDialog(ref: ref, pdfPath: pdfPath),
   );
 
   if (result == null || !context.mounted) return null;
@@ -158,10 +153,7 @@ class _GeminiLoadingDialog extends StatefulWidget {
   final WidgetRef ref;
   final String pdfPath;
 
-  const _GeminiLoadingDialog({
-    required this.ref,
-    required this.pdfPath,
-  });
+  const _GeminiLoadingDialog({required this.ref, required this.pdfPath});
 
   @override
   State<_GeminiLoadingDialog> createState() => _GeminiLoadingDialogState();
@@ -213,8 +205,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 const SizedBox(height: 8),
                 Text(
                   _errorMessage!,
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.error),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
             )
@@ -225,7 +216,9 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 SizedBox(height: 8),
                 LinearProgressIndicator(),
                 SizedBox(height: 16),
-                Text('O Gemini está lendo o documento e extraindo os campos do edital. Aguarde…'),
+                Text(
+                  'O Gemini está lendo o documento e extraindo os campos do edital. Aguarde…',
+                ),
               ],
             ),
       actions: [
@@ -272,7 +265,8 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
     // Pré-seleciona campos onde o Gemini encontrou valor e o atual está vazio.
     _accepted = {
       for (final f in widget.fields)
-        f.key: widget.suggestedValues[f.key] != null &&
+        f.key:
+            widget.suggestedValues[f.key] != null &&
             (widget.currentValues[f.key] ?? '').isEmpty,
     };
     // Se objetoCompra foi pré-selecionado, seleciona SRP junto
@@ -287,14 +281,10 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
   }
 
   void _acceptAll() => setState(
-        () => _accepted.updateAll(
-          (k, _) => widget.suggestedValues[k] != null,
-        ),
-      );
+    () => _accepted.updateAll((k, _) => widget.suggestedValues[k] != null),
+  );
 
-  void _rejectAll() => setState(
-        () => _accepted.updateAll((_, _) => false),
-      );
+  void _rejectAll() => setState(() => _accepted.updateAll((_, _) => false));
 
   Map<String, String> _buildResult() {
     final result = <String, String>{};
@@ -307,8 +297,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
     return result;
   }
 
-  int get _acceptedCount =>
-      _accepted.values.where((v) => v).length;
+  int get _acceptedCount => _accepted.values.where((v) => v).length;
 
   @override
   Widget build(BuildContext context) {
@@ -409,17 +398,12 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
 
     return TableRow(
       decoration: BoxDecoration(
-        color: isAccepted
-            ? colorScheme.primaryContainer.withAlpha(80)
-            : null,
+        color: isAccepted ? colorScheme.primaryContainer.withAlpha(80) : null,
       ),
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Text(
-            field.label,
-            style: const TextStyle(fontSize: 12),
-          ),
+          child: Text(field.label, style: const TextStyle(fontSize: 12)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -453,10 +437,10 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
   }
 
   static Widget _tableHeader(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+    ),
+  );
 }

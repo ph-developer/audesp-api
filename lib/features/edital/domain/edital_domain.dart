@@ -278,7 +278,8 @@ const kAmparosLegais = <int, String>{
   154: '154 - Lei 11.652/2008, art. 8º, §2º, II',
   155: '155 - Lei 14.744/2023, art 2º, I',
   156: '156 - Lei 14.744/2023, art 2º, II',
-  157: '157 - Instrução normativa de critério de julgamento e/ou edital (Sorteio)',
+  157:
+      '157 - Instrução normativa de critério de julgamento e/ou edital (Sorteio)',
   158: '158 - Lei 14.981/2024, art. 2º, I (Calamidade pública)',
   159: '159 - Lei 14.981/2024, art. 2º, II (Calamidade pública)',
   160: '160 - Lei 14.981/2024, art. 2º, IV (Calamidade pública)',

@@ -6,8 +6,9 @@ class EditaisDao {
   EditaisDao(this._db);
 
   Future<List<Edital>> watchAll() async {
-    final result =
-        await _db.pool.execute('SELECT * FROM editais ORDER BY updated_at DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM editais ORDER BY updated_at DESC',
+    );
     return result.rows.map((r) => Edital.fromMap(r.typedAssoc())).toList();
   }
 
@@ -20,9 +21,7 @@ class EditaisDao {
   }
 
   Future<Edital?> findById(int id) async {
-    final stmt = await _db.pool.prepare(
-      'SELECT * FROM editais WHERE id = (?)',
-    );
+    final stmt = await _db.pool.prepare('SELECT * FROM editais WHERE id = (?)');
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : Edital.fromMap(rows.first.typedAssoc());

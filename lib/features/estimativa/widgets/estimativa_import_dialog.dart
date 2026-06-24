@@ -29,22 +29,33 @@ class _EstimativaImportDialog extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Erro: $e')),
           data: (estimativas) {
             if (estimativas.isEmpty) {
-              return const Center(child: Text('Nenhuma estimativa encontrada.'));
+              return const Center(
+                child: Text('Nenhuma estimativa encontrada.'),
+              );
             }
 
             final fmt = DateFormat('dd/MM/yyyy HH:mm');
-            final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+            final currencyFmt = NumberFormat.currency(
+              locale: 'pt_BR',
+              symbol: 'R\$',
+            );
 
             return ListView.builder(
               itemCount: estimativas.length,
               itemBuilder: (ctx, i) {
                 final est = estimativas[i];
-                final updateDate = DateTime.fromMillisecondsSinceEpoch(est.updatedAt * 1000);
-                
+                final updateDate = DateTime.fromMillisecondsSinceEpoch(
+                  est.updatedAt * 1000,
+                );
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    title: Text('Estimativa ${est.numero}/${est.ano} - ${est.objeto}', maxLines: 2, overflow: TextOverflow.ellipsis),
+                    title: Text(
+                      'Estimativa ${est.numero}/${est.ano} - ${est.objeto}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       'Tipo: ${est.tipoEstimativa == "lote" ? "Por Lote" : "Por Item"} | '
                       'Valor Total: ${currencyFmt.format(est.valorTotalGlobal)}\n'

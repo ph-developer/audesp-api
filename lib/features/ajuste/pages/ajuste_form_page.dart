@@ -17,8 +17,10 @@ import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../domain/ajuste_domain.dart';
 import '../ajuste_providers.dart';
@@ -33,11 +35,7 @@ class AjusteFormPage extends ConsumerStatefulWidget {
   final int? ajusteId;
   final int? preselectedEditalId;
 
-  const AjusteFormPage({
-    super.key,
-    this.ajusteId,
-    this.preselectedEditalId,
-  });
+  const AjusteFormPage({super.key, this.ajusteId, this.preselectedEditalId});
 
   @override
   ConsumerState<AjusteFormPage> createState() => _AjusteFormPageState();
@@ -189,16 +187,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ajuste.codigoEdital;
     _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
-        descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '');
+      descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '',
+    );
     _codigoContratoCtrl.text = PcnpInputFormatter.applyMask(
-        descritor['codigoContrato'] as String? ?? ajuste.codigoContrato);
+      descritor['codigoContrato'] as String? ?? ajuste.codigoContrato,
+    );
     _retificacao = descritor['retificacao'] as bool? ?? ajuste.retificacao;
-    _adesaoParticipacao =
-        descritor['adesaoParticipacao'] as bool? ?? false;
+    _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
     _gerenciadoraJurisdicionada =
         descritor['gerenciadoraJurisdicionada'] as bool? ?? false;
-    _cnpjGerenciadoraCtrl.text =
-        descritor['cnpjGerenciadora'] as String? ?? '';
+    _cnpjGerenciadoraCtrl.text = descritor['cnpjGerenciadora'] as String? ?? '';
     _municipioGerenciadorCtrl.text =
         (descritor['municipioGerenciador'] as int?)?.toString() ?? '';
     _entidadeGerenciadoraCtrl.text =
@@ -251,8 +249,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     final vigFim = doc['dataVigenciaFim'] as String?;
     if (vigFim != null) _dataVigenciaFim = DateTime.tryParse(vigFim);
-    _vigenciaMesesCtrl.text =
-        (doc['vigenciaMeses'] as num?)?.toString() ?? '';
+    _vigenciaMesesCtrl.text = (doc['vigenciaMeses'] as num?)?.toString() ?? '';
 
     _tipoObjetoContrato = doc['tipoObjetoContrato'] as int?;
 
@@ -288,7 +285,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
     }
     if (_codigoAtaCtrl.text.trim().isNotEmpty) {
-      descritor['codigoAta'] = PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+      descritor['codigoAta'] = PcnpInputFormatter.stripMask(
+        _codigoAtaCtrl.text,
+      );
     }
 
     final map = <String, dynamic>{
@@ -302,12 +301,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'receita': _receita,
       'niFornecedor': _niFornecedorCtrl.text.trim(),
       'tipoPessoaFornecedor': _tipoPessoaFornecedor,
-      'nomeRazaoSocialFornecedor':
-          _nomeRazaoSocialFornecedorCtrl.text.trim(),
+      'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
       'objetoContrato': _objetoContratoCtrl.text.trim(),
       'valorInicial': double.parse(
-          parseBrCurrency(_valorInicialCtrl.text.trim())
-              .toStringAsFixed(4)),
+        parseBrCurrency(_valorInicialCtrl.text.trim()).toStringAsFixed(4),
+      ),
       'dataAssinatura': _dataAssinatura != null
           ? isoFmt.format(_dataAssinatura!)
           : '',
@@ -341,27 +339,25 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       map['informacaoComplementar'] = _infComplementarCtrl.text.trim();
     }
     if (_numeroParcelasCtrl.text.trim().isNotEmpty) {
-      map['numeroParcelas'] =
-          int.tryParse(_numeroParcelasCtrl.text.trim());
+      map['numeroParcelas'] = int.tryParse(_numeroParcelasCtrl.text.trim());
     }
     if (_valorParcelaCtrl.text.trim().isNotEmpty) {
       map['valorParcela'] = double.parse(
-          parseBrCurrency(_valorParcelaCtrl.text.trim())
-              .toStringAsFixed(4));
+        parseBrCurrency(_valorParcelaCtrl.text.trim()).toStringAsFixed(4),
+      );
     }
     if (_valorGlobalCtrl.text.trim().isNotEmpty) {
       map['valorGlobal'] = double.parse(
-          parseBrCurrency(_valorGlobalCtrl.text.trim())
-              .toStringAsFixed(4));
+        parseBrCurrency(_valorGlobalCtrl.text.trim()).toStringAsFixed(4),
+      );
     }
     if (_valorAcumuladoCtrl.text.trim().isNotEmpty) {
       map['valorAcumulado'] = double.parse(
-          parseBrCurrency(_valorAcumuladoCtrl.text.trim())
-              .toStringAsFixed(4));
+        parseBrCurrency(_valorAcumuladoCtrl.text.trim()).toStringAsFixed(4),
+      );
     }
     if (_vigenciaMesesCtrl.text.trim().isNotEmpty) {
-      map['vigenciaMeses'] =
-          int.tryParse(_vigenciaMesesCtrl.text.trim());
+      map['vigenciaMeses'] = int.tryParse(_vigenciaMesesCtrl.text.trim());
     }
 
     return map;
@@ -406,7 +402,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
               ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
               : null,
-          codigoContrato: PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
+          codigoContrato: PcnpInputFormatter.stripMask(
+            _codigoContratoCtrl.text,
+          ),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -424,7 +422,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
               ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
               : null,
-          codigoContrato: PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
+          codigoContrato: PcnpInputFormatter.stripMask(
+            _codigoContratoCtrl.text,
+          ),
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -436,9 +436,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
       if (mounted) {
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rascunho salvo com sucesso.')),
-        );
+        AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
       }
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -464,15 +462,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       return;
     }
     final isEmpenho = _tipoContratoId == 7;
-    
+
     if (isEmpenho || !_receita) {
       if (_despesas.isEmpty) {
-        _showError('A classificação de despesa é obrigatória (exigida para despesas ou empenhos).');
+        _showError(
+          'A classificação de despesa é obrigatória (exigida para despesas ou empenhos).',
+        );
         return;
       }
     }
     if (isEmpenho && _despesas.length > 1) {
-      _showError('Para empenho (tipo 7), informe apenas uma classificação de despesa.');
+      _showError(
+        'Para empenho (tipo 7), informe apenas uma classificação de despesa.',
+      );
       return;
     }
     if (_dataAssinatura == null ||
@@ -501,9 +503,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         );
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          AudespSnackBar.success(context, msg);
           context.go('/ajuste');
         }
       },
@@ -512,9 +512,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    AudespSnackBar.error(context, msg);
   }
 
   void _addItem() {
@@ -574,9 +572,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         'objetoContrato': _objetoContratoCtrl.text.trim(),
         'valorInicial': _valorInicialCtrl.text.trim(),
         'itens': _itens.join(', '),
-        'dataAssinatura': _dataAssinatura != null ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!) : '',
-        'dataVigenciaInicio': _dataVigenciaInicio != null ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!) : '',
-        'dataVigenciaFim': _dataVigenciaFim != null ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!) : '',
+        'dataAssinatura': _dataAssinatura != null
+            ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!)
+            : '',
+        'dataVigenciaInicio': _dataVigenciaInicio != null
+            ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!)
+            : '',
+        'dataVigenciaFim': _dataVigenciaFim != null
+            ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!)
+            : '',
       };
 
       final accepted = await showGeminiAjusteImportDialog(
@@ -626,15 +630,24 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           _itens.sort();
         }
         if (accepted.containsKey('categoriaProcessoId')) {
-          final match = RegExp(r'\d+').firstMatch(accepted['categoriaProcessoId']!);
-          if (match != null) _categoriaProcessoId = int.tryParse(match.group(0)!);
+          final match = RegExp(
+            r'\d+',
+          ).firstMatch(accepted['categoriaProcessoId']!);
+          if (match != null) {
+            _categoriaProcessoId = int.tryParse(match.group(0)!);
+          }
         }
         if (accepted.containsKey('nomeRazaoSocialFornecedor')) {
-          _nomeRazaoSocialFornecedorCtrl.text = accepted['nomeRazaoSocialFornecedor']!;
+          _nomeRazaoSocialFornecedorCtrl.text =
+              accepted['nomeRazaoSocialFornecedor']!;
         }
         if (accepted.containsKey('tipoObjetoContrato')) {
-          final match = RegExp(r'\d+').firstMatch(accepted['tipoObjetoContrato']!);
-          if (match != null) _tipoObjetoContrato = int.tryParse(match.group(0)!);
+          final match = RegExp(
+            r'\d+',
+          ).firstMatch(accepted['tipoObjetoContrato']!);
+          if (match != null) {
+            _tipoObjetoContrato = int.tryParse(match.group(0)!);
+          }
         }
         if (accepted.containsKey('objetoContrato')) {
           _objetoContratoCtrl.text = accepted['objetoContrato']!;
@@ -644,17 +657,23 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         }
         if (accepted.containsKey('dataAssinatura')) {
           try {
-            _dataAssinatura = DateFormat('dd/MM/yyyy').parse(accepted['dataAssinatura']!);
+            _dataAssinatura = DateFormat(
+              'dd/MM/yyyy',
+            ).parse(accepted['dataAssinatura']!);
           } catch (_) {}
         }
         if (accepted.containsKey('dataVigenciaInicio')) {
           try {
-            _dataVigenciaInicio = DateFormat('dd/MM/yyyy').parse(accepted['dataVigenciaInicio']!);
+            _dataVigenciaInicio = DateFormat(
+              'dd/MM/yyyy',
+            ).parse(accepted['dataVigenciaInicio']!);
           } catch (_) {}
         }
         if (accepted.containsKey('dataVigenciaFim')) {
           try {
-            _dataVigenciaFim = DateFormat('dd/MM/yyyy').parse(accepted['dataVigenciaFim']!);
+            _dataVigenciaFim = DateFormat(
+              'dd/MM/yyyy',
+            ).parse(accepted['dataVigenciaFim']!);
           } catch (_) {}
         }
       });
@@ -662,7 +681,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${accepted.length} campo(s) preenchido(s) pelo Gemini.'),
+            content: Text(
+              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+            ),
           ),
         );
       }
@@ -676,8 +697,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final readOnly = _isSent;
@@ -689,8 +709,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           _loadedId == null
               ? 'Novo Ajuste'
               : _isSent
-                  ? 'Ajuste'
-                  : 'Editar Ajuste',
+              ? 'Ajuste'
+              : 'Editar Ajuste',
         ),
         actions: [
           if (!readOnly) ...[
@@ -698,9 +718,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               )
             else ...[
               TextButton.icon(
@@ -732,12 +753,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           if (_isSent)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Chip(
-                label: const Text('Enviado'),
-                avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
-              ),
+              child: StatusChip.document('sent'),
             ),
         ],
       ),
@@ -790,8 +806,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                                   setState(() {
                                     _ataId = v;
                                     if (v != null) {
-                                      final ata =
-                                          _atas.where((a) => a.id == v).firstOrNull;
+                                      final ata = _atas
+                                          .where((a) => a.id == v)
+                                          .firstOrNull;
                                       if (ata != null) {
                                         _codigoAtaCtrl.text = ata.codigoAta;
                                       }
@@ -803,7 +820,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         ),
                       ),
                     ],
-                  ),                  
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -812,20 +829,22 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Descritor',
                 children: [
-                  Builder(builder: (context) {
-                    final municipio = ref.watch(codigoMunicipioProvider);
-                    final entidade = ref.watch(codigoEntidadeProvider);
-                    if (municipio.isEmpty && entidade.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    );
-                  }),                  
+                  Builder(
+                    builder: (context) {
+                      final municipio = ref.watch(codigoMunicipioProvider);
+                      final entidade = ref.watch(codigoEntidadeProvider);
+                      if (municipio.isEmpty && entidade.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      );
+                    },
+                  ),
                   Row(
                     children: [
                       Expanded(
@@ -841,8 +860,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         child: AudespCheckbox(
                           label: 'Retificação',
                           value: _retificacao,
-                          onChanged:
-                              readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
+                          onChanged: readOnly
+                              ? null
+                              : (v) =>
+                                    setState(() => _retificacao = v ?? false),
                         ),
                       ),
                     ],
@@ -860,7 +881,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     value: _adesaoParticipacao,
                     onChanged: readOnly
                         ? null
-                        : (v) => setState(() => _adesaoParticipacao = v ?? false),
+                        : (v) =>
+                              setState(() => _adesaoParticipacao = v ?? false),
                   ),
                   if (_adesaoParticipacao) ...[
                     AudespCheckbox(
@@ -868,8 +890,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       value: _gerenciadoraJurisdicionada,
                       onChanged: readOnly
                           ? null
-                          : (v) =>
-                              setState(() => _gerenciadoraJurisdicionada = v ?? false),
+                          : (v) => setState(
+                              () => _gerenciadoraJurisdicionada = v ?? false,
+                            ),
                     ),
                     if (_gerenciadoraJurisdicionada) ...[
                       Row(
@@ -880,7 +903,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                               controller: _municipioGerenciadorCtrl,
                               readOnly: readOnly,
                               decimals: false,
-                              validator: (v) => _gerenciadoraJurisdicionada &&
+                              validator: (v) =>
+                                  _gerenciadoraJurisdicionada &&
                                       _adesaoParticipacao &&
                                       (v == null || v.trim().isEmpty)
                                   ? 'Obrigatório'
@@ -894,7 +918,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                               controller: _entidadeGerenciadoraCtrl,
                               readOnly: readOnly,
                               decimals: false,
-                              validator: (v) => _gerenciadoraJurisdicionada &&
+                              validator: (v) =>
+                                  _gerenciadoraJurisdicionada &&
                                       _adesaoParticipacao &&
                                       (v == null || v.trim().isEmpty)
                                   ? 'Obrigatório'
@@ -927,7 +952,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     children: kFonteRecursoAjuste.entries.map((e) {
                       final selected = _fontesRecurso.contains(e.key);
                       return FilterChip(
-                        label: Text(e.value, style: const TextStyle(fontSize: 11)),
+                        label: Text(
+                          e.value,
+                          style: const TextStyle(fontSize: 11),
+                        ),
                         selected: selected,
                         onSelected: readOnly
                             ? null
@@ -957,9 +985,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       hintText: 'Ex: 1',
                       controller: _itemCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       suffixIcon: IconButton(
                         onPressed: _addItem,
                         icon: const Icon(Icons.add),
@@ -973,7 +999,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
                         'Nenhum item adicionado.',
-                        style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                     )
                   else ...[
@@ -982,15 +1010,17 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       spacing: 8,
                       runSpacing: 4,
                       children: _itens
-                          .map((n) => Chip(
-                                label: Text('Item $n'),
-                                deleteIcon: readOnly
-                                    ? null
-                                    : const Icon(Icons.close, size: 16),
-                                onDeleted: readOnly
-                                    ? null
-                                    : () => setState(() => _itens.remove(n)),
-                              ))
+                          .map(
+                            (n) => Chip(
+                              label: Text('Item $n'),
+                              deleteIcon: readOnly
+                                  ? null
+                                  : const Icon(Icons.close, size: 16),
+                              onDeleted: readOnly
+                                  ? null
+                                  : () => setState(() => _itens.remove(n)),
+                            ),
+                          )
                           .toList(),
                     ),
                   ],
@@ -1006,8 +1036,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Tipo de Contrato *',
                     value: _tipoContratoId,
                     items: kTipoContrato,
-                    onChanged:
-                        readOnly ? null : (v) => setState(() => _tipoContratoId = v),
+                    onChanged: readOnly
+                        ? null
+                        : (v) => setState(() => _tipoContratoId = v),
                     validator: (v) =>
                         v == null ? 'Selecione o tipo de contrato' : null,
                   ),
@@ -1019,8 +1050,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Número do Contrato/Empenho *',
                           controller: _numeroContratoEmpenhoCtrl,
                           readOnly: readOnly,
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Obrigatório'
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1052,8 +1084,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Número do Processo *',
                           controller: _processoCtrl,
                           readOnly: readOnly,
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Obrigatório'
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1065,12 +1098,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           onChanged: readOnly
                               ? null
                               : (v) => setState(() => _categoriaProcessoId = v),
-                          validator: (v) =>
-                              v == null ? 'Selecione a categoria do processo' : null,
+                          validator: (v) => v == null
+                              ? 'Selecione a categoria do processo'
+                              : null,
                         ),
                       ),
                     ],
-                  ),                  
+                  ),
                   const SizedBox(height: 8),
                   // ── Receita ou Despesa ─────────────────────────────
                   Padding(
@@ -1080,8 +1114,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       children: [
                         Text(
                           'Receita ou Despesa *',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                         ),
                         const SizedBox(height: 8),
@@ -1137,7 +1174,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
                           'Nenhuma despesa adicionada.',
-                          style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                       )
                     else ...[
@@ -1146,16 +1185,17 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         spacing: 6,
                         runSpacing: 4,
                         children: _despesas
-                            .map((d) => Chip(
-                                  label: Text(d),
-                                  deleteIcon: readOnly
-                                      ? null
-                                      : const Icon(Icons.close, size: 16),
-                                  onDeleted: readOnly
-                                      ? null
-                                      : () =>
-                                          setState(() => _despesas.remove(d)),
-                                ))
+                            .map(
+                              (d) => Chip(
+                                label: Text(d),
+                                deleteIcon: readOnly
+                                    ? null
+                                    : const Icon(Icons.close, size: 16),
+                                onDeleted: readOnly
+                                    ? null
+                                    : () => setState(() => _despesas.remove(d)),
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -1174,8 +1214,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'NI do Fornecedor (CNPJ/CPF) *',
                           controller: _niFornecedorCtrl,
                           readOnly: readOnly,
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Obrigatório'
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1187,7 +1228,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           onChanged: readOnly
                               ? null
                               : (v) =>
-                                  setState(() => _tipoPessoaFornecedor = v),
+                                    setState(() => _tipoPessoaFornecedor = v),
                           validator: (v) =>
                               v == null ? 'Selecione o tipo de pessoa' : null,
                         ),
@@ -1231,8 +1272,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           },
                           onChanged: readOnly
                               ? null
-                              : (v) =>
-                                  setState(() => _tipoPessoaFornecedorSub = v),
+                              : (v) => setState(
+                                  () => _tipoPessoaFornecedorSub = v,
+                                ),
                         ),
                       ),
                     ],
@@ -1354,7 +1396,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Início da Vigência *',
                           value: _dataVigenciaInicio,
                           readOnly: readOnly,
-                          onChanged: (d) => setState(() => _dataVigenciaInicio = d),
+                          onChanged: (d) =>
+                              setState(() => _dataVigenciaInicio = d),
                           validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
@@ -1364,7 +1407,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Fim da Vigência *',
                           value: _dataVigenciaFim,
                           readOnly: readOnly,
-                          onChanged: (d) => setState(() => _dataVigenciaFim = d),
+                          onChanged: (d) =>
+                              setState(() => _dataVigenciaFim = d),
                           validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
@@ -1387,4 +1431,3 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     );
   }
 }
-

@@ -11,10 +11,10 @@ enum DialogSize { small, medium, large }
 
 extension _DialogSizeExt on DialogSize {
   double get maxWidth => switch (this) {
-        DialogSize.small => 400,
-        DialogSize.medium => 600,
-        DialogSize.large => 800,
-      };
+    DialogSize.small => 400,
+    DialogSize.medium => 600,
+    DialogSize.large => 800,
+  };
 }
 
 /// Helper que exibe um [AlertDialog] responsivo.
@@ -39,10 +39,7 @@ Future<T?> showAudespDialog<T>({
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    builder: (ctx) => _AudespDialogConstraint(
-      size: size,
-      child: builder(ctx),
-    ),
+    builder: (ctx) => _AudespDialogConstraint(size: size, child: builder(ctx)),
   );
 }
 
@@ -54,10 +51,7 @@ class _AudespDialogConstraint extends StatelessWidget {
   final DialogSize size;
   final Widget child;
 
-  const _AudespDialogConstraint({
-    required this.size,
-    required this.child,
-  });
+  const _AudespDialogConstraint({required this.size, required this.child});
 
   @override
   Widget build(BuildContext context) {

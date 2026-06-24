@@ -6,8 +6,9 @@ class AtasDao {
   AtasDao(this._db);
 
   Future<List<Ata>> watchAll() async {
-    final result =
-        await _db.pool.execute('SELECT * FROM atas ORDER BY updated_at DESC');
+    final result = await _db.pool.execute(
+      'SELECT * FROM atas ORDER BY updated_at DESC',
+    );
     return result.rows.map((r) => Ata.fromMap(r.typedAssoc())).toList();
   }
 
@@ -28,8 +29,7 @@ class AtasDao {
   }
 
   Future<Ata?> findById(int id) async {
-    final stmt =
-        await _db.pool.prepare('SELECT * FROM atas WHERE id = (?)');
+    final stmt = await _db.pool.prepare('SELECT * FROM atas WHERE id = (?)');
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : Ata.fromMap(rows.first.typedAssoc());

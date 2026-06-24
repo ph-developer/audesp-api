@@ -43,16 +43,18 @@ class TemplateGenerator {
         columnIndex: col,
         rowIndex: 1,
       );
-      sheet.cell(cellIndexDesc).value =
-          TextCellValue(template.columns[col].description);
+      sheet.cell(cellIndexDesc).value = TextCellValue(
+        template.columns[col].description,
+      );
       sheet.cell(cellIndexDesc).cellStyle = descriptionStyle;
 
       final cellIndexExample = CellIndex.indexByColumnRow(
         columnIndex: col,
         rowIndex: 2,
       );
-      sheet.cell(cellIndexExample).value =
-          TextCellValue(template.columns[col].example);
+      sheet.cell(cellIndexExample).value = TextCellValue(
+        template.columns[col].example,
+      );
 
       sheet.setColumnAutoFit(col);
     }

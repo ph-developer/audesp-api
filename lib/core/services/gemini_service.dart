@@ -67,12 +67,15 @@ class GeminiService {
         ? modelName.trim()
         : 'gemini-3.1-flash-lite';
 
-    final fieldDescriptions = fields.map((f) {
-      final hint = f.hint != null ? ' (${f.hint})' : '';
-      return '- "${f.key}": ${f.label}$hint';
-    }).join('\n');
+    final fieldDescriptions = fields
+        .map((f) {
+          final hint = f.hint != null ? ' (${f.hint})' : '';
+          return '- "${f.key}": ${f.label}$hint';
+        })
+        .join('\n');
 
-    final prompt = '''
+    final prompt =
+        '''
 Você é um assistente especializado em licitações públicas brasileiras.
 Analise o documento fornecido e extraia os seguintes campos no formato JSON.
 Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional.
@@ -107,10 +110,7 @@ Exemplo de resposta esperada:
     }
 
     final content = [
-      Content.multi([
-        filePart,
-        TextPart(prompt),
-      ]),
+      Content.multi([filePart, TextPart(prompt)]),
     ];
 
     final response = await generativeModel.generateContent(content);
@@ -174,7 +174,8 @@ Exemplo de resposta esperada:
 
     final itensJson = jsonEncode(itensEstimativa);
 
-    final prompt = '''
+    final prompt =
+        '''
 Você é um assistente especializado em licitações públicas brasileiras.
 Analise o documento de orçamento fornecido e extraia as seguintes informações no formato JSON:
 1. "razaoSocial": Razão social da empresa fornecedora.
@@ -219,10 +220,7 @@ Exemplo de resposta esperada:
     }
 
     final content = [
-      Content.multi([
-        filePart,
-        TextPart(prompt),
-      ]),
+      Content.multi([filePart, TextPart(prompt)]),
     ];
 
     final response = await generativeModel.generateContent(content);
@@ -264,7 +262,9 @@ Exemplo de resposta esperada:
         final val = item['valorUnitario'];
         if (idVal != null && val != null) {
           final strId = idVal.toString();
-          final doubleVal = val is num ? val.toDouble() : double.tryParse(val.toString());
+          final doubleVal = val is num
+              ? val.toDouble()
+              : double.tryParse(val.toString());
           if (doubleVal != null) {
             mapItens[strId] = doubleVal;
           }

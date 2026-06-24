@@ -147,15 +147,23 @@ class DatabaseService {
 
     if (version < 3) {
       try {
-        await pool.execute('ALTER TABLE api_logs ADD COLUMN protocolo VARCHAR(255) NULL');
-        await pool.execute('ALTER TABLE api_logs ADD COLUMN status_protocolo VARCHAR(255) NULL');
-        await pool.execute('ALTER TABLE api_logs ADD COLUMN retorno_status LONGTEXT NULL');
+        await pool.execute(
+          'ALTER TABLE api_logs ADD COLUMN protocolo VARCHAR(255) NULL',
+        );
+        await pool.execute(
+          'ALTER TABLE api_logs ADD COLUMN status_protocolo VARCHAR(255) NULL',
+        );
+        await pool.execute(
+          'ALTER TABLE api_logs ADD COLUMN retorno_status LONGTEXT NULL',
+        );
       } catch (_) {}
       await setSchemaVersion(3);
     }
 
     if (version < 4) {
-      final result = await pool.execute('SELECT id, response FROM api_logs WHERE response IS NOT NULL AND status_code >= 200 AND status_code < 300 AND protocolo IS NULL');
+      final result = await pool.execute(
+        'SELECT id, response FROM api_logs WHERE response IS NOT NULL AND status_code >= 200 AND status_code < 300 AND protocolo IS NULL',
+      );
       for (final row in result.rows) {
         final map = row.typedAssoc();
         final id = map['id'] as int;
@@ -165,7 +173,9 @@ class DatabaseService {
           if (json is Map<String, dynamic> && json.containsKey('protocolo')) {
             final protocolo = json['protocolo']?.toString();
             if (protocolo != null && protocolo.isNotEmpty) {
-              final stmt = await pool.prepare('UPDATE api_logs SET protocolo = ?, status_protocolo = ? WHERE id = ?');
+              final stmt = await pool.prepare(
+                'UPDATE api_logs SET protocolo = ?, status_protocolo = ? WHERE id = ?',
+              );
               await stmt.execute([protocolo, 'Pendente', id]);
             }
           }
@@ -176,16 +186,24 @@ class DatabaseService {
 
     if (version < 5) {
       try {
-        await pool.execute('ALTER TABLE users ADD COLUMN is_admin TINYINT NOT NULL DEFAULT 0');
-        await pool.execute('ALTER TABLE users ADD COLUMN permissions INT NOT NULL DEFAULT 0');
-        
+        await pool.execute(
+          'ALTER TABLE users ADD COLUMN is_admin TINYINT NOT NULL DEFAULT 0',
+        );
+        await pool.execute(
+          'ALTER TABLE users ADD COLUMN permissions INT NOT NULL DEFAULT 0',
+        );
+
         final countResult = await pool.execute('SELECT COUNT(*) FROM users');
         if ((countResult.rows.first.typedAssoc()['COUNT(*)'] as int) == 0) {
           final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
           await pool.execute(
             'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) '
             'VALUES (:nome, :email, NULL, 1, 0, :created_at)',
-            {'nome': 'Administrador', 'email': 'ti@penapolis.sp.gov.br', 'created_at': now},
+            {
+              'nome': 'Administrador',
+              'email': 'ti@penapolis.sp.gov.br',
+              'created_at': now,
+            },
           );
         }
       } catch (_) {}

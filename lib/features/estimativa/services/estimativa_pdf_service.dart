@@ -93,7 +93,7 @@ class EstimativaPdfService {
               ..._buildLotes(estimativa)
             else
               ..._buildItens(
-                estimativa.itens, 
+                estimativa.itens,
                 estimativa.fornecedores,
                 estimativa.calculoGlobal,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
@@ -165,16 +165,21 @@ class EstimativaPdfService {
     }
     if (estimativa.exclusividadeMeEpp == 'reservada') {
       final tipoStr = estimativa.tipoEstimativa == 'lote' ? 'lotes' : 'itens';
-      String base = 'Com $tipoStr reservados para ME/EPP (conforme Art. 48, III, da LFC nº 123/2006)';
+      String base =
+          'Com $tipoStr reservados para ME/EPP (conforme Art. 48, III, da LFC nº 123/2006)';
       final exclusivos = <int>[];
-      
+
       if (estimativa.tipoEstimativa == 'lote') {
-        exclusivos.addAll(estimativa.lotes.where((l) => l.exclusivoMeEpp).map((l) => l.numero));
+        exclusivos.addAll(
+          estimativa.lotes.where((l) => l.exclusivoMeEpp).map((l) => l.numero),
+        );
         if (exclusivos.isNotEmpty) {
           base += ' - Lotes: ${exclusivos.join(', ')}';
         }
       } else {
-        exclusivos.addAll(estimativa.itens.where((i) => i.exclusivoMeEpp).map((i) => i.numero));
+        exclusivos.addAll(
+          estimativa.itens.where((i) => i.exclusivoMeEpp).map((i) => i.numero),
+        );
         if (exclusivos.isNotEmpty) {
           base += ' - Itens: ${exclusivos.join(', ')}';
         }
@@ -209,7 +214,6 @@ class EstimativaPdfService {
     );
   }
 
-
   static List<pw.Widget> _buildLotes(EstimativaModel estimativa) {
     final widgets = <pw.Widget>[];
     for (final lote in estimativa.lotes) {
@@ -231,10 +235,14 @@ class EstimativaPdfService {
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-              if (estimativa.exclusividadeMeEpp == 'exclusiva' || (lote.exclusivoMeEpp && estimativa.exclusividadeMeEpp == 'reservada')) ...[
+              if (estimativa.exclusividadeMeEpp == 'exclusiva' ||
+                  (lote.exclusivoMeEpp &&
+                      estimativa.exclusividadeMeEpp == 'reservada')) ...[
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  estimativa.exclusividadeMeEpp == 'exclusiva' ? '(Exclusivo ME/EPP)' : '(Reservado ME/EPP)',
+                  estimativa.exclusividadeMeEpp == 'exclusiva'
+                      ? '(Exclusivo ME/EPP)'
+                      : '(Reservado ME/EPP)',
                   style: pw.TextStyle(color: PdfColors.green700, fontSize: 10),
                 ),
               ],
@@ -301,9 +309,14 @@ class EstimativaPdfService {
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ),
-                  if (!isInsideLote && (exclusividadeGlobal == 'exclusiva' || (item.exclusivoMeEpp && exclusividadeGlobal == 'reservada')))
+                  if (!isInsideLote &&
+                      (exclusividadeGlobal == 'exclusiva' ||
+                          (item.exclusivoMeEpp &&
+                              exclusividadeGlobal == 'reservada')))
                     pw.Text(
-                      exclusividadeGlobal == 'exclusiva' ? '(Exclusivo ME/EPP)' : '(Reservado ME/EPP)',
+                      exclusividadeGlobal == 'exclusiva'
+                          ? '(Exclusivo ME/EPP)'
+                          : '(Reservado ME/EPP)',
                       style: pw.TextStyle(
                         color: PdfColors.green700,
                         fontSize: 10,
@@ -335,19 +348,17 @@ class EstimativaPdfService {
                   color: PdfColors.blueGrey800,
                 ),
                 headers: ['Razão Social', 'CNPJ', 'Data', 'V. Unitário'],
-                data: item.orcamentos
-                    .map(
-                      (o) {
-                        final fornecedor = fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
-                        return [
-                          fornecedor?.razaoSocial ?? '-',
-                          fornecedor?.cnpj ?? '-',
-                          fornecedor?.data ?? '-',
-                          _fmt.format(o.valorUnitario),
-                        ];
-                      },
-                    )
-                    .toList(),
+                data: item.orcamentos.map((o) {
+                  final fornecedor = fornecedores
+                      .where((f) => f.id == o.fornecedorId)
+                      .firstOrNull;
+                  return [
+                    fornecedor?.razaoSocial ?? '-',
+                    fornecedor?.cnpj ?? '-',
+                    fornecedor?.data ?? '-',
+                    _fmt.format(o.valorUnitario),
+                  ];
+                }).toList(),
               ),
 
               pw.SizedBox(height: 8),

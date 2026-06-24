@@ -86,13 +86,11 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
                                 ),
                               Text(
                                 ni,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -123,10 +121,7 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Aplicar'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Aplicar')),
       ],
     );
   }

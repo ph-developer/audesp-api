@@ -38,7 +38,8 @@ class AudespPncpField extends StatelessWidget {
   });
 
   /// Remove a máscara, retornando apenas dígitos.
-  static String stripMask(String masked) => PcnpInputFormatter.stripMask(masked);
+  static String stripMask(String masked) =>
+      PcnpInputFormatter.stripMask(masked);
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +56,8 @@ class AudespPncpField extends StatelessWidget {
         PcnpInputFormatter(),
         LengthLimitingTextInputFormatter(28),
       ],
-      validator: validator ??
+      validator:
+          validator ??
           (v) {
             if (v == null || v.isEmpty) return 'Obrigatório';
             final raw = PcnpInputFormatter.stripMask(v);

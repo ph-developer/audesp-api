@@ -5,6 +5,7 @@
 - Fase 1 concluida.
 - Fase 2 / Prioridade 1 concluida.
 - Fase 2 / Prioridade 2 concluida.
+- Fase 2 / Prioridade 3 concluida.
 - Ultima validacao: `flutter analyze` sem issues.
 
 ---
@@ -25,6 +26,8 @@
 | `AudespPncpField` | `lib/shared/widgets/audesp_pncp_field.dart` | ID PNCP com mascara |
 | `AudespChipInput<T>` | `lib/shared/widgets/audesp_chip_input.dart` | Entrada com chips |
 | `AudespSegmentedButton<T>` | `lib/shared/widgets/audesp_segmented_button.dart` | Botao segmentado |
+| `AudespSnackBar` | `lib/shared/widgets/audesp_snack_bar.dart` | Helpers de SnackBar |
+| `StatusChip` | `lib/shared/widgets/status_chip.dart` | Chip padronizado de status |
 | `showAudespDeleteDialog()` | `lib/shared/widgets/audesp_delete_dialog.dart` | Dialog padronizado de exclusao |
 | `DocumentCard` | `lib/shared/widgets/document_card.dart` | Card padrao para listas de documentos/perfis |
 | `EmptyState` | `lib/shared/widgets/empty_state.dart` | Icone + mensagem para listas vazias |
@@ -108,6 +111,12 @@
   - `item_licitacao_dialog.dart`
 - `AudespSpacing` criado e aplicado nos mesmos pontos migrados.
 
+### Prioridade 3
+
+- Campo Amparo Legal voltou a usar `AudespDropdown`.
+- `AudespSnackBar` criado e aplicado em feedbacks principais de sucesso/erro.
+- `StatusChip` criado e aplicado em status enviado, retificacao e status HTTP dos logs.
+
 ---
 
 ## Mantidos sem migracao
@@ -125,10 +134,5 @@
 
 ## Proximas prioridades
 
-### Prioridade 3 - UX
-
-| Item | Motivo |
-|------|--------|
-| `AudespAutocomplete<T>` | Padroniza autocomplete restrito a lista |
-| SnackBar helpers | Reduz repeticao de sucesso/erro |
-| `StatusChip` | Padroniza chips de status como "Enviado" |
+- Revisao visual manual nas telas migradas.
+- Expandir `AudespSnackBar` para feedbacks restantes em logs/dialogs/estimativas.
