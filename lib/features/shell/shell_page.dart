@@ -93,6 +93,7 @@ class ShellPage extends ConsumerWidget {
         : selectedIndex < allowedItems.length
         ? selectedIndex
         : 0;
+    final navSelectedIndex = allowedItems.isEmpty ? null : validSelectedIndex;
 
     return Scaffold(
       body: Row(
@@ -106,7 +107,7 @@ class ShellPage extends ConsumerWidget {
             ),
             child: NavigationRail(
               extended: false,
-              selectedIndex: validSelectedIndex,
+              selectedIndex: navSelectedIndex,
               onDestinationSelected: (i) {
                 ref.read(selectedShellIndexProvider.notifier).setIndex(i);
                 context.go(allowedItems[i].route);

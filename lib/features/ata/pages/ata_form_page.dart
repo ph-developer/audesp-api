@@ -84,7 +84,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   Future<void> _init() async {
     final editaisDao = ref.read(editaisDaoProvider);
-    _editais = await editaisDao.watchByStatus('sent');
+    final editaisEnviados = await editaisDao.watchByStatus('sent');
+    _editais = editaisEnviados.where((e) => e.isSrp).toList();
 
     if (widget.preselectedEditalId != null) {
       _editalId = widget.preselectedEditalId;

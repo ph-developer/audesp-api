@@ -82,6 +82,8 @@ class Edital {
 
   int? get modalidadeId => _doc['modalidadeId'] as int?;
 
+  bool get isSrp => _doc['srp'] as bool? ?? false;
+
   String get modalidadeLabel {
     final id = modalidadeId;
     return id != null ? (kModalidadesDropdown[id] ?? '') : '';

@@ -143,7 +143,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    _editais = await ref.read(editaisDaoProvider).watchByStatus('sent');
+    final editaisEnviados = await ref.read(editaisDaoProvider).watchByStatus(
+      'sent',
+    );
+    _editais = editaisEnviados.where((e) => !e.isSrp).toList();
     _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
 
     if (widget.preselectedEditalId != null) {
