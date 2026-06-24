@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
 import '../edital_providers.dart' show editaisDraftProvider, editaisEnviadosProvider;
 import '../widgets/pcnp_input_formatter.dart';
 
@@ -28,14 +29,9 @@ class _EditalPageState extends ConsumerState<EditalPage> {
               padding: const EdgeInsets.only(left: 16.0, right: 8.0),
               child: SizedBox(
                 width: 160,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _statusFilter,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    isDense: true,
-                  ),
+                child: AudespDropdown<String>.items(
+                  label: 'Status',
+                  value: _statusFilter,
                   items: const [
                     DropdownMenuItem(value: 'draft', child: Text('Rascunhos', overflow: TextOverflow.ellipsis)),
                     DropdownMenuItem(value: 'sent', child: Text('Enviados', overflow: TextOverflow.ellipsis)),

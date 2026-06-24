@@ -5,6 +5,7 @@ import '../../../core/constants/environments.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
 /// Exibido antes do envio de qualquer módulo ao AUDESP.
@@ -121,22 +122,21 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 12),
-          TextFormField(
+          AudespTextField(
+            label: 'Senha AUDESP',
             controller: _passwordCtrl,
             obscureText: _obscure,
-            decoration: InputDecoration(
-              labelText: 'Senha AUDESP',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscure ? Icons.visibility_off : Icons.visibility,
-                ),
-                onPressed: () => setState(() => _obscure = !_obscure),
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscure ? Icons.visibility_off : Icons.visibility,
               ),
+              onPressed: () => setState(() => _obscure = !_obscure),
             ),
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _authenticate(),
-            autofocus: true,
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            validator: (v) => null,
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),

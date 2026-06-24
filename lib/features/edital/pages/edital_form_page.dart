@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'
-    show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,14 +11,19 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../edital_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
-import '../widgets/pcnp_input_formatter.dart';
+import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
 
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
@@ -177,7 +180,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'descritor': {
         'municipio': municipio,
         'entidade': entidade,
-        'codigoEdital': PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
+        'codigoEdital': AudespPncpField.stripMask(_codigoEditalCtrl.text),
         'dataDocumento': _dataDoc != null
             ? DateFormat('yyyy-MM-dd').format(_dataDoc!)
             : '',
@@ -262,7 +265,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         final id = await dao.insertEdital(
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
+          codigoEdital: AudespPncpField.stripMask(_codigoEditalCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           pdfPath: _pdfPath,
@@ -275,7 +278,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           id: _loadedId!,
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: PcnpInputFormatter.stripMask(_codigoEditalCtrl.text),
+          codigoEdital: AudespPncpField.stripMask(_codigoEditalCtrl.text),
           retificacao: _retificacao,
           status: 'draft',
           pdfPath: _pdfPath,
@@ -654,28 +657,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           children: [
             Expanded(
               flex: 2,
-              child: TextFormField(
+              child: AudespPncpField(
+                label: 'ID de Contratação PNCP *',
                 controller: _codigoEditalCtrl,
                 enabled: !readOnly && !_retificacao,
-                decoration: const InputDecoration(
-                  labelText: 'ID de Contratação PNCP *',
-                  hintText: '00000000000000-0-000000/0000',
-                  counterText: '',
-                ),
-                maxLength: 28,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Obrigatório';
-                  final raw = PcnpInputFormatter.stripMask(v);
-                  if (raw.length < 25) {
-                    return 'ID de Contratação PNCP incompleto';
-                  }
-                  return null;
-                },
-                inputFormatters: [
-                  PcnpInputFormatter(),
-                  LengthLimitingTextInputFormatter(28),
-                ],
-                keyboardType: TextInputType.number,
               ),
             ),
             const SizedBox(width: 12),
@@ -692,14 +677,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: CheckboxListTile(
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Retificação'),
+              child: AudespCheckbox(
+                label: 'Retificação',
                 value: _retificacao,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _retificacao = v ?? false),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _retificacao = v ?? false),
               ),
             ),
           ],
@@ -714,17 +696,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     return SectionCard(
       title: 'Publicidade',
       children: [
-        CheckboxListTile(
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Houve Publicação'),
+        AudespCheckbox(
+          label: 'Houve Publicação',
           value: _houvePublicacao,
-          onChanged: readOnly
-              ? null
-              : (v) => setState(() {
-                  _houvePublicacao = v ?? false;
-                  if (!(_houvePublicacao)) _publicacoes.clear();
-                }),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() {
+              _houvePublicacao = v ?? false;
+              if (!(_houvePublicacao)) _publicacoes.clear();
+            }),
         ),
         if (_houvePublicacao) ...[
           const SizedBox(height: 8),
@@ -846,15 +825,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         const SizedBox(height: 12),
         */
         // Tipo de Instrumento Convocatório
-        DropdownButtonFormField<int>(
-          key: ValueKey('inst_$_tipoInstrumento'),
-          initialValue: _tipoInstrumento,
-          decoration: const InputDecoration(
-            labelText: 'Tipo de Instrumento Convocatório *',
-          ),
-          items: kTipoInstrumento.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
+        AudespDropdown<int>(
+          label: 'Tipo de Instrumento Convocatório *',
+          value: _tipoInstrumento,
+          items: kTipoInstrumento,
           onChanged: readOnly
               ? null
               : (v) => setState(() => _tipoInstrumento = v),
@@ -862,41 +836,28 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ),
         const SizedBox(height: 12),
         // Modalidade
-        DropdownButtonFormField<int>(
-          key: ValueKey('mod_$_modalidade'),
-          initialValue: _modalidade,
-          decoration: const InputDecoration(
-            labelText: 'Modalidade de Contratação *',
-          ),
-          items: kModalidades.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
+        AudespDropdown<int>(
+          label: 'Modalidade de Contratação *',
+          value: _modalidade,
+          items: kModalidades,
           onChanged: readOnly ? null : (v) => setState(() => _modalidade = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
         // Modo de Disputa
-        DropdownButtonFormField<int>(
-          key: ValueKey('disp_$_modoDisputa'),
-          initialValue: _modoDisputa,
-          decoration: const InputDecoration(labelText: 'Modo de Disputa *'),
-          items: kModoDisputa.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
+        AudespDropdown<int>(
+          label: 'Modo de Disputa *',
+          value: _modoDisputa,
+          items: kModoDisputa,
           onChanged: readOnly ? null : (v) => setState(() => _modoDisputa = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
         // Critério de Julgamento
-        DropdownButtonFormField<int>(
-          key: ValueKey('crit_$_criterioJulgamentoId'),
-          initialValue: _criterioJulgamentoId,
-          decoration: const InputDecoration(
-            labelText: 'Critério de Julgamento *',
-          ),
-          items: kCriterioJulgamento.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
+        AudespDropdown<int>(
+          label: 'Critério de Julgamento *',
+          value: _criterioJulgamentoId,
+          items: kCriterioJulgamento,
           onChanged: readOnly
               ? null
               : (v) => setState(() => _criterioJulgamentoId = v),
@@ -908,38 +869,27 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           children: [
             Expanded(
               flex: 2,
-              child: TextFormField(
+              child: AudespNumberField(
+                label: 'Número da Compra *',
                 controller: _numeroCompraCtrl,
                 enabled: !readOnly,
-                decoration: const InputDecoration(
-                  labelText: 'Número da Compra *',
-                  hintText: 'Ex.: 14',
-                  counterText: '',
-                ),
+                hintText: 'Ex.: 14',
                 maxLength: 50,
+                decimals: false,
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(50),
-                ],
               ),
             ),
             const SizedBox(width: 12),
             SizedBox(
               width: 200,
-              child: TextFormField(
+              child: AudespNumberField(
+                label: 'Ano da Compra *',
                 controller: _anoCompraCtrl,
                 enabled: !readOnly,
-                decoration: const InputDecoration(
-                  labelText: 'Ano da Compra *',
-                  hintText: 'Ex.: 2024',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(4),
-                ],
+                hintText: 'Ex.: 2024',
+                maxLength: 4,
+                decimals: false,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Obrigatório';
                   final n = int.tryParse(v);
@@ -951,46 +901,36 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           ],
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        AudespTextField(
+          label: 'Número do Processo *',
           controller: _numeroProcessoCtrl,
           enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Número do Processo *',
-            counterText: '',
-          ),
           maxLength: 50,
           validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        AudespTextField(
+          label: 'Objeto da Contratação *',
           controller: _objetoCompraCtrl,
           enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Objeto da Contratação *',
-            counterText: '',
-          ),
           maxLength: 5120,
           maxLines: 4,
           validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        AudespTextField(
+          label: 'Informações Complementares',
           controller: _infComplementarCtrl,
           enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Informações Complementares',
-            counterText: '',
-          ),
           maxLength: 5120,
           maxLines: 3,
         ),
         const SizedBox(height: 8),
-        CheckboxListTile(
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('SRP – Sistema de Registro de Preços'),
+        AudespCheckbox(
+          label: 'SRP – Sistema de Registro de Preços',
           value: _srp,
-          onChanged: readOnly ? null : (v) => setState(() => _srp = v ?? false),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _srp = v ?? false),
         ),
         const SizedBox(height: 12),
         // Datas de propostas
@@ -998,16 +938,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Abertura de Propostas *',
                 controller: _dataAberturaCtrl,
                 readOnly: true,
                 enabled: !readOnly,
-                decoration: const InputDecoration(
-                  labelText: 'Abertura de Propostas *',
-                  hintText: 'dd/MM/yyyy HH:mm',
-                  suffixIcon: Icon(Icons.event),
-                  helperText: 'Obrigatório para instrumento tipo 1 ou 2',
-                ),
+                hintText: 'dd/MM/yyyy HH:mm',
+                suffixIcon: const Icon(Icons.event),
+                helperText: 'Obrigatório para instrumento tipo 1 ou 2',
                 onTap: readOnly ? null : () => _pickDateTime(_dataAberturaCtrl),
                 validator: (v) {
                   if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
@@ -1020,16 +958,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Encerramento de Propostas *',
                 controller: _dataEncerramentoCtrl,
                 readOnly: true,
                 enabled: !readOnly,
-                decoration: const InputDecoration(
-                  labelText: 'Encerramento de Propostas *',
-                  hintText: 'dd/MM/yyyy HH:mm',
-                  suffixIcon: Icon(Icons.event),
-                  helperText: 'Obrigatório para instrumento tipo 1 ou 2',
-                ),
+                hintText: 'dd/MM/yyyy HH:mm',
+                suffixIcon: const Icon(Icons.event),
+                helperText: 'Obrigatório para instrumento tipo 1 ou 2',
                 onTap: readOnly
                     ? null
                     : () => _pickDateTime(_dataEncerramentoCtrl),
@@ -1061,13 +997,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ),
         const SizedBox(height: 12),
         */
-        TextFormField(
+        AudespTextField(
+          label: 'Justificativa para Modalidade Presencial',
           controller: _justificativaCtrl,
           enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Justificativa para Modalidade Presencial',
-            counterText: '',
-          ),
           maxLength: 500,
           maxLines: 2,
         ),

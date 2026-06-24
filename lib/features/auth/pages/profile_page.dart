@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/password_hasher.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
 /// Página para o usuário comum editar o próprio cadastro e as credenciais AUDESP.
@@ -183,18 +184,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        AudespTextField(
+                          label: 'E-mail AUDESP',
                           initialValue: _user?.email ?? '',
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail AUDESP',
-                            helperText: 'O e-mail não pode ser alterado',
-                          ),
+                          helperText: 'O e-mail não pode ser alterado',
                           enabled: false,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        AudespTextField(
+                          label: 'Nome',
                           controller: _nome,
-                          decoration: const InputDecoration(labelText: 'Nome'),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Obrigatório'
                               : null,
@@ -244,34 +243,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AudespTextField(
+                        label: 'Senha atual',
                         controller: _sysPwAtualCtrl,
                         obscureText: _obscureSysPwAtual,
-                        decoration: InputDecoration(
-                          labelText: 'Senha atual',
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureSysPwAtual
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () => setState(
-                                () => _obscureSysPwAtual = !_obscureSysPwAtual),
-                          ),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureSysPwAtual
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () => setState(
+                              () => _obscureSysPwAtual = !_obscureSysPwAtual),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AudespTextField(
+                        label: 'Nova senha',
                         controller: _sysPwNovaCtrl,
                         obscureText: _obscureSysPwNova,
-                        decoration: InputDecoration(
-                          labelText: 'Nova senha',
-                          helperText: 'Mínimo de 6 caracteres',
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureSysPwNova
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () => setState(
-                                () => _obscureSysPwNova = !_obscureSysPwNova),
-                          ),
+                        helperText: 'Mínimo de 6 caracteres',
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureSysPwNova
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () => setState(
+                              () => _obscureSysPwNova = !_obscureSysPwNova),
                         ),
                       ),
                       const SizedBox(height: 20),

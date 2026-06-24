@@ -10,6 +10,7 @@ import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
 import '../services/consulta_service.dart';
 import '../services/pdf_comprovante_service.dart';
 
@@ -307,10 +308,9 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 children: [
                   SizedBox(
                     width: 220,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _endpointFilter,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Módulo'),
+                    child: AudespDropdown<String?>.items(
+                      label: 'Módulo',
+                      value: _endpointFilter,
                       items: [
                         const DropdownMenuItem<String?>(
                           value: null,
@@ -352,30 +352,14 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   const SizedBox(width: 8),
                   SizedBox(
                     width: 190,
-                    child: DropdownButtonFormField<_StatusFilter>(
-                      initialValue: _statusFilter,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Status'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: _StatusFilter.todos,
-                          child: Text(
-                            'Todos os status',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: _StatusFilter.sucesso,
-                          child: Text(
-                            'Sucesso',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: _StatusFilter.erro,
-                          child: Text('Erro', overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
+                    child: AudespDropdown<_StatusFilter>(
+                      label: 'Status',
+                      value: _statusFilter,
+                      items: const {
+                        _StatusFilter.todos: 'Todos os status',
+                        _StatusFilter.sucesso: 'Sucesso',
+                        _StatusFilter.erro: 'Erro',
+                      },
                       onChanged: (v) {
                         if (v != null) setState(() => _statusFilter = v);
                       },
@@ -385,7 +369,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   SizedBox(
                     width: 140,
                     child: AudespDatePickerField(
-                      isDense: true,
                       label: 'Data início',
                       value: _dateFrom,
                       onChanged: (d) => setState(() => _dateFrom = d),
@@ -395,7 +378,6 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   SizedBox(
                     width: 140,
                     child: AudespDatePickerField(
-                      isDense: true,
                       label: 'Data fim',
                       value: _dateTo,
                       onChanged: (d) => setState(() => _dateTo = d),

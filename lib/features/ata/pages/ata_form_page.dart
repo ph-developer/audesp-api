@@ -10,7 +10,12 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../ata_providers.dart';
@@ -405,21 +410,12 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<int>(
-                          initialValue: _editalId,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Edital *',
-                          ),
-                          items: _editais
-                              .map((e) => DropdownMenuItem(
-                                    value: e.id,
-                                    child: Text(
-                                      e.dropdownLabel,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
+                        child: AudespDropdown<int>(
+                          label: 'Edital *',
+                          value: _editalId,
+                          items: {
+                            for (final e in _editais) e.id: e.dropdownLabel,
+                          },
                           onChanged: readOnly
                               ? null
                               : (v) {
@@ -433,13 +429,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: CheckboxListTile(
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: const Text('Retificação'),
+                        child: AudespCheckbox(
+                          label: 'Retificação',
                           value: _retificacao,
                           onChanged:
                               readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
-                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ],
@@ -469,28 +463,10 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespPncpField(
+                          label: 'ID da Ata PNCP *',
                           controller: _codigoAtaCtrl,
                           readOnly: readOnly,
-                          decoration: const InputDecoration(
-                            labelText: 'ID da Ata PNCP *',
-                            hintText: '00000000000000-0-000000/0000',
-                            counterText: '',
-                          ),
-                          maxLength: 28,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Obrigatório';
-                            final raw = PcnpInputFormatter.stripMask(v);
-                            if (raw.length < 25) {
-                              return 'ID da Ata PNCP incompleto';
-                            }
-                            return null;
-                          },
-                          inputFormatters: [
-                            PcnpInputFormatter(),
-                            LengthLimitingTextInputFormatter(28),
-                          ],
-                          keyboardType: TextInputType.number,
                         ),
                       ),
                     ],
@@ -506,12 +482,10 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespTextField(
+                          label: 'Número da Ata *',
                           controller: _numeroAtaCtrl,
                           readOnly: readOnly,
-                          decoration: const InputDecoration(
-                            labelText: 'Número da Ata *',
-                          ),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o número da ata'
                               : null,
@@ -520,18 +494,13 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       const SizedBox(width: 16),
                       SizedBox(
                         width: 200,
-                        child: TextFormField(
+                        child: AudespNumberField(
+                          label: 'Ano da Ata *',
                           controller: _anoAtaCtrl,
                           readOnly: readOnly,
-                          decoration: const InputDecoration(
-                            labelText: 'Ano da Ata *',
-                            hintText: 'ex: 2026',
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
+                          hintText: 'ex: 2026',
+                          decimals: false,
+                          maxLength: 4,
                           validator: (v) {
                             final y = int.tryParse(v ?? '');
                             if (y == null || y < 1950 || y > 2100) {
@@ -587,23 +556,21 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                 title: 'Itens da Licitação Referenciados',
                 children: [
                   if (!readOnly)
-                    TextFormField(
+                    AudespTextField(
+                      label: 'Número do item',
+                      hintText: 'ex: 3',
                       controller: _itemCtrl,
-                      decoration: InputDecoration(
-                        labelText: 'Número do item',
-                        hintText: 'ex: 3',
-                        suffixIcon: IconButton(
-                          onPressed: _addItem,
-                          icon: const Icon(Icons.add),
-                          tooltip: 'Adicionar',
-                          iconSize: 18,
-                        )
-                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
-                      onFieldSubmitted: (_) => _addItem(),                            
+                      suffixIcon: IconButton(
+                        onPressed: _addItem,
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Adicionar',
+                        iconSize: 18,
+                      ),
+                      onFieldSubmitted: (_) => _addItem(),
                     ),
                   if (_numerosItem.isEmpty)
                     Padding(

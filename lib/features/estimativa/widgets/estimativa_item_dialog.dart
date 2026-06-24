@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
 
 import '../../edital/domain/edital_domain.dart';
 
@@ -146,25 +148,14 @@ class _ItemDialogState extends State<_ItemDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _tipoFornecimento,
-                              decoration: const InputDecoration(
-                                labelText: 'Fornecimento *',
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'unica',
-                                  child: Text('Compra Única'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'mensal',
-                                  child: Text('Mensal'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'anual',
-                                  child: Text('Anual'),
-                                ),
-                              ],
+                            child: AudespDropdown<String>(
+                              label: 'Fornecimento *',
+                              value: _tipoFornecimento,
+                              items: const {
+                                'unica': 'Compra Única',
+                                'mensal': 'Mensal',
+                                'anual': 'Anual',
+                              },
                               onChanged: (v) {
                                 if (v != null) {
                                   setState(() => _tipoFornecimento = v);
@@ -175,21 +166,13 @@ class _ItemDialogState extends State<_ItemDialog> {
                           if (widget.estimativaTipo == 'item') ...[
                             const SizedBox(width: 8),
                             Expanded(
-                              child: DropdownButtonFormField<String>(
-                                initialValue: _materialOuServico,
-                                decoration: const InputDecoration(
-                                  labelText: 'Material/Serviço *',
-                                ),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'M',
-                                    child: Text('Material'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'S',
-                                    child: Text('Serviço'),
-                                  ),
-                                ],
+                              child: AudespDropdown<String>(
+                                label: 'Material/Serviço *',
+                                value: _materialOuServico,
+                                items: const {
+                                  'M': 'Material',
+                                  'S': 'Serviço',
+                                },
                                 onChanged: (v) {
                                   if (v != null) {
                                     setState(() => _materialOuServico = v);
@@ -199,19 +182,10 @@ class _ItemDialogState extends State<_ItemDialog> {
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: DropdownButtonFormField<int>(
-                                initialValue: _itemCategoriaId,
-                                decoration: const InputDecoration(
-                                  labelText: 'Categoria do Item *',
-                                ),
-                                items: kItemCategoria.entries
-                                    .map(
-                                      (e) => DropdownMenuItem(
-                                        value: e.key,
-                                        child: Text(e.value),
-                                      ),
-                                    )
-                                    .toList(),
+                              child: AudespDropdown<int>(
+                                label: 'Categoria do Item *',
+                                value: _itemCategoriaId,
+                                items: kItemCategoria,
                                 onChanged: (v) {
                                   if (v != null) {
                                     setState(() => _itemCategoriaId = v);
@@ -229,18 +203,9 @@ class _ItemDialogState extends State<_ItemDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: TextFormField(
+                            child: AudespNumberField(
+                              label: labelQtd,
                               controller: _quantidadeCtrl,
-                              decoration: InputDecoration(labelText: labelQtd),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9.,]'),
-                                ),
-                              ],
                               onChanged: (_) => setState(() {}),
                               validator: (v) => (v == null || v.isEmpty)
                                   ? 'Obrigatório'
@@ -249,12 +214,10 @@ class _ItemDialogState extends State<_ItemDialog> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextFormField(
+                            child: AudespTextField(
+                              label: 'Unidade *',
                               controller: _unidadeCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Unidade *',
-                                hintText: 'UN, M2...',
-                              ),
+                              hintText: 'UN, M2...',
                               validator: (v) => (v == null || v.isEmpty)
                                   ? 'Obrigatório'
                                   : null,
@@ -262,16 +225,11 @@ class _ItemDialogState extends State<_ItemDialog> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextFormField(
+                            child: AudespNumberField(
+                              label: 'Meses *',
                               controller: _quantidadeMesesCtrl,
                               enabled: isMensal,
-                              decoration: const InputDecoration(
-                                labelText: 'Meses *',
-                              ),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
+                              decimals: false,
                               onChanged: (_) => setState(() {}),
                               validator: (v) =>
                                   (isMensal && (v == null || v.isEmpty))
@@ -282,11 +240,9 @@ class _ItemDialogState extends State<_ItemDialog> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
+                      AudespTextField(
+                        label: 'Descrição *',
                         controller: _descricaoCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Descrição *',
-                        ),
                         maxLines: 3,
                         validator: (v) =>
                             (v == null || v.isEmpty) ? 'Obrigatório' : null,

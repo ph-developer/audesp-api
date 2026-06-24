@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/edital_domain.dart';
-import 'pcnp_input_formatter.dart';
 
 /// Diálogo para adicionar ou editar uma Publicação do Edital.
 ///
@@ -95,53 +97,27 @@ class _PublicacaoDialogState extends State<_PublicacaoDialog> {
               ),
               const SizedBox(height: 12),
               // Veículo de publicação
-              DropdownButtonFormField<int>(
-                key: ValueKey('veic_$_veiculo'),
-                initialValue: _veiculo,
-                decoration: const InputDecoration(
-                    labelText: 'Veículo de Publicação *'),
-                items: kVeiculosPublicacao.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
-                    .toList(),
+              AudespDropdown<int>(
+                label: 'Veículo de Publicação *',
+                value: _veiculo,
+                items: kVeiculosPublicacao,
                 onChanged: (v) => setState(() => _veiculo = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
               // PNCP id (se veiculo = 5)
               if (_veiculo == 5) ...[
                 const SizedBox(height: 12),
-                TextFormField(
+                AudespPncpField(
+                  label: 'ID Contratação PNCP *',
                   controller: _pncpCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'ID Contratação PNCP *',
-                    hintText: '00000000000000-0-000000/0000',
-                    counterText: '',
-                  ),
-                  maxLength: 28,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    PcnpInputFormatter(),
-                    LengthLimitingTextInputFormatter(28),
-                  ],
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obrigatório';
-                    final raw = PcnpInputFormatter.stripMask(v);
-                    if (raw.length < 25) return 'ID de Contratação PNCP incompleto';
-                    return null;
-                  },
                 ),
               ],
               // Nome do veículo (se veiculo = 10)
               if (_veiculo == 10) ...[
                 const SizedBox(height: 12),
-                TextFormField(
+                AudespTextField(
+                  label: 'Nome do Veículo *',
                   controller: _outrosCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome do Veículo *',
-                    counterText: '',
-                  ),
                   maxLength: 100,
                   validator: (v) =>
                       (v == null || v.isEmpty) ? 'Obrigatório' : null,

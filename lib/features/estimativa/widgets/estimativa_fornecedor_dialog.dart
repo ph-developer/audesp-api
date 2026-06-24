@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../models/estimativa_fornecedor_model.dart';
 
 enum FornecedorDialogAction { cancel, delete }
@@ -71,29 +72,23 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            AudespTextField(
+              label: 'Razão Social',
               controller: _razaoSocialCtrl,
-              decoration: const InputDecoration(labelText: 'Razão Social'),
             ),
             const SizedBox(height: 12),
-            TextField(
+            AudespCpfCnpjField(
+              label: 'CPF/CNPJ (apenas números)',
               controller: _cnpjCtrl,
-              decoration: const InputDecoration(
-                labelText: 'CPF/CNPJ (apenas números)',
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 12),
-            TextField(
+            AudespTextField(
+              label: 'Data do Orçamento',
+              hintText: 'DD/MM/AAAA',
               controller: _dataCtrl,
               readOnly: true,
               onTap: _pickDate,
-              decoration: const InputDecoration(
-                labelText: 'Data do Orçamento',
-                hintText: 'DD/MM/AAAA',
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
+              suffixIcon: const Icon(Icons.calendar_today),
             ),
           ],
         ),

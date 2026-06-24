@@ -11,7 +11,13 @@ import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
+import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../domain/ajuste_domain.dart';
@@ -750,19 +756,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: DropdownButtonFormField<int>(
-                          initialValue: _editalId,
-                          decoration: const InputDecoration(labelText: 'Edital *'),
-                          isExpanded: true,
-                          items: _editais
-                              .map((e) => DropdownMenuItem(
-                                    value: e.id,
-                                    child: Text(
-                                      e.dropdownLabel,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
+                        child: AudespDropdown<int>(
+                          label: 'Edital *',
+                          value: _editalId,
+                          items: {
+                            for (final e in _editais) e.id: e.dropdownLabel,
+                          },
                           onChanged: readOnly
                               ? null
                               : (v) {
@@ -778,22 +777,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 1,
-                        child: DropdownButtonFormField<int?>(
-                          initialValue: _ataId,
-                          decoration: const InputDecoration(
-                              labelText: 'Ata (somente para SRP)'),
-                          isExpanded: true,
-                          items: [
-                            const DropdownMenuItem<int?>(
-                                value: null, child: Text('— Nenhuma —')),
-                            ..._atas.map((a) => DropdownMenuItem(
-                                  value: a.id,
-                                  child: Text(
-                                    a.dropdownLabel,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                )),
-                          ],
+                        child: AudespDropdown<int?>(
+                          label: 'Ata (somente para SRP)',
+                          value: _ataId,
+                          items: {
+                            null: '— Nenhuma —',
+                            for (final a in _atas) a.id: a.dropdownLabel,
+                          },
                           onChanged: readOnly
                               ? null
                               : (v) {
@@ -839,40 +829,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespPncpField(
+                          label: 'ID do Contrato PNCP *',
                           controller: _codigoContratoCtrl,
                           readOnly: readOnly,
-                          decoration: const InputDecoration(
-                            labelText: 'ID do Contrato PNCP *',
-                            hintText: '00000000000000-0-000000/0000',
-                            counterText: '',
-                          ),
-                          maxLength: 28,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Obrigatório';
-                            final raw = PcnpInputFormatter.stripMask(v);
-                            if (raw.length < 25) {
-                              return 'ID do Contrato PNCP incompleto';
-                            }
-                            return null;
-                          },
-                          inputFormatters: [
-                            PcnpInputFormatter(),
-                            LengthLimitingTextInputFormatter(28),
-                          ],
-                          keyboardType: TextInputType.number,
                         ),
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: CheckboxListTile(
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: const Text('Retificação'),
+                        child: AudespCheckbox(
+                          label: 'Retificação',
                           value: _retificacao,
                           onChanged:
                               readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
-                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     ],
@@ -884,44 +854,32 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   //       labelText: 'Código da Unidade (PNCP — opcional)'),
                   //   readOnly: readOnly,
                   // ),
-                  const SizedBox(height: 4),                  
-                  CheckboxListTile(
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text('Adesão / Participação'),
-                    subtitle: const Text(
-                        'Adesão ou participação em licitação gerenciada por outra entidade?'),
+                  const SizedBox(height: 4),
+                  AudespCheckbox(
+                    label: 'Adesão / Participação',
                     value: _adesaoParticipacao,
                     onChanged: readOnly
                         ? null
                         : (v) => setState(() => _adesaoParticipacao = v ?? false),
-                    contentPadding: EdgeInsets.zero,
                   ),
                   if (_adesaoParticipacao) ...[
-                    CheckboxListTile(
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text('Gerenciadora Jurisdicionada'),
-                      subtitle: const Text(
-                          'A entidade gerenciadora é jurisdicionada ao TCE-SP?'),
+                    AudespCheckbox(
+                      label: 'Gerenciadora Jurisdicionada',
                       value: _gerenciadoraJurisdicionada,
                       onChanged: readOnly
                           ? null
                           : (v) =>
                               setState(() => _gerenciadoraJurisdicionada = v ?? false),
-                      contentPadding: EdgeInsets.zero,
                     ),
                     if (_gerenciadoraJurisdicionada) ...[
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
+                            child: AudespNumberField(
+                              label: 'Município Gerenciador *',
                               controller: _municipioGerenciadorCtrl,
-                              decoration: const InputDecoration(
-                                  labelText: 'Município Gerenciador *'),
                               readOnly: readOnly,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
-                              ],
+                              decimals: false,
                               validator: (v) => _gerenciadoraJurisdicionada &&
                                       _adesaoParticipacao &&
                                       (v == null || v.trim().isEmpty)
@@ -931,15 +889,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextFormField(
+                            child: AudespNumberField(
+                              label: 'Entidade Gerenciadora *',
                               controller: _entidadeGerenciadoraCtrl,
-                              decoration: const InputDecoration(
-                                  labelText: 'Entidade Gerenciadora *'),
                               readOnly: readOnly,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
-                              ],
+                              decimals: false,
                               validator: (v) => _gerenciadoraJurisdicionada &&
                                       _adesaoParticipacao &&
                                       (v == null || v.trim().isEmpty)
@@ -950,16 +904,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         ],
                       ),
                     ] else ...[
-                      TextFormField(
+                      AudespNumberField(
+                        label: 'CNPJ da Entidade Gerenciadora',
                         controller: _cnpjGerenciadoraCtrl,
-                        decoration: const InputDecoration(
-                            labelText: 'CNPJ da Entidade Gerenciadora'),
                         readOnly: readOnly,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(14),
-                        ],
+                        decimals: false,
+                        maxLength: 14,
                       ),
                     ],
                   ],
@@ -1002,22 +952,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 title: 'Itens Contratados',
                 children: [
                   if (!readOnly)
-                    TextFormField(
+                    AudespTextField(
+                      label: 'Número do item',
+                      hintText: 'Ex: 1',
                       controller: _itemCtrl,
-                      decoration: InputDecoration(
-                          labelText: 'Número do item',
-                          hintText: 'Ex: 1',
-                          suffixIcon: IconButton(
-                            onPressed: _addItem,
-                            icon: const Icon(Icons.add),
-                            tooltip: 'Adicionar',
-                            iconSize: 18,
-                          ),
-                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly
                       ],
+                      suffixIcon: IconButton(
+                        onPressed: _addItem,
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Adicionar',
+                        iconSize: 18,
+                      ),
                       onFieldSubmitted: (_) => _addItem(),
                     ),
                   if (_itens.isEmpty)
@@ -1054,17 +1002,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Dados do Contrato',
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _tipoContratoId,
-                    decoration: const InputDecoration(
-                        labelText: 'Tipo de Contrato *'),
-                    isExpanded: true,
-                    items: kTipoContrato.entries
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ))
-                        .toList(),
+                  AudespDropdown<int>(
+                    label: 'Tipo de Contrato *',
+                    value: _tipoContratoId,
+                    items: kTipoContrato,
                     onChanged:
                         readOnly ? null : (v) => setState(() => _tipoContratoId = v),
                     validator: (v) =>
@@ -1074,10 +1015,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespTextField(
+                          label: 'Número do Contrato/Empenho *',
                           controller: _numeroContratoEmpenhoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Número do Contrato/Empenho *'),
                           readOnly: readOnly,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -1086,18 +1026,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: TextFormField(
+                        child: AudespNumberField(
+                          label: 'Ano do Contrato *',
                           controller: _anoContratoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Ano do Contrato *',
-                              hintText: 'Ex: 2024' 
-                            ),
                           readOnly: readOnly,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
+                          hintText: 'Ex: 2024',
+                          decimals: false,
+                          maxLength: 4,
                           validator: (v) {
                             final n = int.tryParse(v ?? '');
                             if (n == null || n < 1970 || n > 2099) {
@@ -1113,10 +1048,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespTextField(
+                          label: 'Número do Processo *',
                           controller: _processoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Número do Processo *'),
                           readOnly: readOnly,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -1124,20 +1058,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DropdownButtonFormField<int>(
-                          initialValue: _categoriaProcessoId,
-                          decoration: const InputDecoration(
-                              labelText: 'Categoria do Processo *'),
-                          isExpanded: true,
-                          items: kCategoriaProcesso.entries
-                              .map((e) => DropdownMenuItem(
-                                    value: e.key,
-                                    child: Text(
-                                      e.value,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
+                        child: AudespDropdown<int>(
+                          label: 'Categoria do Processo *',
+                          value: _categoriaProcessoId,
+                          items: kCategoriaProcesso,
                           onChanged: readOnly
                               ? null
                               : (v) => setState(() => _categoriaProcessoId = v),
@@ -1192,22 +1116,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   title: 'Classificações de Despesa',
                   children: [
                     if (!readOnly)
-                      TextFormField(
+                      AudespTextField(
+                        label: '8 dígitos (ex: 33903900)',
                         controller: _despesaCtrl,
-                        decoration: InputDecoration(
-                            labelText: '8 dígitos (ex: 33903900)',                                
-                            suffixIcon: IconButton(
-                              onPressed: _addDespesa,
-                              icon: const Icon(Icons.add),
-                              tooltip: 'Adicionar',
-                              iconSize: 18,
-                            )
-                          ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(8),
                         ],
+                        suffixIcon: IconButton(
+                          onPressed: _addDespesa,
+                          icon: const Icon(Icons.add),
+                          tooltip: 'Adicionar',
+                          iconSize: 18,
+                        ),
                         onFieldSubmitted: (_) => _addDespesa(),
                       ),
                     if (_despesas.isEmpty)
@@ -1248,10 +1170,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespTextField(
+                          label: 'NI do Fornecedor (CNPJ/CPF) *',
                           controller: _niFornecedorCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'NI do Fornecedor (CNPJ/CPF) *'),
                           readOnly: readOnly,
                           validator: (v) =>
                               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -1259,17 +1180,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _tipoPessoaFornecedor,
-                          decoration: const InputDecoration(
-                              labelText: 'Tipo de Pessoa *'),
-                          isExpanded: true,
-                          items: kTipoPessoaFornecedor.entries
-                              .map((e) => DropdownMenuItem(
-                                    value: e.key,
-                                    child: Text(e.value),
-                                  ))
-                              .toList(),
+                        child: AudespDropdown<String>(
+                          label: 'Tipo de Pessoa *',
+                          value: _tipoPessoaFornecedor,
+                          items: kTipoPessoaFornecedor,
                           onChanged: readOnly
                               ? null
                               : (v) =>
@@ -1281,10 +1195,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Nome/Razão Social do Fornecedor *',
                     controller: _nomeRazaoSocialFornecedorCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Nome/Razão Social do Fornecedor *'),
                     readOnly: readOnly,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -1300,29 +1213,22 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespTextField(
+                          label: 'NI do Subcontratado',
                           controller: _niFornecedorSubCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'NI do Subcontratado'),
                           readOnly: readOnly,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DropdownButtonFormField<String?>(
-                          initialValue: _tipoPessoaFornecedorSub,
-                          decoration: const InputDecoration(
-                              labelText: 'Tipo de Pessoa'),
-                          isExpanded: true,
-                          items: [
-                            const DropdownMenuItem<String?>(
-                                value: null, child: Text('— Nenhum —')),
-                            ...kTipoPessoaFornecedor.entries.map((e) =>
-                                DropdownMenuItem(
-                                  value: e.key,
-                                  child: Text(e.value),
-                                )),
-                          ],
+                        child: AudespDropdown<String?>(
+                          label: 'Tipo de Pessoa',
+                          value: _tipoPessoaFornecedorSub,
+                          items: {
+                            null: '— Nenhuma —',
+                            for (final e in kTipoPessoaFornecedor.entries)
+                              e.key: e.value,
+                          },
                           onChanged: readOnly
                               ? null
                               : (v) =>
@@ -1332,10 +1238,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Nome/Razão Social do Subcontratado',
                     controller: _nomeRazaoSocialFornecedorSubCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Nome/Razão Social do Subcontratado'),
                     readOnly: readOnly,
                   ),
                 ],
@@ -1346,20 +1251,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Objeto e Valores',
                 children: [
-                  DropdownButtonFormField<int>(
-                    initialValue: _tipoObjetoContrato,
-                    decoration: const InputDecoration(
-                        labelText: 'Tipo de Objeto do Contrato *'),
-                    isExpanded: true,
-                    items: kTipoObjetoContrato.entries
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(
-                                e.value,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
-                        .toList(),
+                  AudespDropdown<int>(
+                    label: 'Tipo de Objeto do Contrato *',
+                    value: _tipoObjetoContrato,
+                    items: kTipoObjetoContrato,
                     onChanged: readOnly
                         ? null
                         : (v) => setState(() => _tipoObjetoContrato = v),
@@ -1367,20 +1262,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         v == null ? 'Selecione o tipo de objeto' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Objeto do Contrato *',
                     controller: _objetoContratoCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Objeto do Contrato *'),
                     readOnly: readOnly,
                     maxLines: 3,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Informações Complementares',
                     controller: _infComplementarCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Informações Complementares'),
                     readOnly: readOnly,
                     maxLines: 2,
                   ),
@@ -1388,33 +1281,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespCurrencyField(
+                          label: 'Valor Inicial *',
                           controller: _valorInicialCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Valor Inicial (R\$) *'),
                           readOnly: readOnly,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Obrigatório';
-                            }
-                            if (parseBrCurrencyOrNull(v.trim()) == null) {
-                              return 'Valor inválido';
-                            }
-                            return null;
-                          },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
+                        child: AudespCurrencyField(
+                          label: 'Valor Global',
                           controller: _valorGlobalCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Valor Global (R\$)'),
                           readOnly: readOnly,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                          validator: (_) => null,
                         ),
                       ),
                     ],
@@ -1423,37 +1302,29 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
+                        child: AudespNumberField(
+                          label: 'Nº de Parcelas',
                           controller: _numeroParcelasCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Nº de Parcelas'),
                           readOnly: readOnly,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
+                          decimals: false,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
+                        child: AudespCurrencyField(
+                          label: 'Valor da Parcela',
                           controller: _valorParcelaCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Valor da Parcela (R\$)'),
                           readOnly: readOnly,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                          validator: (_) => null,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
+                        child: AudespCurrencyField(
+                          label: 'Valor Acumulado',
                           controller: _valorAcumuladoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Valor Acumulado (R\$)'),
                           readOnly: readOnly,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                          validator: (_) => null,
                         ),
                       ),
                     ],
@@ -1500,13 +1371,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespNumberField(
+                    label: 'Vigência em Meses',
                     controller: _vigenciaMesesCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Vigência em Meses'),
                     readOnly: readOnly,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decimals: false,
                   ),
                 ],
               ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
 
 import 'package:intl/intl.dart';
 
@@ -159,19 +161,15 @@ class _LoteDialogState extends State<_LoteDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          TextFormField(
+                          AudespTextField(
+                            label: 'Lote Nº',
                             controller: _numeroCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Lote Nº',
-                            ),
                             readOnly: true,
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
+                          AudespTextField(
+                            label: 'Descrição *',
                             controller: _descricaoCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Descrição *',
-                            ),
                             maxLines: 2,
                             validator: (v) =>
                                 (v == null || v.isEmpty) ? 'Obrigatório' : null,
@@ -181,20 +179,9 @@ class _LoteDialogState extends State<_LoteDialog> {
                             children: [
                               Expanded(
                                 flex: 2,
-                                child: TextFormField(
+                                child: AudespNumberField(
+                                  label: 'Quantidade *',
                                   controller: _quantidadeCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Quantidade *',
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9.,]'),
-                                    ),
-                                  ],
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Obrigatório'
                                       : null,
@@ -203,13 +190,10 @@ class _LoteDialogState extends State<_LoteDialog> {
                               const SizedBox(width: 8),
                               Expanded(
                                 flex: 1,
-                                child: TextFormField(
+                                child: AudespTextField(
+                                  label: 'Unidade *',
                                   controller: _unidadeCtrl,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Unidade *',
-                                  ),
-                                  textCapitalization:
-                                      TextCapitalization.characters,
+                                  textCapitalization: TextCapitalization.characters,
                                   validator: (v) => (v == null || v.isEmpty)
                                       ? 'Obrigatório'
                                       : null,
@@ -218,39 +202,22 @@ class _LoteDialogState extends State<_LoteDialog> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            initialValue: _materialOuServico,
-                            decoration: const InputDecoration(
-                              labelText: 'Material/Serviço *',
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'M',
-                                child: Text('Material'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'S',
-                                child: Text('Serviço'),
-                              ),
-                            ],
+                          AudespDropdown<String>(
+                            label: 'Material/Serviço *',
+                            value: _materialOuServico,
+                            items: const {
+                              'M': 'Material',
+                              'S': 'Serviço',
+                            },
                             onChanged: (v) =>
                                 setState(() => _materialOuServico = v!),
                             validator: (v) => v == null ? 'Obrigatório' : null,
                           ),
                           const SizedBox(height: 12),
-                          DropdownButtonFormField<int>(
-                            initialValue: _itemCategoriaId,
-                            decoration: const InputDecoration(
-                              labelText: 'Categoria do Lote *',
-                            ),
-                            items: kItemCategoria.entries
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                    value: e.key,
-                                    child: Text(e.value),
-                                  ),
-                                )
-                                .toList(),
+                          AudespDropdown<int>(
+                            label: 'Categoria do Lote *',
+                            value: _itemCategoriaId,
+                            items: kItemCategoria,
                             onChanged: (v) {
                               if (v != null) {
                                 setState(() => _itemCategoriaId = v);

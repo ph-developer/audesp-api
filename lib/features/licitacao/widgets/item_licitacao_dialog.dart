@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
 import '../domain/licitacao_domain.dart';
 import 'licitante_dialog.dart';
 
@@ -145,11 +146,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: TextFormField(
+                      child: AudespNumberField(
+                        label: 'Nº do Item *',
                         controller: _numeroItemCtrl,
-                        decoration: const InputDecoration(labelText: 'Nº do Item *'),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decimals: false,
                         validator: (v) =>
                             (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                       ),
@@ -157,13 +157,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 4,
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _tipoOrcamento,
-                        decoration: const InputDecoration(labelText: 'Tipo de Orçamento *'),
-                        items: kTipoOrcamento.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
+                      child: AudespDropdown<int>(
+                        label: 'Tipo de Orçamento *',
+                        value: _tipoOrcamento,
+                        items: kTipoOrcamento,
                         onChanged: (v) => setState(() => _tipoOrcamento = v),
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
@@ -174,15 +171,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AudespNumberField(
+                        label: 'Valor Médio dos Orçamentos (R\$)',
                         controller: _valorCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'Valor Médio dos Orçamentos (R\$)', hintText: 'Ex.: 12345.00'),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                        ],
+                        hintText: 'Ex.: 12345.00',
                         validator: (v) {
                           if (_tipoOrcamento != null &&
                               _tipoOrcamento != 0 &&
@@ -220,14 +212,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _situacaoCompraItemId,
-                        decoration:
-                            const InputDecoration(labelText: 'Situação do Item *'),
-                        items: kSituacaoCompraItem.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
+                      child: AudespDropdown<int>(
+                        label: 'Situação do Item *',
+                        value: _situacaoCompraItemId,
+                        items: kSituacaoCompraItem,
                         onChanged: (v) => setState(() => _situacaoCompraItemId = v),
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
@@ -248,13 +236,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _tipoValor,
-                        decoration: const InputDecoration(labelText: 'Tipo de Valor *'),
-                        items: kTipoValor.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
+                      child: AudespDropdown<String>(
+                        label: 'Tipo de Valor *',
+                        value: _tipoValor,
+                        items: kTipoValor,
                         onChanged: (v) => setState(() => _tipoValor = v),
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
@@ -262,13 +247,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 4,
-                      child: DropdownButtonFormField<int>(
-                        initialValue: _tipoProposta,
-                        decoration: const InputDecoration(labelText: 'Tipo de Proposta *'),
-                        items: kTipoProposta.entries
-                            .map((e) =>
-                                DropdownMenuItem(value: e.key, child: Text(e.value)))
-                            .toList(),
+                      child: AudespDropdown<int>(
+                        label: 'Tipo de Proposta *',
+                        value: _tipoProposta,
+                        items: kTipoProposta,
                         onChanged: (v) => setState(() => _tipoProposta = v),
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),

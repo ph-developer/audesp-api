@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../core/services/gemini_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,17 +252,17 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'Razão Social',
                       controller: _razaoSocialCtrl,
-                      decoration: const InputDecoration(labelText: 'Razão Social', isDense: true),
                       validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'CNPJ',
                       controller: _cnpjCtrl,
-                      decoration: const InputDecoration(labelText: 'CNPJ', isDense: true),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
@@ -269,7 +270,8 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'Data (dd/MM/yyyy)',
                       controller: _dataCtrl,
                       readOnly: true,
                       onTap: () async {
@@ -289,11 +291,7 @@ class _GeminiOrcamentoReviewDialogState extends State<_GeminiOrcamentoReviewDial
                           _dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
                         }
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Data (dd/MM/yyyy)', 
-                        isDense: true,
-                        suffixIcon: Icon(Icons.calendar_today, size: 18),
-                      ),
+                      suffixIcon: const Icon(Icons.calendar_today, size: 18),
                       validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                     ),
                   ),

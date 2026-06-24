@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/audesp_checkbox.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_lote_model.dart';
 
@@ -39,10 +40,8 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                             itemCount: tempLotes.length,
                             itemBuilder: (context, index) {
                               final lote = tempLotes[index];
-                              return CheckboxListTile(
-                                title: Text(
-                                  'Lote ${lote.numero} - ${lote.descricao}',
-                                ),
+                              return AudespCheckbox(
+                                label: 'Lote ${lote.numero} - ${lote.descricao}',
                                 value: lote.exclusivoMeEpp,
                                 onChanged: (v) {
                                   setModalState(() {
@@ -61,10 +60,8 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                           itemCount: tempItens.length,
                           itemBuilder: (context, index) {
                             final item = tempItens[index];
-                            return CheckboxListTile(
-                              title: Text(
-                                'Item ${item.numero} - ${item.descricao}',
-                              ),
+                            return AudespCheckbox(
+                              label: 'Item ${item.numero} - ${item.descricao}',
                               value: item.exclusivoMeEpp,
                               onChanged: (v) {
                                 setModalState(() {

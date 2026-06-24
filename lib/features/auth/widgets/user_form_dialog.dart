@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 
 /// Abre o diálogo de criação/edição de usuário usando o sistema responsivo.
 Future<bool?> showUserFormDialog(BuildContext context, {User? user}) {
@@ -116,19 +118,17 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
+                AudespTextField(
+                  label: 'Nome',
                   controller: _nome,
-                  decoration: const InputDecoration(labelText: 'Nome'),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                AudespTextField(
+                  label: 'E-mail AUDESP',
                   controller: _email,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail AUDESP',
-                    helperText: 'Será usado como login e nas chamadas à API',
-                  ),
+                  helperText: 'Será usado como login e nas chamadas à API',
                   keyboardType: TextInputType.emailAddress,
                   enabled: !_isEdit,
                   validator: (v) {
@@ -170,34 +170,29 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Text('Permissões de Módulo', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                  CheckboxListTile(
-                    title: const Text('Edital'),
+                  AudespCheckbox(
+                    label: 'Edital',
                     value: _permEdital,
-                    dense: true,
                     onChanged: (v) => setState(() => _permEdital = v ?? false),
                   ),
-                  CheckboxListTile(
-                    title: const Text('Licitação'),
+                  AudespCheckbox(
+                    label: 'Licitação',
                     value: _permLicitacao,
-                    dense: true,
                     onChanged: (v) => setState(() => _permLicitacao = v ?? false),
                   ),
-                  CheckboxListTile(
-                    title: const Text('Ata'),
+                  AudespCheckbox(
+                    label: 'Ata',
                     value: _permAta,
-                    dense: true,
                     onChanged: (v) => setState(() => _permAta = v ?? false),
                   ),
-                  CheckboxListTile(
-                    title: const Text('Ajuste'),
+                  AudespCheckbox(
+                    label: 'Ajuste',
                     value: _permAjuste,
-                    dense: true,
                     onChanged: (v) => setState(() => _permAjuste = v ?? false),
                   ),
-                  CheckboxListTile(
-                    title: const Text('Estimativa'),
+                  AudespCheckbox(
+                    label: 'Estimativa',
                     value: _permEstimativa,
-                    dense: true,
                     onChanged: (v) => setState(() => _permEstimativa = v ?? false),
                   ),
                 ],

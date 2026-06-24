@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/hover_cell_text.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../core/database/database_providers.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
@@ -43,7 +45,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Cabeçalho ────────────────────────────────────────────────────────────
   final _objetoCtrl = TextEditingController();
   String _tipoEstimativa = 'item'; // 'item' ou 'lote'
-  final _tipoEstimativaKey = GlobalKey<FormFieldState<String>>();
   String _calculoGlobal = 'min'; // 'min', 'avg', 'median'
 
   // ── Textos PDF (Agora Automáticos) ──────────────────────────────────────
@@ -198,9 +199,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         Row(
           children: [
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Número *',
                 controller: _numeroCtrl,
-                decoration: const InputDecoration(labelText: 'Número *'),
                 keyboardType: TextInputType.number,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -208,9 +209,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Ano *',
                 controller: _anoCtrl,
-                decoration: const InputDecoration(labelText: 'Ano *'),
                 keyboardType: TextInputType.number,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -219,12 +220,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ],
         ),
         const SizedBox(height: 16),
-        TextFormField(
+        AudespTextField(
+          label: 'Objeto da Licitação *',
           controller: _objetoCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Objeto da Licitação *',
-            alignLabelWithHint: true,
-          ),
           maxLines: 3,
           validator: (v) =>
               (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
@@ -233,16 +231,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         Row(
           children: [
             Expanded(
-              child: DropdownButtonFormField<String>(
-                key: _tipoEstimativaKey,
-                initialValue: _tipoEstimativa,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Estimativa *',
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'item', child: Text('Por Item')),
-                  DropdownMenuItem(value: 'lote', child: Text('Por Lote')),
-                ],
+              child: AudespDropdown<String>(
+                label: 'Tipo de Estimativa *',
+                value: _tipoEstimativa,
+                items: const {'item': 'Por Item', 'lote': 'Por Lote'},
                 onChanged: (v) async {
                   if (v != null && v != _tipoEstimativa) {
                     if (_itens.isNotEmpty || _lotes.isNotEmpty) {
@@ -266,7 +258,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         ),
                       );
                       if (confirm != true) {
-                        _tipoEstimativaKey.currentState?.reset();
                         return;
                       }
                     }
@@ -281,23 +272,15 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: DropdownButtonFormField<String>(
-                initialValue: _calculoGlobal,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Cálculo *',
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'min',
-                    child: Text('Menor Preço (Mínimo)'),
-                  ),
-                  DropdownMenuItem(value: 'avg', child: Text('Média')),
-                  DropdownMenuItem(value: 'median', child: Text('Mediana')),
-                  DropdownMenuItem(
-                    value: 'desc',
-                    child: Text('Maior Desconto'),
-                  ),
-                ],
+              child: AudespDropdown<String>(
+                label: 'Tipo de Cálculo *',
+                value: _calculoGlobal,
+                items: const {
+                  'min': 'Menor Preço (Mínimo)',
+                  'avg': 'Média',
+                  'median': 'Mediana',
+                  'desc': 'Maior Desconto',
+                },
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);
                 },
@@ -309,29 +292,19 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         Row(
           children: [
             Expanded(
-              child: DropdownButtonFormField<bool>(
-                initialValue: _registroPrecos,
-                decoration: const InputDecoration(
-                  labelText: 'Registro de Preços? *',
-                ),
-                items: const [
-                  DropdownMenuItem(value: true, child: Text('Sim')),
-                  DropdownMenuItem(value: false, child: Text('Não')),
-                ],
+              child: AudespDropdown<bool>(
+                label: 'Registro de Preços? *',
+                value: _registroPrecos,
+                items: const {true: 'Sim', false: 'Não'},
                 onChanged: (v) => setState(() => _registroPrecos = v ?? false),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: DropdownButtonFormField<bool>(
-                initialValue: _temGarantia,
-                decoration: const InputDecoration(
-                  labelText: 'Exige Garantia? *',
-                ),
-                items: const [
-                  DropdownMenuItem(value: true, child: Text('Sim')),
-                  DropdownMenuItem(value: false, child: Text('Não')),
-                ],
+              child: AudespDropdown<bool>(
+                label: 'Exige Garantia? *',
+                value: _temGarantia,
+                items: const {true: 'Sim', false: 'Não'},
                 onChanged: (v) => setState(() => _temGarantia = v ?? false),
               ),
             ),
@@ -339,12 +312,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         ),
         if (_temGarantia) ...[
           const SizedBox(height: 12),
-          TextFormField(
+          AudespTextField(
+            label: 'Período da Garantia *',
             controller: _periodoGarantiaCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Período da Garantia *',
-              hintText: 'Ex: 12 meses',
-            ),
+            hintText: 'Ex: 12 meses',
             validator: (v) => (_temGarantia && (v == null || v.trim().isEmpty))
                 ? 'Obrigatório'
                 : null,
@@ -355,24 +326,20 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Prazo de Vigência *',
                 controller: _prazoVigenciaCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Prazo de Vigência *',
-                  hintText: 'Ex: 12 meses',
-                ),
+                hintText: 'Ex: 12 meses',
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: TextFormField(
+              child: AudespTextField(
+                label: 'Forma de Pagamento *',
                 controller: _formaPagamentoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Forma de Pagamento *',
-                  hintText: 'Ex: 30 dias após emissão da NF',
-                ),
+                hintText: 'Ex: 30 dias após emissão da NF',
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
@@ -380,25 +347,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ],
         ),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          initialValue: _exclusividadeMeEpp,
-          decoration: const InputDecoration(
-            labelText: 'Exclusividade ME/EPP *',
-          ),
-          items: const [
-            DropdownMenuItem(
-              value: 'nenhuma',
-              child: Text('Não exclusiva para ME/EPP'),
-            ),
-            DropdownMenuItem(
-              value: 'exclusiva',
-              child: Text('Exclusiva para ME/EPP (Art. 48, I)'),
-            ),
-            DropdownMenuItem(
-              value: 'reservada',
-              child: Text('Itens/Lotes reservados para ME/EPP (Art. 48, III)'),
-            ),
-          ],
+        AudespDropdown<String>(
+          label: 'Exclusividade ME/EPP *',
+          value: _exclusividadeMeEpp,
+          items: const {
+            'nenhuma': 'Não exclusiva para ME/EPP',
+            'exclusiva': 'Exclusiva para ME/EPP (Art. 48, I)',
+            'reservada': 'Itens/Lotes reservados para ME/EPP (Art. 48, III)',
+          },
           onChanged: (v) =>
               setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
         ),
@@ -410,24 +366,22 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     return SectionCard(
       title: 'Fontes de Recurso/Aplicação',
       children: [
-        TextFormField(
+        AudespTextField(
+          label: 'Nova Fonte (ex: xx/xxxxx)',
           controller: _fonteRecursoInputCtrl,
-          decoration: InputDecoration(
-            labelText: 'Nova Fonte (ex: xx/xxxxx)',
-            suffixIcon: IconButton(
-              onPressed: () {
-                final v = _fonteRecursoInputCtrl.text.trim();
-                if (v.isNotEmpty && !_fontesRecurso.contains(v)) {
-                  setState(() {
-                    _fontesRecurso.add(v);
-                    _fonteRecursoInputCtrl.clear();
-                  });
-                }
-              },
-              icon: const Icon(Icons.add),
-              tooltip: 'Adicionar',
-              iconSize: 18,
-            ),
+          suffixIcon: IconButton(
+            onPressed: () {
+              final v = _fonteRecursoInputCtrl.text.trim();
+              if (v.isNotEmpty && !_fontesRecurso.contains(v)) {
+                setState(() {
+                  _fontesRecurso.add(v);
+                  _fonteRecursoInputCtrl.clear();
+                });
+              }
+            },
+            icon: const Icon(Icons.add),
+            tooltip: 'Adicionar',
+            iconSize: 18,
           ),
           onFieldSubmitted: (v) {
             if (v.trim().isNotEmpty && !_fontesRecurso.contains(v.trim())) {

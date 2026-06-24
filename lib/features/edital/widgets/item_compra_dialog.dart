@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
+import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/edital_domain.dart';
 
 /// Diálogo para adicionar ou editar um Item de Compra do Edital.
@@ -153,18 +157,10 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               ),
               const SizedBox(height: 12),
               // Tipo de Benefício
-              DropdownButtonFormField<int>(
-                key: ValueKey('ben_$_tipoBeneficio'),
-                initialValue: _tipoBeneficio,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Benefício *',
-                ),
-                items: kTipoBeneficio.entries
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)),
-                    )
-                    .toList(),
+              AudespDropdown<int>(
+                label: 'Tipo de Benefício *',
+                value: _tipoBeneficio,
+                items: kTipoBeneficio,
                 onChanged: (v) => setState(() => _tipoBeneficio = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
@@ -173,10 +169,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: CheckboxListTile(
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Incentivo Produtivo Básico (PPB)'),
+                    child: AudespCheckbox(
+                      label: 'Incentivo Produtivo Básico (PPB)',
                       value: _incentivoBasico,
                       onChanged: (v) =>
                           setState(() => _incentivoBasico = v ?? false),
@@ -184,10 +178,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: CheckboxListTile(
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Orçamento Sigiloso'),
+                    child: AudespCheckbox(
+                      label: 'Orçamento Sigiloso',
                       value: _orcamentoSigiloso,
                       onChanged: (v) =>
                           setState(() => _orcamentoSigiloso = v ?? false),
@@ -197,12 +189,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               ),
               const SizedBox(height: 8),
               // Descrição
-              TextFormField(
+              AudespTextField(
+                label: 'Descrição *',
                 controller: _descCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição *',
-                  counterText: '',
-                ),
                 maxLength: 2048,
                 maxLines: 3,
                 validator: (v) =>
@@ -215,17 +204,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: AudespNumberField(
+                      label: 'Quantidade *',
                       controller: _qtdCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantidade *',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                      ],
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obrigatório';
                         if (parseBrCurrencyOrNull(v) == null) {
@@ -238,12 +219,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'Unidade de Medida *',
                       controller: _unidadeCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Unidade de Medida *',
-                        counterText: '',
-                      ),
                       maxLength: 30,
                       validator: (v) =>
                           (v == null || v.isEmpty) ? 'Obrigatório' : null,
@@ -257,63 +235,27 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: AudespCurrencyField(
+                      label: 'Valor Unitário Estimado *',
                       controller: _valorUnitCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Valor Unitário Estimado *',
-                        prefixText: 'R\$ ',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                      ],
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null) {
-                          return 'Valor inválido';
-                        }
-                        return null;
-                      },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextFormField(
+                    child: AudespCurrencyField(
+                      label: 'Valor Total Estimado *',
                       controller: _valorTotalCtrl,
                       readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Valor Total Estimado *',
-                        prefixText: 'R\$ ',
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Obrigatório';
-                        if (parseBrCurrencyOrNull(v) == null) {
-                          return 'Valor inválido';
-                        }
-                        return null;
-                      },
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               // Categoria do Item
-              DropdownButtonFormField<int>(
-                key: ValueKey('cat_$_itemCategoria'),
-                initialValue: _itemCategoria,
-                decoration: const InputDecoration(
-                  labelText: 'Categoria do Item *',
-                ),
-                items: kItemCategoria.entries
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e.key,
-                        child: Text(e.value),
-                      ),
-                    )
-                    .toList(),
+              AudespDropdown<int>(
+                label: 'Categoria do Item *',
+                value: _itemCategoria,
+                items: kItemCategoria,
                 onChanged: (v) => setState(() => _itemCategoria = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
@@ -323,12 +265,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'Patrimônio',
                       controller: _patrimonioCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Patrimônio',
-                        counterText: '',
-                      ),
                       maxLength: 255,
                     ),
                   ),
@@ -336,12 +275,9 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   // Código de Registro Imobiliário (opcional)
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: AudespTextField(
+                      label: 'Registro Imobiliário',
                       controller: _registroImobCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Registro Imobiliário',
-                        counterText: '',
-                      ),
                       maxLength: 255,
                     ),
                   ),

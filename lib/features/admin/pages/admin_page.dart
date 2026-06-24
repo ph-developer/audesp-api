@@ -6,6 +6,7 @@ import '../../../core/constants/environments.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/database/daos/app_settings_dao.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
 
@@ -370,25 +371,21 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                         ],
                       ),
                       const Divider(height: 24),
-                      TextFormField(
+                      AudespTextField(
+                        label: 'Código do Município',
                         controller: _municipioCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Código do Município',
-                          hintText: 'Ex.: 3550308',
-                          helperText:
-                              'Código numérico do município conforme cadastro AUDESP.',
-                        ),
+                        hintText: 'Ex.: 3550308',
+                        helperText:
+                            'Código numérico do município conforme cadastro AUDESP.',
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AudespTextField(
+                        label: 'Código da Entidade',
                         controller: _entidadeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Código da Entidade',
-                          hintText: 'Ex.: 1',
-                          helperText:
-                              'Código numérico da entidade conforme cadastro AUDESP.',
-                        ),
+                        hintText: 'Ex.: 1',
+                        helperText:
+                            'Código numérico da entidade conforme cadastro AUDESP.',
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 24),
@@ -525,35 +522,31 @@ class _GeminiTabState extends ConsumerState<_GeminiTab> {
                   ],
                 ),
                 const Divider(height: 24),
-                TextFormField(
+                AudespTextField(
+                  label: 'Chave de API do Gemini',
                   controller: _apiKeyCtrl,
+                  hintText: 'AIza...',
+                  helperText:
+                      'Obtenha em https://aistudio.google.com/apikey',
                   obscureText: _obscureKey,
-                  decoration: InputDecoration(
-                    labelText: 'Chave de API do Gemini',
-                    hintText: 'AIza...',
-                    helperText:
-                        'Obtenha em https://aistudio.google.com/apikey',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureKey
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      tooltip: _obscureKey ? 'Mostrar' : 'Ocultar',
-                      onPressed: () =>
-                          setState(() => _obscureKey = !_obscureKey),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureKey
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
+                    tooltip: _obscureKey ? 'Mostrar' : 'Ocultar',
+                    onPressed: () =>
+                        setState(() => _obscureKey = !_obscureKey),
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AudespTextField(
+                  label: 'Modelo Gemini',
                   controller: _modelCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Modelo Gemini',
-                    hintText: 'gemini-3.1-flash-lite',
-                    helperText:
-                        'Deixe em branco para usar "gemini-3.1-flash-lite" (padrão).',
-                  ),
+                  hintText: 'gemini-3.1-flash-lite',
+                  helperText:
+                      'Deixe em branco para usar "gemini-3.1-flash-lite" (padrão).',
                 ),
                 const SizedBox(height: 24),
                 FilledButton.icon(

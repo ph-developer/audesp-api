@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/local_prefs.dart';
 import '../../../core/utils/password_hasher.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -130,28 +131,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 children: [
                   const Text('Este é o seu primeiro acesso. Por favor, defina uma senha para sua conta.'),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Nova senha',
                     controller: ctrl,
                     obscureText: obscure1,
-                    decoration: InputDecoration(
-                      labelText: 'Nova senha',
-                      suffixIcon: IconButton(
-                        icon: Icon(obscure1 ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setModalState(() => obscure1 = !obscure1),
-                      ),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscure1 ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setModalState(() => obscure1 = !obscure1),
                     ),
                     validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  AudespTextField(
+                    label: 'Confirmar senha',
                     controller: confirmCtrl,
                     obscureText: obscure2,
-                    decoration: InputDecoration(
-                      labelText: 'Confirmar senha',
-                      suffixIcon: IconButton(
-                        icon: Icon(obscure2 ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setModalState(() => obscure2 = !obscure2),
-                      ),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscure2 ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setModalState(() => obscure2 = !obscure2),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Obrigatório';
@@ -213,16 +210,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: 32),
 
                     // ── Formulário ──────────────────────────────────────
-                    TextFormField(
+                    AudespTextField(
+                      label: 'E-mail',
                       controller: _emailCtrl,
                       focusNode: _emailFocus,
-                      decoration: const InputDecoration(
-                        labelText: 'E-mail',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
+                      prefixIcon: const Icon(Icons.person_outline),
                       keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      autocorrect: false,
                       onChanged: (_) => setState(() => _error = null),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Obrigatório'
@@ -235,6 +228,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       obscureText: _obscure,
                       decoration: InputDecoration(
                         labelText: 'Senha',
+                        isDense: true,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(

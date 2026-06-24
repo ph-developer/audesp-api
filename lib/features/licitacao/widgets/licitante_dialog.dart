@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/licitacao_domain.dart';
 
 /// Exibe o diálogo para adicionar ou editar um licitante dentro de um item.
@@ -92,34 +95,23 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Tipo de pessoa
-                DropdownButtonFormField<String>(
-                  initialValue: _tipoPessoa,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo de Pessoa *',
-                  ),
-                  items: kTipoPessoa.entries
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      )
-                      .toList(),
+                AudespDropdown<String>(
+                  label: 'Tipo de Pessoa *',
+                  value: _tipoPessoa,
+                  items: kTipoPessoa,
                   onChanged: (v) => setState(() => _tipoPessoa = v!),
                   validator: (v) => v == null ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 12),
                 // NI (CPF/CNPJ/identificação estrangeira)
-                TextFormField(
+                AudespTextField(
+                  label: _tipoPessoa == 'PJ'
+                      ? 'CNPJ *'
+                      : _tipoPessoa == 'PF'
+                      ? 'CPF *'
+                      : 'Identificação Estrangeira *',
                   controller: _niCtrl,
-                  decoration: InputDecoration(
-                    labelText: _tipoPessoa == 'PJ'
-                        ? 'CNPJ *'
-                        : _tipoPessoa == 'PF'
-                        ? 'CPF *'
-                        : 'Identificação Estrangeira *',
-                    hintText: '3 a 30 caracteres',
-                  ),
+                  hintText: '3 a 30 caracteres',
                   inputFormatters: [
                     FilteringTextInputFormatter.deny(RegExp(r'\s')),
                   ],
@@ -132,14 +124,12 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 ),
                 const SizedBox(height: 12),
                 // Nome/Razão Social (opcional para PJ/PF; obrigatório para PE)
-                TextFormField(
+                AudespTextField(
+                  label: _tipoPessoa == 'PE'
+                      ? 'Nome/Razão Social *'
+                      : 'Nome/Razão Social',
                   controller: _nomeCtrl,
-                  decoration: InputDecoration(
-                    labelText: _tipoPessoa == 'PE'
-                        ? 'Nome/Razão Social *'
-                        : 'Nome/Razão Social',
-                    hintText: '3 a 50 caracteres',
-                  ),
+                  hintText: '3 a 50 caracteres',
                   maxLength: 50,
                   validator: (v) {
                     if (_tipoPessoa == 'PE' &&
@@ -156,40 +146,22 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 ),
                 const SizedBox(height: 12),
                 // Declaração ME/EPP
-                DropdownButtonFormField<int>(
-                  initialValue: _declaracaoME,
-                  decoration: const InputDecoration(
-                    labelText: 'Declaração ME/EPP *',
-                  ),
-                  items: kDeclaracaoMEouEPP.entries
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      )
-                      .toList(),
+                AudespDropdown<int>(
+                  label: 'Declaração ME/EPP *',
+                  value: _declaracaoME,
+                  items: kDeclaracaoMEouEPP,
                   onChanged: (v) => setState(() => _declaracaoME = v),
                   validator: (v) => v == null ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 12),
                 // Valor proposto (obrigatório para habilitados 1 e 2)
-                TextFormField(
+                AudespNumberField(
+                  label: (_resultadoHabilitacao == 1 ||
+                          _resultadoHabilitacao == 2)
+                      ? 'Valor Proposto (R\$) *'
+                      : 'Valor Proposto (R\$)',
                   controller: _valorCtrl,
-                  decoration: InputDecoration(
-                    labelText:
-                        (_resultadoHabilitacao == 1 ||
-                            _resultadoHabilitacao == 2)
-                        ? 'Valor Proposto (R\$) *'
-                        : 'Valor Proposto (R\$)',
-                    hintText: 'Ex.: 12345.55',
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                  ],
+                  hintText: 'Ex.: 12345.55',
                   validator: (v) {
                     if ((_resultadoHabilitacao == 1 ||
                             _resultadoHabilitacao == 2) &&
@@ -205,19 +177,10 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                 ),
                 const SizedBox(height: 12),
                 // Resultado de habilitação
-                DropdownButtonFormField<int>(
-                  initialValue: _resultadoHabilitacao,
-                  decoration: const InputDecoration(
-                    labelText: 'Resultado de Habilitação *',
-                  ),
-                  items: kResultadoHabilitacao.entries
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      )
-                      .toList(),
+                AudespDropdown<int>(
+                  label: 'Resultado de Habilitação *',
+                  value: _resultadoHabilitacao,
+                  items: kResultadoHabilitacao,
                   onChanged: (v) => setState(() => _resultadoHabilitacao = v),
                   validator: (v) => v == null ? 'Obrigatório' : null,
                 ),

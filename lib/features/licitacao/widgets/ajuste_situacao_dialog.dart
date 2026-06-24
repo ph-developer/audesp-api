@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_tristate_checkbox.dart';
 import '../domain/licitacao_domain.dart';
 
 /// Abre o diálogo de ajuste em lote da situação e data dos itens.
@@ -136,17 +138,10 @@ class _AjusteSituacaoDialogState extends State<_AjusteSituacaoDialog> {
                     children: [
                       Expanded(
                         flex: 3,
-                        child: DropdownButtonFormField<int>(
+                        child: AudespDropdown<int>.items(
                           key: ValueKey(_batchSituacao),
-                          isExpanded: true,
-                          initialValue: _batchSituacao,
-                          decoration: const InputDecoration(
-                            labelText: 'Nova Situação',
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ),
+                          label: 'Nova Situação',
+                          value: _batchSituacao,
                           items: kSituacaoCompraItem.entries
                               .map(
                                 (e) => DropdownMenuItem(
@@ -183,14 +178,10 @@ class _AjusteSituacaoDialogState extends State<_AjusteSituacaoDialog> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Checkbox(
+                AudespTriStateCheckbox(
+                  label: 'Selecionar Todos',
                   value: allSelected ? true : (someSelected ? null : false),
-                  tristate: true,
                   onChanged: _toggleSelectAll,
-                ),
-                const Text(
-                  'Selecionar Todos',
-                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 Text('${_selectedIndices.length} selecionado(s)'),
@@ -239,17 +230,10 @@ class _AjusteSituacaoDialogState extends State<_AjusteSituacaoDialog> {
                           const SizedBox(width: 8),
                           Expanded(
                             flex: 3,
-                            child: DropdownButtonFormField<int>(
+                            child: AudespDropdown<int>.items(
                               key: ValueKey(situacaoId),
-                              isExpanded: true,
-                              initialValue: situacaoId,
-                              decoration: const InputDecoration(
-                                labelText: 'Situação',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                              ),
+                              label: 'Situação',
+                              value: situacaoId,
                               items: kSituacaoCompraItem.entries
                                   .map(
                                     (e) => DropdownMenuItem(
