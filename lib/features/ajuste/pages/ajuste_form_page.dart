@@ -149,14 +149,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _editais = editaisEnviados.where((e) => !e.isSrp).toList();
     _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
 
-    if (widget.preselectedEditalId != null) {
-      _editalId = widget.preselectedEditalId;
-      if (_isSelectedEditalAvailable) {
-        _fillEditalDescriptor();
-      } else {
-        _editalId = null;
-      }
-    }
+    await _selectPreselectedEdital(widget.preselectedEditalId);
 
     if (widget.ajusteId != null) {
       await _loadExisting(widget.ajusteId!);
@@ -171,6 +164,21 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (edital != null && _codigoEditalCtrl.text.isEmpty) {
       _codigoEditalCtrl.text = edital.codigoEdital;
     }
+  }
+
+  Future<void> _selectPreselectedEdital(int? editalId) async {
+    if (editalId == null) return;
+    var edital = _editais.where((e) => e.id == editalId).firstOrNull;
+    if (edital == null) {
+      final found = await ref.read(editaisDaoProvider).findById(editalId);
+      if (found != null && found.status == 'sent' && !found.isSrp) {
+        edital = found;
+        _editais = [..._editais, found];
+      }
+    }
+    if (edital == null) return;
+    _editalId = edital.id;
+    _codigoEditalCtrl.text = edital.codigoEdital;
   }
 
   bool get _isSelectedEditalAvailable {

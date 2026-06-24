@@ -124,14 +124,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final editaisDao = ref.read(editaisDaoProvider);
     _editais = await editaisDao.watchByStatus('sent');
 
-    if (widget.preselectedEditalId != null) {
-      _editalId = widget.preselectedEditalId;
-      if (_isSelectedEditalAvailable) {
-        _fillEditalDescriptor();
-      } else {
-        _editalId = null;
-      }
-    }
+    await _selectPreselectedEdital(widget.preselectedEditalId);
 
     if (widget.licitacaoId != null) {
       await _loadExisting(widget.licitacaoId!);
@@ -147,6 +140,22 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       _codigoEditalCtrl.text = edital.codigoEdital;
       _retificacao = edital.retificacao;
     }
+  }
+
+  Future<void> _selectPreselectedEdital(int? editalId) async {
+    if (editalId == null) return;
+    var edital = _editais.where((e) => e.id == editalId).firstOrNull;
+    if (edital == null) {
+      final found = await ref.read(editaisDaoProvider).findById(editalId);
+      if (found != null && found.status == 'sent') {
+        edital = found;
+        _editais = [..._editais, found];
+      }
+    }
+    if (edital == null) return;
+    _editalId = edital.id;
+    _codigoEditalCtrl.text = edital.codigoEdital;
+    _retificacao = edital.retificacao;
   }
 
   bool get _isSelectedEditalAvailable {

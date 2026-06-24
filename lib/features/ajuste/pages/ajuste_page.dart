@@ -12,6 +12,7 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../ajuste_providers.dart';
 
 class AjustePage extends ConsumerStatefulWidget {
@@ -30,6 +31,11 @@ class _AjustePageState extends ConsumerState<AjustePage> {
       appBar: AppBar(
         title: const Text('Ajustes (Contratos)'),
         actions: [
+          TextButton.icon(
+            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+            icon: const Icon(Icons.playlist_add),
+            label: const Text('Criar por edital'),
+          ),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
             child: SizedBox(
@@ -61,6 +67,9 @@ class _AjustePageState extends ConsumerState<AjustePage> {
             onPressed: () {
               ref.invalidate(ajustesDraftProvider);
               ref.invalidate(ajustesEnviadosProvider);
+              ref.invalidate(
+                unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
+              );
             },
           ),
           const SizedBox(width: 8),
@@ -216,6 +225,20 @@ class _AjusteList extends ConsumerWidget {
       },
     );
   }
+}
+
+Future<void> _openUnlinkedEditaisDialog(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final edital = await showUnlinkedEditaisDialog(
+    context: context,
+    target: UnlinkedEditaisTarget.ajuste,
+    title: 'Editais sem ajuste',
+    emptyMessage: 'Nenhum edital não SRP enviado sem ajuste vinculado.',
+  );
+  if (edital == null || !context.mounted) return;
+  context.go('/ajuste/new?editalId=${edital.id}');
 }
 
 final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {

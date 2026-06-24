@@ -12,6 +12,7 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../ata_providers.dart';
 
 class AtaPage extends ConsumerStatefulWidget {
@@ -30,6 +31,11 @@ class _AtaPageState extends ConsumerState<AtaPage> {
       appBar: AppBar(
         title: const Text('Atas de Registro de Preço'),
         actions: [
+          TextButton.icon(
+            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+            icon: const Icon(Icons.playlist_add),
+            label: const Text('Criar por edital'),
+          ),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
             child: SizedBox(
@@ -61,6 +67,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             onPressed: () {
               ref.invalidate(atasDraftProvider);
               ref.invalidate(atasEnviadasProvider);
+              ref.invalidate(unlinkedEditaisProvider(UnlinkedEditaisTarget.ata));
             },
           ),
           const SizedBox(width: 8),
@@ -187,6 +194,20 @@ class _AtaList extends ConsumerWidget {
       },
     );
   }
+}
+
+Future<void> _openUnlinkedEditaisDialog(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final edital = await showUnlinkedEditaisDialog(
+    context: context,
+    target: UnlinkedEditaisTarget.ata,
+    title: 'Editais SRP sem ata',
+    emptyMessage: 'Nenhum edital SRP enviado sem ata vinculada.',
+  );
+  if (edital == null || !context.mounted) return;
+  context.go('/ata/new?editalId=${edital.id}');
 }
 
 final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {

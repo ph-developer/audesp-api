@@ -141,7 +141,12 @@ final _routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'new',
-                builder: (context, _) => const AjusteFormPage(),
+                builder: (context, state) {
+                  final editalId = int.tryParse(
+                    state.uri.queryParameters['editalId'] ?? '',
+                  );
+                  return AjusteFormPage(preselectedEditalId: editalId);
+                },
               ),
               GoRoute(
                 path: ':id',

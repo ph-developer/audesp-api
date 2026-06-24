@@ -12,6 +12,7 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../licitacao_providers.dart';
 
 class LicitacaoPage extends ConsumerStatefulWidget {
@@ -30,6 +31,11 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
       appBar: AppBar(
         title: const Text('Licitações'),
         actions: [
+          TextButton.icon(
+            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+            icon: const Icon(Icons.playlist_add),
+            label: const Text('Criar por edital'),
+          ),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
             child: SizedBox(
@@ -61,6 +67,9 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
             onPressed: () {
               ref.invalidate(licitacoesDraftProvider);
               ref.invalidate(licitacoesEnviadasProvider);
+              ref.invalidate(
+                unlinkedEditaisProvider(UnlinkedEditaisTarget.licitacao),
+              );
             },
           ),
           const SizedBox(width: 8),
@@ -176,6 +185,20 @@ class _LicitacaoList extends ConsumerWidget {
       },
     );
   }
+}
+
+Future<void> _openUnlinkedEditaisDialog(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final edital = await showUnlinkedEditaisDialog(
+    context: context,
+    target: UnlinkedEditaisTarget.licitacao,
+    title: 'Editais sem licitação',
+    emptyMessage: 'Nenhum edital enviado sem licitação vinculada.',
+  );
+  if (edital == null || !context.mounted) return;
+  context.go('/licitacao/new?editalId=${edital.id}');
 }
 
 final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {
