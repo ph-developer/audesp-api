@@ -837,10 +837,29 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _JsonPanel extends StatelessWidget {
+class _JsonPanel extends StatefulWidget {
   final String content;
   final String label;
   const _JsonPanel({required this.content, required this.label});
+
+  @override
+  State<_JsonPanel> createState() => _JsonPanelState();
+}
+
+class _JsonPanelState extends State<_JsonPanel> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -854,10 +873,10 @@ class _JsonPanel extends StatelessWidget {
             children: [
               TextButton.icon(
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: content));
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('$label copiado')));
+                  Clipboard.setData(ClipboardData(text: widget.content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${widget.label} copiado')),
+                  );
                 },
                 icon: const Icon(Icons.copy, size: 16),
                 label: const Text('Copiar'),
@@ -871,10 +890,12 @@ class _JsonPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Scrollbar(
+                controller: _scrollController,
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(12),
                   child: SelectableText(
-                    content,
+                    widget.content,
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12.5,
