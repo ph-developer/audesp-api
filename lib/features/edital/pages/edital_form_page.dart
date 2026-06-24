@@ -141,7 +141,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _tipoInstrumento = doc['tipoInstrumentoConvocatorioId'] as int?;
     _modalidade = doc['modalidadeId'] as int?;
     _modoDisputa = doc['modoDisputaId'] as int?;
-    _criterioJulgamentoId = doc['criterioJulgamentoId'] as int?;
+    final itensCompra = doc['itensCompra'] as List<dynamic>?;
+    _criterioJulgamentoId = doc['criterioJulgamentoId'] as int? ??
+        (itensCompra?.isNotEmpty == true
+            ? itensCompra!.first['criterioJulgamentoId'] as int?
+            : null);
     _numeroCompraCtrl.text = doc['numeroCompra'] as String? ?? '';
     _anoCompraCtrl.text = doc['anoCompra']?.toString() ?? '';
     _numeroProcessoCtrl.text = doc['numeroProcesso'] as String? ?? '';
