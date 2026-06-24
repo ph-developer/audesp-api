@@ -14,7 +14,9 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_chip_input.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
@@ -483,10 +485,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     maxLength: 50,
                   ),
                 const SizedBox(height: 12),
-                AudespNumberField(
-                  label: 'Valor *',
-                  controller: valorCtrl,
-                ),
+                AudespNumberField(label: 'Valor *', controller: valorCtrl),
               ],
             ),
           ),
@@ -762,9 +761,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Edital Vinculado',
       children: [
-        Row(
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Edital *',
                 value: _editalId,
@@ -781,8 +780,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     v == null ? 'Selecione o edital vinculado' : null,
               ),
             ),
-            const SizedBox(width: 12),
-            SizedBox(
+            AudespFieldRowItem(
               width: 200,
               child: AudespCheckbox(
                 label: 'Retificação',
@@ -828,15 +826,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         if (_recursoBID == 1) ...[
-          const SizedBox(height: 12),
+          AudespSpacing.verticalMd,
           const Text(
             'Fases BID (preencha conforme aplicável):',
             style: TextStyle(fontSize: 12),
           ),
-          const SizedBox(height: 8),
-          Row(
+          AudespSpacing.verticalSm,
+          AudespFieldRow(
             children: [
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Abertura Pré-Qualificação',
                   value: _aberturaPreQualificacaoBID,
@@ -846,8 +844,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                       : (v) => setState(() => _aberturaPreQualificacaoBID = v),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Edital Pré-Qualificação',
                   value: _editalPreQualificacaoBID,
@@ -857,8 +854,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                       : (v) => setState(() => _editalPreQualificacaoBID = v),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Julgamento Pré-Qualificação',
                   value: _julgamentoPreQualificacaoBID,
@@ -871,10 +867,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
+          AudespSpacing.verticalSm,
+          AudespFieldRow(
             children: [
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Edital 2ª Fase',
                   value: _edital2FaseBID,
@@ -884,8 +880,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                       : (v) => setState(() => _edital2FaseBID = v),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Julgamento de Propostas',
                   value: _julgamentoPropostasBID,
@@ -895,8 +890,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                       : (v) => setState(() => _julgamentoPropostasBID = v),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              AudespFieldRowItem(
                 child: AudespDropdown<int>(
                   label: 'Julgamento/Negociação',
                   value: _julgamentoNegociacaoBID,
@@ -917,9 +911,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Dados Gerais',
       children: [
-        Row(
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Tipo de Natureza *',
                 value: _tipoNatureza,
@@ -930,8 +924,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Viabilidade de Contratação',
                 value: _viabilidadeContratacao,
@@ -943,10 +936,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
+        AudespSpacing.verticalMd,
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Interposição de Recurso *',
                 value: _interposicaoRecurso,
@@ -957,8 +950,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Audiência Pública',
                 value: _audienciaPublica,
@@ -970,10 +962,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
+        AudespSpacing.verticalMd,
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Exigência de Amostra',
                 value: _exigenciaAmostra,
@@ -983,8 +975,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _exigenciaAmostra = v),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Exigência de Visita Técnica',
                 value: _exigenciaVisitaTecnica,
@@ -996,10 +987,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
+        AudespSpacing.verticalMd,
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Exige Currículo',
                 value: _exigenciaCurriculo ?? false,
@@ -1008,7 +999,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _exigenciaCurriculo = v),
               ),
             ),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Exige Visto CREA',
                 value: _exigenciaVistoCREA ?? false,
@@ -1017,7 +1008,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _exigenciaVistoCREA = v),
               ),
             ),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Declaração de Recursos',
                 value: _declaracaoRecursos ?? false,
@@ -1036,9 +1027,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Garantia de Licitantes',
       children: [
-        Row(
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespDropdown<int>(
                 label: 'Exigência de Garantia *',
                 value: _exigenciaGarantiaLicitantes,
@@ -1049,8 +1040,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespNumberField(
                 label: 'Percentual (%)',
                 controller: _percentualValorCtrl,
@@ -1078,9 +1068,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Quitação de Tributos',
       children: [
-        Row(
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Tributos Federais',
                 value: _quitacaoFederal ?? false,
@@ -1089,7 +1079,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _quitacaoFederal = v),
               ),
             ),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Tributos Estaduais',
                 value: _quitacaoEstadual ?? false,
@@ -1098,7 +1088,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : (v) => setState(() => _quitacaoEstadual = v),
               ),
             ),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Tributos Municipais',
                 value: _quitacaoMunicipal ?? false,
@@ -1164,7 +1154,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             keyboardType: TextInputType.number,
             validateInput: (cpf) {
-              if (cpf == null || cpf.length != 11) return 'CPF deve conter 11 dígitos';
+              if (cpf == null || cpf.length != 11) {
+                return 'CPF deve conter 11 dígitos';
+              }
               if (_cpfsCondutores.contains(cpf)) return 'CPF já adicionado';
               return null;
             },
@@ -1337,4 +1329,3 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 }
-

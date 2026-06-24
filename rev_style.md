@@ -4,6 +4,7 @@
 
 - Fase 1 concluida.
 - Fase 2 / Prioridade 1 concluida.
+- Fase 2 / Prioridade 2 concluida.
 - Ultima validacao: `flutter analyze` sem issues.
 
 ---
@@ -38,6 +39,8 @@
 | `SectionCard` | `lib/shared/widgets/section_card.dart` |
 | `AudespDialog` | `lib/shared/widgets/audesp_dialog.dart` |
 | `HoverCellText` | `lib/shared/widgets/hover_cell_text.dart` |
+| `AudespFieldRow` | `lib/shared/widgets/audesp_field_row.dart` |
+| `AudespSpacing` | `lib/shared/widgets/audesp_spacing.dart` |
 
 ---
 
@@ -95,6 +98,16 @@
   - `users_page.dart`
   - `admin_page.dart`
 
+### Prioridade 2
+
+- `AudespFieldRow` criado e aplicado em grupos de campos:
+  - `edital_form_page.dart`
+  - `licitacao_form_page.dart`
+  - `ata_form_page.dart`
+  - `item_compra_dialog.dart`
+  - `item_licitacao_dialog.dart`
+- `AudespSpacing` criado e aplicado nos mesmos pontos migrados.
+
 ---
 
 ## Mantidos sem migracao
@@ -111,13 +124,6 @@
 ---
 
 ## Proximas prioridades
-
-### Prioridade 2 - Layout
-
-| Item | Motivo |
-|------|--------|
-| `AudespFieldRow` | Reduz repeticao de `Row(children: [Expanded(...), SizedBox(width: 12), ...])` |
-| Constantes de espacamento | Padroniza `12`, `16`, `24` usados em forms e secoes |
 
 ### Prioridade 3 - UX
 

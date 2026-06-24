@@ -5,7 +5,9 @@ import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/edital_domain.dart';
 
@@ -155,7 +157,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              AudespSpacing.verticalMd,
               // Tipo de Benefício
               AudespDropdown<int>(
                 label: 'Tipo de Benefício *',
@@ -164,11 +166,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 onChanged: (v) => setState(() => _tipoBeneficio = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 8),
+              AudespSpacing.verticalSm,
               // Switches
-              Row(
+              AudespFieldRow(
                 children: [
-                  Expanded(
+                  AudespFieldRowItem(
                     child: AudespCheckbox(
                       label: 'Incentivo Produtivo Básico (PPB)',
                       value: _incentivoBasico,
@@ -176,8 +178,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                           setState(() => _incentivoBasico = v ?? false),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  AudespFieldRowItem(
                     child: AudespCheckbox(
                       label: 'Orçamento Sigiloso',
                       value: _orcamentoSigiloso,
@@ -187,7 +188,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              AudespSpacing.verticalSm,
               // Descrição
               AudespTextField(
                 label: 'Descrição *',
@@ -197,12 +198,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
+              AudespSpacing.verticalMd,
               // Quantidade + Unidade (em linha)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              AudespFieldRow(
                 children: [
-                  Expanded(
+                  AudespFieldRowItem(
                     flex: 2,
                     child: AudespNumberField(
                       label: 'Quantidade *',
@@ -216,8 +216,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  AudespFieldRowItem(
                     flex: 2,
                     child: AudespTextField(
                       label: 'Unidade de Medida *',
@@ -229,19 +228,17 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              AudespSpacing.verticalMd,
               // Valores
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              AudespFieldRow(
                 children: [
-                  Expanded(
+                  AudespFieldRowItem(
                     child: AudespCurrencyField(
                       label: 'Valor Unitário Estimado *',
                       controller: _valorUnitCtrl,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  AudespFieldRowItem(
                     child: AudespCurrencyField(
                       label: 'Valor Total Estimado *',
                       controller: _valorTotalCtrl,
@@ -250,7 +247,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              AudespSpacing.verticalMd,
               // Categoria do Item
               AudespDropdown<int>(
                 label: 'Categoria do Item *',
@@ -259,11 +256,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 onChanged: (v) => setState(() => _itemCategoria = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
+              AudespSpacing.verticalMd,
               // Patrimônio (opcional)
-              Row(
+              AudespFieldRow(
                 children: [
-                  Expanded(
+                  AudespFieldRowItem(
                     flex: 2,
                     child: AudespTextField(
                       label: 'Patrimônio',
@@ -271,9 +268,8 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                       maxLength: 255,
                     ),
                   ),
-                  const SizedBox(width: 12),
                   // Código de Registro Imobiliário (opcional)
-                  Expanded(
+                  AudespFieldRowItem(
                     flex: 2,
                     child: AudespTextField(
                       label: 'Registro Imobiliário',

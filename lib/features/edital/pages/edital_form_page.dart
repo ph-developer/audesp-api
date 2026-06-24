@@ -14,8 +14,10 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../domain/edital_domain.dart';
@@ -852,10 +854,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               flex: 2,
               child: AudespNumberField(
                 label: 'Número da Compra *',
@@ -868,8 +869,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                     (v == null || v.isEmpty) ? 'Obrigatório' : null,
               ),
             ),
-            const SizedBox(width: 12),
-            SizedBox(
+            AudespFieldRowItem(
               width: 200,
               child: AudespNumberField(
                 label: 'Ano da Compra *',
@@ -888,7 +888,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        AudespSpacing.verticalMd,
         AudespTextField(
           label: 'Número do Processo *',
           controller: _numeroProcessoCtrl,
@@ -896,7 +896,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           maxLength: 50,
           validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
         ),
-        const SizedBox(height: 12),
+        AudespSpacing.verticalMd,
         AudespTextField(
           label: 'Objeto da Contratação *',
           controller: _objetoCompraCtrl,
@@ -922,10 +922,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ),
         const SizedBox(height: 12),
         // Datas de propostas
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        AudespFieldRow(
           children: [
-            Expanded(
+            AudespFieldRowItem(
               child: AudespTextField(
                 label: 'Abertura de Propostas *',
                 controller: _dataAberturaCtrl,
@@ -944,8 +943,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
+            AudespFieldRowItem(
               child: AudespTextField(
                 label: 'Encerramento de Propostas *',
                 controller: _dataEncerramentoCtrl,

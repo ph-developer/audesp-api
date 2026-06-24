@@ -4,7 +4,9 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
+import '../../../shared/widgets/audesp_spacing.dart';
 import '../domain/licitacao_domain.dart';
 import 'licitante_dialog.dart';
 
@@ -88,7 +90,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
   }
 
   Future<void> _editLicitante(int index) async {
-    final result = await showLicitanteDialog(context, initial: _licitantes[index]);
+    final result = await showLicitanteDialog(
+      context,
+      initial: _licitantes[index],
+    );
     if (result != null) {
       setState(() => _licitantes[index] = result);
     }
@@ -142,20 +147,20 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Dados do item ────────────────────────────────────────
-                Row(
+                AudespFieldRow(
                   children: [
-                    Expanded(
+                    AudespFieldRowItem(
                       flex: 2,
                       child: AudespNumberField(
                         label: 'Nº do Item *',
                         controller: _numeroItemCtrl,
                         decimals: false,
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Obrigatório'
+                            : null,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    AudespFieldRowItem(
                       flex: 4,
                       child: AudespDropdown<int>(
                         label: 'Tipo de Orçamento *',
@@ -167,10 +172,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
+                AudespSpacing.verticalMd,
+                AudespFieldRow(
                   children: [
-                    Expanded(
+                    AudespFieldRowItem(
                       child: AudespNumberField(
                         label: 'Valor Médio dos Orçamentos (R\$)',
                         controller: _valorCtrl,
@@ -190,8 +195,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    AudespFieldRowItem(
                       child: AudespDatePickerField(
                         label: 'Data do Orçamento',
                         value: _dataOrcamento,
@@ -208,20 +212,20 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
+                AudespSpacing.verticalMd,
+                AudespFieldRow(
                   children: [
-                    Expanded(
+                    AudespFieldRowItem(
                       child: AudespDropdown<int>(
                         label: 'Situação do Item *',
                         value: _situacaoCompraItemId,
                         items: kSituacaoCompraItem,
-                        onChanged: (v) => setState(() => _situacaoCompraItemId = v),
+                        onChanged: (v) =>
+                            setState(() => _situacaoCompraItemId = v),
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    AudespFieldRowItem(
                       child: AudespDatePickerField(
                         label: 'Data da Situação *',
                         value: _dataSituacao,
@@ -231,10 +235,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
+                AudespSpacing.verticalMd,
+                AudespFieldRow(
                   children: [
-                    Expanded(
+                    AudespFieldRowItem(
                       flex: 2,
                       child: AudespDropdown<String>(
                         label: 'Tipo de Valor *',
@@ -244,8 +248,7 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    AudespFieldRowItem(
                       flex: 4,
                       child: AudespDropdown<int>(
                         label: 'Tipo de Proposta *',
@@ -286,7 +289,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         dense: true,
                         leading: CircleAvatar(
                           radius: 14,
-                          child: Text(tipo, style: const TextStyle(fontSize: 9)),
+                          child: Text(
+                            tipo,
+                            style: const TextStyle(fontSize: 9),
+                          ),
                         ),
                         title: Text(nome.isNotEmpty ? nome : ni),
                         subtitle: Text(
@@ -312,7 +318,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
@@ -332,7 +340,9 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(widget.initial == null ? 'Adicionar Item' : 'Salvar Item'),
+          child: Text(
+            widget.initial == null ? 'Adicionar Item' : 'Salvar Item',
+          ),
         ),
       ],
     );

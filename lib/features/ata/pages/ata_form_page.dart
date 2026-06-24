@@ -13,8 +13,10 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
@@ -130,7 +132,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ata.codigoEdital;
     _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
-        descritor['codigoAta'] as String? ?? ata.codigoAta);
+      descritor['codigoAta'] as String? ?? ata.codigoAta,
+    );
     _retificacao = descritor['retificacao'] as bool? ?? ata.retificacao;
     _fillEditalDescriptor();
 
@@ -298,9 +301,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
         setState(() => _isSent = true);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
           context.go('/ata');
         }
       },
@@ -309,9 +312,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   // ── Itens ─────────────────────────────────────────────────────────────
@@ -355,8 +358,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           _loadedId == null
               ? 'Nova Ata'
               : _isSent
-                  ? 'Ata'
-                  : 'Editar Ata',
+              ? 'Ata'
+              : 'Editar Ata',
         ),
         actions: [
           if (!readOnly) ...[
@@ -390,8 +393,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               child: Chip(
                 label: const Text('Enviada'),
                 avatar: const Icon(Icons.check_circle, size: 16),
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               ),
             ),
         ],
@@ -407,9 +409,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               SectionCard(
                 title: 'Vínculo com Edital',
                 children: [
-                  Row(
+                  AudespFieldRow(
                     children: [
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespDropdown<int>(
                           label: 'Edital *',
                           value: _editalId,
@@ -426,43 +428,46 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                               v == null ? 'Selecione o edital vinculado' : null,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      SizedBox(
+                      AudespFieldRowItem(
                         width: 200,
                         child: AudespCheckbox(
                           label: 'Retificação',
                           value: _retificacao,
-                          onChanged:
-                              readOnly ? null : (v) => setState(() => _retificacao = v ?? false),
+                          onChanged: readOnly
+                              ? null
+                              : (v) =>
+                                    setState(() => _retificacao = v ?? false),
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              AudespSpacing.verticalLg,
 
               // ── Descritor ────────────────────────────────────────────
               SectionCard(
                 title: 'Descritor',
                 children: [
-                  Builder(builder: (context) {
-                    final municipio = ref.watch(codigoMunicipioProvider);
-                    final entidade = ref.watch(codigoEntidadeProvider);
-                    if (municipio.isEmpty && entidade.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    );
-                  }),
-                  Row(
+                  Builder(
+                    builder: (context) {
+                      final municipio = ref.watch(codigoMunicipioProvider);
+                      final entidade = ref.watch(codigoEntidadeProvider);
+                      if (municipio.isEmpty && entidade.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      );
+                    },
+                  ),
+                  AudespFieldRow(
                     children: [
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespPncpField(
                           label: 'ID da Ata PNCP *',
                           controller: _codigoAtaCtrl,
@@ -473,15 +478,15 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              AudespSpacing.verticalLg,
 
               // ── Dados da Ata ─────────────────────────────────────────
               SectionCard(
                 title: 'Dados da Ata',
                 children: [
-                  Row(
+                  AudespFieldRow(
                     children: [
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespTextField(
                           label: 'Número da Ata *',
                           controller: _numeroAtaCtrl,
@@ -491,8 +496,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                               : null,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      SizedBox(
+                      AudespFieldRowItem(
                         width: 200,
                         child: AudespNumberField(
                           label: 'Ano da Ata *',
@@ -512,11 +516,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  AudespSpacing.verticalLg,
                   // ── Datas ──────────────────────────────────────────
-                  Row(
+                  AudespFieldRow(
                     children: [
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespDatePickerField(
                           label: 'Data de Assinatura *',
                           value: _dataAssinatura,
@@ -525,23 +529,23 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespDatePickerField(
                           label: 'Início de Vigência *',
                           value: _dataVigenciaInicio,
                           readOnly: readOnly,
-                          onChanged: (d) => setState(() => _dataVigenciaInicio = d),
+                          onChanged: (d) =>
+                              setState(() => _dataVigenciaInicio = d),
                           validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      AudespFieldRowItem(
                         child: AudespDatePickerField(
                           label: 'Fim de Vigência *',
                           value: _dataVigenciaFim,
                           readOnly: readOnly,
-                          onChanged: (d) => setState(() => _dataVigenciaFim = d),
+                          onChanged: (d) =>
+                              setState(() => _dataVigenciaFim = d),
                           validator: (d) => d == null ? 'Obrigatório' : null,
                         ),
                       ),
@@ -561,9 +565,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       hintText: 'ex: 3',
                       controller: _itemCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       suffixIcon: IconButton(
                         onPressed: _addItem,
                         icon: const Icon(Icons.add),
@@ -577,7 +579,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
                         'Nenhum item adicionado.',
-                        style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                     )
                   else ...[
@@ -596,8 +600,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             ),
                           )
                           .toList(),
-                      ),
-                    ]
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),
@@ -608,4 +612,3 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     );
   }
 }
-
