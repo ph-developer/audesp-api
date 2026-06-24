@@ -6,6 +6,9 @@ import '../../../core/constants/environments.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/database/daos/app_settings_dao.dart';
+import '../../../shared/widgets/audesp_delete_dialog.dart';
+import '../../../shared/widgets/document_card.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
@@ -100,42 +103,27 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
             }
             final users = snapshot.data!;
             if (users.isEmpty) {
-              return const Center(
-                child: Text('Nenhum usuário cadastrado.'),
+              return const EmptyState(
+                icon: Icons.people_outline,
+                message: 'Nenhum usuário cadastrado.',
               );
             }
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
               itemCount: users.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) {
-                final u = users[i];
-                return Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(u.nome[0].toUpperCase()),
-                    ),
-                    title: Text(u.nome),
-                    subtitle: Text(u.email),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar',
-                          onPressed: () => _openForm(u),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Excluir',
-                          color: Theme.of(ctx).colorScheme.error,
-                          onPressed: () => _confirmDelete(u),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+               itemBuilder: (ctx, i) {
+                 final u = users[i];
+                 return DocumentCard(
+                   leading: CircleAvatar(
+                     child: Text(u.nome[0].toUpperCase()),
+                   ),
+                   title: u.nome,
+                   subtitle: Text(u.email),
+                   onDelete: () => _confirmDelete(u),
+                   onEdit: () => _openForm(u),
+                 );
+               },
             );
           },
         ),
@@ -170,30 +158,25 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
       );
       return;
     }
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAudespDeleteDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Excluir usuário'),
-        content:
-            Text('Deseja excluir o perfil de "${user.nome}"? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
+      title: 'Excluir usuário',
+      entityName: user.nome,
+      entityLabel: 'o perfil de',
     );
     if (confirmed == true) {
-      await ref.read(usersDaoProvider).deleteById(user.id);
-      _refresh();
+      try {
+        await ref.read(usersDaoProvider).deleteById(user.id);
+        _refresh();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

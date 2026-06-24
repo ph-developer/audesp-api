@@ -11,6 +11,7 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../services/consulta_service.dart';
 import '../services/pdf_comprovante_service.dart';
 
@@ -446,15 +447,15 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 }).toList();
 
                 if (all.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhuma chamada registrada ainda.'),
+                  return const EmptyState(
+                    icon: Icons.inbox_outlined,
+                    message: 'Nenhuma chamada registrada ainda.',
                   );
                 }
                 if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Nenhum resultado para os filtros selecionados.',
-                    ),
+                  return const EmptyState(
+                    icon: Icons.filter_list_off_outlined,
+                    message: 'Nenhum resultado para os filtros selecionados.',
                   );
                 }
 

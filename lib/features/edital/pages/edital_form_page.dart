@@ -145,7 +145,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _modalidade = doc['modalidadeId'] as int?;
     _modoDisputa = doc['modoDisputaId'] as int?;
     final itensCompra = doc['itensCompra'] as List<dynamic>?;
-    _criterioJulgamentoId = doc['criterioJulgamentoId'] as int? ??
+    _criterioJulgamentoId =
+        doc['criterioJulgamentoId'] as int? ??
         (itensCompra?.isNotEmpty == true
             ? itensCompra!.first['criterioJulgamentoId'] as int?
             : null);
@@ -701,9 +702,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           value: _houvePublicacao,
           readOnly: readOnly,
           onChanged: (v) => setState(() {
-              _houvePublicacao = v ?? false;
-              if (!(_houvePublicacao)) _publicacoes.clear();
-            }),
+            _houvePublicacao = v ?? false;
+            if (!(_houvePublicacao)) _publicacoes.clear();
+          }),
         ),
         if (_houvePublicacao) ...[
           const SizedBox(height: 8),
@@ -811,19 +812,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     return SectionCard(
       title: 'Dados Gerais',
       children: [
-        // Código da Unidade Compradora (facultativo)
-        /*
-        TextFormField(
-          controller: _codigoUnidadeCtrl,
-          enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Código da Unidade Compradora (PNCP)',
-            counterText: '',
-          ),
-          maxLength: 20,
-        ),
-        const SizedBox(height: 12),
-        */
         // Tipo de Instrumento Convocatório
         AudespDropdown<int>(
           label: 'Tipo de Instrumento Convocatório *',

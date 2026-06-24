@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/hover_cell_text.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
@@ -701,25 +702,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Future<void> _confirmDeleteItem(int? loteIndex, int itemIndex) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showAudespDeleteDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Excluir Item'),
-          content: const Text('Deseja excluir este item e todos os seus orçamentos?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
+      title: 'Excluir Item',
+      entityName: 'este item',
     );
 
     if (confirm == true) {

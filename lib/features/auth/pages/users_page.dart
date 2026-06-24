@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_delete_dialog.dart';
+import '../../../shared/widgets/document_card.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../widgets/user_form_dialog.dart';
 
 class UsersPage extends ConsumerWidget {
@@ -27,42 +30,27 @@ class UsersPage extends ConsumerWidget {
           }
           final users = snapshot.data!;
           if (users.isEmpty) {
-            return const Center(
-              child: Text('Nenhum perfil cadastrado.\nClique em + para adicionar.'),
+            return const EmptyState(
+              icon: Icons.people_outline,
+              message: 'Nenhum perfil cadastrado.\nClique em + para adicionar.',
             );
           }
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: users.length,
             separatorBuilder: (context, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) {
-              final u = users[i];
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(u.nome[0].toUpperCase()),
-                  ),
-                  title: Text(u.nome),
-                  subtitle: Text(u.email),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Editar',
-                        onPressed: () => _openForm(context, ref, u),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Excluir',
-                        color: Theme.of(context).colorScheme.error,
-                        onPressed: () => _confirmDelete(context, ref, u),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+             itemBuilder: (context, i) {
+               final u = users[i];
+               return DocumentCard(
+                 leading: CircleAvatar(
+                   child: Text(u.nome[0].toUpperCase()),
+                 ),
+                 title: u.nome,
+                 subtitle: Text(u.email),
+                 onDelete: () => _confirmDelete(context, ref, u),
+                 onEdit: () => _openForm(context, ref, u),
+               );
+             },
           );
         },
       ),
@@ -79,30 +67,25 @@ class UsersPage extends ConsumerWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, WidgetRef ref, User user) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAudespDeleteDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Excluir perfil'),
-        content: Text(
-            'Tem certeza que deseja excluir o perfil de "${user.nome}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
+      title: 'Excluir perfil',
+      entityName: user.nome,
+      entityLabel: 'o perfil de',
     );
 
     if (confirmed == true) {
-      await ref.read(usersDaoProvider).deleteById(user.id);
+      try {
+        await ref.read(usersDaoProvider).deleteById(user.id);
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
