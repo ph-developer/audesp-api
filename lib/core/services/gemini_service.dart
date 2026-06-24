@@ -47,7 +47,7 @@ class GeminiService {
 
   /// Extrai campos de um arquivo usando o modelo e chave configurados.
   ///
-  /// Suporta arquivos PDF, DOC e DOCX.
+  /// Suporta arquivos PDF e DOCX.
   /// Retorna [GeminiExtractionResult] com um valor por campo (null = não
   /// encontrado) ou lança [GeminiException] em caso de erro.
   Future<GeminiExtractionResult> extractFromFile({
@@ -97,7 +97,11 @@ Exemplo de resposta esperada:
     );
 
     final lowerPath = filePath.toLowerCase();
-    final isWordDoc = lowerPath.endsWith('.docx') || lowerPath.endsWith('.doc');
+    final isWordDoc = lowerPath.endsWith('.docx');
+    final isPdf = lowerPath.endsWith('.pdf');
+    if (!isWordDoc && !isPdf) {
+      throw const GeminiException('Formato não suportado. Use PDF ou DOCX.');
+    }
 
     Part filePart;
     if (isWordDoc) {
@@ -207,7 +211,11 @@ Exemplo de resposta esperada:
     );
 
     final lowerPath = filePath.toLowerCase();
-    final isWordDoc = lowerPath.endsWith('.docx') || lowerPath.endsWith('.doc');
+    final isWordDoc = lowerPath.endsWith('.docx');
+    final isPdf = lowerPath.endsWith('.pdf');
+    if (!isWordDoc && !isPdf) {
+      throw const GeminiException('Formato não suportado. Use PDF ou DOCX.');
+    }
 
     Part filePart;
     if (isWordDoc) {

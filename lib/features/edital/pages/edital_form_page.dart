@@ -357,11 +357,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Importação via Gemini ─────────────────────────────────────────────────
 
-  Future<void> _importFromPdf() async {
-    // Seleciona o PDF para análise
+  Future<void> _importFromDocument() async {
+    // Seleciona o documento para análise
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: ['pdf', 'docx'],
     );
     if (result == null || result.files.single.path == null) return;
     if (!mounted) return;
@@ -577,7 +577,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               )
             else ...[
               TextButton.icon(
-                onPressed: _importingGemini ? null : _importFromPdf,
+                onPressed: _importingGemini ? null : _importFromDocument,
                 icon: _importingGemini
                     ? const SizedBox(
                         width: 16,
@@ -585,7 +585,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_fix_high),
-                label: const Text('Importar do PDF'),
+                label: const Text('Importar PDF/DOCX'),
               ),
               const SizedBox(width: 4),
               TextButton.icon(

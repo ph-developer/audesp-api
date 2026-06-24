@@ -577,10 +577,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   // ── Importação via Gemini ─────────────────────────────────────────────
 
-  Future<void> _importFromDocx() async {
+  Future<void> _importFromDocument() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['doc', 'docx'],
+      allowedExtensions: ['pdf', 'docx'],
     );
     if (result == null || result.files.single.path == null) return;
     if (!mounted) return;
@@ -593,18 +593,24 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         'anoContrato': _anoContratoCtrl.text.trim(),
         'processo': _processoCtrl.text.trim(),
         'categoriaProcessoId': _categoriaProcessoId?.toString() ?? '',
+        'fonteRecursosContratacao': (_fontesRecurso.toList()..sort()).join(
+          ', ',
+        ),
         'niFornecedor': _niFornecedorCtrl.text.trim(),
         'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
         'tipoObjetoContrato': _tipoObjetoContrato?.toString() ?? '',
         'objetoContrato': _objetoContratoCtrl.text.trim(),
         'valorInicial': _valorInicialCtrl.text.trim(),
         'itens': _itens.join(', '),
+        'despesas': _despesas.join(', '),
         'dataAssinatura': _dataAssinatura != null
             ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!)
             : '',
         'dataVigenciaInicio': _dataVigenciaInicio != null
             ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!)
             : '',
+        'prazoVigenciaMeses': _vigenciaMesesCtrl.text.trim(),
+        'prazoVigenciaDias': '',
         'dataVigenciaFim': _dataVigenciaFim != null
             ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!)
             : '',
@@ -656,6 +662,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           }
           _itens.sort();
         }
+        if (accepted.containsKey('fonteRecursosContratacao')) {
+          _fontesRecurso = _parseFontesRecurso(
+            accepted['fonteRecursosContratacao']!,
+          );
+        }
+        if (accepted.containsKey('despesas')) {
+          _despesas = _parseDespesas(accepted['despesas']!);
+        }
         if (accepted.containsKey('categoriaProcessoId')) {
           final match = RegExp(
             r'\d+',
@@ -696,6 +710,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             ).parse(accepted['dataVigenciaInicio']!);
           } catch (_) {}
         }
+        if (accepted.containsKey('prazoVigenciaMeses')) {
+          final meses = _parseFirstInt(accepted['prazoVigenciaMeses']!);
+          if (meses != null) _vigenciaMesesCtrl.text = meses.toString();
+        }
         if (accepted.containsKey('dataVigenciaFim')) {
           try {
             _dataVigenciaFim = DateFormat(
@@ -703,6 +721,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             ).parse(accepted['dataVigenciaFim']!);
           } catch (_) {}
         }
+        _dataVigenciaFim ??= _calculateVigenciaFim(
+          start: _dataVigenciaInicio,
+          meses: accepted.containsKey('prazoVigenciaMeses')
+              ? _parseFirstInt(accepted['prazoVigenciaMeses']!)
+              : null,
+          dias: accepted.containsKey('prazoVigenciaDias')
+              ? _parseFirstInt(accepted['prazoVigenciaDias']!)
+              : null,
+        );
       });
 
       if (mounted) {
@@ -720,6 +747,61 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   // ─────────────────────────────────────────────────────────────────────
+
+  static Set<int> _parseFontesRecurso(String raw) {
+    final validCodes = kFonteRecursoAjuste.keys.toSet();
+    final result = <int>{};
+    for (final match in RegExp(r'\d+').allMatches(raw)) {
+      final value = int.tryParse(match.group(0)!);
+      if (value != null && validCodes.contains(value)) {
+        result.add(value);
+      }
+    }
+    return result;
+  }
+
+  static List<String> _parseDespesas(String raw) {
+    final result = <String>[];
+
+    void add(String value) {
+      if (value.length == 8 && !result.contains(value)) {
+        result.add(value);
+      }
+    }
+
+    final dottedPattern = RegExp(r'(\d)\.(\d)\.(\d{2})\.(\d{2})\.(\d{2})');
+    for (final match in dottedPattern.allMatches(raw)) {
+      add(
+        '${match.group(1)!}${match.group(2)!}${match.group(3)!}${match.group(4)!}${match.group(5)!}',
+      );
+    }
+
+    for (final match in RegExp(r'\b\d{8}\b').allMatches(raw)) {
+      add(match.group(0)!);
+    }
+
+    return result;
+  }
+
+  static int? _parseFirstInt(String raw) {
+    final match = RegExp(r'\d+').firstMatch(raw);
+    return match == null ? null : int.tryParse(match.group(0)!);
+  }
+
+  static DateTime? _calculateVigenciaFim({
+    required DateTime? start,
+    required int? meses,
+    required int? dias,
+  }) {
+    if (start == null) return null;
+    if (meses != null && meses > 0) {
+      return DateTime(start.year, start.month + meses, start.day);
+    }
+    if (dias != null && dias > 0) {
+      return start.add(Duration(days: dias));
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -752,7 +834,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               )
             else ...[
               TextButton.icon(
-                onPressed: _importingGemini ? null : _importFromDocx,
+                onPressed: _importingGemini ? null : _importFromDocument,
                 icon: _importingGemini
                     ? const SizedBox(
                         width: 16,
@@ -760,7 +842,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_fix_high),
-                label: const Text('Importar do Word'),
+                label: const Text('Importar PDF/DOCX'),
               ),
               const SizedBox(width: 4),
               TextButton.icon(

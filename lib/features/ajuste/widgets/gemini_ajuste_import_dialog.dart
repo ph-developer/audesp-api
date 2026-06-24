@@ -62,6 +62,18 @@ final _kAjusteFields = <GeminiField>[
         'Lista de números sequenciais dos itens contratados separados por vírgula (Ex: 1, 2, 3)',
   ),
   GeminiField(
+    key: 'fonteRecursosContratacao',
+    label: 'Fontes de Recurso',
+    hint:
+        'Lista de códigos da fonte de recurso separados por vírgula. Em "Fonte de Recurso e Aplicação: 01/11000", a fonte seria 01, retorne "1". Use apenas códigos do domínio AUDESP: 1, 2, 3, 4, 5, 6, 7, 8, 91, 92, 93, 94, 95, 96, 97, 98.',
+  ),
+  GeminiField(
+    key: 'despesas',
+    label: 'Classificações de Despesa',
+    hint:
+        'Lista de classificações de despesa separadas por vírgula, sempre com 8 dígitos e sem pontos. Exemplo: "4.4.90.52.99" deve retornar "44905299". Ignore unidade orçamentária anterior, como "02.11.02", trazendo sempre os ultimos 8 dígitos.',
+  ),
+  GeminiField(
     key: 'valorInicial',
     label: 'Valor Inicial (R\$)',
     hint:
@@ -78,9 +90,22 @@ final _kAjusteFields = <GeminiField>[
     hint: 'formato dd/MM/yyyy',
   ),
   GeminiField(
+    key: 'prazoVigenciaMeses',
+    label: 'Prazo de Vigência (meses)',
+    hint:
+        'Quantidade de meses de vigência, apenas número inteiro. Se o contrato disser "12 meses", retorne "12".',
+  ),
+  GeminiField(
+    key: 'prazoVigenciaDias',
+    label: 'Prazo de Vigência (dias)',
+    hint:
+        'Quantidade de dias de vigência, apenas número inteiro. Use somente quando a vigência estiver em dias, como "90 dias".',
+  ),
+  GeminiField(
     key: 'dataVigenciaFim',
     label: 'Fim da Vigência',
-    hint: 'formato dd/MM/yyyy',
+    hint:
+        'formato dd/MM/yyyy. Se houver data de início e prazo de vigência, calcule a data final. Para prazo em meses, mantenha o mesmo dia da data inicial e acrescente apenas mês/ano. Para prazo em dias, some os dias à data inicial.',
   ),
 ];
 
@@ -100,6 +125,14 @@ String _displayValue(String key, String raw) {
     case 'tipoObjetoContrato':
       final id = int.tryParse(raw);
       return id != null ? (kTipoObjetoContrato[id] ?? raw) : raw;
+    case 'fonteRecursosContratacao':
+      return RegExp(r'\d+')
+          .allMatches(raw)
+          .map((m) => int.tryParse(m.group(0)!))
+          .whereType<int>()
+          .where(kFonteRecursoAjuste.containsKey)
+          .map((id) => kFonteRecursoAjuste[id] ?? id.toString())
+          .join(', ');
     default:
       return raw;
   }

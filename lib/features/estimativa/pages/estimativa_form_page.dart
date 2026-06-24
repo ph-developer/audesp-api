@@ -936,7 +936,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   Future<void> _importarOrcamentoIa() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
+      allowedExtensions: ['pdf', 'docx'],
     );
 
     if (result == null || result.files.isEmpty) return;
