@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/hover_cell_text.dart';
 import '../../../core/database/database_providers.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
@@ -13,6 +13,9 @@ import '../models/estimativa_orcamento_model.dart';
 import '../models/estimativa_fornecedor_model.dart';
 import '../widgets/estimativa_item_dialog.dart';
 import '../widgets/estimativa_lote_dialog.dart';
+import '../widgets/estimativa_fornecedor_dialog.dart';
+import '../widgets/estimativa_valor_dialog.dart';
+import '../widgets/estimativa_exclusividade_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
@@ -560,86 +563,18 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
 
   Future<void> _showExclusividadeDialog() async {
-    final isLote = _tipoEstimativa == 'lote';
-
-    await showDialog(
+    final result = await showEstimativaExclusividadeDialog(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return AlertDialog(
-              title: Text(
-                'Selecionar ${isLote ? 'Lotes' : 'Itens'} Exclusivos',
-              ),
-              content: SizedBox(
-                width: 400,
-                child: isLote
-                    ? _lotes.isEmpty
-                          ? const Text('Nenhum lote adicionado.')
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: _lotes.length,
-                              itemBuilder: (context, index) {
-                                final lote = _lotes[index];
-                                return CheckboxListTile(
-                                  title: Text(
-                                    'Lote ${lote.numero} - ${lote.descricao}',
-                                  ),
-                                  value: lote.exclusivoMeEpp,
-                                  onChanged: (v) {
-                                    setModalState(() {
-                                      _lotes[index] = lote.copyWith(
-                                        exclusivoMeEpp: v ?? false,
-                                      );
-                                    });
-                                    setState(() {
-                                      _lotes[index] = _lotes[index].copyWith(
-                                        exclusivoMeEpp: v ?? false,
-                                      );
-                                    });
-                                  },
-                                );
-                              },
-                            )
-                    : _itens.isEmpty
-                    ? const Text('Nenhum item adicionado.')
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _itens.length,
-                        itemBuilder: (context, index) {
-                          final item = _itens[index];
-                          return CheckboxListTile(
-                            title: Text(
-                              'Item ${item.numero} - ${item.descricao}',
-                            ),
-                            value: item.exclusivoMeEpp,
-                            onChanged: (v) {
-                              setModalState(() {
-                                _itens[index] = item.copyWith(
-                                  exclusivoMeEpp: v ?? false,
-                                );
-                              });
-                              setState(() {
-                                _itens[index] = _itens[index].copyWith(
-                                  exclusivoMeEpp: v ?? false,
-                                );
-                              });
-                            },
-                          );
-                        },
-                      ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Concluído'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      tipoEstimativa: _tipoEstimativa,
+      itens: _itens,
+      lotes: _lotes,
     );
+    if (result != null) {
+      setState(() {
+        _itens = result.itens;
+        _lotes = result.lotes;
+      });
+    }
   }
 
   Future<void> _addLote() async {
@@ -870,126 +805,43 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Future<void> _showFornecedorDialog([EstimativaFornecedor? fornecedor]) async {
-    final razaoSocialCtrl = TextEditingController(text: fornecedor?.razaoSocial);
-    final cnpjCtrl = TextEditingController(text: fornecedor?.cnpj);
-    final dataCtrl = TextEditingController(text: fornecedor?.data);
-
-    await showDialog<bool>(
+    final result = await showEstimativaFornecedorDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(fornecedor == null ? 'Incluir Fornecedor' : 'Editar Fornecedor'),
-          content: SizedBox(
-            width: 500,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                controller: razaoSocialCtrl,
-                decoration: const InputDecoration(labelText: 'Razão Social'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: cnpjCtrl,
-                decoration: const InputDecoration(labelText: 'CNPJ (apenas números)'),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: dataCtrl,
-                readOnly: true,
-                onTap: () async {
-                  DateTime initialDate = DateTime.now();
-                  try {
-                    if (dataCtrl.text.isNotEmpty) {
-                      initialDate = DateFormat('dd/MM/yyyy').parseLoose(dataCtrl.text);
-                    }
-                  } catch (_) {}
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: initialDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
-                  }
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Data do Orçamento',
-                  hintText: 'DD/MM/AAAA',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-              ),
-            ],
-          ),
-          ),
-          actions: [
-            if (fornecedor != null)
-              TextButton(
-                onPressed: () {
-                  // Excluir fornecedor
-                  setState(() {
-                    _fornecedores.removeWhere((f) => f.id == fornecedor.id);
-                    // Also remove orcamentos associated with this supplier
-                    if (_tipoEstimativa == 'lote') {
-                      for (int i = 0; i < _lotes.length; i++) {
-                        final newItens = _lotes[i].itens.map((it) {
-                          return it.copyWith(orcamentos: it.orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList());
-                        }).toList();
-                        _lotes[i] = _lotes[i].copyWith(itens: newItens);
-                      }
-                    } else {
-                      for (int i = 0; i < _itens.length; i++) {
-                        _itens[i] = _itens[i].copyWith(
-                          orcamentos: _itens[i].orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList(),
-                        );
-                      }
-                    }
-                  });
-                  Navigator.pop(ctx, false);
-                },
-                child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (razaoSocialCtrl.text.trim().isEmpty) return;
-                
-                setState(() {
-                  if (fornecedor == null) {
-                    _fornecedores.add(EstimativaFornecedor(
-                      razaoSocial: razaoSocialCtrl.text.trim(),
-                      cnpj: cnpjCtrl.text.trim(),
-                      data: dataCtrl.text.trim(),
-                    ));
-                  } else {
-                    final index = _fornecedores.indexWhere((f) => f.id == fornecedor.id);
-                    if (index != -1) {
-                      _fornecedores[index] = fornecedor.copyWith(
-                        razaoSocial: razaoSocialCtrl.text.trim(),
-                        cnpj: cnpjCtrl.text.trim(),
-                        data: dataCtrl.text.trim(),
-                      );
-                    }
-                  }
-                });
-                Navigator.pop(ctx, true);
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        );
-      },
+      fornecedor: fornecedor,
     );
 
-    razaoSocialCtrl.dispose();
-    cnpjCtrl.dispose();
-    dataCtrl.dispose();
+    if (result == null) return;
+
+    if (result.isDelete && fornecedor != null) {
+      setState(() {
+        _fornecedores.removeWhere((f) => f.id == fornecedor.id);
+        if (_tipoEstimativa == 'lote') {
+          for (int i = 0; i < _lotes.length; i++) {
+            final newItens = _lotes[i].itens.map((it) {
+              return it.copyWith(orcamentos: it.orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList());
+            }).toList();
+            _lotes[i] = _lotes[i].copyWith(itens: newItens);
+          }
+        } else {
+          for (int i = 0; i < _itens.length; i++) {
+            _itens[i] = _itens[i].copyWith(
+              orcamentos: _itens[i].orcamentos.where((o) => o.fornecedorId != fornecedor.id).toList(),
+            );
+          }
+        }
+      });
+    } else if (result.isSave && result.fornecedor != null) {
+      setState(() {
+        if (fornecedor == null) {
+          _fornecedores.add(result.fornecedor!);
+        } else {
+          final index = _fornecedores.indexWhere((f) => f.id == fornecedor.id);
+          if (index != -1) {
+            _fornecedores[index] = result.fornecedor!;
+          }
+        }
+      });
+    }
   }
 
   Future<void> _showValorDialog({
@@ -998,56 +850,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required EstimativaFornecedor fornecedor,
     required EstimativaOrcamento? atual,
   }) async {
-    final valorStr = atual != null ? doubleToBrString(atual.valorUnitario) : '';
-    final valorCtrl = TextEditingController(text: valorStr);
-
-    await showDialog(
+    final result = await showEstimativaValorDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text('Valor - ${fornecedor.razaoSocial}'),
-          content: TextField(
-            controller: valorCtrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Valor Unitário (R\$)',
-              hintText: '0,00',
-            ),
-          ),
-          actions: [
-            if (atual != null)
-              TextButton(
-                onPressed: () {
-                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, null);
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Remover Valor', style: TextStyle(color: Colors.red)),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final vStr = valorCtrl.text.replaceAll('.', '').replaceAll(',', '.');
-                final v = double.tryParse(vStr);
-                if (v != null) {
-                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, v);
-                } else if (valorCtrl.text.trim().isEmpty) {
-                  _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, null);
-                }
-                Navigator.pop(ctx);
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        );
-      },
+      fornecedor: fornecedor,
+      atual: atual,
     );
-    valorCtrl.dispose();
+
+    if (result == -1.0) {
+      _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, null);
+    } else if (result != null) {
+      _updateItemOrcamento(loteIndex, itemIndex, fornecedor.id, result);
+    }
   }
 
   void _updateItemOrcamento(int? loteIndex, int itemIndex, String fornecedorId, double? novoValor) {
@@ -1231,75 +1044,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class HoverCellText extends StatefulWidget {
-  final String text;
-  final TextStyle? style;
-  final VoidCallback onTap;
-  final String? tooltip;
-  final int? maxLines;
-  final TextOverflow? overflow;
-  final Alignment? alignment;
-  final double? width;
-  final TextAlign? textAlign;
-
-  const HoverCellText({
-    super.key,
-    required this.text,
-    required this.onTap,
-    this.style,
-    this.tooltip,
-    this.maxLines,
-    this.overflow,
-    this.alignment,
-    this.width,
-    this.textAlign,
-  });
-
-  @override
-  State<HoverCellText> createState() => _HoverCellTextState();
-}
-
-class _HoverCellTextState extends State<HoverCellText> {
-  bool _hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget child = Text(
-      widget.text,
-      maxLines: widget.maxLines,
-      overflow: widget.overflow,
-      textAlign: widget.textAlign,
-      style: (widget.style ?? const TextStyle()).copyWith(
-        decoration: _hovering ? TextDecoration.underline : TextDecoration.none,
-        decorationStyle: TextDecorationStyle.dotted,
-      ),
-    );
-
-    if (widget.alignment != null || widget.width != null) {
-      child = Container(
-        alignment: widget.alignment,
-        width: widget.width,
-        color: Colors.transparent,
-        child: child,
-      );
-    }
-
-    if (widget.tooltip != null) {
-      child = Tooltip(message: widget.tooltip!, child: child);
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: child,
       ),
     );
   }
