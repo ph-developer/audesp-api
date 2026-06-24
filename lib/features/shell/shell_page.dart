@@ -80,11 +80,17 @@ class ShellPage extends ConsumerWidget {
     final user = ref.watch(localSessionProvider);
     final env = ref.watch(environmentProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final currentPath = GoRouterState.of(context).uri.path;
 
     final allowedItems = _allNavItems
         .where((d) => user?.hasPermission(d.perm) ?? false)
         .toList();
-    final validSelectedIndex = selectedIndex < allowedItems.length
+    final routeSelectedIndex = allowedItems.indexWhere(
+      (d) => currentPath == d.route || currentPath.startsWith('${d.route}/'),
+    );
+    final validSelectedIndex = routeSelectedIndex >= 0
+        ? routeSelectedIndex
+        : selectedIndex < allowedItems.length
         ? selectedIndex
         : 0;
 

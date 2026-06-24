@@ -84,11 +84,15 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   Future<void> _init() async {
     final editaisDao = ref.read(editaisDaoProvider);
-    _editais = await editaisDao.watchAll();
+    _editais = await editaisDao.watchByStatus('sent');
 
     if (widget.preselectedEditalId != null) {
       _editalId = widget.preselectedEditalId;
-      _fillEditalDescriptor();
+      if (_isSelectedEditalAvailable) {
+        _fillEditalDescriptor();
+      } else {
+        _editalId = null;
+      }
     }
 
     if (widget.ataId != null) {
@@ -114,6 +118,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     }
   }
 
+  bool get _isSelectedEditalAvailable {
+    final id = _editalId;
+    return id != null && _editais.any((e) => e.id == id);
+  }
+
   Future<void> _loadExisting(int id) async {
     final dao = ref.read(atasDaoProvider);
     final ata = await dao.findById(id);
@@ -124,6 +133,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _loadedId = ata.id;
     _isSent = ata.status == 'sent';
     _editalId = ata.editalId;
+    if (!_isSelectedEditalAvailable) _editalId = null;
 
     Map<String, dynamic> doc = {};
     try {

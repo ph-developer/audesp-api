@@ -143,12 +143,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    _editais = await ref.read(editaisDaoProvider).watchAll();
-    _atas = await ref.read(atasDaoProvider).watchAll();
+    _editais = await ref.read(editaisDaoProvider).watchByStatus('sent');
+    _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
 
     if (widget.preselectedEditalId != null) {
       _editalId = widget.preselectedEditalId;
-      _fillEditalDescriptor();
+      if (_isSelectedEditalAvailable) {
+        _fillEditalDescriptor();
+      } else {
+        _editalId = null;
+      }
     }
 
     if (widget.ajusteId != null) {
@@ -166,6 +170,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
   }
 
+  bool get _isSelectedEditalAvailable {
+    final id = _editalId;
+    return id != null && _editais.any((e) => e.id == id);
+  }
+
+  bool get _isSelectedAtaAvailable {
+    final id = _ataId;
+    return id == null || _atas.any((a) => a.id == id);
+  }
+
   Future<void> _loadExisting(int id) async {
     final dao = ref.read(ajustesDaoProvider);
     final ajuste = await dao.findById(id);
@@ -177,6 +191,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _isSent = ajuste.status == 'sent';
     _editalId = ajuste.editalId;
     _ataId = ajuste.ataId;
+    if (!_isSelectedEditalAvailable) _editalId = null;
+    if (!_isSelectedAtaAvailable) _ataId = null;
 
     Map<String, dynamic> doc = {};
     try {

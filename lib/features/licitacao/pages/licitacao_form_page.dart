@@ -122,11 +122,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   Future<void> _init() async {
     // Carrega editais disponíveis
     final editaisDao = ref.read(editaisDaoProvider);
-    _editais = await editaisDao.watchAll();
+    _editais = await editaisDao.watchByStatus('sent');
 
     if (widget.preselectedEditalId != null) {
       _editalId = widget.preselectedEditalId;
-      _fillEditalDescriptor();
+      if (_isSelectedEditalAvailable) {
+        _fillEditalDescriptor();
+      } else {
+        _editalId = null;
+      }
     }
 
     if (widget.licitacaoId != null) {
@@ -145,6 +149,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
   }
 
+  bool get _isSelectedEditalAvailable {
+    final id = _editalId;
+    return id != null && _editais.any((e) => e.id == id);
+  }
+
   Future<void> _loadExisting(int id) async {
     final dao = ref.read(licitacoesDaoProvider);
     final licitacao = await dao.findById(id);
@@ -155,6 +164,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _loadedId = licitacao.id;
     _isSent = licitacao.status == 'sent';
     _editalId = licitacao.editalId;
+    if (!_isSelectedEditalAvailable) _editalId = null;
 
     Map<String, dynamic> doc = {};
     try {

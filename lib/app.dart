@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/database/models/user.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
@@ -34,23 +35,27 @@ final _routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final user = ref.read(localSessionProvider);
       final loggedIn = user != null;
-      final loc = state.matchedLocation;
+      final loc = state.uri.path;
       final isAuthRoute = loc == '/login';
 
       // Não logado → sempre para o login
       if (!loggedIn && !isAuthRoute) return '/login';
 
       // Logado e na tela de login → módulo inicial
-      if (loggedIn && loc == '/login') return '/edital';
+      if (loggedIn && loc == '/login') return _homeLocationFor(user);
 
       // Não-admin tentando acessar a área de admin → redireciona
       if (loggedIn && loc.startsWith('/admin') && !user.isAdmin) {
-        return '/edital';
+        return _homeLocationFor(user);
       }
 
       // Admin tentando acessar o perfil de usuário → redireciona para admin
       if (loggedIn && loc == '/profile' && user.isAdmin) {
         return '/admin';
+      }
+
+      if (loggedIn && !_canAccessLocation(user, loc)) {
+        return _homeLocationFor(user);
       }
 
       return null;
@@ -170,6 +175,30 @@ final _routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+const _moduleRoutes = [
+  (route: '/edital', permission: AppPermissions.edital),
+  (route: '/licitacao', permission: AppPermissions.licitacao),
+  (route: '/ata', permission: AppPermissions.ata),
+  (route: '/ajuste', permission: AppPermissions.ajuste),
+  (route: '/estimativa', permission: AppPermissions.estimativa),
+  (route: '/logs', permission: AppPermissions.none),
+];
+
+String _homeLocationFor(User user) {
+  return _moduleRoutes
+      .firstWhere((module) => user.hasPermission(module.permission))
+      .route;
+}
+
+bool _canAccessLocation(User user, String location) {
+  for (final module in _moduleRoutes) {
+    if (location == module.route || location.startsWith('${module.route}/')) {
+      return user.hasPermission(module.permission);
+    }
+  }
+  return true;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App
