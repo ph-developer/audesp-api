@@ -16,7 +16,7 @@ final unlinkedEditaisProvider =
       ref,
       target,
     ) async {
-      final editais = await ref.watch(editaisDaoProvider).watchByStatus('sent');
+      final editais = await ref.watch(editaisDaoProvider).watchAll();
 
       switch (target) {
         case UnlinkedEditaisTarget.licitacao:

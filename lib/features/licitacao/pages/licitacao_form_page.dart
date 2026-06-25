@@ -123,7 +123,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   Future<void> _init() async {
     // Carrega editais disponíveis
     final editaisDao = ref.read(editaisDaoProvider);
-    _editais = await editaisDao.watchByStatus('sent');
+    _editais = await editaisDao.watchAll();
 
     await _selectPreselectedEdital(widget.preselectedEditalId);
 
@@ -148,7 +148,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     var edital = _editais.where((e) => e.id == editalId).firstOrNull;
     if (edital == null) {
       final found = await ref.read(editaisDaoProvider).findById(editalId);
-      if (found != null && found.status == 'sent') {
+      if (found != null) {
         edital = found;
         _editais = [..._editais, found];
       }
@@ -157,6 +157,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _editalId = edital.id;
     _codigoEditalCtrl.text = edital.codigoEdital;
     _retificacao = edital.retificacao;
+  }
+
+  bool get _isSelectedEditalSent {
+    final id = _editalId;
+    if (id == null) return false;
+    final edital = _editais.where((e) => e.id == id).firstOrNull;
+    return edital != null && edital.status == 'sent';
   }
 
   bool get _isSelectedEditalAvailable {
@@ -719,10 +726,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: const Text('Salvar Rascunho'),
               ),
               const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _enviar,
-                icon: const Icon(Icons.send),
-                label: const Text('Enviar à AUDESP'),
+              Tooltip(
+                message: _editalId != null && !_isSelectedEditalSent
+                    ? 'Edital ainda não enviado à AUDESP'
+                    : 'Enviar à AUDESP',
+                child: FilledButton.icon(
+                  onPressed: (!_isSelectedEditalSent) ? null : _enviar,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Enviar à AUDESP'),
+                ),
               ),
               const SizedBox(width: 8),
             ],
