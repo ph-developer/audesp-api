@@ -4,6 +4,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 
 import 'package:intl/intl.dart';
 
@@ -328,18 +329,14 @@ class _LoteDialogState extends State<_LoteDialog> {
                                                   ),
                                                 ),
                                               ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.edit,
-                                                size: 16,
-                                              ),
+                                            AudespIconButton(
+                                              icon: Icons.edit,
+                                              tooltip: 'Editar item',
                                               onPressed: () => _editItem(index),
                                             ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete,
-                                                size: 16,
-                                              ),
+                                            AudespIconButton(
+                                              icon: Icons.delete,
+                                              tooltip: 'Excluir item',
                                               color: Colors.red,
                                               onPressed: () => setState(
                                                 () => _itens.removeAt(index),

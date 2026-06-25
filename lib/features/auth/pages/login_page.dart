@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/local_prefs.dart';
 import '../../../core/utils/password_hasher.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
@@ -140,10 +141,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       label: 'Nova senha',
                       controller: ctrl,
                       obscureText: obscure1,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          obscure1 ? Icons.visibility_off : Icons.visibility,
-                        ),
+                      suffixIcon: AudespIconButton(
+                        icon: obscure1
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        tooltip: obscure1 ? 'Mostrar senha' : 'Ocultar senha',
                         onPressed: () =>
                             setModalState(() => obscure1 = !obscure1),
                       ),
@@ -155,10 +157,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       label: 'Confirmar senha',
                       controller: confirmCtrl,
                       obscureText: obscure2,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          obscure2 ? Icons.visibility_off : Icons.visibility,
-                        ),
+                      suffixIcon: AudespIconButton(
+                        icon: obscure2
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        tooltip: obscure2 ? 'Mostrar senha' : 'Ocultar senha',
                         onPressed: () =>
                             setModalState(() => obscure2 = !obscure2),
                       ),
@@ -243,11 +246,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         labelText: 'Senha',
                         isDense: true,
                         prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off : Icons.visibility,
-                          ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                        suffixIcon: AudespIconButton(
+                          icon: _obscure
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          tooltip:
+                              _obscure ? 'Mostrar senha' : 'Ocultar senha',
+                          onPressed: () =>
+                              setState(() => _obscure = !_obscure),
                         ),
                         errorText: _error,
                       ),

@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import 'pcnp_input_formatter.dart';
 
@@ -112,9 +113,9 @@ class _UnlinkedEditaisDialogState
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchCtrl.text.isEmpty
                       ? null
-                      : IconButton(
+                      : AudespIconButton(
+                          icon: Icons.close,
                           tooltip: 'Limpar filtro',
-                          icon: const Icon(Icons.close),
                           onPressed: () {
                             _searchCtrl.clear();
                             setState(() {});

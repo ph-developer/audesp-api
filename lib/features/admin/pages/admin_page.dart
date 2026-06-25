@@ -9,6 +9,7 @@ import '../../../core/database/daos/app_settings_dao.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
@@ -509,12 +510,10 @@ class _GeminiTabState extends ConsumerState<_GeminiTab> {
                   hintText: 'AIza...',
                   helperText: 'Obtenha em https://aistudio.google.com/apikey',
                   obscureText: _obscureKey,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureKey
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
+                  suffixIcon: AudespIconButton(
+                    icon: _obscureKey
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     tooltip: _obscureKey ? 'Mostrar' : 'Ocultar',
                     onPressed: () => setState(() => _obscureKey = !_obscureKey),
                   ),

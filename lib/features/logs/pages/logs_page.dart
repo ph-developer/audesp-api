@@ -9,8 +9,11 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
-import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../features/edital/domain/edital_domain.dart';
+import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../services/consulta_service.dart';
@@ -37,6 +40,83 @@ String _labelFor(String endpoint) {
   return endpoint;
 }
 
+String _searchableLogText(ApiLog log) {
+  return [
+    log.endpoint,
+    log.protocolo ?? '',
+    log.statusProtocolo ?? '',
+    log.userName ?? '',
+    log.statusCode?.toString() ?? '',
+    _docLabelFromRequest(log) ?? '',
+  ].join(' ');
+}
+
+String? _docLabelFromRequest(ApiLog log, {Map<String, Edital>? editaisMap}) {
+  try {
+    final doc = jsonDecode(log.request) as Map<String, dynamic>;
+    final endpoint = log.endpoint;
+
+    if (endpoint.contains('enviar-edital')) {
+      return _editalDocLabel(doc);
+    }
+
+    if (endpoint.contains('enviar-licitacao')) {
+      return _licitacaoDocLabel(doc, editaisMap);
+    }
+
+    if (endpoint.contains('enviar-ata')) {
+      final numero = doc['numeroAtaRegistroPreco']?.toString();
+      final ano = doc['anoAta']?.toString();
+      if (numero != null && numero.isNotEmpty) {
+        return 'Ata de Registro $numero/$ano';
+      }
+    }
+
+    if (endpoint.contains('enviar-ajuste') ||
+        endpoint.contains('enviar-empenho-contrato') ||
+        endpoint.contains('enviar-termo-contrato')) {
+      final numero = doc['numeroContratoEmpenho']?.toString();
+      final ano = doc['anoContrato']?.toString();
+      if (numero != null && numero.isNotEmpty) {
+        return 'Contrato $numero/$ano';
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+String? _editalDocLabel(Map<String, dynamic> doc) {
+  final modalidadeId = doc['modalidadeId'] as int?;
+  final modalidade = modalidadeId != null
+      ? (kModalidadesDropdown[modalidadeId] ?? '')
+      : '';
+  final numero = doc['numeroCompra']?.toString() ?? '';
+  final ano = doc['anoCompra']?.toString() ?? '';
+  if (numero.isEmpty) return null;
+  return modalidade.isNotEmpty ? '$modalidade $numero/$ano' : '$numero/$ano';
+}
+
+String? _licitacaoDocLabel(
+  Map<String, dynamic> doc,
+  Map<String, Edital>? editaisMap,
+) {
+  if (editaisMap == null || editaisMap.isEmpty) return null;
+  final descritor = doc['descritor'] as Map<String, dynamic>?;
+  if (descritor == null) return null;
+  final municipio = descritor['municipio']?.toString();
+  final entidade = descritor['entidade']?.toString();
+  final codigoEdital = descritor['codigoEdital']?.toString();
+  if (municipio == null || entidade == null || codigoEdital == null) {
+    return null;
+  }
+  final key = '$municipio|$entidade|$codigoEdital';
+  final edital = editaisMap[key];
+  if (edital == null) return null;
+  return _editalDocLabel(
+    jsonDecode(edital.documentoJson) as Map<String, dynamic>,
+  );
+}
+
 enum _StatusFilter { todos, sucesso, erro }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,23 +131,50 @@ class LogsPage extends ConsumerStatefulWidget {
 }
 
 class _LogsPageState extends ConsumerState<LogsPage> {
+  // ── Dados ───────────────────────────────────────────────────────────
+  List<ApiLog> _allLogs = [];
+  List<Edital> _allEditais = [];
+  bool _loading = true;
+
   // ── Filtros ───────────────────────────────────────────────────────────
   String? _endpointFilter; // null → todos
   _StatusFilter _statusFilter = _StatusFilter.todos;
-  DateTime? _dateFrom;
-  DateTime? _dateTo;
+  final _textSearchCtrl = TextEditingController();
 
   final _timeFmt = DateFormat('dd/MM/yy HH:mm:ss');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _textSearchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
+    final logs = await ref.read(apiLogsDaoProvider).watchAll();
+    final editais = await ref.read(editaisDaoProvider).watchAll();
+    if (mounted) {
+      setState(() {
+        _allLogs = logs;
+        _allEditais = editais;
+        _loading = false;
+      });
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────
 
   List<ApiLog> _applyFilters(List<ApiLog> all) {
     return all.where((log) {
-      // endpoint
       if (_endpointFilter != null && !log.endpoint.contains(_endpointFilter!)) {
         return false;
       }
-      // status
       final code = log.statusCode;
       if (_statusFilter == _StatusFilter.sucesso &&
           (code == null || code < 200 || code >= 300)) {
@@ -76,21 +183,9 @@ class _LogsPageState extends ConsumerState<LogsPage> {
       if (_statusFilter == _StatusFilter.erro && (code == null || code < 300)) {
         return false;
       }
-      // date from
-      if (_dateFrom != null && log.timestamp.isBefore(_dateFrom!)) {
+      if (_textSearchCtrl.text.isNotEmpty &&
+          !matchesLikeSearch(_searchableLogText(log), _textSearchCtrl.text)) {
         return false;
-      }
-      // date to — include the full day
-      if (_dateTo != null) {
-        final endOfDay = DateTime(
-          _dateTo!.year,
-          _dateTo!.month,
-          _dateTo!.day,
-          23,
-          59,
-          59,
-        );
-        if (log.timestamp.isAfter(endOfDay)) return false;
       }
       return true;
     }).toList();
@@ -131,7 +226,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Status atualizado para: $novoStatus')),
             );
-            setState(() {}); // recarrega a lista
+            _loadData();
           }
         } catch (e) {
           if (mounted) {
@@ -212,7 +307,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 ),
               ),
             );
-            setState(() {}); // recarrega a lista
+            _loadData();
           }
         } catch (e) {
           if (mounted) {
@@ -271,14 +366,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final future = ref.watch(apiLogsDaoProvider).watchAll();
     final user = ref.watch(localSessionProvider);
-
-    final hasActiveFilters =
-        _endpointFilter != null ||
-        _statusFilter != _StatusFilter.todos ||
-        _dateFrom != null ||
-        _dateTo != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -309,17 +397,14 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    width: 220,
+                    width: 120,
                     child: AudespDropdown<String?>.items(
                       label: 'Módulo',
                       value: _endpointFilter,
                       items: [
                         const DropdownMenuItem<String?>(
                           value: null,
-                          child: Text(
-                            'Todos os módulos',
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: Text('Todos', overflow: TextOverflow.ellipsis),
                         ),
                         ...[
                           if (user == null ||
@@ -353,12 +438,12 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
-                    width: 190,
+                    width: 120,
                     child: AudespDropdown<_StatusFilter>(
                       label: 'Status',
                       value: _statusFilter,
                       items: const {
-                        _StatusFilter.todos: 'Todos os status',
+                        _StatusFilter.todos: 'Todos',
                         _StatusFilter.sucesso: 'Sucesso',
                         _StatusFilter.erro: 'Erro',
                       },
@@ -369,47 +454,32 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
-                    width: 140,
-                    child: AudespDatePickerField(
-                      label: 'Data início',
-                      value: _dateFrom,
-                      onChanged: (d) => setState(() => _dateFrom = d),
+                    width: 200,
+                    child: AudespTextField(
+                      label: 'Filtrar',
+                      controller: _textSearchCtrl,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _textSearchCtrl.text.isEmpty
+                          ? null
+                          : AudespIconButton(
+                              tooltip: 'Limpar filtro',
+                              icon: Icons.close,
+                              onPressed: () {
+                                _textSearchCtrl.clear();
+                                setState(() {});
+                              },
+                            ),
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 140,
-                    child: AudespDatePickerField(
-                      label: 'Data fim',
-                      value: _dateTo,
-                      onChanged: (d) => setState(() => _dateTo = d),
-                    ),
-                  ),
-                  if (hasActiveFilters) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => setState(() {
-                        _endpointFilter = null;
-                        _statusFilter = _StatusFilter.todos;
-                        _dateFrom = null;
-                        _dateTo = null;
-                      }),
-                      icon: const Icon(Icons.clear, size: 16),
-                      style: IconButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          AudespIconButton(
+            icon: Icons.refresh,
             tooltip: 'Atualizar',
-            onPressed: () {
-              setState(() {});
-            },
+            onPressed: _loadData,
           ),
           const SizedBox(width: 8),
         ],
@@ -418,66 +488,63 @@ class _LogsPageState extends ConsumerState<LogsPage> {
         children: [
           // ── Lista ─────────────────────────────────────────────────────
           Expanded(
-            child: FutureBuilder<List<ApiLog>>(
-              future: future,
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final all = snap.data ?? [];
-                final filtered = _applyFilters(all).where((log) {
-                  if (user == null || user.isAdmin) return true;
-                  final ep = log.endpoint.toLowerCase();
-                  if (ep.contains('edital') &&
-                      !user.hasPermission(AppPermissions.edital)) {
-                    return false;
-                  }
-                  if (ep.contains('licitacao') &&
-                      !user.hasPermission(AppPermissions.licitacao)) {
-                    return false;
-                  }
-                  if (ep.contains('ata') &&
-                      !user.hasPermission(AppPermissions.ata)) {
-                    return false;
-                  }
-                  if ((ep.contains('ajuste') || ep.contains('contrato')) &&
-                      !user.hasPermission(AppPermissions.ajuste)) {
-                    return false;
-                  }
-                  return true;
-                }).toList();
-
-                if (all.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.inbox_outlined,
-                    message: 'Nenhuma chamada registrada ainda.',
-                  );
-                }
-                if (filtered.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.filter_list_off_outlined,
-                    message: 'Nenhum resultado para os filtros selecionados.',
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, i) => _LogCard(
-                    log: filtered[i],
-                    timeFmt: _timeFmt,
-                    onTap: () => _openDetail(filtered[i]),
-                    onUpdateStatus: () => _updateStatus(filtered[i]),
-                    onShowErrors: () => _showErrors(filtered[i]),
-                  ),
-                );
-              },
-            ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildList(user),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildList(dynamic user) {
+    final editaisMap = <String, Edital>{
+      for (final e in _allEditais)
+        '${e.municipio}|${e.entidade}|${e.codigoEdital}': e,
+    };
+    final filtered = _applyFilters(_allLogs).where((log) {
+      if (user == null || user.isAdmin) return true;
+      final ep = log.endpoint.toLowerCase();
+      if (ep.contains('edital') && !user.hasPermission(AppPermissions.edital)) {
+        return false;
+      }
+      if (ep.contains('licitacao') &&
+          !user.hasPermission(AppPermissions.licitacao)) {
+        return false;
+      }
+      if (ep.contains('ata') && !user.hasPermission(AppPermissions.ata)) {
+        return false;
+      }
+      if ((ep.contains('ajuste') || ep.contains('contrato')) &&
+          !user.hasPermission(AppPermissions.ajuste)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (_allLogs.isEmpty) {
+      return const EmptyState(
+        icon: Icons.inbox_outlined,
+        message: 'Nenhuma chamada registrada ainda.',
+      );
+    }
+    if (filtered.isEmpty) {
+      return const EmptyState(
+        icon: Icons.filter_list_off_outlined,
+        message: 'Nenhum resultado para os filtros selecionados.',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: filtered.length,
+      itemBuilder: (context, i) => _LogCard(
+        log: filtered[i],
+        timeFmt: _timeFmt,
+        editaisMap: editaisMap,
+        onTap: () => _openDetail(filtered[i]),
+        onUpdateStatus: () => _updateStatus(filtered[i]),
+        onShowErrors: () => _showErrors(filtered[i]),
       ),
     );
   }
@@ -506,9 +573,31 @@ bool isProtocoloUpdatable(String? status) {
   return true;
 }
 
+class _DocLabel extends StatelessWidget {
+  final ApiLog log;
+  final Map<String, Edital> editaisMap;
+  final String baseLabel;
+
+  const _DocLabel({
+    required this.log,
+    required this.editaisMap,
+    required this.baseLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final docLabel = _docLabelFromRequest(log, editaisMap: editaisMap);
+    return Text(
+      docLabel != null ? '$baseLabel · $docLabel' : baseLabel,
+      style: Theme.of(context).textTheme.titleSmall,
+    );
+  }
+}
+
 class _LogCard extends ConsumerWidget {
   final ApiLog log;
   final DateFormat timeFmt;
+  final Map<String, Edital> editaisMap;
   final VoidCallback onTap;
   final VoidCallback onUpdateStatus;
   final VoidCallback onShowErrors;
@@ -516,6 +605,7 @@ class _LogCard extends ConsumerWidget {
   const _LogCard({
     required this.log,
     required this.timeFmt,
+    required this.editaisMap,
     required this.onTap,
     required this.onUpdateStatus,
     required this.onShowErrors,
@@ -567,7 +657,7 @@ class _LogCard extends ConsumerWidget {
             ),
           ),
         ),
-        title: Text(label, style: Theme.of(context).textTheme.titleSmall),
+        title: _DocLabel(log: log, editaisMap: editaisMap, baseLabel: label),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -593,7 +683,7 @@ class _LogCard extends ConsumerWidget {
                   const Icon(Icons.person_outline, size: 12),
                   const SizedBox(width: 4),
                   Text(
-                    'Usuário #${log.userId}',
+                    log.userName ?? 'Usuário #${log.userId}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -633,22 +723,22 @@ class _LogCard extends ConsumerWidget {
                 ],
               ),
               if (isProtocoloUpdatable(log.statusProtocolo))
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 16),
+                AudespIconButton(
+                  icon: Icons.refresh,
                   tooltip: 'Atualizar Status',
                   onPressed: onUpdateStatus,
                 )
               else
-                IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                AudespIconButton(
+                  icon: Icons.picture_as_pdf_outlined,
                   tooltip: 'Gerar Comprovante (PDF)',
                   color: Theme.of(context).colorScheme.primary,
                   onPressed: () =>
                       PdfComprovanteService.gerarComprovante(context, ref, log),
                 ),
             ],
-            IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+            AudespIconButton(
+              icon: Icons.arrow_forward_ios,
               tooltip: 'Abrir',
               onPressed: onTap,
             ),

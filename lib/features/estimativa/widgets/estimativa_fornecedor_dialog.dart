@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../models/estimativa_fornecedor_model.dart';
 
@@ -41,7 +42,7 @@ class _FornecedorDialog extends StatefulWidget {
 class _FornecedorDialogState extends State<_FornecedorDialog> {
   late final TextEditingController _razaoSocialCtrl;
   late final TextEditingController _cnpjCtrl;
-  late final TextEditingController _dataCtrl;
+  DateTime? _data;
 
   @override
   void initState() {
@@ -50,14 +51,18 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       text: widget.fornecedor?.razaoSocial,
     );
     _cnpjCtrl = TextEditingController(text: widget.fornecedor?.cnpj);
-    _dataCtrl = TextEditingController(text: widget.fornecedor?.data);
+    if (widget.fornecedor?.data != null &&
+        widget.fornecedor!.data.isNotEmpty) {
+      try {
+        _data = DateFormat('dd/MM/yyyy').parse(widget.fornecedor!.data);
+      } catch (_) {}
+    }
   }
 
   @override
   void dispose() {
     _razaoSocialCtrl.dispose();
     _cnpjCtrl.dispose();
-    _dataCtrl.dispose();
     super.dispose();
   }
 
@@ -82,13 +87,10 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
               controller: _cnpjCtrl,
             ),
             const SizedBox(height: 12),
-            AudespTextField(
+            AudespDatePickerField(
               label: 'Data do Orçamento',
-              hintText: 'DD/MM/AAAA',
-              controller: _dataCtrl,
-              readOnly: true,
-              onTap: _pickDate,
-              suffixIcon: const Icon(Icons.calendar_today),
+              value: _data,
+              onChanged: (d) => setState(() => _data = d),
             ),
           ],
         ),
@@ -114,24 +116,6 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
     );
   }
 
-  Future<void> _pickDate() async {
-    DateTime initialDate = DateTime.now();
-    try {
-      if (_dataCtrl.text.isNotEmpty) {
-        initialDate = DateFormat('dd/MM/yyyy').parseLoose(_dataCtrl.text);
-      }
-    } catch (_) {}
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      _dataCtrl.text = DateFormat('dd/MM/yyyy').format(picked);
-    }
-  }
-
   void _save() {
     if (_razaoSocialCtrl.text.trim().isEmpty) return;
 
@@ -139,7 +123,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       id: widget.fornecedor?.id,
       razaoSocial: _razaoSocialCtrl.text.trim(),
       cnpj: _cnpjCtrl.text.trim(),
-      data: _dataCtrl.text.trim(),
+      data: _data != null ? DateFormat('dd/MM/yyyy').format(_data!) : '',
     );
     Navigator.pop(context, FornecedorDialogResult.save(result));
   }

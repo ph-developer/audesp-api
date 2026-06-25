@@ -13,6 +13,7 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_currency_field.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
@@ -1095,11 +1096,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       controller: _itemCtrl,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      suffixIcon: IconButton(
-                        onPressed: _addItem,
-                        icon: const Icon(Icons.add),
+                      suffixIcon: AudespIconButton(
+                        icon: Icons.add,
                         tooltip: 'Adicionar',
-                        iconSize: 18,
+                        onPressed: _addItem,
                       ),
                       onFieldSubmitted: (_) => _addItem(),
                     ),
@@ -1270,11 +1270,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(8),
                         ],
-                        suffixIcon: IconButton(
-                          onPressed: _addDespesa,
-                          icon: const Icon(Icons.add),
+                        suffixIcon: AudespIconButton(
+                          icon: Icons.add,
                           tooltip: 'Adicionar',
-                          iconSize: 18,
+                          onPressed: _addDespesa,
                         ),
                         onFieldSubmitted: (_) => _addDespesa(),
                       ),

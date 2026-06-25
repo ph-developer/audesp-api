@@ -5,6 +5,7 @@ class ApiLog {
   final String? response;
   final int? statusCode;
   final int? userId;
+  final String? userName;
   final DateTime timestamp;
   final String? protocolo;
   final String? statusProtocolo;
@@ -17,6 +18,7 @@ class ApiLog {
     this.response,
     this.statusCode,
     this.userId,
+    this.userName,
     required this.timestamp,
     this.protocolo,
     this.statusProtocolo,
@@ -30,6 +32,7 @@ class ApiLog {
     response: row['response'] as String?,
     statusCode: row['status_code'] as int?,
     userId: row['user_id'] as int?,
+    userName: row['user_name'] as String?,
     timestamp: DateTime.fromMillisecondsSinceEpoch(
       (row['timestamp'] as int) * 1000,
     ),
@@ -45,6 +48,7 @@ class ApiLog {
     'response': response,
     'status_code': statusCode,
     'user_id': userId,
+    'user_name': userName,
     'timestamp': timestamp.millisecondsSinceEpoch ~/ 1000,
     'protocolo': protocolo,
     'status_protocolo': statusProtocolo,

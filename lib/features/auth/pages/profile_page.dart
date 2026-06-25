@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/password_hasher.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
@@ -255,12 +256,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         label: 'Senha atual',
                         controller: _sysPwAtualCtrl,
                         obscureText: _obscureSysPwAtual,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureSysPwAtual
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
+                        suffixIcon: AudespIconButton(
+                          icon: _obscureSysPwAtual
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          tooltip: _obscureSysPwAtual
+                              ? 'Mostrar senha'
+                              : 'Ocultar senha',
                           onPressed: () => setState(
                             () => _obscureSysPwAtual = !_obscureSysPwAtual,
                           ),
@@ -272,12 +274,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         controller: _sysPwNovaCtrl,
                         obscureText: _obscureSysPwNova,
                         helperText: 'Mínimo de 6 caracteres',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureSysPwNova
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
+                        suffixIcon: AudespIconButton(
+                          icon: _obscureSysPwNova
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          tooltip: _obscureSysPwNova
+                              ? 'Mostrar senha'
+                              : 'Ocultar senha',
                           onPressed: () => setState(
                             () => _obscureSysPwNova = !_obscureSysPwNova,
                           ),

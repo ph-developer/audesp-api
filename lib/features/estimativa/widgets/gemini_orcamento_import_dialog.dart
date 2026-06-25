@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
+import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../core/services/gemini_service.dart';
@@ -169,7 +170,7 @@ class _GeminiOrcamentoReviewDialogState
   final _formKey = GlobalKey<FormState>();
   final _razaoSocialCtrl = TextEditingController();
   final _cnpjCtrl = TextEditingController();
-  final _dataCtrl = TextEditingController();
+  DateTime? _data;
 
   late final Map<String, bool> _acceptedItems;
 
@@ -179,7 +180,12 @@ class _GeminiOrcamentoReviewDialogState
     _razaoSocialCtrl.text = widget.suggestedValues.razaoSocial ?? '';
     _cnpjCtrl.text =
         widget.suggestedValues.cnpj?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
-    _dataCtrl.text = widget.suggestedValues.data ?? '';
+    if (widget.suggestedValues.data != null &&
+        widget.suggestedValues.data!.isNotEmpty) {
+      try {
+        _data = DateFormat('dd/MM/yyyy').parse(widget.suggestedValues.data!);
+      } catch (_) {}
+    }
 
     // Pré-seleciona todos os itens que tiveram valor retornado.
     _acceptedItems = {
@@ -194,7 +200,6 @@ class _GeminiOrcamentoReviewDialogState
   void dispose() {
     _razaoSocialCtrl.dispose();
     _cnpjCtrl.dispose();
-    _dataCtrl.dispose();
     super.dispose();
   }
 
@@ -219,7 +224,7 @@ class _GeminiOrcamentoReviewDialogState
     return GeminiOrcamentoResult(
       razaoSocial: _razaoSocialCtrl.text.trim(),
       cnpj: _cnpjCtrl.text.trim(),
-      data: _dataCtrl.text.trim(),
+      data: _data != null ? DateFormat('dd/MM/yyyy').format(_data!) : null,
       itens: acceptedMap,
     );
   }
@@ -275,34 +280,11 @@ class _GeminiOrcamentoReviewDialogState
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: AudespTextField(
-                      label: 'Data (dd/MM/yyyy)',
-                      controller: _dataCtrl,
-                      readOnly: true,
-                      onTap: () async {
-                        DateTime initialDate = DateTime.now();
-                        try {
-                          if (_dataCtrl.text.isNotEmpty) {
-                            initialDate = DateFormat(
-                              'dd/MM/yyyy',
-                            ).parseLoose(_dataCtrl.text);
-                          }
-                        } catch (_) {}
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: initialDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          _dataCtrl.text = DateFormat(
-                            'dd/MM/yyyy',
-                          ).format(picked);
-                        }
-                      },
-                      suffixIcon: const Icon(Icons.calendar_today, size: 18),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                    child: AudespDatePickerField(
+                      label: 'Data *',
+                      value: _data,
+                      onChanged: (d) => setState(() => _data = d),
+                      validator: (d) => d == null ? 'Obrigatório' : null,
                     ),
                   ),
                 ],

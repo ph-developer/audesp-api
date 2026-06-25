@@ -4,6 +4,7 @@ import 'audesp_snack_bar.dart';
 import 'package:flutter/services.dart';
 
 import 'audesp_text_field.dart';
+import 'audesp_icon_button.dart';
 
 /// Campo de entrada com chips (tags) padronizado para os formulários AUDESP.
 ///
@@ -111,8 +112,8 @@ class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
             ),
             if (!widget.readOnly) ...[
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
+              AudespIconButton(
+                icon: Icons.add_circle_outline,
                 onPressed: _add,
                 tooltip: 'Adicionar',
               ),

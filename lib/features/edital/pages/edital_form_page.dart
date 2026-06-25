@@ -13,8 +13,10 @@ import '../edital_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_date_time_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
@@ -72,8 +74,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   final _objetoCompraCtrl = TextEditingController();
   final _infComplementarCtrl = TextEditingController();
   bool _srp = false;
-  final _dataAberturaCtrl = TextEditingController();
-  final _dataEncerramentoCtrl = TextEditingController();
+  DateTime? _dataAbertura;
+  DateTime? _dataEncerramento;
   final _amparoLegalCtrl = TextEditingController();
   final _linkSistemaCtrl = TextEditingController();
   final _justificativaCtrl = TextEditingController();
@@ -101,8 +103,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _numeroProcessoCtrl.dispose();
     _objetoCompraCtrl.dispose();
     _infComplementarCtrl.dispose();
-    _dataAberturaCtrl.dispose();
-    _dataEncerramentoCtrl.dispose();
     _amparoLegalCtrl.dispose();
     _linkSistemaCtrl.dispose();
     _justificativaCtrl.dispose();
@@ -160,10 +160,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _objetoCompraCtrl.text = doc['objetoCompra'] as String? ?? '';
     _infComplementarCtrl.text = doc['informacaoComplementar'] as String? ?? '';
     _srp = doc['srp'] as bool? ?? false;
-    _dataAberturaCtrl.text = _toDisplayDateTime(
+    _dataAbertura = DateTime.tryParse(
       doc['dataAberturaProposta'] as String? ?? '',
     );
-    _dataEncerramentoCtrl.text = _toDisplayDateTime(
+    _dataEncerramento = DateTime.tryParse(
       doc['dataEncerramentoProposta'] as String? ?? '',
     );
     _amparoLegalCtrl.text = doc['amparoLegalId']?.toString() ?? '';
@@ -222,15 +222,13 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (_infComplementarCtrl.text.trim().isNotEmpty) {
       map['informacaoComplementar'] = _infComplementarCtrl.text.trim();
     }
-    if (_dataAberturaCtrl.text.trim().isNotEmpty) {
-      map['dataAberturaProposta'] = _fromDisplayDateTime(
-        _dataAberturaCtrl.text.trim(),
-      );
+    if (_dataAbertura != null) {
+      map['dataAberturaProposta'] =
+          DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(_dataAbertura!);
     }
-    if (_dataEncerramentoCtrl.text.trim().isNotEmpty) {
-      map['dataEncerramentoProposta'] = _fromDisplayDateTime(
-        _dataEncerramentoCtrl.text.trim(),
-      );
+    if (_dataEncerramento != null) {
+      map['dataEncerramentoProposta'] =
+          DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(_dataEncerramento!);
     }
     if (_linkSistemaCtrl.text.trim().isNotEmpty) {
       map['linkSistemaOrigem'] = _linkSistemaCtrl.text.trim();
@@ -382,8 +380,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         'objetoCompra': _objetoCompraCtrl.text.trim(),
         'srp': _srp.toString(),
         'amparoLegalId': _amparoLegalCtrl.text.trim(),
-        'dataAberturaProposta': _dataAberturaCtrl.text.trim(),
-        'dataEncerramentoProposta': _dataEncerramentoCtrl.text.trim(),
+        'dataAberturaProposta': _dataAbertura != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(_dataAbertura!)
+            : '',
+        'dataEncerramentoProposta': _dataEncerramento != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(_dataEncerramento!)
+            : '',
       };
 
       final accepted = await showGeminiImportDialog(
@@ -436,11 +438,19 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             accepted['amparoLegalId']!,
           );
         }
-        if (accepted.containsKey('dataAberturaProposta')) {
-          _dataAberturaCtrl.text = accepted['dataAberturaProposta']!;
+        if (accepted.containsKey('dataAberturaProposta') &&
+            accepted['dataAberturaProposta']!.isNotEmpty) {
+          try {
+            _dataAbertura = DateFormat('dd/MM/yyyy HH:mm')
+                .parse(accepted['dataAberturaProposta']!);
+          } catch (_) {}
         }
-        if (accepted.containsKey('dataEncerramentoProposta')) {
-          _dataEncerramentoCtrl.text = accepted['dataEncerramentoProposta']!;
+        if (accepted.containsKey('dataEncerramentoProposta') &&
+            accepted['dataEncerramentoProposta']!.isNotEmpty) {
+          try {
+            _dataEncerramento = DateFormat('dd/MM/yyyy HH:mm')
+                .parse(accepted['dataEncerramentoProposta']!);
+          } catch (_) {}
         }
       });
 
@@ -491,50 +501,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     } catch (_) {
       return apiDate;
     }
-  }
-
-  /// `yyyy-MM-ddTHH:mm:ss` → `dd/MM/yyyy HH:mm`.
-  static String _toDisplayDateTime(String apiDt) {
-    if (apiDt.isEmpty) return '';
-    try {
-      return DateFormat(
-        'dd/MM/yyyy HH:mm',
-      ).format(DateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(apiDt));
-    } catch (_) {
-      return apiDt;
-    }
-  }
-
-  /// `dd/MM/yyyy HH:mm` → `yyyy-MM-ddTHH:mm:ss`.
-  static String _fromDisplayDateTime(String display) {
-    if (display.isEmpty) return '';
-    try {
-      final d = DateFormat('dd/MM/yyyy HH:mm').parse(display);
-      return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(d);
-    } catch (_) {
-      return display;
-    }
-  }
-
-  Future<void> _pickDateTime(TextEditingController ctrl) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(2100),
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time == null) return;
-    setState(
-      () => ctrl.text =
-          '${DateFormat('dd/MM/yyyy').format(date)} '
-          '${time.hour.toString().padLeft(2, '0')}:'
-          '${time.minute.toString().padLeft(2, '0')}',
-    );
   }
 
   void _showError(String msg) {
@@ -770,12 +736,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 18),
+                        AudespIconButton(
+                          icon: Icons.edit,
+                          tooltip: 'Editar publicação',
                           onPressed: () => _editPublicacao(i),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 18),
+                        AudespIconButton(
+                          icon: Icons.delete,
+                          tooltip: 'Excluir publicação',
                           onPressed: () =>
                               setState(() => _publicacoes.removeAt(i)),
                         ),
@@ -917,18 +885,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         AudespFieldRow(
           children: [
             AudespFieldRowItem(
-              child: AudespTextField(
+              child: AudespDateTimePickerField(
                 label: 'Abertura de Propostas *',
-                controller: _dataAberturaCtrl,
-                readOnly: true,
-                enabled: !readOnly,
-                hintText: 'dd/MM/yyyy HH:mm',
-                suffixIcon: const Icon(Icons.event),
-                helperText: 'Obrigatório para instrumento tipo 1 ou 2',
-                onTap: readOnly ? null : () => _pickDateTime(_dataAberturaCtrl),
-                validator: (v) {
+                value: _dataAbertura,
+                readOnly: readOnly,
+                onChanged: (d) => setState(() => _dataAbertura = d),
+                validator: (d) {
                   if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
-                      (v == null || v.trim().isEmpty)) {
+                      d == null) {
                     return 'Obrigatório para instrumento tipo 1 ou 2';
                   }
                   return null;
@@ -936,20 +900,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               ),
             ),
             AudespFieldRowItem(
-              child: AudespTextField(
+              child: AudespDateTimePickerField(
                 label: 'Encerramento de Propostas *',
-                controller: _dataEncerramentoCtrl,
-                readOnly: true,
-                enabled: !readOnly,
-                hintText: 'dd/MM/yyyy HH:mm',
-                suffixIcon: const Icon(Icons.event),
-                helperText: 'Obrigatório para instrumento tipo 1 ou 2',
-                onTap: readOnly
-                    ? null
-                    : () => _pickDateTime(_dataEncerramentoCtrl),
-                validator: (v) {
+                value: _dataEncerramento,
+                readOnly: readOnly,
+                onChanged: (d) => setState(() => _dataEncerramento = d),
+                validator: (d) {
                   if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
-                      (v == null || v.trim().isEmpty)) {
+                      d == null) {
                     return 'Obrigatório para instrumento tipo 1 ou 2';
                   }
                   return null;
@@ -1068,16 +1026,17 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 18),
+                  AudespIconButton(
+                    icon: Icons.edit,
+                    tooltip: 'Editar item',
                     onPressed: () => _editItem(index),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 18),
+                  AudespIconButton(
+                    icon: Icons.delete,
+                    tooltip: 'Excluir item',
                     onPressed: () {
                       setState(() {
                         _itens.removeAt(index);
-                        // Renumera
                         for (int j = 0; j < _itens.length; j++) {
                           _itens[j]['numeroItem'] = j + 1;
                         }
@@ -1139,8 +1098,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
             trailing: readOnly
                 ? null
-                : IconButton(
-                    icon: const Icon(Icons.clear),
+                : AudespIconButton(
+                    icon: Icons.clear,
+                    tooltip: 'Remover PDF',
                     onPressed: () => setState(() => _pdfPath = null),
                   ),
           )

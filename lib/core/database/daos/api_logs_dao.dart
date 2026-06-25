@@ -7,14 +7,14 @@ class ApiLogsDao {
 
   Future<List<ApiLog>> watchAll() async {
     final result = await _db.pool.execute(
-      'SELECT * FROM api_logs ORDER BY timestamp DESC',
+      'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.timestamp DESC',
     );
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<ApiLog>> watchByEndpoint(String endpoint) async {
     final stmt = await _db.pool.prepare(
-      'SELECT * FROM api_logs WHERE endpoint = (?) ORDER BY timestamp DESC',
+      'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id WHERE a.endpoint = (?) ORDER BY a.timestamp DESC',
     );
     final result = await stmt.execute([endpoint]);
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();
@@ -22,7 +22,7 @@ class ApiLogsDao {
 
   Future<List<ApiLog>> watchByUser(int userId) async {
     final stmt = await _db.pool.prepare(
-      'SELECT * FROM api_logs WHERE user_id = (?) ORDER BY timestamp DESC',
+      'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id WHERE a.user_id = (?) ORDER BY a.timestamp DESC',
     );
     final result = await stmt.execute([userId]);
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();

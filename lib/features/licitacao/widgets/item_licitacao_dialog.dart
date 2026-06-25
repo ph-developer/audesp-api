@@ -5,6 +5,7 @@ import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../domain/licitacao_domain.dart';
@@ -301,12 +302,14 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 16),
+                            AudespIconButton(
+                              icon: Icons.edit_outlined,
+                              tooltip: 'Editar licitante',
                               onPressed: () => _editLicitante(i),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 16),
+                            AudespIconButton(
+                              icon: Icons.delete_outline,
+                              tooltip: 'Excluir licitante',
                               onPressed: () => _removeLicitante(i),
                             ),
                           ],

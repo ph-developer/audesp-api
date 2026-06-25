@@ -13,6 +13,7 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_chip_input.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
@@ -1224,12 +1225,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 16),
+                          AudespIconButton(
+                            icon: Icons.edit_outlined,
+                            tooltip: 'Editar índice',
                             onPressed: () => _showIndiceDialog(i),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 16),
+                          AudespIconButton(
+                            icon: Icons.delete_outline,
+                            tooltip: 'Excluir índice',
                             onPressed: () =>
                                 setState(() => _indicesEconomicos.removeAt(i)),
                           ),
@@ -1313,8 +1316,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined),
+                          AudespIconButton(
+                            icon: Icons.edit_outlined,
                             tooltip: 'Editar',
                             onPressed: () async {
                               final result = await showItemLicitacaoDialog(
@@ -1326,8 +1329,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                               }
                             },
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
+                          AudespIconButton(
+                            icon: Icons.delete_outline,
                             tooltip: 'Remover',
                             onPressed: () => setState(() => _itens.removeAt(i)),
                           ),

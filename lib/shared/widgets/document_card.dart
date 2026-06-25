@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'audesp_icon_button.dart';
+
 /// Shared card for document-like list rows.
 class DocumentCard extends StatelessWidget {
   final IconData? icon;
@@ -55,23 +57,21 @@ class DocumentCard extends StatelessWidget {
                   ...chips,
                   if (chips.isNotEmpty) const SizedBox(width: 4),
                   if (onDelete != null)
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: colorScheme.error,
-                      ),
+                    AudespIconButton(
+                      icon: Icons.delete_outline,
                       tooltip: 'Excluir',
+                      color: colorScheme.error,
                       onPressed: onDelete,
                     ),
                   if (onEdit != null)
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
+                    AudespIconButton(
+                      icon: Icons.edit_outlined,
                       tooltip: 'Editar',
                       onPressed: onEdit,
                     ),
                   if (onNavigate != null)
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                    AudespIconButton(
+                      icon: Icons.arrow_forward_ios,
                       tooltip: 'Abrir',
                       onPressed: onNavigate,
                     ),

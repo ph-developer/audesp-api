@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../estimativa_providers.dart';
@@ -25,8 +26,8 @@ class _EstimativasListPageState extends ConsumerState<EstimativasListPage> {
       appBar: AppBar(
         title: const Text('Estimativas'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          AudespIconButton(
+            icon: Icons.refresh,
             tooltip: 'Atualizar',
             onPressed: () {
               ref.invalidate(estimativasListProvider);

@@ -7,6 +7,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -56,8 +57,8 @@ class _EditalPageState extends ConsumerState<EditalPage> {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          AudespIconButton(
+            icon: Icons.refresh,
             tooltip: 'Atualizar',
             onPressed: () {
               ref.invalidate(editaisDraftProvider);

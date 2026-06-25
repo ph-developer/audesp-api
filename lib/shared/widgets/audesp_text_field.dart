@@ -93,8 +93,24 @@ class AudespTextField extends StatelessWidget {
             prefixText: prefixText,
             suffixText: suffixText,
             helperText: helperText,
-            prefixIcon: prefixIcon,
-            suffixIcon: suffixIcon,
+            prefixIcon: Container(
+              width: prefixIcon == null ? 12.0 : 32.0,
+              padding: EdgeInsets.all(4.0),
+              child: prefixIcon,
+            ),
+            prefixIconConstraints: const BoxConstraints(
+              maxHeight: 32,
+              maxWidth: 32,
+            ),
+            suffixIcon: Container(
+              width: suffixIcon == null ? 12.0 : 32.0,
+              padding: EdgeInsets.all(4.0),
+              child: suffixIcon,
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              maxHeight: 32,
+              maxWidth: 32,
+            ),
           ),
     );
   }

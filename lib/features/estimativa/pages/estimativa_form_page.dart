@@ -7,6 +7,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/hover_cell_text.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../core/database/database_providers.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
@@ -370,7 +371,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         AudespTextField(
           label: 'Nova Fonte (ex: xx/xxxxx)',
           controller: _fonteRecursoInputCtrl,
-          suffixIcon: IconButton(
+          suffixIcon: AudespIconButton(
+            icon: Icons.add,
+            tooltip: 'Adicionar',
             onPressed: () {
               final v = _fonteRecursoInputCtrl.text.trim();
               if (v.isNotEmpty && !_fontesRecurso.contains(v)) {
@@ -380,9 +383,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 });
               }
             },
-            icon: const Icon(Icons.add),
-            tooltip: 'Adicionar',
-            iconSize: 18,
           ),
           onFieldSubmitted: (v) {
             if (v.trim().isNotEmpty && !_fontesRecurso.contains(v.trim())) {
@@ -771,9 +771,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               children: [
                 statusIcon,
                 const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                AudespIconButton(
+                  icon: Icons.delete,
                   tooltip: 'Excluir Item',
+                  color: Colors.red,
                   onPressed: () => _confirmDeleteItem(loteIndex, itemIndex),
                 ),
               ],

@@ -5,6 +5,7 @@ import '../../../core/constants/environments.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
@@ -128,8 +129,9 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
             controller: _passwordCtrl,
             obscureText: _obscure,
             prefixIcon: const Icon(Icons.lock_outline),
-            suffixIcon: IconButton(
-              icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+            suffixIcon: AudespIconButton(
+              icon: _obscure ? Icons.visibility_off : Icons.visibility,
+              tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
               onPressed: () => setState(() => _obscure = !_obscure),
             ),
             onChanged: (_) {
