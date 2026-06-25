@@ -1,4 +1,4 @@
-class Licitacoe {
+class Licitacao {
   final int id;
   final int editalId;
   final String municipio;
@@ -10,7 +10,7 @@ class Licitacoe {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  const Licitacoe({
+  const Licitacao({
     required this.id,
     required this.editalId,
     required this.municipio,
@@ -23,7 +23,7 @@ class Licitacoe {
     required this.updatedAt,
   });
 
-  factory Licitacoe.fromMap(Map<String, dynamic> row) => Licitacoe(
+  factory Licitacao.fromMap(Map<String, dynamic> row) => Licitacao(
     id: row['id'] as int,
     editalId: row['edital_id'] as int,
     municipio: row['municipio'] as String,

@@ -5,7 +5,7 @@ import 'database_service.dart';
 
 export 'models/user.dart';
 export 'models/edital.dart';
-export 'models/licitacoe.dart';
+export 'models/licitacao.dart';
 export 'models/ata.dart';
 export 'models/ajuste.dart';
 export 'models/api_log.dart';

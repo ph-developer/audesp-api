@@ -254,7 +254,7 @@ final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {
 Future<void> _confirmDelete(
   BuildContext context,
   WidgetRef ref,
-  Licitacoe licitacao,
+  Licitacao licitacao,
 ) async {
   final confirmed = await showAudespDeleteDialog(
     context: context,

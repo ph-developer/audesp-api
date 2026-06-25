@@ -5,36 +5,36 @@ class LicitacoesDao {
   final DatabaseService _db;
   LicitacoesDao(this._db);
 
-  Future<List<Licitacoe>> watchAll() async {
+  Future<List<Licitacao>> watchAll() async {
     final result = await _db.pool.execute(
       'SELECT * FROM licitacoes ORDER BY updated_at DESC',
     );
-    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+    return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<List<Licitacoe>> watchByStatus(String status) async {
+  Future<List<Licitacao>> watchByStatus(String status) async {
     final stmt = await _db.pool.prepare(
       'SELECT * FROM licitacoes WHERE status = (?) ORDER BY updated_at DESC',
     );
     final result = await stmt.execute([status]);
-    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+    return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<List<Licitacoe>> watchByEdital(int editalId) async {
+  Future<List<Licitacao>> watchByEdital(int editalId) async {
     final stmt = await _db.pool.prepare(
       'SELECT * FROM licitacoes WHERE edital_id = (?) ORDER BY updated_at DESC',
     );
     final result = await stmt.execute([editalId]);
-    return result.rows.map((r) => Licitacoe.fromMap(r.typedAssoc())).toList();
+    return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<Licitacoe?> findById(int id) async {
+  Future<Licitacao?> findById(int id) async {
     final stmt = await _db.pool.prepare(
       'SELECT * FROM licitacoes WHERE id = (?)',
     );
     final result = await stmt.execute([id]);
     final rows = result.rows;
-    return rows.isEmpty ? null : Licitacoe.fromMap(rows.first.typedAssoc());
+    return rows.isEmpty ? null : Licitacao.fromMap(rows.first.typedAssoc());
   }
 
   Future<int> insertLicitacao({
