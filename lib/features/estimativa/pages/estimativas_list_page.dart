@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../estimativa_providers.dart';
@@ -20,12 +22,39 @@ class EstimativasListPage extends ConsumerStatefulWidget {
 }
 
 class _EstimativasListPageState extends ConsumerState<EstimativasListPage> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Estimativas'),
         actions: [
+          SizedBox(
+            width: 200,
+            child: AudespTextField(
+              label: 'Filtrar',
+              controller: _searchCtrl,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchCtrl.text.isEmpty
+                  ? null
+                  : AudespIconButton(
+                      tooltip: 'Limpar filtro',
+                      icon: Icons.close,
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() {});
+                      },
+                    ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
           AudespIconButton(
             icon: Icons.refresh,
             tooltip: 'Atualizar',
@@ -41,13 +70,14 @@ class _EstimativasListPageState extends ConsumerState<EstimativasListPage> {
         icon: const Icon(Icons.add),
         label: const Text('Nova Estimativa'),
       ),
-      body: const _EstimativaList(),
+      body: _EstimativaList(search: _searchCtrl.text),
     );
   }
 }
 
 class _EstimativaList extends ConsumerWidget {
-  const _EstimativaList();
+  final String search;
+  const _EstimativaList({this.search = ''});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,17 +87,29 @@ class _EstimativaList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (estimativas) {
-        if (estimativas.isEmpty) {
-          return const EmptyState(
+        final filtered = search.isEmpty
+            ? estimativas
+            : estimativas.where((e) {
+                final searchable = [
+                  'Estimativa ${e.numero}/${e.ano}',
+                  e.objeto,
+                ].join(' ');
+                return matchesLikeSearch(searchable, search);
+              }).toList();
+
+        if (filtered.isEmpty) {
+          return EmptyState(
             icon: Icons.calculate_outlined,
-            message: 'Nenhuma estimativa cadastrada',
+            message: search.isNotEmpty
+                ? 'Nenhum resultado para "$search"'
+                : 'Nenhuma estimativa cadastrada',
           );
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: estimativas.length,
+          itemCount: filtered.length,
           itemBuilder: (context, i) {
-            final estimativa = estimativas[i];
+            final estimativa = filtered[i];
             final colorScheme = Theme.of(context).colorScheme;
             final fmt = DateFormat('dd/MM/yyyy HH:mm');
 

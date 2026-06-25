@@ -18,6 +18,7 @@ import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
@@ -1218,38 +1219,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   // ── Receita ou Despesa ─────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Receita ou Despesa *',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(
-                              value: false,
-                              label: Text('Despesa'),
-                              icon: Icon(Icons.arrow_circle_up_outlined),
-                            ),
-                            ButtonSegment(
-                              value: true,
-                              label: Text('Receita'),
-                              icon: Icon(Icons.arrow_circle_down_outlined),
-                            ),
-                          ],
-                          selected: {_receita},
-                          onSelectionChanged: readOnly
-                              ? null
-                              : (v) => setState(() => _receita = v.first),
-                        ),
-                      ],
+                    child: AudespSegmentedButton<bool>(
+                      label: 'Receita ou Despesa *',
+                      segments: const {
+                        false: 'Despesa',
+                        true: 'Receita',
+                      },
+                      icons: const {
+                        false: Icons.arrow_circle_up_outlined,
+                        true: Icons.arrow_circle_down_outlined,
+                      },
+                      selected: {_receita},
+                      onSelectionChanged: readOnly
+                          ? null
+                          : (v) => setState(() => _receita = v.first),
                     ),
                   ),
                 ],

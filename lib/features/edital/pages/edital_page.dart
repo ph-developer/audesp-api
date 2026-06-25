@@ -5,12 +5,15 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
-import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../edital_providers.dart'
     show editaisDraftProvider, editaisEnviadosProvider;
@@ -25,6 +28,13 @@ class EditalPage extends ConsumerStatefulWidget {
 
 class _EditalPageState extends ConsumerState<EditalPage> {
   String _statusFilter = 'draft';
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,27 +44,39 @@ class _EditalPageState extends ConsumerState<EditalPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-            child: SizedBox(
-              width: 160,
-              child: AudespDropdown<String>.items(
-                label: 'Status',
-                value: _statusFilter,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'draft',
-                    child: Text('Rascunhos', overflow: TextOverflow.ellipsis),
-                  ),
-                  DropdownMenuItem(
-                    value: 'sent',
-                    child: Text('Enviados', overflow: TextOverflow.ellipsis),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _statusFilter = v);
-                  }
-                },
-              ),
+            child: AudespSegmentedButton<String>(
+              width: 260,
+              segments: const {
+                'draft': 'Rascunhos',
+                'sent': 'Enviados',
+              },
+              icons: const {
+                'draft': Icons.edit_note,
+                'sent': Icons.check_circle_outline,
+              },
+              selected: {_statusFilter},
+              onSelectionChanged: (v) {
+                setState(() => _statusFilter = v.first);
+              },
+            ),
+          ),
+          SizedBox(
+            width: 200,
+            child: AudespTextField(
+              label: 'Filtrar',
+              controller: _searchCtrl,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchCtrl.text.isEmpty
+                  ? null
+                  : AudespIconButton(
+                      tooltip: 'Limpar filtro',
+                      icon: Icons.close,
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() {});
+                      },
+                    ),
+              onChanged: (_) => setState(() {}),
             ),
           ),
           AudespIconButton(
@@ -68,19 +90,21 @@ class _EditalPageState extends ConsumerState<EditalPage> {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: HoverExpandFab(
+        heroTag: 'novoEdital',
         onPressed: () => context.go('/edital/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Edital'),
+        icon: Icons.add,
+        tooltip: 'Novo Edital',
       ),
-      body: _EditalList(status: _statusFilter),
+      body: _EditalList(status: _statusFilter, search: _searchCtrl.text),
     );
   }
 }
 
 class _EditalList extends ConsumerWidget {
   final String status;
-  const _EditalList({required this.status});
+  final String search;
+  const _EditalList({required this.status, this.search = ''});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -92,21 +116,35 @@ class _EditalList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (editais) {
-        if (editais.isEmpty) {
+        final filtered = search.isEmpty
+            ? editais
+            : editais.where((e) {
+                final searchable = [
+                  e.codigoEdital,
+                  e.idContratacaoPNCP,
+                  e.objetoCompra,
+                  e.modalidadeLabel,
+                ].join(' ');
+                return matchesLikeSearch(searchable, search);
+              }).toList();
+
+        if (filtered.isEmpty) {
           return EmptyState(
             icon: status == 'draft'
                 ? Icons.article_outlined
                 : Icons.check_circle_outline,
-            message: status == 'draft'
-                ? 'Nenhum rascunho de edital'
-                : 'Nenhum edital enviado',
+            message: search.isNotEmpty
+                ? 'Nenhum resultado para "$search"'
+                : status == 'draft'
+                    ? 'Nenhum rascunho de edital'
+                    : 'Nenhum edital enviado',
           );
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: editais.length,
+          itemCount: filtered.length,
           itemBuilder: (context, i) {
-            final edital = editais[i];
+            final edital = filtered[i];
             final isSent = edital.status == 'sent';
             final colorScheme = Theme.of(context).colorScheme;
             final fmt = DateFormat('dd/MM/yyyy HH:mm');

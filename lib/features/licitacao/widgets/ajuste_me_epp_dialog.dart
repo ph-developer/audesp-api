@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 
 /// Abre o diálogo de ajuste em lote do enquadramento ME/EPP.
 ///
@@ -97,12 +98,12 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        SegmentedButton<int>(
-                          segments: const [
-                            ButtonSegment(value: 1, label: Text('ME')),
-                            ButtonSegment(value: 2, label: Text('EPP')),
-                            ButtonSegment(value: 3, label: Text('NÃO')),
-                          ],
+                        AudespSegmentedButton<int>(
+                          segments: const {
+                            1: 'ME',
+                            2: 'EPP',
+                            3: 'NÃO',
+                          },
                           selected: {_status[ni] ?? 3},
                           onSelectionChanged: (s) =>
                               setState(() => _status[ni] = s.first),

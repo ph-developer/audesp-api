@@ -7,6 +7,7 @@ import '../../../core/constants/template_constants.dart';
 import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_async_button.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../estimativa/models/estimativa_model.dart';
 import '../../estimativa/widgets/estimativa_import_dialog.dart';
 import '../csv/csv.dart';
@@ -303,19 +304,15 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: SegmentedButton<PortalType>(
-                segments: const [
-                  ButtonSegment(
-                    value: PortalType.bll,
-                    label: Text('BLL'),
-                    icon: Icon(Icons.source_outlined),
-                  ),
-                  ButtonSegment(
-                    value: PortalType.brConectado,
-                    label: Text('BRConectado'),
-                    icon: Icon(Icons.source_outlined),
-                  ),
-                ],
+              child: AudespSegmentedButton<PortalType>(
+                segments: const {
+                  PortalType.bll: 'BLL',
+                  PortalType.brConectado: 'BRConectado',
+                },
+                icons: const {
+                  PortalType.bll: Icons.source_outlined,
+                  PortalType.brConectado: Icons.source_outlined,
+                },
                 selected: {_portal},
                 onSelectionChanged: _loading
                     ? null
@@ -353,19 +350,15 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
             ],
             const SizedBox(height: 16),
             Center(
-              child: SegmentedButton<ComplementoType>(
-                segments: const [
-                  ButtonSegment(
-                    value: ComplementoType.planilha,
-                    label: Text('Planilha'),
-                    icon: Icon(Icons.upload_file_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ComplementoType.estimativa,
-                    label: Text('Estimativa'),
-                    icon: Icon(Icons.calculate_outlined),
-                  ),
-                ],
+              child: AudespSegmentedButton<ComplementoType>(
+                segments: const {
+                  ComplementoType.planilha: 'Planilha',
+                  ComplementoType.estimativa: 'Estimativa',
+                },
+                icons: const {
+                  ComplementoType.planilha: Icons.upload_file_outlined,
+                  ComplementoType.estimativa: Icons.calculate_outlined,
+                },
                 selected: {_complementoType},
                 onSelectionChanged: _loading
                     ? null

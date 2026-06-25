@@ -7,6 +7,7 @@ import '../../../core/constants/template_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/template_generator.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../estimativa/models/estimativa_model.dart';
 import '../../estimativa/widgets/estimativa_import_dialog.dart';
 import '../csv/edital_csv.dart';
@@ -243,19 +244,15 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: SegmentedButton<ImportSource>(
-                segments: const [
-                  ButtonSegment(
-                    value: ImportSource.planilha,
-                    label: Text('Planilha'),
-                    icon: Icon(Icons.upload_file_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ImportSource.estimativa,
-                    label: Text('Estimativa'),
-                    icon: Icon(Icons.calculate_outlined),
-                  ),
-                ],
+              child: AudespSegmentedButton<ImportSource>(
+                segments: const {
+                  ImportSource.planilha: 'Planilha',
+                  ImportSource.estimativa: 'Estimativa',
+                },
+                icons: const {
+                  ImportSource.planilha: Icons.upload_file_outlined,
+                  ImportSource.estimativa: Icons.calculate_outlined,
+                },
                 selected: {_source},
                 onSelectionChanged: _loading
                     ? null

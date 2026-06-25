@@ -5,6 +5,7 @@ import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
@@ -146,11 +147,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'M', label: Text('Material')),
-                      ButtonSegment(value: 'S', label: Text('Serviço')),
-                    ],
+                  AudespSegmentedButton<String>(
+                    segments: const {
+                      'M': 'Material',
+                      'S': 'Serviço',
+                    },
                     selected: {_materialOuServico},
                     onSelectionChanged: (s) =>
                         setState(() => _materialOuServico = s.first),

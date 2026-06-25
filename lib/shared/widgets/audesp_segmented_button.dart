@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Wraps [SegmentedButton<T>] com um mapa de opções.
 ///
-/// Exemplo:
+/// Exemplo sem ícones:
 /// ```dart
 /// AudespSegmentedButton<String>(
 ///   label: 'Tipo',
@@ -13,24 +13,53 @@ import 'package:flutter/material.dart';
 ///   onSelectionChanged: (v) => setState(() => _tipo = v),
 /// )
 /// ```
+///
+/// Exemplo com ícones:
+/// ```dart
+/// AudespSegmentedButton<bool>(
+///   label: 'Receita ou Despesa',
+///   segments: {false: 'Despesa', true: 'Receita'},
+///   icons: {false: Icons.arrow_circle_up_outlined, true: Icons.arrow_circle_down_outlined},
+///   selected: {_receita},
+///   onSelectionChanged: (v) => setState(() => _receita = v.first),
+/// )
+/// ```
 class AudespSegmentedButton<T> extends StatelessWidget {
   final String? label;
   final Map<T, String> segments;
+  final Map<T, IconData>? icons;
   final Set<T> selected;
   final ValueChanged<Set<T>>? onSelectionChanged;
   final bool readOnly;
+  final double? width;
 
   const AudespSegmentedButton({
     super.key,
     this.label,
     required this.segments,
+    this.icons,
     required this.selected,
     this.onSelectionChanged,
     this.readOnly = false,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
+    final button = SegmentedButton<T>(
+      segments: segments.entries
+          .map(
+            (e) => ButtonSegment(
+              value: e.key,
+              label: Text(e.value),
+              icon: icons != null ? Icon(icons![e.key]) : null,
+            ),
+          )
+          .toList(),
+      selected: selected,
+      onSelectionChanged: readOnly ? null : onSelectionChanged,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -45,13 +74,7 @@ class AudespSegmentedButton<T> extends StatelessWidget {
               ),
             ),
           ),
-        SegmentedButton<T>(
-          segments: segments.entries
-              .map((e) => ButtonSegment(value: e.key, label: Text(e.value)))
-              .toList(),
-          selected: selected,
-          onSelectionChanged: readOnly ? null : onSelectionChanged,
-        ),
+        if (width != null) SizedBox(width: width, child: button) else button,
       ],
     );
   }
