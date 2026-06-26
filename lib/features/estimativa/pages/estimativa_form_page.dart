@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,7 @@ import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../edital/domain/edital_domain.dart';
 
 class EstimativaFormPage extends ConsumerStatefulWidget {
   final int? estimativaId;
@@ -37,7 +40,6 @@ class EstimativaFormPage extends ConsumerStatefulWidget {
 
 class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Larguras fixas das colunas da tabela ─────────────────────────────────
-  static const double _colLote = 50;
   static const double _colItem = 50;
   static const double _colQuant = 80;
   static const double _colUnidade = 80;
@@ -45,9 +47,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   static const double _colValorUnit = 100;
   static const double _colValorTotal = 100;
   static const double _colAcoes = 60;
-  static const double _colDescMin = 200;
-  static const double _columnSpacing = 12;
-  static const double _horizontalMargin = 8;
+  static const double _larguraDesc = 200;
+
+  double _totalTableWidth() => _colItem +
+      _larguraDesc +
+      _colQuant +
+      _colUnidade +
+      (_fornecedores.length * _colFornecedor) +
+      _colValorUnit +
+      _colValorTotal +
+      _colAcoes +
+      8; // container horizontal padding (4 each side)
 
   final _formKey = GlobalKey<FormState>();
 
@@ -207,6 +217,48 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
   // ── Seções ───────────────────────────────────────────────────────────────
 
+  // ── Helpers de renumeracao e conversao ──────────────────────────────────
+
+  List<EstimativaItem> _renumerarItens(List<EstimativaItem> itens) {
+    return [
+      for (int i = 0; i < itens.length; i++) itens[i].copyWith(numero: i + 1),
+    ];
+  }
+
+  List<EstimativaLote> _renumerarLotes(List<EstimativaLote> lotes) {
+    return [
+      for (int i = 0; i < lotes.length; i++) lotes[i].copyWith(numero: i + 1),
+    ];
+  }
+
+  List<EstimativaItem> _converterLotesToItens(List<EstimativaLote> lotes) {
+    final allItens = <EstimativaItem>[];
+    for (final lote in lotes) {
+      for (final item in lote.itens) {
+        allItens.add(
+          item.copyWith(
+            exclusivoMeEpp: lote.exclusivoMeEpp || item.exclusivoMeEpp,
+          ),
+        );
+      }
+    }
+    return _renumerarItens(allItens);
+  }
+
+  EstimativaLote _converterItensToSingleLote(List<EstimativaItem> itens) {
+    final primeiroItem = itens.first;
+    return EstimativaLote(
+      numero: 1,
+      descricao: 'LOTE 01',
+      quantidade: 1,
+      unidade: 'LOTE',
+      materialOuServico: primeiroItem.materialOuServico,
+      itemCategoriaId: primeiroItem.itemCategoriaId,
+      exclusivoMeEpp: itens.any((i) => i.exclusivoMeEpp),
+      itens: _renumerarItens(itens),
+    );
+  }
+
   Widget _buildCabecalho() {
     return SectionCard(
       title: 'Dados da Estimativa',
@@ -252,14 +304,24 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 items: const {'item': 'Por Item', 'lote': 'Por Lote'},
                 onChanged: (v) async {
                   if (v != null && v != _tipoEstimativa) {
-                    if (_itens.isNotEmpty || _lotes.isNotEmpty) {
+                    final hasItens = _itens.isNotEmpty;
+                    final hasLotes = _lotes.isNotEmpty;
+
+                    if (hasItens || hasLotes) {
+                      String mensagem;
+                      if (_tipoEstimativa == 'item' && v == 'lote') {
+                        mensagem =
+                            'Será criado um único lote (LOTE 01) com todos os itens existentes. Deseja continuar?';
+                      } else {
+                        mensagem =
+                            'Os itens serão separados avulsos, removendo a estrutura de lotes. Deseja continuar?';
+                      }
+
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Alterar Tipo de Estimativa?'),
-                          content: const Text(
-                            'Ao alterar o tipo de estimativa, todos os itens e lotes já adicionados serão apagados. Deseja continuar?',
-                          ),
+                          content: Text(mensagem),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
@@ -272,14 +334,21 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           ],
                         ),
                       );
-                      if (confirm != true) {
-                        return;
-                      }
+                      if (confirm != true) return;
                     }
+
                     setState(() {
                       _tipoEstimativa = v;
-                      _itens.clear();
-                      _lotes.clear();
+                      if (_tipoEstimativa == 'lote' &&
+                          _itens.isNotEmpty &&
+                          _lotes.isEmpty) {
+                        _lotes = [_converterItensToSingleLote(_itens)];
+                        _itens = [];
+                      } else if (_tipoEstimativa == 'item' &&
+                          _lotes.isNotEmpty) {
+                        _itens = _converterLotesToItens(_lotes);
+                        _lotes = [];
+                      }
                     });
                   }
                 },
@@ -301,11 +370,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 },
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
+            const SizedBox(width: 16),
             Expanded(
               child: AudespDropdown<bool>(
                 label: 'Registro de Preços? *',
@@ -316,26 +381,20 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: AudespDropdown<bool>(
-                label: 'Exige Garantia? *',
-                value: _temGarantia,
-                items: const {true: 'Sim', false: 'Não'},
-                onChanged: (v) => setState(() => _temGarantia = v ?? false),
+              child: AudespDropdown<String>(
+                label: 'Exclusividade ME/EPP *',
+                value: _exclusividadeMeEpp,
+                items: const {
+                  'nenhuma': 'Não exclusiva para ME/EPP',
+                  'exclusiva': 'Exclusiva para ME/EPP (Art. 48, I)',
+                  'reservada': 'Itens/Lotes reservados (Art. 48, III)',
+                },
+                onChanged: (v) =>
+                    setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
               ),
             ),
           ],
         ),
-        if (_temGarantia) ...[
-          const SizedBox(height: 12),
-          AudespTextField(
-            label: 'Período da Garantia *',
-            controller: _periodoGarantiaCtrl,
-            hintText: 'Ex: 12 meses',
-            validator: (v) => (_temGarantia && (v == null || v.trim().isEmpty))
-                ? 'Obrigatório'
-                : null,
-          ),
-        ],
         const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,19 +418,29 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AudespDropdown<bool>(
+                label: 'Exige Garantia? *',
+                value: _temGarantia,
+                items: const {true: 'Sim', false: 'Não'},
+                onChanged: (v) => setState(() => _temGarantia = v ?? false),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AudespTextField(
+                label: 'Período da Garantia *',
+                controller: _periodoGarantiaCtrl,
+                hintText: 'Ex: 12 meses',
+                enabled: _temGarantia,
+                validator: (v) =>
+                    (_temGarantia && (v == null || v.trim().isEmpty))
+                    ? 'Obrigatório'
+                    : null,
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 16),
-        AudespDropdown<String>(
-          label: 'Exclusividade ME/EPP *',
-          value: _exclusividadeMeEpp,
-          items: const {
-            'nenhuma': 'Não exclusiva para ME/EPP',
-            'exclusiva': 'Exclusiva para ME/EPP (Art. 48, I)',
-            'reservada': 'Itens/Lotes reservados para ME/EPP (Art. 48, III)',
-          },
-          onChanged: (v) =>
-              setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
         ),
       ],
     );
@@ -465,19 +534,18 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           label: const Text('Incluir Fornecedor'),
         ),
         const SizedBox(width: 8),
-        TextButton.icon(
-          onPressed: _addItem,
-          icon: const Icon(Icons.add),
-          label: const Text('Incluir Item'),
-        ),
-        if (isLote) ...[
-          const SizedBox(width: 8),
+        if (isLote)
           TextButton.icon(
             onPressed: _addLote,
             icon: const Icon(Icons.add_to_photos),
             label: const Text('Incluir Lote'),
+          )
+        else
+          TextButton.icon(
+            onPressed: _addItem,
+            icon: const Icon(Icons.add),
+            label: const Text('Incluir Item'),
           ),
-        ],
       ],
       children: [
         if ((isLote && _lotes.isEmpty) || (!isLote && _itens.isEmpty))
@@ -487,153 +555,23 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: Text('Nenhum item ou lote adicionado.'),
             ),
           )
+        else if (isLote)
+          _buildLotesList(fmt)
         else
           LayoutBuilder(
             builder: (context, constraints) {
-              final int totalCols =
-                  2 + // Item + Descrição
-                  1 + // Quantidade
-                  1 + // Unidade
-                  _fornecedores.length +
-                  1 + // Valor Unitário
-                  1 + // Valor Total
-                  1; // Ações
-              final double totalSpacing =
-                  _columnSpacing * (totalCols - 1).toDouble();
-              final double totalMargin = _horizontalMargin * 2;
-
-              final double outrasColunas =
-                  (isLote ? _colLote : 0) +
-                  _colItem +
-                  _colQuant +
-                  _colUnidade +
-                  (_fornecedores.length * _colFornecedor) +
-                  _colValorUnit +
-                  _colValorTotal +
-                  _colAcoes +
-                  totalSpacing +
-                  totalMargin;
-
-              final double larguraDisponivel = constraints.maxWidth;
-              final double espacoRestante = larguraDisponivel - outrasColunas;
-              final double larguraDesc = espacoRestante > _colDescMin
-                  ? espacoRestante
-                  : _colDescMin;
-
+              final tableWidth = math.max(
+                _totalTableWidth(),
+                constraints.maxWidth,
+              );
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: larguraDisponivel),
-                  child: DataTable(
-                    horizontalMargin: _horizontalMargin,
-                    headingRowColor: WidgetStateProperty.resolveWith(
-                      (states) => Colors.transparent,
-                    ),
-                    headingRowHeight: 40,
-                    dataRowMinHeight: 36,
-                    dataRowMaxHeight: double.infinity,
-                    columnSpacing: _columnSpacing,
-                    columns: [
-                      if (isLote)
-                        DataColumn(
-                          label: SizedBox(
-                            width: _colLote,
-                            child: Center(
-                              child: const Text(
-                                'Lote',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        ),
-                      DataColumn(
-                        label: SizedBox(
-                          width: _colItem,
-                          child: Center(
-                            child: const Text(
-                              'Item',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Descrição',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: SizedBox(
-                          width: _colQuant,
-                          child: Center(
-                            child: const Text(
-                              'Quantidade',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: SizedBox(
-                          width: _colUnidade,
-                          child: Center(
-                            child: const Text(
-                              'Unidade',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      ..._fornecedores.map((f) {
-                        return DataColumn(
-                          label: SizedBox(
-                            width: _colFornecedor,
-                            child: HoverCellText(
-                              text: f.razaoSocial.isNotEmpty
-                                  ? f.razaoSocial
-                                  : 'Novo Fornecedor',
-                              onTap: () => _showFornecedorDialog(f),
-                              tooltip:
-                                  '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        );
-                      }),
-                      DataColumn(
-                        label: SizedBox(
-                          width: _colValorUnit,
-                          child: Center(
-                            child: const Text(
-                              'Valor Unitário',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: SizedBox(
-                          width: _colValorTotal,
-                          child: Center(
-                            child: const Text(
-                              'Valor Total',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const DataColumn(label: Text('')),
-                    ],
-                    rows: _buildTableRows(fmt, larguraDesc),
-                  ),
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(children: [
+                    _buildTableHeader(fmt),
+                    _buildItensList(fmt),
+                  ]),
                 ),
               );
             },
@@ -695,47 +633,298 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (res != null) setState(() => _itens[i] = res);
   }
 
-  List<DataRow> _buildTableRows(NumberFormat fmt, double larguraDesc) {
-    final isLote = _tipoEstimativa == 'lote';
-    final rows = <DataRow>[];
-
-    if (isLote) {
-      for (int l = 0; l < _lotes.length; l++) {
-        final lote = _lotes[l];
-        for (int i = 0; i < lote.itens.length; i++) {
-          rows.add(
-            _buildDataRow(
-              item: lote.itens[i],
-              loteIndex: l,
-              itemIndex: i,
-              isLote: true,
-              larguraDesc: larguraDesc,
-            ),
-          );
-        }
-      }
-    } else {
-      for (int i = 0; i < _itens.length; i++) {
-        rows.add(
-          _buildDataRow(
-            item: _itens[i],
-            loteIndex: null,
-            itemIndex: i,
-            isLote: false,
-            larguraDesc: larguraDesc,
-          ),
-        );
-      }
+  Future<void> _addLoteItem(int loteIndex) async {
+    final lote = _lotes[loteIndex];
+    final res = await showEstimativaItemDialog(
+      context: context,
+      estimativaTipo: 'lote',
+      calculoGlobal: _calculoGlobal,
+      nextNumero: lote.itens.length + 1,
+    );
+    if (res != null) {
+      setState(() {
+        final newItens = List<EstimativaItem>.from(lote.itens)..add(res);
+        _lotes[loteIndex] = lote.copyWith(itens: _renumerarItens(newItens));
+      });
     }
-    return rows;
   }
 
-  DataRow _buildDataRow({
+  void _reorderItens(int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) newIndex -= 1;
+      final item = _itens.removeAt(oldIndex);
+      _itens.insert(newIndex, item);
+      _itens = _renumerarItens(_itens);
+    });
+  }
+
+  void _reorderLotes(int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) newIndex -= 1;
+      final lote = _lotes.removeAt(oldIndex);
+      _lotes.insert(newIndex, lote);
+      _lotes = _renumerarLotes(_lotes);
+    });
+  }
+
+  void _reorderLoteItens(int loteIndex, int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) newIndex -= 1;
+      final lote = _lotes[loteIndex];
+      final newItens = List<EstimativaItem>.from(lote.itens);
+      final item = newItens.removeAt(oldIndex);
+      newItens.insert(newIndex, item);
+      _lotes[loteIndex] = lote.copyWith(itens: _renumerarItens(newItens));
+    });
+  }
+
+  Widget _buildTableHeader(NumberFormat fmt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: _tipoEstimativa == 'item'
+            ? const BorderRadius.vertical(top: Radius.circular(8))
+            : null,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _colItem,
+            child: const Center(
+              child: Text(
+                'Item',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: _larguraDesc),
+              child: const Text(
+                'Descrição',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: _colQuant,
+            child: const Center(
+              child: Text(
+                'Quantidade',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: _colUnidade,
+            child: const Center(
+              child: Text(
+                'Unidade',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          ..._fornecedores.map((f) {
+            return SizedBox(
+              width: _colFornecedor,
+              child: HoverCellText(
+                text: f.razaoSocial.isNotEmpty
+                    ? f.razaoSocial
+                    : 'Novo Fornecedor',
+                onTap: () => _showFornecedorDialog(f),
+                tooltip:
+                    '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+          SizedBox(
+            width: _colValorUnit,
+            child: const Center(
+              child: Text(
+                'Valor Unitário',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: _colValorTotal,
+            child: const Center(
+              child: Text(
+                'Valor Total',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(width: _colAcoes),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItensList(NumberFormat fmt) {
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _itens.length,
+      onReorder: _reorderItens,
+      itemBuilder: (context, index) {
+        final item = _itens[index];
+        return _buildItemRow(
+          item: item,
+          loteIndex: null,
+          itemIndex: index,
+          fmt: fmt,
+          key: ValueKey('item_${item.numero}_${item.descricao.hashCode}'),
+        );
+      },
+    );
+  }
+
+  Widget _buildLotesList(NumberFormat fmt) {
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _lotes.length,
+      onReorder: _reorderLotes,
+      itemBuilder: (context, loteIndex) {
+        final lote = _lotes[loteIndex];
+        final loteTotal = lote.getValorTotal(_calculoGlobal);
+        return Card(
+          key: ValueKey('lote_${lote.numero}_${lote.descricao.hashCode}'),
+          margin: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InkWell(
+                onTap: () => _editLote(loteIndex),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Lote ${lote.numero} - ${lote.descricao}',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Material/Serviço: ${lote.materialOuServico == 'M' ? 'Material' : 'Serviço'} | '
+                              'Categoria: ${lote.itemCategoriaId != null ? kItemCategoria[lote.itemCategoriaId] ?? '' : ''} | '
+                              'Subtotal: ${fmt.format(loteTotal)}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ReorderableDragStartListener(
+                        index: loteIndex,
+                        child: const MouseRegion(
+                          cursor: SystemMouseCursors.move,
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Icon(Icons.drag_handle, size: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      TextButton.icon(
+                        onPressed: () => _addLoteItem(loteIndex),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Incluir Item'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final tableWidth = math.max(
+                    _totalTableWidth(),
+                    constraints.maxWidth,
+                  );
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        children: [
+                          _buildTableHeader(fmt),
+                          if (lote.itens.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                'Nenhum item neste lote.',
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          else
+                            ReorderableListView.builder(
+                              buildDefaultDragHandles: false,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: lote.itens.length,
+                              onReorder: (oldIndex, newIndex) =>
+                                  _reorderLoteItens(loteIndex, oldIndex, newIndex),
+                              itemBuilder: (context, itemIndex) {
+                                final item = lote.itens[itemIndex];
+                                return _buildItemRow(
+                                  item: item,
+                                  loteIndex: loteIndex,
+                                  itemIndex: itemIndex,
+                                  fmt: fmt,
+                                  key: ValueKey(
+                                    'lote_${loteIndex}_item_${item.numero}_${item.descricao.hashCode}',
+                                  ),
+                                  showBottomBorder: itemIndex < lote.itens.length - 1,
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildItemRow({
     required EstimativaItem item,
     required int? loteIndex,
     required int itemIndex,
-    required bool isLote,
-    required double larguraDesc,
+    required NumberFormat fmt,
+    required Key key,
+    bool showBottomBorder = true,
   }) {
     final statusIcon = item.orcamentos.length >= 3
         ? const Tooltip(
@@ -752,46 +941,45 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             child: Icon(Icons.cancel, color: Colors.red, size: 16),
           );
 
-    return DataRow(
-      cells: [
-        if (isLote)
-          DataCell(
-            SizedBox(
-              width: _colLote,
-              child: HoverCellText(
-                text: '${_lotes[loteIndex ?? 0].numero}',
-                onTap: () => _editLote(loteIndex ?? 0),
-                textAlign: TextAlign.center,
-                alignment: Alignment.center,
-              ),
-            ),
-          ),
-        DataCell(
+    return Container(
+      key: key,
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      decoration: BoxDecoration(
+        border: showBottomBorder
+            ? Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withOpacity(0.3),
+                ),
+              )
+            : null,
+      ),
+      child: Row(
+        children: [
           SizedBox(
             width: _colItem,
             child: HoverCellText(
               text: '${item.numero}',
-              onTap: () => isLote
-                  ? _editLoteItem(loteIndex ?? 0, itemIndex)
+              onTap: () => loteIndex != null
+                  ? _editLoteItem(loteIndex, itemIndex)
                   : _editItem(itemIndex),
               textAlign: TextAlign.center,
               alignment: Alignment.center,
             ),
           ),
-        ),
-        DataCell(
-          HoverCellText(
-            text: item.descricao,
-            onTap: () => isLote
-                ? _editLoteItem(loteIndex ?? 0, itemIndex)
-                : _editItem(itemIndex),
-            width: larguraDesc,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.justify,
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: _larguraDesc),
+              child: HoverCellText(
+                text: item.descricao,
+                onTap: () => loteIndex != null
+                    ? _editLoteItem(loteIndex, itemIndex)
+                    : _editItem(itemIndex),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.justify,
+              ),
+            ),
           ),
-        ),
-        DataCell(
           SizedBox(
             width: _colQuant,
             child: Center(
@@ -809,21 +997,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     ),
             ),
           ),
-        ),
-        DataCell(
           SizedBox(
             width: _colUnidade,
             child: Center(
               child: Text(item.unidade, textAlign: TextAlign.center),
             ),
           ),
-        ),
-        ..._fornecedores.map((f) {
-          final orc = item.orcamentos
-              .where((o) => o.fornecedorId == f.id)
-              .firstOrNull;
-          return DataCell(
-            SizedBox(
+          ..._fornecedores.map((f) {
+            final orc = item.orcamentos
+                .where((o) => o.fornecedorId == f.id)
+                .firstOrNull;
+            return SizedBox(
               width: _colFornecedor,
               child: Center(
                 child: HoverCellText(
@@ -838,10 +1022,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   alignment: Alignment.center,
                 ),
               ),
-            ),
-          );
-        }),
-        DataCell(
+            );
+          }),
           SizedBox(
             width: _colValorUnit,
             child: Center(
@@ -859,8 +1041,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             ),
           ),
-        ),
-        DataCell(
           SizedBox(
             width: _colValorTotal,
             child: Center(
@@ -870,25 +1050,26 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             ),
           ),
-        ),
-        DataCell(
-          Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                statusIcon,
-                const SizedBox(width: 8),
-                AudespIconButton(
-                  icon: Icons.delete,
-                  tooltip: 'Excluir Item',
-                  color: Colors.red,
-                  onPressed: () => _confirmDeleteItem(loteIndex, itemIndex),
-                ),
-              ],
+          SizedBox(
+            width: _colAcoes,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  statusIcon,
+                  const SizedBox(width: 8),
+                  AudespIconButton(
+                    icon: Icons.delete,
+                    tooltip: 'Excluir Item',
+                    color: Colors.red,
+                    onPressed: () => _confirmDeleteItem(loteIndex, itemIndex),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

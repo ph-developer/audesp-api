@@ -163,36 +163,34 @@ class _ItemDialogState extends State<_ItemDialog> {
                               },
                             ),
                           ),
-                          if (widget.estimativaTipo == 'item') ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: AudespDropdown<String>(
-                                label: 'Material/Serviço *',
-                                value: _materialOuServico,
-                                items: const {'M': 'Material', 'S': 'Serviço'},
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    setState(() => _materialOuServico = v);
-                                  }
-                                },
-                              ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AudespDropdown<String>(
+                              label: 'Material/Serviço *',
+                              value: _materialOuServico,
+                              items: const {'M': 'Material', 'S': 'Serviço'},
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _materialOuServico = v);
+                                }
+                              },
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: AudespDropdown<int>(
-                                label: 'Categoria do Item *',
-                                value: _itemCategoriaId,
-                                items: kItemCategoria,
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    setState(() => _itemCategoriaId = v);
-                                  }
-                                },
-                                validator: (v) =>
-                                    v == null ? 'Obrigatório' : null,
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AudespDropdown<int>(
+                              label: 'Categoria do Item *',
+                              value: _itemCategoriaId,
+                              items: kItemCategoria,
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _itemCategoriaId = v);
+                                }
+                              },
+                              validator: (v) =>
+                                  v == null ? 'Obrigatório' : null,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
