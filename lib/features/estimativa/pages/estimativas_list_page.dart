@@ -10,6 +10,7 @@ import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/hover_expand_fab.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
 
@@ -65,10 +66,11 @@ class _EstimativasListPageState extends ConsumerState<EstimativasListPage> {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: HoverExpandFab(
+        heroTag: 'novaEstimativa',
         onPressed: () => context.go('/estimativa/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Nova Estimativa'),
+        icon: Icons.add,
+        tooltip: 'Nova Estimativa',
       ),
       body: _EstimativaList(search: _searchCtrl.text),
     );
