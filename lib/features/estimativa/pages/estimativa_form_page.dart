@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/hover_cell_text.dart';
+import '../../../shared/widgets/hover_underline_text.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
@@ -40,6 +41,7 @@ class EstimativaFormPage extends ConsumerStatefulWidget {
 
 class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Larguras fixas das colunas da tabela ─────────────────────────────────
+  static const double _colDrag = 26;
   static const double _colItem = 50;
   static const double _colQuant = 80;
   static const double _colUnidade = 80;
@@ -49,7 +51,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   static const double _colAcoes = 60;
   static const double _larguraDesc = 200;
 
-  double _totalTableWidth() => _colItem +
+  double _totalTableWidth() =>
+      _colDrag +
+      _colItem +
       _larguraDesc +
       _colQuant +
       _colUnidade +
@@ -558,23 +562,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         else if (isLote)
           _buildLotesList(fmt)
         else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final tableWidth = math.max(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: math.max(
                 _totalTableWidth(),
-                constraints.maxWidth,
-              );
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: tableWidth,
-                  child: Column(children: [
-                    _buildTableHeader(fmt),
-                    _buildItensList(fmt),
-                  ]),
-                ),
-              );
-            },
+                MediaQuery.sizeOf(context).width,
+              ),
+              child: Column(
+                children: [_buildTableHeader(fmt), _buildItensList(fmt)],
+              ),
+            ),
           ),
       ],
     );
@@ -689,6 +687,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       ),
       child: Row(
         children: [
+          const SizedBox(width: _colDrag),
           SizedBox(
             width: _colItem,
             child: const Center(
@@ -804,112 +803,114 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              InkWell(
-                onTap: () => _editLote(loteIndex),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
                 ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
                   ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Lote ${lote.numero} - ${lote.descricao}',
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Material/Serviço: ${lote.materialOuServico == 'M' ? 'Material' : 'Serviço'} | '
-                              'Categoria: ${lote.itemCategoriaId != null ? kItemCategoria[lote.itemCategoriaId] ?? '' : ''} | '
-                              'Subtotal: ${fmt.format(loteTotal)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ReorderableDragStartListener(
-                        index: loteIndex,
-                        child: const MouseRegion(
-                          cursor: SystemMouseCursors.move,
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(Icons.drag_handle, size: 20),
+                ),
+                child: Row(
+                  children: [
+                    ReorderableDragStartListener(
+                      index: loteIndex,
+                      child: const MouseRegion(
+                        cursor: SystemMouseCursors.move,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            right: 8.0,
+                            top: 8.0,
+                            bottom: 8.0,
                           ),
+                          child: Icon(Icons.drag_indicator, size: 20),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      TextButton.icon(
-                        onPressed: () => _addLoteItem(loteIndex),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Incluir Item'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final tableWidth = math.max(
-                    _totalTableWidth(),
-                    constraints.maxWidth,
-                  );
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: tableWidth,
+                    ),
+                    Expanded(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildTableHeader(fmt),
-                          if (lote.itens.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text(
-                                'Nenhum item neste lote.',
-                                textAlign: TextAlign.center,
-                              ),
-                            )
-                          else
-                            ReorderableListView.builder(
-                              buildDefaultDragHandles: false,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: lote.itens.length,
-                              onReorder: (oldIndex, newIndex) =>
-                                  _reorderLoteItens(loteIndex, oldIndex, newIndex),
-                              itemBuilder: (context, itemIndex) {
-                                final item = lote.itens[itemIndex];
-                                return _buildItemRow(
-                                  item: item,
-                                  loteIndex: loteIndex,
-                                  itemIndex: itemIndex,
-                                  fmt: fmt,
-                                  key: ValueKey(
-                                    'lote_${loteIndex}_item_${item.numero}_${item.descricao.hashCode}',
-                                  ),
-                                  showBottomBorder: itemIndex < lote.itens.length - 1,
-                                );
-                              },
-                            ),
+                          HoverUnderlineText(
+                            text: 'Lote ${lote.numero} - ${lote.descricao}',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                            onTap: () => _editLote(loteIndex),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${lote.materialOuServico == 'M' ? 'Material' : 'Serviço'} | '
+                            '${lote.itemCategoriaId != null ? kItemCategoria[lote.itemCategoriaId] ?? '' : ''} | '
+                            '${formatNumberBR(lote.quantidade)} ${lote.unidade} | '
+                            '${fmt.format(loteTotal)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ],
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(width: 4),
+                    TextButton.icon(
+                      onPressed: () => _addLoteItem(loteIndex),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Incluir Item'),
+                    ),
+                    const SizedBox(width: 4),
+                    AudespIconButton(
+                      icon: Icons.delete,
+                      tooltip: 'Excluir Lote',
+                      color: Colors.red,
+                      onPressed: () => _confirmDeleteLote(loteIndex),
+                    ),
+                  ],
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: math.max(
+                    _totalTableWidth(),
+                    MediaQuery.sizeOf(context).width,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildTableHeader(fmt),
+                      if (lote.itens.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            'Nenhum item neste lote.',
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      else
+                        ReorderableListView.builder(
+                          buildDefaultDragHandles: false,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: lote.itens.length,
+                          onReorder: (oldIndex, newIndex) =>
+                              _reorderLoteItens(loteIndex, oldIndex, newIndex),
+                          itemBuilder: (context, itemIndex) {
+                            final item = lote.itens[itemIndex];
+                            return _buildItemRow(
+                              item: item,
+                              loteIndex: loteIndex,
+                              itemIndex: itemIndex,
+                              fmt: fmt,
+                              key: ValueKey(
+                                'lote_${loteIndex}_item_${item.numero}_${item.descricao.hashCode}',
+                              ),
+                              showBottomBorder:
+                                  itemIndex < lote.itens.length - 1,
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -955,6 +956,16 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       ),
       child: Row(
         children: [
+          ReorderableDragStartListener(
+            index: itemIndex,
+            child: const MouseRegion(
+              cursor: SystemMouseCursors.move,
+              child: SizedBox(
+                width: _colDrag,
+                child: Center(child: Icon(Icons.drag_indicator, size: 18)),
+              ),
+            ),
+          ),
           SizedBox(
             width: _colItem,
             child: HoverCellText(
@@ -1044,10 +1055,19 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           SizedBox(
             width: _colValorTotal,
             child: Center(
-              child: Text(
-                formatBRL(item.getValorTotal(_calculoGlobal)),
-                textAlign: TextAlign.center,
-              ),
+              child: item.tipoFornecimento == 'mensal'
+                  ? Tooltip(
+                      message:
+                          '${formatBRL(item.getValorMensal(_calculoGlobal))}/mês',
+                      child: Text(
+                        formatBRL(item.getValorTotal(_calculoGlobal)),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Text(
+                      formatBRL(item.getValorTotal(_calculoGlobal)),
+                      textAlign: TextAlign.center,
+                    ),
             ),
           ),
           SizedBox(
@@ -1095,6 +1115,24 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           for (int i = 0; i < _itens.length; i++) {
             _itens[i] = _itens[i].copyWith(numero: i + 1);
           }
+        }
+      });
+    }
+  }
+
+  Future<void> _confirmDeleteLote(int loteIndex) async {
+    final lote = _lotes[loteIndex];
+    final confirm = await showAudespDeleteDialog(
+      context: context,
+      title: 'Excluir Lote',
+      entityName: 'lote ${lote.numero}',
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _lotes.removeAt(loteIndex);
+        for (int i = 0; i < _lotes.length; i++) {
+          _lotes[i] = _lotes[i].copyWith(numero: i + 1);
         }
       });
     }
