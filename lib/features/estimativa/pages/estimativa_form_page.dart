@@ -36,6 +36,19 @@ class EstimativaFormPage extends ConsumerStatefulWidget {
 }
 
 class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
+  // ── Larguras fixas das colunas da tabela ─────────────────────────────────
+  static const double _colLote = 50;
+  static const double _colItem = 50;
+  static const double _colQuant = 80;
+  static const double _colUnidade = 80;
+  static const double _colFornecedor = 100;
+  static const double _colValorUnit = 100;
+  static const double _colValorTotal = 100;
+  static const double _colAcoes = 60;
+  static const double _colDescMin = 200;
+  static const double _columnSpacing = 12;
+  static const double _horizontalMargin = 8;
+
   final _formKey = GlobalKey<FormState>();
 
   bool _loading = true;
@@ -475,86 +488,155 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
           )
         else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              horizontalMargin: 12,
-              headingRowColor: WidgetStateProperty.resolveWith(
-                (states) => Colors.transparent,
-              ),
-              dataRowMinHeight: 48,
-              dataRowMaxHeight: double.infinity,
-              columnSpacing: 24,
-              columns: [
-                if (isLote)
-                  const DataColumn(
-                    label: Text(
-                      'Lote',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final int totalCols =
+                  2 + // Item + Descrição
+                  1 + // Quantidade
+                  1 + // Unidade
+                  _fornecedores.length +
+                  1 + // Valor Unitário
+                  1 + // Valor Total
+                  1; // Ações
+              final double totalSpacing =
+                  _columnSpacing * (totalCols - 1).toDouble();
+              final double totalMargin = _horizontalMargin * 2;
+
+              final double outrasColunas =
+                  (isLote ? _colLote : 0) +
+                  _colItem +
+                  _colQuant +
+                  _colUnidade +
+                  (_fornecedores.length * _colFornecedor) +
+                  _colValorUnit +
+                  _colValorTotal +
+                  _colAcoes +
+                  totalSpacing +
+                  totalMargin;
+
+              final double larguraDisponivel = constraints.maxWidth;
+              final double espacoRestante = larguraDisponivel - outrasColunas;
+              final double larguraDesc = espacoRestante > _colDescMin
+                  ? espacoRestante
+                  : _colDescMin;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: larguraDisponivel),
+                  child: DataTable(
+                    horizontalMargin: _horizontalMargin,
+                    headingRowColor: WidgetStateProperty.resolveWith(
+                      (states) => Colors.transparent,
                     ),
-                  ),
-                const DataColumn(
-                  label: Text(
-                    'Item',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const DataColumn(
-                  label: Text(
-                    'Descrição',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const DataColumn(
-                  label: Text(
-                    'Quantidade',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const DataColumn(
-                  label: Text(
-                    'Unidade',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ..._fornecedores.map((f) {
-                  return DataColumn(
-                    label: Expanded(
-                      child: HoverCellText(
-                        text: f.razaoSocial.isNotEmpty
-                            ? f.razaoSocial
-                            : 'Novo Fornecedor',
-                        onTap: () => _showFornecedorDialog(f),
-                        tooltip:
-                            'CNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
+                    headingRowHeight: 40,
+                    dataRowMinHeight: 36,
+                    dataRowMaxHeight: double.infinity,
+                    columnSpacing: _columnSpacing,
+                    columns: [
+                      if (isLote)
+                        DataColumn(
+                          label: SizedBox(
+                            width: _colLote,
+                            child: Center(
+                              child: const Text(
+                                'Lote',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
+                      DataColumn(
+                        label: SizedBox(
+                          width: _colItem,
+                          child: Center(
+                            child: const Text(
+                              'Item',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                }),
-                const DataColumn(
-                  label: Expanded(
-                    child: Text(
-                      'Valor Unitário',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                      DataColumn(
+                        label: Text(
+                          'Descrição',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: SizedBox(
+                          width: _colQuant,
+                          child: Center(
+                            child: const Text(
+                              'Quantidade',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      DataColumn(
+                        label: SizedBox(
+                          width: _colUnidade,
+                          child: Center(
+                            child: const Text(
+                              'Unidade',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      ..._fornecedores.map((f) {
+                        return DataColumn(
+                          label: SizedBox(
+                            width: _colFornecedor,
+                            child: HoverCellText(
+                              text: f.razaoSocial.isNotEmpty
+                                  ? f.razaoSocial
+                                  : 'Novo Fornecedor',
+                              onTap: () => _showFornecedorDialog(f),
+                              tooltip:
+                                  '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        );
+                      }),
+                      DataColumn(
+                        label: SizedBox(
+                          width: _colValorUnit,
+                          child: Center(
+                            child: const Text(
+                              'Valor Unitário',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      DataColumn(
+                        label: SizedBox(
+                          width: _colValorTotal,
+                          child: Center(
+                            child: const Text(
+                              'Valor Total',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const DataColumn(label: Text('')),
+                    ],
+                    rows: _buildTableRows(fmt, larguraDesc),
                   ),
                 ),
-                const DataColumn(
-                  label: Expanded(
-                    child: Text(
-                      'Valor Total',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                const DataColumn(label: Text('')),
-              ],
-              rows: _buildTableRows(fmt),
-            ),
+              );
+            },
           ),
       ],
     );
@@ -613,7 +695,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (res != null) setState(() => _itens[i] = res);
   }
 
-  List<DataRow> _buildTableRows(NumberFormat fmt) {
+  List<DataRow> _buildTableRows(NumberFormat fmt, double larguraDesc) {
     final isLote = _tipoEstimativa == 'lote';
     final rows = <DataRow>[];
 
@@ -627,6 +709,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               loteIndex: l,
               itemIndex: i,
               isLote: true,
+              larguraDesc: larguraDesc,
             ),
           );
         }
@@ -639,6 +722,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             loteIndex: null,
             itemIndex: i,
             isLote: false,
+            larguraDesc: larguraDesc,
           ),
         );
       }
@@ -651,6 +735,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required int? loteIndex,
     required int itemIndex,
     required bool isLote,
+    required double larguraDesc,
   }) {
     final statusIcon = item.orcamentos.length >= 3
         ? const Tooltip(
@@ -671,21 +756,27 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       cells: [
         if (isLote)
           DataCell(
-            HoverCellText(
-              text: '${_lotes[loteIndex ?? 0].numero}',
-              onTap: () => _editLote(loteIndex ?? 0),
-              textAlign: TextAlign.center,
-              alignment: Alignment.center,
+            SizedBox(
+              width: _colLote,
+              child: HoverCellText(
+                text: '${_lotes[loteIndex ?? 0].numero}',
+                onTap: () => _editLote(loteIndex ?? 0),
+                textAlign: TextAlign.center,
+                alignment: Alignment.center,
+              ),
             ),
           ),
         DataCell(
-          HoverCellText(
-            text: '${item.numero}',
-            onTap: () => isLote
-                ? _editLoteItem(loteIndex ?? 0, itemIndex)
-                : _editItem(itemIndex),
-            textAlign: TextAlign.center,
-            alignment: Alignment.center,
+          SizedBox(
+            width: _colItem,
+            child: HoverCellText(
+              text: '${item.numero}',
+              onTap: () => isLote
+                  ? _editLoteItem(loteIndex ?? 0, itemIndex)
+                  : _editItem(itemIndex),
+              textAlign: TextAlign.center,
+              alignment: Alignment.center,
+            ),
           ),
         ),
         DataCell(
@@ -694,73 +785,89 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             onTap: () => isLote
                 ? _editLoteItem(loteIndex ?? 0, itemIndex)
                 : _editItem(itemIndex),
-            width: 200,
+            width: larguraDesc,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.justify,
           ),
         ),
         DataCell(
-          Center(
-            child: item.tipoFornecimento == 'mensal'
-                ? Tooltip(
-                    message: '${formatNumberBR(item.quantidade)}/mês',
-                    child: Text(
-                      '${formatNumberBR(item.quantidade * item.quantidadeMeses)} *',
+          SizedBox(
+            width: _colQuant,
+            child: Center(
+              child: item.tipoFornecimento == 'mensal'
+                  ? Tooltip(
+                      message: '${formatNumberBR(item.quantidade)}/mês',
+                      child: Text(
+                        '${formatNumberBR(item.quantidade * item.quantidadeMeses)} *',
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Text(
+                      formatNumberBR(item.quantidade),
                       textAlign: TextAlign.center,
                     ),
-                  )
-                : Text(
-                    formatNumberBR(item.quantidade),
-                    textAlign: TextAlign.center,
-                  ),
+            ),
           ),
         ),
         DataCell(
-          Center(child: Text(item.unidade, textAlign: TextAlign.center)),
+          SizedBox(
+            width: _colUnidade,
+            child: Center(
+              child: Text(item.unidade, textAlign: TextAlign.center),
+            ),
+          ),
         ),
         ..._fornecedores.map((f) {
           final orc = item.orcamentos
               .where((o) => o.fornecedorId == f.id)
               .firstOrNull;
           return DataCell(
-            Center(
-              child: HoverCellText(
-                text: orc != null ? formatBRL(orc.valorUnitario) : '-',
-                onTap: () => _showValorDialog(
-                  loteIndex: loteIndex,
-                  itemIndex: itemIndex,
-                  fornecedor: f,
-                  atual: orc,
+            SizedBox(
+              width: _colFornecedor,
+              child: Center(
+                child: HoverCellText(
+                  text: orc != null ? formatBRL(orc.valorUnitario) : '-',
+                  onTap: () => _showValorDialog(
+                    loteIndex: loteIndex,
+                    itemIndex: itemIndex,
+                    fornecedor: f,
+                    atual: orc,
+                  ),
+                  textAlign: TextAlign.center,
+                  alignment: Alignment.center,
                 ),
-                textAlign: TextAlign.center,
-                alignment: Alignment.center,
-                width: 80,
               ),
             ),
           );
         }),
         DataCell(
-          Center(
-            child: Tooltip(
-              message:
-                  'Cálculo atual: ${_calculoGlobal == 'min'
-                      ? 'Menor'
-                      : _calculoGlobal == 'avg'
-                      ? 'Média'
-                      : 'Mediana'}',
-              child: Text(
-                formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)),
-                textAlign: TextAlign.center,
+          SizedBox(
+            width: _colValorUnit,
+            child: Center(
+              child: Tooltip(
+                message:
+                    'Cálculo atual: ${_calculoGlobal == 'min'
+                        ? 'Menor'
+                        : _calculoGlobal == 'avg'
+                        ? 'Média'
+                        : 'Mediana'}',
+                child: Text(
+                  formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
         ),
         DataCell(
-          Center(
-            child: Text(
-              formatBRL(item.getValorTotal(_calculoGlobal)),
-              textAlign: TextAlign.center,
+          SizedBox(
+            width: _colValorTotal,
+            child: Center(
+              child: Text(
+                formatBRL(item.getValorTotal(_calculoGlobal)),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
