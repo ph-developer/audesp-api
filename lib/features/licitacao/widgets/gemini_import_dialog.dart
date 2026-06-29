@@ -1,98 +1,134 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../core/services/gemini_service.dart';
-import '../domain/edital_domain.dart';
+import '../domain/licitacao_domain.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Campos extraídos pelo Gemini para o Edital
+// Campos extraídos pelo Gemini para a Licitação (Fase 5)
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _kEditalFields = <GeminiField>[
+final _kLicitacaoFields = <GeminiField>[
   GeminiField(
-    key: 'dataDocumento',
-    label: 'Data do Edital',
-    hint: 'formato dd/MM/yyyy',
-  ),
-  GeminiField(
-    key: 'tipoInstrumentoConvocatorioId',
-    label: 'Tipo de Instrumento Convocatório',
+    key: 'tipoNatureza',
+    label: 'Tipo de Natureza',
     hint:
-        '1=Edital, 2=Aviso Contratação Direta, 3=Ato Contratação Direta, 4=Chamamento Público',
+        '1=Normal (padrão), 2=Concessão/permissão de uso (Lei 14.133/2024), '
+        '3=Concessão serviço público ordinária (Lei 8.987/1995), '
+        '4=PPP Patrocinada (Lei 11.079/2004), '
+        '5=PPP Administrativa (Lei 11.079/2004), '
+        '6=Permissão serviço público (Lei 8.987/1995), '
+        '7=Credenciamento (Lei 14.133/2021), '
+        '8=Registro de Preços (Lei 14.133/2021). '
+        'Use 1 (Normal) a menos que o edital mencione explicitamente outro tipo.',
   ),
   GeminiField(
-    key: 'modalidadeId',
-    label: 'Modalidade',
+    key: 'exigenciaAmostra',
+    label: 'Exigência de Amostra',
+    hint: '1=Sim, para todos os licitantes, 2=Sim, somente do vencedor, 3=Não',
+  ),
+  GeminiField(
+    key: 'exigenciaCurriculo',
+    label: 'Exigência de Currículo',
     hint:
-        '1=Leilão Eletrônico, 2=Diálogo Competitivo, 3=Concurso, 4=Concorrência Eletrônica, '
-        '5=Concorrência Presencial, 6=Pregão Eletrônico, 7=Pregão Presencial, '
-        '8=Dispensa, 9=Inexigibilidade, 12=Credenciamento, 13=Leilão Presencial, '
-        '14=Inaplicabilidade, 15=Chamada pública, 16=Concorrência Eletrônica Internacional, '
-        '17=Concorrência Presencial Internacional, 18=Pregão Eletrônico Internacional, '
-        '19=Pregão Presencial Internacional, 997=RDC, 998=Convite, 999=Tomada de Preços',
+        '"true" ou "false" (inglês), conforme exige ou não comprovação de currículo',
   ),
   GeminiField(
-    key: 'modoDisputaId',
-    label: 'Modo de Disputa',
+    key: 'exigenciaVistoCREA',
+    label: 'Exigência de Visto CREA',
     hint:
-        '1=Aberto, 2=Fechado, 3=Aberto-Fechado, 4=Dispensa com Disputa, 5=Não se aplica, 6=Fechado-Aberto',
+        '"true" ou "false" (inglês), conforme exige ou não visto CREA na habilitação',
   ),
   GeminiField(
-    key: 'criterioJulgamentoId',
-    label: 'Critério de Julgamento',
+    key: 'exigenciaVisitaTecnica',
+    label: 'Exigência de Visita Técnica',
+    hint: '1=Sim, 2=Não',
+  ),
+  GeminiField(
+    key: 'exigenciaGarantiaLicitantes',
+    label: 'Exigência de Garantia de Execução Contratual',
     hint:
-        '1=Menor preço, 2=Maior desconto, 4=Técnica e preço, 5=Maior lance, '
-        '6=Maior retorno econômico, 7=Não se aplica, 8=Melhor técnica, '
-        '9=Conteúdo artístico, 1000=Melhor destinação de bens alienados, '
-        '1001=Maior oferta de preço',
+        '1=Sim (exige garantia de execução contratual, caução, ou seguro-garantia dos licitantes), '
+        '2=Não',
   ),
   GeminiField(
-    key: 'numeroCompra',
-    label: 'Número da Compra',
+    key: 'percentualGarantia',
+    label: 'Percentual de Garantia',
     hint:
-        'apenas o número sequencial, sem o ano. Ex.: se for "14/2024", extraia "14"',
-  ),
-  GeminiField(key: 'anoCompra', label: 'Ano da Compra', hint: 'formato YYYY'),
-  GeminiField(key: 'numeroProcesso', label: 'Número do Processo'),
-  GeminiField(
-    key: 'objetoCompra',
-    label: 'Objeto da Contratação',
-    hint: 'descrição resumida do objeto',
+        'Percentual exigido de garantia de execução contratual, caução ou seguro-garantia exigido. Ex.: "5" para 5%. Deixe vazio se não informado.',
   ),
   GeminiField(
-    key: 'srp',
-    label: 'SRP – Sistema de Registro de Preços',
-    hint: 'APENAS "true" ou "false" (inglês), nunca "sim" ou "não"',
-  ),
-  GeminiField(
-    key: 'amparoLegalId',
-    label: 'Amparo Legal',
+    key: 'quitacaoTributosFederais',
+    label: 'Quitação Tributos Federais',
     hint:
-        'código numérico APENAS, sem texto. Use o mapeamento abaixo para '
-        'encontrar o código que corresponde ao dispositivo legal mencionado no edital:\n'
-        '${kAmparosLegais.entries.map((e) => '${e.key} = ${e.value}').join('\n')}',
+        '"true" se o edital exige certidão negativa federal na habilitação, "false" caso contrário',
   ),
   GeminiField(
-    key: 'dataAberturaProposta',
-    label: 'Data/Hora de Abertura das Propostas',
-    hint: 'formato dd/MM/yyyy HH:mm',
+    key: 'quitacaoTributosEstaduais',
+    label: 'Quitação Tributos Estaduais',
+    hint:
+        '"true" se o edital exige certidão negativa estadual na habilitação, "false" caso contrário',
   ),
   GeminiField(
-    key: 'dataEncerramentoProposta',
-    label: 'Data/Hora de Encerramento das Propostas',
-    hint: 'formato dd/MM/yyyy HH:mm',
+    key: 'quitacaoTributosMunicipais',
+    label: 'Quitação Tributos Municipais',
+    hint:
+        '"true" se o edital exige certidão negativa municipal na habilitação, "false" caso contrário',
+  ),
+  GeminiField(
+    key: 'fonteRecursosContratacao',
+    label: 'Fontes de Recurso',
+    hint:
+        'Lista separada por vírgulas dos códigos numéricos. Ex.: "1, 5, 8". '
+        '1=Tesouro, 2=Transferências e Convênios Estaduais - Vinculados, '
+        '3=Recursos Próprios de Fundos Especiais, 4=Recursos Próprios da Adm. Indireta, '
+        '5=Transferências e Convênios Federais - Vinculados, 6=Outras Fontes, '
+        '7=Operações de Crédito, 8=Emendas Parlamentares Individuais',
+  ),
+  GeminiField(
+    key: 'exigenciaIndicesEconomicos',
+    label: 'Exigência de Índices Econômicos',
+    hint: '1=Sim (exige índices econômicos na habilitação), 2=Não',
+  ),
+  GeminiField(
+    key: 'indicesEconomicos',
+    label: 'Índices Econômicos (detalhes)',
+    hint:
+        'JSON array com os índices exigidos, SOMENTE se exigenciaIndicesEconomicos for 1. '
+        'Formato: [{"tipoIndice": N, "valorIndice": V.0, "nomeIndice": "..."}]. '
+        'tipoIndice: 1=Capital Social Mínimo, 2=Endividamento Curto Prazo, '
+        '3=Endividamento Total, 4=Liquidez Corrente, 5=Liquidez Geral, '
+        '6=Liquidez Imediata, 7=Liquidez Seca, 8=Outro. '
+        'Se for tipo 8, inclua "nomeIndice" com o nome personalizado. '
+        'Ex.: [{"tipoIndice": 1, "valorIndice": 150000.0}, {"tipoIndice": 4, "valorIndice": 1.5}]',
+  ),
+  GeminiField(key: 'recursoBID', label: 'Recurso BID', hint: '1=Sim, 2=Não'),
+  GeminiField(
+    key: 'audienciaPublica',
+    label: 'Audiência Pública',
+    hint: '1=Sim (haverá sessão de lances), 2=Não',
   ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper — remove prefixo numérico de labels como "1 – Edital" → "Edital"
+// Helpers de exibição
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Remove o prefixo numérico de labels como "1 – Normal" → "Normal".
 String _stripIdPrefix(String value) {
   final match = RegExp(r'^\d+\s*[–-]\s*').firstMatch(value);
   return match != null ? value.substring(match.end) : value;
+}
+
+/// Ajusta o ID pra 2 dígitos: "1 – Tesouro" → "01 – Tesouro".
+String _padFonteLabel(int id, String label) {
+  final padded = id.toString().padLeft(2, '0');
+  final match = RegExp(r'^\d+\s*[–-]\s*').firstMatch(label);
+  return match != null ? '$padded – ${label.substring(match.end)}' : label;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,32 +138,87 @@ String _stripIdPrefix(String value) {
 String _displayValue(String key, String raw) {
   if (raw.isEmpty) return raw;
   switch (key) {
-    case 'srp':
+    case 'exigenciaCurriculo':
+    case 'exigenciaVistoCREA':
+    case 'quitacaoTributosFederais':
+    case 'quitacaoTributosEstaduais':
+    case 'quitacaoTributosMunicipais':
       if (['true', 'sim'].contains(raw.toLowerCase())) return 'Sim';
       if (['false', 'não', 'nao'].contains(raw.toLowerCase())) return 'Não';
       return raw;
-    case 'tipoInstrumentoConvocatorioId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kTipoInstrumento[id] ?? raw)) : raw;
-    }
-    case 'modalidadeId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kModalidades[id] ?? raw)) : raw;
-    }
-    case 'modoDisputaId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kModoDisputa[id] ?? raw)) : raw;
-    }
-    case 'criterioJulgamentoId': {
-      final id = int.tryParse(raw);
-      return id != null
-          ? (_stripIdPrefix(kCriterioJulgamento[id] ?? raw))
-          : raw;
-    }
-    case 'amparoLegalId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kAmparosLegais[id] ?? raw)) : raw;
-    }
+    case 'tipoNatureza':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kTipoNatureza[id] ?? raw)) : raw;
+      }
+    case 'exigenciaAmostra':
+      {
+        final id = int.tryParse(raw);
+        return id != null
+            ? (_stripIdPrefix(kExigenciaAmostra[id] ?? raw))
+            : raw;
+      }
+    case 'exigenciaVisitaTecnica':
+      {
+        final id = int.tryParse(raw);
+        return id != null
+            ? (_stripIdPrefix(kExigenciaVisitaTecnica[id] ?? raw))
+            : raw;
+      }
+    case 'exigenciaGarantiaLicitantes':
+    case 'exigenciaIndicesEconomicos':
+    case 'audienciaPublica':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kTriState[id] ?? raw)) : raw;
+      }
+    case 'recursoBID':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kRecursoBID[id] ?? raw)) : raw;
+      }
+    case 'percentualGarantia':
+      {
+        final v = double.tryParse(raw);
+        return v != null ? '${v.toStringAsFixed(4)}%' : raw;
+      }
+    case 'fonteRecursosContratacao':
+      {
+        final parts = raw
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty);
+        final labels = parts.map((s) {
+          final id = int.tryParse(s);
+          return id != null ? _padFonteLabel(id, kFonteRecurso[id] ?? s) : s;
+        });
+        return labels.join(', ');
+      }
+    case 'indicesEconomicos':
+      try {
+        final list = jsonDecode(raw) as List;
+        final lines = list
+            .map((e) {
+              final idx = e as Map;
+              final tipo = idx['tipoIndice'];
+              final nomeTipo = tipo != null
+                  ? (_stripIdPrefix(kTipoIndice[tipo] ?? 'Tipo $tipo'))
+                  : '';
+              final valor = idx['valorIndice'];
+              final nomeExtra = idx['nomeIndice'] as String?;
+              final partes = <String>[];
+              if (nomeTipo.isNotEmpty) partes.add(nomeTipo);
+              if (nomeExtra != null && nomeExtra.isNotEmpty) {
+                partes.add('($nomeExtra)');
+              }
+              if (valor != null) partes.add(': $valor');
+              return partes.join(' ').replaceAll(' :', ':');
+            })
+            .join('\n');
+        return lines;
+      } catch (_) {
+        return raw;
+      }
     default:
       return raw;
   }
@@ -137,9 +228,9 @@ String _displayValue(String key, String raw) {
 // Função pública de entrada
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Exibe o fluxo completo de importação Gemini para o Edital:
+/// Exibe o fluxo completo de importação Gemini para a Licitação:
 /// 1. Chama o serviço com [pdfPath].
-/// 2. Exibe o dialog de revisão com os valores sugeridos x atuais.
+/// 2. Exibe o dialog de revisão com os valores sugeridos × atuais.
 /// 3. Retorna um mapa com apenas os campos aceitos pelo usuário,
 ///    ou null se a importação foi cancelada.
 ///
@@ -150,7 +241,6 @@ Future<Map<String, String>?> showGeminiImportDialog({
   required String pdfPath,
   required Map<String, String> currentValues,
 }) async {
-  // Mostra progress enquanto chama a API
   final result = await showAudespDialog<GeminiExtractionResult?>(
     context: context,
     barrierDismissible: false,
@@ -160,13 +250,12 @@ Future<Map<String, String>?> showGeminiImportDialog({
 
   if (result == null || !context.mounted) return null;
 
-  // Exibe o dialog de revisão
   return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
-      fields: _kEditalFields,
+      fields: _kLicitacaoFields,
       currentValues: currentValues,
       suggestedValues: result,
     ),
@@ -174,7 +263,7 @@ Future<Map<String, String>?> showGeminiImportDialog({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dialog 1 — Progresso (Sugestão 4)
+// Dialog 1 — Progresso (chamada à API Gemini)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _GeminiLoadingDialog extends StatefulWidget {
@@ -201,7 +290,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
       final service = widget.ref.read(geminiServiceProvider);
       final result = await service.extractFromPdf(
         pdfPath: widget.pdfPath,
-        fields: _kEditalFields,
+        fields: _kLicitacaoFields,
       );
       if (mounted) Navigator.of(context).pop(result);
     } on GeminiException catch (e) {
@@ -245,7 +334,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
                 LinearProgressIndicator(),
                 SizedBox(height: 16),
                 Text(
-                  'O Gemini está lendo o documento e extraindo os campos do edital. Aguarde…',
+                  'O Gemini está lendo o documento e extraindo os campos da licitação. Aguarde…',
                 ),
               ],
             ),
@@ -290,21 +379,23 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
   @override
   void initState() {
     super.initState();
-    // Pré-seleciona campos onde o Gemini encontrou valor e o atual está vazio.
     _accepted = {
       for (final f in widget.fields)
         f.key:
             widget.suggestedValues[f.key] != null &&
             (widget.currentValues[f.key] ?? '').isEmpty,
     };
-    // Se objetoCompra foi pré-selecionado, seleciona SRP junto
-    _syncSrpFromObjeto();
+    _syncDependentFields();
   }
 
-  void _syncSrpFromObjeto() {
-    if (_accepted['objetoCompra'] == true &&
-        widget.suggestedValues['srp'] != null) {
-      _accepted['srp'] = true;
+  void _syncDependentFields() {
+    if (_accepted['exigenciaGarantiaLicitantes'] == true &&
+        widget.suggestedValues['percentualGarantia'] != null) {
+      _accepted['percentualGarantia'] = true;
+    }
+    if (_accepted['exigenciaIndicesEconomicos'] == true &&
+        widget.suggestedValues['indicesEconomicos'] != null) {
+      _accepted['indicesEconomicos'] = true;
     }
   }
 

@@ -91,23 +91,66 @@ final _kAjusteFields = <GeminiField>[
   ),
   GeminiField(
     key: 'prazoVigenciaMeses',
-    label: 'Prazo de Vigência (meses)',
+    label: 'Prazo de Vigência',
     hint:
-        'Quantidade de meses de vigência, apenas número inteiro. Se o contrato disser "12 meses", retorne "12".',
-  ),
-  GeminiField(
-    key: 'prazoVigenciaDias',
-    label: 'Prazo de Vigência (dias)',
-    hint:
-        'Quantidade de dias de vigência, apenas número inteiro. Use somente quando a vigência estiver em dias, como "90 dias".',
+        'Prazo em meses ou dias. Se o contrato disser "12 meses", retorne o número de meses (ex.: "12"). '
+        'Se disser "90 dias", retorne o número de dias seguido de "d" (ex.: "90d"). '
+        'Se disser "1 ano", retorne o numero de meses. '
+        'Prefira sempre meses quando ambas informações estiverem disponíveis.',
   ),
   GeminiField(
     key: 'dataVigenciaFim',
     label: 'Fim da Vigência',
-    hint:
-        'formato dd/MM/yyyy. Se houver data de início e prazo de vigência, calcule a data final. Para prazo em meses, mantenha o mesmo dia da data inicial e acrescente apenas mês/ano. Para prazo em dias, some os dias à data inicial.',
+    hint: 'Campo calculado com base na data de início e no prazo de vigência.',
   ),
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper — remove prefixo numérico de labels como "1 – Contrato" → "Contrato"
+// ─────────────────────────────────────────────────────────────────────────────
+
+String _stripIdPrefix(String value) {
+  final match = RegExp(r'^\d+\s*[–-]\s*').firstMatch(value);
+  return match != null ? value.substring(match.end) : value;
+}
+
+/// Ajusta o ID pra 2 dígitos: "1 – Tesouro" → "01 – Tesouro".
+String _padFonteLabel(int id, String label) {
+  final padded = id.toString().padLeft(2, '0');
+  final match = RegExp(r'^\d+\s*[–-]\s*').firstMatch(label);
+  return match != null ? '$padded – ${label.substring(match.end)}' : label;
+}
+
+/// Calcula o fim da vigência a partir de data de início (dd/MM/yyyy) + prazo.
+/// [prazoRaw] pode ser "12" (meses) ou "90d" (dias). Retorna dd/MM/yyyy ou vazio.
+String _calcularDataVigenciaFim(String startRaw, String prazoRaw) {
+  if (startRaw.isEmpty || prazoRaw.isEmpty) return '';
+  try {
+    final parts = startRaw.split('/');
+    if (parts.length != 3) return '';
+    final dia = int.tryParse(parts[0]);
+    final mes = int.tryParse(parts[1]);
+    final ano = int.tryParse(parts[2]);
+    if (dia == null || mes == null || ano == null) return '';
+    var start = DateTime(ano, mes, dia);
+
+    if (prazoRaw.endsWith('d')) {
+      final dias = int.tryParse(prazoRaw.replaceAll(RegExp(r'\D'), ''));
+      if (dias == null || dias <= 0) return '';
+      start = DateTime(start.year, start.month, start.day + dias);
+    } else {
+      final meses = int.tryParse(prazoRaw.replaceAll(RegExp(r'\D'), ''));
+      if (meses == null || meses <= 0) return '';
+      start = DateTime(start.year, start.month + meses, start.day);
+    }
+
+    return '${start.day.toString().padLeft(2, '0')}/'
+        '${start.month.toString().padLeft(2, '0')}/'
+        '${start.year}';
+  } catch (_) {
+    return '';
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — converte valor bruto em descrição legível para a tabela de revisão
@@ -117,21 +160,61 @@ String _displayValue(String key, String raw) {
   if (raw.isEmpty) return raw;
   switch (key) {
     case 'tipoContratoId':
-      final id = int.tryParse(raw);
-      return id != null ? (kTipoContrato[id] ?? raw) : raw;
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kTipoContrato[id] ?? raw)) : raw;
+      }
     case 'categoriaProcessoId':
-      final id = int.tryParse(raw);
-      return id != null ? (kCategoriaProcesso[id] ?? raw) : raw;
+      {
+        final id = int.tryParse(raw);
+        return id != null
+            ? (_stripIdPrefix(kCategoriaProcesso[id] ?? raw))
+            : raw;
+      }
     case 'tipoObjetoContrato':
-      final id = int.tryParse(raw);
-      return id != null ? (kTipoObjetoContrato[id] ?? raw) : raw;
+      {
+        final id = int.tryParse(raw);
+        return id != null
+            ? (_stripIdPrefix(kTipoObjetoContrato[id] ?? raw))
+            : raw;
+      }
+    case 'prazoVigenciaMeses':
+      if (raw.endsWith('d')) {
+        final dias = raw.replaceAll(RegExp(r'\D'), '');
+        return '$dias dias';
+      }
+      return '$raw meses';
     case 'fonteRecursosContratacao':
       return RegExp(r'\d+')
           .allMatches(raw)
           .map((m) => int.tryParse(m.group(0)!))
           .whereType<int>()
           .where(kFonteRecursoAjuste.containsKey)
-          .map((id) => kFonteRecursoAjuste[id] ?? id.toString())
+          .map((id) => _padFonteLabel(id, kFonteRecursoAjuste[id]!))
+          .join(', ');
+    case 'niFornecedor':
+      {
+        final digits = raw.replaceAll(RegExp(r'\D'), '');
+        if (digits.length == 11) {
+          return '${digits.substring(0, 3)}.${digits.substring(3, 6)}.'
+              '${digits.substring(6, 9)}-${digits.substring(9)}';
+        } else if (digits.length == 14) {
+          return '${digits.substring(0, 2)}.${digits.substring(2, 5)}.'
+              '${digits.substring(5, 8)}/${digits.substring(8, 12)}-'
+              '${digits.substring(12)}';
+        }
+        return digits;
+      }
+    case 'despesas':
+      return raw
+          .split(RegExp(r'[,\s]+'))
+          .where((s) => s.isNotEmpty)
+          .map((s) {
+            final digits = s.replaceAll(RegExp(r'\D'), '');
+            return digits.length > 8
+                ? digits.substring(digits.length - 8)
+                : digits;
+          })
           .join(', ');
     default:
       return raw;
@@ -156,6 +239,15 @@ Future<Map<String, String>?> showGeminiAjusteImportDialog({
   );
 
   if (result == null || !context.mounted) return null;
+
+  // Calcula fim da vigência com base na data de início + prazo encontrado
+  if (result['prazoVigenciaMeses'] != null) {
+    final calc = _calcularDataVigenciaFim(
+      currentValues['dataVigenciaInicio'] ?? '',
+      result['prazoVigenciaMeses']!,
+    );
+    if (calc.isNotEmpty) result['dataVigenciaFim'] = calc;
+  }
 
   return showAudespDialog<Map<String, String>?>(
     context: context,

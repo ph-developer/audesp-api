@@ -30,6 +30,8 @@ import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
 import '../widgets/ajuste_situacao_dialog.dart';
+import '../widgets/gemini_import_dialog.dart';
+import 'package:file_picker/file_picker.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -52,6 +54,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _importingGemini = false;
   bool _isSent = false;
   int? _loadedId;
 
@@ -598,6 +601,150 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
   }
 
+  // ── Importação via IA (Gemini) ─────────────────────────────────────────
+
+  Future<void> _importFromDocument() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx'],
+    );
+    if (result == null || result.files.single.path == null) return;
+    if (!mounted) return;
+
+    setState(() => _importingGemini = true);
+    try {
+      final currentValues = <String, String>{
+        'tipoNatureza': _tipoNatureza?.toString() ?? '',
+        'exigenciaAmostra': _exigenciaAmostra?.toString() ?? '',
+        'exigenciaCurriculo': _exigenciaCurriculo?.toString() ?? '',
+        'exigenciaVistoCREA': _exigenciaVistoCREA?.toString() ?? '',
+        'exigenciaVisitaTecnica': _exigenciaVisitaTecnica?.toString() ?? '',
+        'exigenciaGarantiaLicitantes':
+            _exigenciaGarantiaLicitantes?.toString() ?? '',
+        'percentualGarantia': _percentualValorCtrl.text.trim(),
+        'quitacaoTributosFederais': _quitacaoFederal?.toString() ?? '',
+        'quitacaoTributosEstaduais': _quitacaoEstadual?.toString() ?? '',
+        'quitacaoTributosMunicipais': _quitacaoMunicipal?.toString() ?? '',
+        'fonteRecursosContratacao': _fontesRecurso.isNotEmpty
+            ? _fontesRecurso.map((e) => e.toString()).join(', ')
+            : '',
+        'exigenciaIndicesEconomicos':
+            _exigenciaIndicesEconomicos?.toString() ?? '',
+        'indicesEconomicos': _indicesEconomicos.isNotEmpty
+            ? jsonEncode(_indicesEconomicos)
+            : '',
+        'recursoBID': _recursoBID?.toString() ?? '',
+        'audienciaPublica': _audienciaPublica?.toString() ?? '',
+      };
+
+      final accepted = await showGeminiImportDialog(
+        context: context,
+        ref: ref,
+        pdfPath: result.files.single.path!,
+        currentValues: currentValues,
+      );
+
+      if (!mounted || accepted == null || accepted.isEmpty) return;
+
+      setState(() {
+        if (accepted.containsKey('tipoNatureza')) {
+          _tipoNatureza = int.tryParse(accepted['tipoNatureza']!);
+        }
+        if (accepted.containsKey('exigenciaAmostra')) {
+          _exigenciaAmostra = int.tryParse(accepted['exigenciaAmostra']!);
+        }
+        if (accepted.containsKey('exigenciaCurriculo')) {
+          _exigenciaCurriculo = ['true', 'sim'].contains(
+            accepted['exigenciaCurriculo']?.toLowerCase(),
+          );
+        }
+        if (accepted.containsKey('exigenciaVistoCREA')) {
+          _exigenciaVistoCREA = ['true', 'sim'].contains(
+            accepted['exigenciaVistoCREA']?.toLowerCase(),
+          );
+        }
+        if (accepted.containsKey('exigenciaVisitaTecnica')) {
+          _exigenciaVisitaTecnica =
+              int.tryParse(accepted['exigenciaVisitaTecnica']!);
+        }
+        if (accepted.containsKey('exigenciaGarantiaLicitantes')) {
+          _exigenciaGarantiaLicitantes =
+              int.tryParse(accepted['exigenciaGarantiaLicitantes']!);
+        }
+        if (accepted.containsKey('percentualGarantia')) {
+          _percentualValorCtrl.text = accepted['percentualGarantia']!;
+        }
+        if (accepted.containsKey('quitacaoTributosFederais')) {
+          _quitacaoFederal = ['true', 'sim'].contains(
+            accepted['quitacaoTributosFederais']?.toLowerCase(),
+          );
+        }
+        if (accepted.containsKey('quitacaoTributosEstaduais')) {
+          _quitacaoEstadual = ['true', 'sim'].contains(
+            accepted['quitacaoTributosEstaduais']?.toLowerCase(),
+          );
+        }
+        if (accepted.containsKey('quitacaoTributosMunicipais')) {
+          _quitacaoMunicipal = ['true', 'sim'].contains(
+            accepted['quitacaoTributosMunicipais']?.toLowerCase(),
+          );
+        }
+        if (accepted.containsKey('fonteRecursosContratacao')) {
+          final raw = accepted['fonteRecursosContratacao']!;
+          Set<int> parsed;
+          if (raw.trim().startsWith('[')) {
+            try {
+              final list = jsonDecode(raw) as List;
+              parsed = list
+                  .map((e) => (e is num) ? e.toInt() : int.tryParse(e.toString()))
+                  .whereType<int>()
+                  .toSet();
+            } catch (_) {
+              parsed = {};
+            }
+          } else {
+            parsed = raw
+                .split(',')
+                .map((s) => int.tryParse(s.trim()))
+                .whereType<int>()
+                .toSet();
+          }
+          if (parsed.isNotEmpty) _fontesRecurso = parsed;
+        }
+        if (accepted.containsKey('exigenciaIndicesEconomicos')) {
+          _exigenciaIndicesEconomicos =
+              int.tryParse(accepted['exigenciaIndicesEconomicos']!);
+        }
+        if (accepted.containsKey('indicesEconomicos')) {
+          try {
+            final parsed = jsonDecode(accepted['indicesEconomicos']!) as List;
+            _indicesEconomicos = parsed
+                .map((e) => Map<String, dynamic>.from(e as Map))
+                .toList();
+          } catch (_) {}
+        }
+        if (accepted.containsKey('recursoBID')) {
+          _recursoBID = int.tryParse(accepted['recursoBID']!);
+        }
+        if (accepted.containsKey('audienciaPublica')) {
+          _audienciaPublica = int.tryParse(accepted['audienciaPublica']!);
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _importingGemini = false);
+    }
+  }
+
   static Map<String, dynamic> _csvItemToMap(LicitacaoItemCsvModel item) {
     final map = <String, dynamic>{
       'numeroItem': item.numeroItem,
@@ -719,7 +866,22 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
+            else if (_importingGemini)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
             else ...[
+              TextButton.icon(
+                onPressed: _importFromDocument,
+                icon: const Icon(Icons.auto_fix_high),
+                label: const Text('Importar PDF/DOCX'),
+              ),
+              const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),

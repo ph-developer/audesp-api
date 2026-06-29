@@ -105,6 +105,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   DateTime? _dataVigenciaInicio;
   DateTime? _dataVigenciaFim;
   final _vigenciaMesesCtrl = TextEditingController();
+  int? _prazoVigenciaDias;
 
   // ── Objeto do Contrato ────────────────────────────────────────────────
   int? _tipoObjetoContrato;
@@ -713,24 +714,21 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           } catch (_) {}
         }
         if (accepted.containsKey('prazoVigenciaMeses')) {
-          final meses = _parseFirstInt(accepted['prazoVigenciaMeses']!);
-          if (meses != null) _vigenciaMesesCtrl.text = meses.toString();
+          final raw = accepted['prazoVigenciaMeses']!;
+          if (raw.endsWith('d')) {
+            final dias = _parseFirstInt(raw);
+            if (dias != null) _vigenciaMesesCtrl.text = '';
+            _prazoVigenciaDias = dias;
+          } else {
+            final meses = _parseFirstInt(raw);
+            if (meses != null) _vigenciaMesesCtrl.text = meses.toString();
+            _prazoVigenciaDias = null;
+          }
         }
-        if (accepted.containsKey('dataVigenciaFim')) {
-          try {
-            _dataVigenciaFim = DateFormat(
-              'dd/MM/yyyy',
-            ).parse(accepted['dataVigenciaFim']!);
-          } catch (_) {}
-        }
-        _dataVigenciaFim ??= _calculateVigenciaFim(
+        _dataVigenciaFim = _calculateVigenciaFim(
           start: _dataVigenciaInicio,
-          meses: accepted.containsKey('prazoVigenciaMeses')
-              ? _parseFirstInt(accepted['prazoVigenciaMeses']!)
-              : null,
-          dias: accepted.containsKey('prazoVigenciaDias')
-              ? _parseFirstInt(accepted['prazoVigenciaDias']!)
-              : null,
+          meses: _parseFirstInt(_vigenciaMesesCtrl.text),
+          dias: _prazoVigenciaDias,
         );
       });
 
@@ -766,8 +764,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     final result = <String>[];
 
     void add(String value) {
-      if (value.length == 8 && !result.contains(value)) {
-        result.add(value);
+      final digits = value.replaceAll(RegExp(r'\D'), '');
+      final trimmed = digits.length > 8 ? digits.substring(digits.length - 8) : digits;
+      if (trimmed.length == 8 && !result.contains(trimmed)) {
+        result.add(trimmed);
       }
     }
 
@@ -778,7 +778,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       );
     }
 
-    for (final match in RegExp(r'\b\d{8}\b').allMatches(raw)) {
+    for (final match in RegExp(r'\d{8,}').allMatches(raw)) {
       add(match.group(0)!);
     }
 

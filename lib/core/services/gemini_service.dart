@@ -153,7 +153,11 @@ Exemplo de resposta esperada:
     final result = <String, String?>{};
     for (final field in fields) {
       final value = decoded[field.key];
-      result[field.key] = value?.toString();
+      if (value is List || value is Map) {
+        result[field.key] = jsonEncode(value);
+      } else {
+        result[field.key] = value?.toString();
+      }
     }
     return result;
   }
