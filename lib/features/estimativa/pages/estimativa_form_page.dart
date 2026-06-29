@@ -364,10 +364,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 label: 'Tipo de Cálculo *',
                 value: _calculoGlobal,
                 items: const {
-                  'min': 'Menor Preço (Mínimo)',
+                  'min': 'Menor Preço',
                   'avg': 'Média',
                   'median': 'Mediana',
-                  'desc': 'Maior Desconto',
+                  //'desc': 'Maior Desconto', // TODO
                 },
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);
@@ -391,7 +391,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 items: const {
                   'nenhuma': 'Não exclusiva para ME/EPP',
                   'exclusiva': 'Exclusiva para ME/EPP (Art. 48, I)',
-                  'reservada': 'Itens/Lotes reservados (Art. 48, III)',
+                  'reservada':
+                      'Itens/Lotes reservados para ME/EPP (Art. 48, III)',
                 },
                 onChanged: (v) =>
                     setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
@@ -732,8 +733,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     ? f.razaoSocial
                     : 'Novo Fornecedor',
                 onTap: () => _showFornecedorDialog(f),
-                tooltip:
-                    '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}\nClique para editar',
+                tooltip: '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -834,18 +834,40 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          HoverUnderlineText(
-                            text: 'Lote ${lote.numero} - ${lote.descricao}',
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                            onTap: () => _editLote(loteIndex),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              HoverUnderlineText(
+                                text: 'Lote ${lote.numero} - ${lote.descricao}',
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                onTap: () => _editLote(loteIndex),
+                              ),
+                              if (_exclusividadeMeEpp == 'reservada' &&
+                                  _tipoEstimativa == 'lote' &&
+                                  lote.exclusivoMeEpp)
+                                const Tooltip(
+                                  message: 'Lote reservado para ME/EPP',
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      top: 2.5,
+                                      left: 2.0,
+                                    ),
+                                    child: Icon(
+                                      Icons.expand_circle_down_outlined,
+                                      size: 12,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${lote.materialOuServico == 'M' ? 'Material' : 'Serviço'} | '
                             '${lote.itemCategoriaId != null ? kItemCategoria[lote.itemCategoriaId] ?? '' : ''} | '
                             '${formatNumberBR(lote.quantidade)} ${lote.unidade} | '
-                            '${fmt.format(loteTotal)}',
+                            'Subtotal: ${fmt.format(loteTotal)}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -968,13 +990,32 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ),
           SizedBox(
             width: _colItem,
-            child: HoverCellText(
-              text: '${item.numero}',
-              onTap: () => loteIndex != null
-                  ? _editLoteItem(loteIndex, itemIndex)
-                  : _editItem(itemIndex),
-              textAlign: TextAlign.center,
-              alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                HoverCellText(
+                  text: '${item.numero}',
+                  onTap: () => loteIndex != null
+                      ? _editLoteItem(loteIndex, itemIndex)
+                      : _editItem(itemIndex),
+                  textAlign: TextAlign.center,
+                  alignment: Alignment.center,
+                ),
+                if (_exclusividadeMeEpp == 'reservada' &&
+                    _tipoEstimativa == 'item' &&
+                    item.exclusivoMeEpp)
+                  const Tooltip(
+                    message: 'Item reservado para ME/EPP',
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 2.5, left: 2.0),
+                      child: Icon(
+                        Icons.expand_circle_down_outlined,
+                        size: 12,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           Expanded(

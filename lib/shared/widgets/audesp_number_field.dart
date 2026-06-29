@@ -23,6 +23,7 @@ class AudespNumberField extends StatelessWidget {
   final String? initialValue;
   final bool readOnly;
   final bool enabled;
+  final bool autofocus;
   final int? maxLength;
   final String? hintText;
   final String? prefixText;
@@ -38,6 +39,7 @@ class AudespNumberField extends StatelessWidget {
     this.initialValue,
     this.readOnly = false,
     this.enabled = true,
+    this.autofocus = false,
     this.maxLength,
     this.hintText,
     this.prefixText,
@@ -55,6 +57,7 @@ class AudespNumberField extends StatelessWidget {
       initialValue: initialValue,
       readOnly: readOnly,
       enabled: enabled,
+      autofocus: autofocus,
       maxLength: maxLength,
       hintText: hintText,
       prefixText: prefixText,

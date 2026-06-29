@@ -21,6 +21,7 @@ class AudespTextField extends StatelessWidget {
   final String? initialValue;
   final bool readOnly;
   final bool enabled;
+  final bool autofocus;
   final bool obscureText;
   final int? maxLength;
   final int maxLines;
@@ -47,6 +48,7 @@ class AudespTextField extends StatelessWidget {
     this.initialValue,
     this.readOnly = false,
     this.enabled = true,
+    this.autofocus = false,
     this.obscureText = false,
     this.maxLength,
     this.maxLines = 1,
@@ -74,6 +76,7 @@ class AudespTextField extends StatelessWidget {
       initialValue: initialValue,
       readOnly: readOnly,
       enabled: enabled,
+      autofocus: autofocus,
       obscureText: obscureText,
       maxLength: maxLength,
       maxLines: maxLines,

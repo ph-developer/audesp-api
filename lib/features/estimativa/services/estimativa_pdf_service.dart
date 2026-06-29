@@ -32,7 +32,7 @@ class EstimativaPdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Planilha de Estimativa - ${estimativa.numero}/${estimativa.ano}',
+                    'Estimativa nº ${estimativa.numero}/${estimativa.ano}',
                     style: pw.TextStyle(
                       fontSize: 18,
                       fontWeight: pw.FontWeight.bold,
@@ -326,7 +326,7 @@ class EstimativaPdfService {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                'Qtd: ${item.quantidade} ${item.unidade} | '
+                'Qquantidade: ${item.quantidade} ${item.unidade} | '
                 '${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | '
                 'Regra Ref.: ${_getCalculoLabel(calculoUsado)}',
                 style: const pw.TextStyle(
@@ -347,7 +347,17 @@ class EstimativaPdfService {
                 headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.blueGrey800,
                 ),
-                headers: ['Razão Social', 'CNPJ', 'Data', 'V. Unitário'],
+                headers: ['Razão Social', 'CNPJ', 'Data', 'Valor Unitário'],
+                columnWidths: {
+                  0: pw.FixedColumnWidth(150.0),
+                  1: pw.FixedColumnWidth(60.0),
+                  2: pw.FixedColumnWidth(40.0),
+                  3: pw.FixedColumnWidth(50.0),
+                },
+                cellAlignments: {
+                  2: pw.Alignment.center,
+                  3: pw.Alignment.centerRight,
+                },
                 data: item.orcamentos.map((o) {
                   final fornecedor = fornecedores
                       .where((f) => f.id == o.fornecedorId)
@@ -371,16 +381,16 @@ class EstimativaPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'V. Referência Unitário: ${_fmt.format(item.getValorReferenciaUnitario(globalCalculo))}',
+                        'Valor de Referência Unitário: ${_fmt.format(item.getValorReferenciaUnitario(globalCalculo))}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                       if (isMensal)
                         pw.Text(
-                          'V. Referência Mensal: ${_fmt.format(item.getValorMensal(globalCalculo))}',
+                          'Valor Estimado Mensal: ${_fmt.format(item.getValorMensal(globalCalculo))}',
                           style: const pw.TextStyle(fontSize: 10),
                         ),
                       pw.Text(
-                        'V. Referência Total: ${_fmt.format(item.getValorTotal(globalCalculo))}',
+                        'Valor Estimado Total: ${_fmt.format(item.getValorTotal(globalCalculo))}',
                         style: pw.TextStyle(
                           fontSize: 11,
                           fontWeight: pw.FontWeight.bold,

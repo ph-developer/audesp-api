@@ -22,6 +22,7 @@ class AudespCurrencyField extends StatelessWidget {
   final String? initialValue;
   final bool readOnly;
   final bool enabled;
+  final bool autofocus;
   final String? prefixText;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
@@ -33,6 +34,7 @@ class AudespCurrencyField extends StatelessWidget {
     this.initialValue,
     this.readOnly = false,
     this.enabled = true,
+    this.autofocus = false,
     this.prefixText = 'R\$ ',
     this.validator,
     this.onChanged,
@@ -46,6 +48,7 @@ class AudespCurrencyField extends StatelessWidget {
       initialValue: initialValue,
       readOnly: readOnly,
       enabled: enabled,
+      autofocus: autofocus,
       decimals: true,
       prefixText: prefixText,
       validator:

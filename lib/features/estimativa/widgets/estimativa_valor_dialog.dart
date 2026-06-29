@@ -1,5 +1,5 @@
+import 'package:audesp_api/shared/widgets/audesp_currency_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
 import '../models/estimativa_fornecedor_model.dart';
@@ -19,16 +19,10 @@ Future<double?> showEstimativaValorDialog({
     builder: (ctx) {
       return AlertDialog(
         title: Text('Valor - ${fornecedor.razaoSocial}'),
-        content: TextField(
+        content: AudespCurrencyField(
           controller: valorCtrl,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          decoration: const InputDecoration(
-            labelText: 'Valor Unitário (R\$)',
-            hintText: '0,00',
-          ),
+          autofocus: true,
+          label: 'Valor Unitário (R\$)',
         ),
         actions: [
           if (atual != null)
