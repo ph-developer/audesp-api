@@ -11,6 +11,7 @@ class EstimativaModel {
   // Configurações Globais
   final String tipoEstimativa; // 'item' ou 'lote'
   final String calculoGlobal; // 'min', 'avg', 'median'
+  final int casasDecimais; // 2 ou 4 (sempre arredondar para cima)
 
   // Textos para o PDF (mantido para retrocompatibilidade do JSON)
   final Map<String, String> textosPdf;
@@ -40,6 +41,7 @@ class EstimativaModel {
     required this.objeto,
     this.tipoEstimativa = 'item',
     this.calculoGlobal = 'min',
+    this.casasDecimais = 2,
     this.textosPdf = const {},
     this.registroPrecos = false,
     this.temGarantia = false,
@@ -62,6 +64,7 @@ class EstimativaModel {
       'objeto': objeto,
       'tipoEstimativa': tipoEstimativa,
       'calculoGlobal': calculoGlobal,
+      'casasDecimais': casasDecimais,
       'textosPdf': textosPdf,
       'registroPrecos': registroPrecos,
       'temGarantia': temGarantia,
@@ -85,6 +88,7 @@ class EstimativaModel {
       objeto: map['objeto'] ?? '',
       tipoEstimativa: map['tipoEstimativa'] ?? 'item',
       calculoGlobal: map['calculoGlobal'] ?? 'min',
+      casasDecimais: map['casasDecimais'] ?? 2,
       textosPdf: Map<String, String>.from(map['textosPdf'] ?? {}),
       registroPrecos: map['registroPrecos'] ?? false,
       temGarantia: map['temGarantia'] ?? false,
@@ -119,6 +123,7 @@ class EstimativaModel {
     String? objeto,
     String? tipoEstimativa,
     String? calculoGlobal,
+    int? casasDecimais,
     Map<String, String>? textosPdf,
     bool? registroPrecos,
     bool? temGarantia,
@@ -139,6 +144,7 @@ class EstimativaModel {
       objeto: objeto ?? this.objeto,
       tipoEstimativa: tipoEstimativa ?? this.tipoEstimativa,
       calculoGlobal: calculoGlobal ?? this.calculoGlobal,
+      casasDecimais: casasDecimais ?? this.casasDecimais,
       textosPdf: textosPdf ?? this.textosPdf,
       registroPrecos: registroPrecos ?? this.registroPrecos,
       temGarantia: temGarantia ?? this.temGarantia,
@@ -158,12 +164,12 @@ class EstimativaModel {
     if (tipoEstimativa == 'lote') {
       return lotes.fold(
         0.0,
-        (sum, lote) => sum + lote.getValorTotal(calculoGlobal),
+        (sum, lote) => sum + lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
       );
     } else {
       return itens.fold(
         0.0,
-        (sum, item) => sum + item.getValorTotal(calculoGlobal),
+        (sum, item) => sum + item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
       );
     }
   }

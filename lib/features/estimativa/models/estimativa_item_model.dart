@@ -1,3 +1,5 @@
+import 'package:audesp_api/core/utils/rounding_utils.dart';
+
 import 'estimativa_orcamento_model.dart';
 
 class EstimativaItem {
@@ -101,43 +103,47 @@ class EstimativaItem {
     return 0.0;
   }
 
-  double getValorReferenciaUnitario(String calculoGlobal) {
+  double getValorReferenciaUnitario(String calculoGlobal, {int casasDecimais = 2}) {
     if (orcamentos.isEmpty) return 0.0;
 
     final strategy = calculoGlobal;
     final valores = orcamentos.map((e) => e.valorUnitario).toList();
 
+    double raw;
     if (strategy == 'min') {
-      return valores.reduce((a, b) => a < b ? a : b);
+      raw = valores.reduce((a, b) => a < b ? a : b);
     } else if (strategy == 'avg') {
       final sum = valores.reduce((a, b) => a + b);
-      return sum / valores.length;
+      raw = sum / valores.length;
     } else if (strategy == 'median') {
       valores.sort();
       final middle = valores.length ~/ 2;
       if (valores.length % 2 == 1) {
-        return valores[middle];
+        raw = valores[middle];
       } else {
-        return (valores[middle - 1] + valores[middle]) / 2.0;
+        raw = (valores[middle - 1] + valores[middle]) / 2.0;
       }
     } else if (strategy == 'desc') {
-      return valores.reduce((a, b) => a > b ? a : b);
+      raw = valores.reduce((a, b) => a > b ? a : b);
+    } else {
+      raw = valores.reduce((a, b) => a < b ? a : b);
     }
 
-    // Default to min
-    return valores.reduce((a, b) => a < b ? a : b);
+    return arredondarParaCima(raw, casasDecimais);
   }
 
-  double getValorMensal(String calculoGlobal) {
+  double getValorMensal(String calculoGlobal, {int casasDecimais = 2}) {
     if (tipoFornecimento != 'mensal') return 0.0;
-    return quantidade * getValorReferenciaUnitario(calculoGlobal);
+    final vUnit = getValorReferenciaUnitario(calculoGlobal, casasDecimais: casasDecimais);
+    return arredondarParaCima(quantidade * vUnit, casasDecimais);
   }
 
-  double getValorTotal(String calculoGlobal) {
-    final vUnit = getValorReferenciaUnitario(calculoGlobal);
+  double getValorTotal(String calculoGlobal, {int casasDecimais = 2}) {
+    final vUnit = getValorReferenciaUnitario(calculoGlobal, casasDecimais: casasDecimais);
     if (tipoFornecimento == 'mensal') {
-      return (quantidade * vUnit) * quantidadeMeses;
+      final vMensal = quantidade * vUnit;
+      return arredondarParaCima(vMensal * quantidadeMeses, casasDecimais);
     }
-    return quantidade * vUnit;
+    return arredondarParaCima(quantidade * vUnit, casasDecimais);
   }
 }

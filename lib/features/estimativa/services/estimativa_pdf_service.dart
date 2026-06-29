@@ -12,12 +12,15 @@ import '../models/estimativa_item_model.dart';
 import '../models/estimativa_fornecedor_model.dart';
 
 class EstimativaPdfService {
-  static final _fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
   static Future<void> gerarPdfEstimativa(
     BuildContext context,
     EstimativaModel estimativa,
   ) async {
+    final fmt = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+      decimalDigits: estimativa.casasDecimais,
+    );
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -58,6 +61,10 @@ class EstimativaPdfService {
                   : 'Mediana',
             ),
             _buildInfoRow(
+              'Casas Decimais:',
+              '${estimativa.casasDecimais} (sempre arredondar para cima)',
+            ),
+            _buildInfoRow(
               'Registro de Preços:',
               estimativa.registroPrecos ? 'Sim' : 'Não',
             ),
@@ -88,13 +95,15 @@ class EstimativaPdfService {
 
             // Itens ou Lotes
             if (estimativa.tipoEstimativa == 'lote')
-              ..._buildLotes(estimativa)
+              ..._buildLotes(estimativa, fmt)
             else
               ..._buildItens(
                 estimativa.itens,
                 estimativa.fornecedores,
                 estimativa.calculoGlobal,
+                fmt,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
+                casasDecimais: estimativa.casasDecimais,
               ),
 
             pw.SizedBox(height: 20),
@@ -103,7 +112,7 @@ class EstimativaPdfService {
               mainAxisAlignment: pw.MainAxisAlignment.end,
               children: [
                 pw.Text(
-                  'VALOR TOTAL ESTIMADO: ${_fmt.format(estimativa.valorTotalGlobal)}',
+                  'VALOR TOTAL ESTIMADO: ${fmt.format(estimativa.valorTotalGlobal)}',
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
@@ -212,7 +221,7 @@ class EstimativaPdfService {
     );
   }
 
-  static List<pw.Widget> _buildLotes(EstimativaModel estimativa) {
+  static List<pw.Widget> _buildLotes(EstimativaModel estimativa, NumberFormat fmt) {
     final widgets = <pw.Widget>[];
     for (final lote in estimativa.lotes) {
       widgets.add(
@@ -250,14 +259,16 @@ class EstimativaPdfService {
                 lote.itens,
                 estimativa.fornecedores,
                 estimativa.calculoGlobal,
+                fmt,
                 isInsideLote: true,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
+                casasDecimais: estimativa.casasDecimais,
               ),
               pw.SizedBox(height: 10),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
-                  'Subtotal do Lote: ${_fmt.format(lote.getValorTotal(estimativa.calculoGlobal))}',
+                  'Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais))}',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 ),
               ),
@@ -272,9 +283,11 @@ class EstimativaPdfService {
   static List<pw.Widget> _buildItens(
     List<EstimativaItem> itens,
     List<EstimativaFornecedor> fornecedores,
-    String globalCalculo, {
+    String globalCalculo,
+    NumberFormat fmt, {
     bool isInsideLote = false,
     String exclusividadeGlobal = 'nenhuma',
+    int casasDecimais = 2,
   }) {
     final widgets = <pw.Widget>[];
 
@@ -366,7 +379,7 @@ class EstimativaPdfService {
                     fornecedor?.razaoSocial ?? '-',
                     AudespCpfCnpjField.formatDocument(fornecedor?.cnpj ?? ''),
                     fornecedor?.data ?? '-',
-                    _fmt.format(o.valorUnitario),
+                    fmt.format(o.valorUnitario),
                   ];
                 }).toList(),
               ),
@@ -381,16 +394,16 @@ class EstimativaPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'Valor de Referência Unitário: ${_fmt.format(item.getValorReferenciaUnitario(globalCalculo))}',
+                        'Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais))}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                       if (isMensal)
                         pw.Text(
-                          'Valor Estimado Mensal: ${_fmt.format(item.getValorMensal(globalCalculo))}',
+                          'Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais))}',
                           style: const pw.TextStyle(fontSize: 10),
                         ),
                       pw.Text(
-                        'Valor Estimado Total: ${_fmt.format(item.getValorTotal(globalCalculo))}',
+                        'Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais))}',
                         style: pw.TextStyle(
                           fontSize: 11,
                           fontWeight: pw.FontWeight.bold,

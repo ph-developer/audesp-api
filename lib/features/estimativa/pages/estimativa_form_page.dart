@@ -75,6 +75,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   final _objetoCtrl = TextEditingController();
   String _tipoEstimativa = 'item'; // 'item' ou 'lote'
   String _calculoGlobal = 'min'; // 'min', 'avg', 'median'
+  int _casasDecimais = 2; // 2 ou 4 (sempre arredondar para cima)
 
   // ── Textos PDF (Agora Automáticos) ──────────────────────────────────────
   final _prazoVigenciaCtrl = TextEditingController();
@@ -133,6 +134,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     _objetoCtrl.text = est.objeto;
     _tipoEstimativa = est.tipoEstimativa;
     _calculoGlobal = est.calculoGlobal;
+    _casasDecimais = est.casasDecimais;
 
     _registroPrecos = est.registroPrecos;
     _temGarantia = est.temGarantia;
@@ -163,6 +165,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         objeto: _objetoCtrl.text.trim(),
         tipoEstimativa: _tipoEstimativa,
         calculoGlobal: _calculoGlobal,
+        casasDecimais: _casasDecimais,
         textosPdf: textos,
         registroPrecos: _registroPrecos,
         temGarantia: _temGarantia,
@@ -394,6 +397,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
               ),
             ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AudespDropdown<int>(
+                label: 'Casas Decimais',
+                value: _casasDecimais,
+                items: const {2: '2 casas decimais', 4: '4 casas decimais'},
+                onChanged: (v) {
+                  if (v != null) setState(() => _casasDecimais = v);
+                },
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -493,7 +507,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
   Widget _buildItensOuLotesSection() {
     final isLote = _tipoEstimativa == 'lote';
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: _casasDecimais);
 
     return SectionCard(
       title: isLote ? 'Lotes da Estimativa' : 'Itens da Estimativa',
@@ -777,7 +791,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       onReorderItem: _reorderLotes,
       itemBuilder: (context, loteIndex) {
         final lote = _lotes[loteIndex];
-        final loteTotal = lote.getValorTotal(_calculoGlobal);
+        final loteTotal = lote.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais);
         return Card(
           key: ValueKey('lote_${lote.numero}_${lote.descricao.hashCode}'),
           margin: const EdgeInsets.only(bottom: 8),
@@ -1067,31 +1081,31 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         : _calculoGlobal == 'avg'
                         ? 'Média'
                         : 'Mediana'}',
-                child: Text(
-                  formatBRL(item.getValorReferenciaUnitario(_calculoGlobal)),
-                  textAlign: TextAlign.center,
+                  child: Text(
+                    formatBRL(item.getValorReferenciaUnitario(_calculoGlobal, casasDecimais: _casasDecimais), casasDecimais: _casasDecimais),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            width: _colValorTotal,
-            child: Center(
-              child: item.tipoFornecimento == 'mensal'
-                  ? Tooltip(
-                      message:
-                          '${formatBRL(item.getValorMensal(_calculoGlobal))}/mês',
-                      child: Text(
-                        formatBRL(item.getValorTotal(_calculoGlobal)),
+            SizedBox(
+              width: _colValorTotal,
+              child: Center(
+                child: item.tipoFornecimento == 'mensal'
+                    ? Tooltip(
+                        message:
+                            '${formatBRL(item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais), casasDecimais: _casasDecimais)}/mês',
+                        child: Text(
+                          formatBRL(item.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais), casasDecimais: _casasDecimais),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : Text(
+                        formatBRL(item.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais), casasDecimais: _casasDecimais),
                         textAlign: TextAlign.center,
                       ),
-                    )
-                  : Text(
-                      formatBRL(item.getValorTotal(_calculoGlobal)),
-                      textAlign: TextAlign.center,
-                    ),
+              ),
             ),
-          ),
           SizedBox(
             width: _colAcoes,
             child: Center(
