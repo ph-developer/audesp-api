@@ -22,7 +22,6 @@ class EstimativaModel {
   // Novas propriedades solicitadas
   final bool registroPrecos;
   final bool temGarantia;
-  final String periodoGarantia;
   final List<String> fontesRecurso;
   final String exclusividadeMeEpp;
 
@@ -44,7 +43,6 @@ class EstimativaModel {
     this.textosPdf = const {},
     this.registroPrecos = false,
     this.temGarantia = false,
-    this.periodoGarantia = '',
     this.prazoVigencia = '',
     this.formaPagamento = '',
     this.fontesRecurso = const [],
@@ -67,7 +65,6 @@ class EstimativaModel {
       'textosPdf': textosPdf,
       'registroPrecos': registroPrecos,
       'temGarantia': temGarantia,
-      'periodoGarantia': periodoGarantia,
       'prazoVigencia': prazoVigencia,
       'formaPagamento': formaPagamento,
       'fontesRecurso': fontesRecurso,
@@ -91,7 +88,6 @@ class EstimativaModel {
       textosPdf: Map<String, String>.from(map['textosPdf'] ?? {}),
       registroPrecos: map['registroPrecos'] ?? false,
       temGarantia: map['temGarantia'] ?? false,
-      periodoGarantia: map['periodoGarantia'] ?? '',
       prazoVigencia: map['prazoVigencia'] ?? '',
       formaPagamento: map['formaPagamento'] ?? '',
       fontesRecurso: List<String>.from(map['fontesRecurso'] ?? []),
@@ -126,7 +122,6 @@ class EstimativaModel {
     Map<String, String>? textosPdf,
     bool? registroPrecos,
     bool? temGarantia,
-    String? periodoGarantia,
     String? prazoVigencia,
     String? formaPagamento,
     List<String>? fontesRecurso,
@@ -147,7 +142,6 @@ class EstimativaModel {
       textosPdf: textosPdf ?? this.textosPdf,
       registroPrecos: registroPrecos ?? this.registroPrecos,
       temGarantia: temGarantia ?? this.temGarantia,
-      periodoGarantia: periodoGarantia ?? this.periodoGarantia,
       prazoVigencia: prazoVigencia ?? this.prazoVigencia,
       formaPagamento: formaPagamento ?? this.formaPagamento,
       fontesRecurso: fontesRecurso ?? this.fontesRecurso,

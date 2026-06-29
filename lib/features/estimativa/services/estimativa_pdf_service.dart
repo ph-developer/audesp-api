@@ -61,20 +61,17 @@ class EstimativaPdfService {
               'Registro de Preços:',
               estimativa.registroPrecos ? 'Sim' : 'Não',
             ),
-            _buildInfoRow(
-              'Garantia Exigida:',
-              estimativa.temGarantia ? estimativa.periodoGarantia : 'Não',
-            ),
-            _buildInfoRow(
-              estimativa.registroPrecos
-                  ? 'Prazo de Vigência da ARP:'
-                  : 'Prazo de Vigência do Contrato:',
-              estimativa.registroPrecos
-                  ? '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado por igual período, desde que comprovada a vantagem econômica dos preços registrados.'
-                  : estimativa.temGarantia
-                  ? '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração, sendo que seus efeitos prorrogar-se-ão até o término da garantia dos equipamentos.'
-                  : '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração.',
-            ),
+            if (estimativa.prazoVigencia.isNotEmpty)
+              _buildInfoRow(
+                estimativa.registroPrecos
+                    ? 'Prazo de Vigência da ARP:'
+                    : 'Prazo de Vigência do Contrato:',
+                estimativa.registroPrecos
+                    ? '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado por igual período, desde que comprovada a vantagem econômica dos preços registrados.'
+                    : estimativa.temGarantia
+                    ? '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração, sendo que seus efeitos prorrogar-se-ão até o término do prazo de garantia.'
+                    : '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração.',
+              ),
             if (estimativa.formaPagamento.isNotEmpty)
               _buildInfoRow('Forma de Pagamento:', estimativa.formaPagamento),
             _buildInfoRow(
@@ -231,6 +228,7 @@ class EstimativaPdfService {
             children: [
               pw.Text(
                 'Lote ${lote.numero} - ${lote.descricao}',
+                textAlign: pw.TextAlign.justify,
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
@@ -307,6 +305,7 @@ class EstimativaPdfService {
                   pw.Expanded(
                     child: pw.Text(
                       'Item ${item.numero} - ${item.descricao}',
+                      textAlign: pw.TextAlign.justify,
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ),
@@ -348,7 +347,7 @@ class EstimativaPdfService {
                 headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.blueGrey800,
                 ),
-                headers: ['Razão Social', 'CNPJ', 'Data', 'Valor Unitário'],
+                headers: ['Razão Social', 'CPF/CNPJ', 'Data', 'Valor Unitário'],
                 columnWidths: {
                   0: pw.FixedColumnWidth(150.0),
                   1: pw.FixedColumnWidth(60.0),

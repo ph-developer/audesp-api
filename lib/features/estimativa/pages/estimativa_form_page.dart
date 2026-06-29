@@ -83,7 +83,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ── Novas Propriedades ───────────────────────────────────────────────────
   bool _registroPrecos = false;
   bool _temGarantia = false;
-  final _periodoGarantiaCtrl = TextEditingController();
   String _exclusividadeMeEpp = 'nenhuma';
   List<String> _fontesRecurso = [];
   final _fonteRecursoInputCtrl = TextEditingController();
@@ -106,7 +105,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     _anoCtrl.dispose();
     _prazoVigenciaCtrl.dispose();
     _formaPagamentoCtrl.dispose();
-    _periodoGarantiaCtrl.dispose();
     _fonteRecursoInputCtrl.dispose();
     super.dispose();
   }
@@ -138,7 +136,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     _registroPrecos = est.registroPrecos;
     _temGarantia = est.temGarantia;
-    _periodoGarantiaCtrl.text = est.periodoGarantia;
     _exclusividadeMeEpp = est.exclusividadeMeEpp;
     _fontesRecurso = List.from(est.fontesRecurso);
 
@@ -169,7 +166,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         textosPdf: textos,
         registroPrecos: _registroPrecos,
         temGarantia: _temGarantia,
-        periodoGarantia: _periodoGarantiaCtrl.text.trim(),
         prazoVigencia: _prazoVigenciaCtrl.text.trim(),
         formaPagamento: _formaPagamentoCtrl.text.trim(),
         exclusividadeMeEpp: _exclusividadeMeEpp,
@@ -288,6 +284,15 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AudespDropdown<bool>(
+                label: 'Registro de Preços? *',
+                value: _registroPrecos,
+                items: const {true: 'Sim', false: 'Não'},
+                onChanged: (v) => setState(() => _registroPrecos = v ?? false),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -376,15 +381,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: AudespDropdown<bool>(
-                label: 'Registro de Preços? *',
-                value: _registroPrecos,
-                items: const {true: 'Sim', false: 'Não'},
-                onChanged: (v) => setState(() => _registroPrecos = v ?? false),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
               child: AudespDropdown<String>(
                 label: 'Exclusividade ME/EPP *',
                 value: _exclusividadeMeEpp,
@@ -406,11 +402,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           children: [
             Expanded(
               child: AudespTextField(
-                label: 'Prazo de Vigência *',
+                label: 'Prazo de Vigência',
                 controller: _prazoVigenciaCtrl,
                 hintText: 'Ex: 12 meses',
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
             const SizedBox(width: 16),
@@ -430,19 +424,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 value: _temGarantia,
                 items: const {true: 'Sim', false: 'Não'},
                 onChanged: (v) => setState(() => _temGarantia = v ?? false),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: AudespTextField(
-                label: 'Período da Garantia *',
-                controller: _periodoGarantiaCtrl,
-                hintText: 'Ex: 12 meses',
-                enabled: _temGarantia,
-                validator: (v) =>
-                    (_temGarantia && (v == null || v.trim().isEmpty))
-                    ? 'Obrigatório'
-                    : null,
               ),
             ),
           ],
@@ -913,8 +894,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: lote.itens.length,
-                           onReorderItem: (oldIndex, newIndex) =>
-                               _reorderLoteItens(loteIndex, oldIndex, newIndex),
+                          onReorderItem: (oldIndex, newIndex) =>
+                              _reorderLoteItens(loteIndex, oldIndex, newIndex),
                           itemBuilder: (context, itemIndex) {
                             final item = lote.itens[itemIndex];
                             return _buildItemRow(
@@ -970,9 +951,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       decoration: BoxDecoration(
         border: showBottomBorder
             ? Border(
-                 bottom: BorderSide(
-                   color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                 ),
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                ),
               )
             : null,
       ),

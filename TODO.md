@@ -6,8 +6,8 @@
 - [ ] Implementar importação de cotação compilada na estimativa
 - [ ] Arredondar estimativa para cima (valores finais)
 - [ ] Opção de estimativa de 2 e 4 casas decimais (com arredondamento)
-- [ ] Mudar garantia para dropdown na etimativa: Garantia de Equipamentos, Serviços ou Nada
+- [x] Mudar garantia na etimativa
 - [x] Forçar máscara do CNPJ no PDF da estimativa
 - [x] Corrigir texto "Qquantidade"
-- [ ] Formatar texto do item no PDF para justificado na estimativa
+- [x] Formatar texto do item no PDF para justificado na estimativa
 - [ ] Integrar Gemini para extrair critério de julgamento do edital
