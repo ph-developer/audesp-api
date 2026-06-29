@@ -4,16 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../core/services/gemini_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Função pública de entrada
+// Função pública de entrada — Orçamento Único
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Exibe o fluxo completo de importação Gemini para o Orçamento:
+/// Exibe o fluxo completo de importação Gemini para um único orçamento:
 /// 1. Chama o serviço com [pdfPath] e a lista de [itensEstimativa].
 /// 2. Exibe o dialog de revisão para Razão Social, CNPJ, Data e valores dos itens.
 /// 3. Retorna um [GeminiOrcamentoResult] modificado com os campos aceitos/editados,
@@ -24,7 +25,6 @@ Future<GeminiOrcamentoResult?> showGeminiOrcamentoImportDialog({
   required String pdfPath,
   required List<Map<String, dynamic>> itensEstimativa,
 }) async {
-  // Mostra progress enquanto chama a API
   final result = await showAudespDialog<GeminiOrcamentoResult?>(
     context: context,
     barrierDismissible: false,
@@ -38,7 +38,6 @@ Future<GeminiOrcamentoResult?> showGeminiOrcamentoImportDialog({
 
   if (result == null || !context.mounted) return null;
 
-  // Exibe o dialog de revisão
   return showAudespDialog<GeminiOrcamentoResult?>(
     context: context,
     barrierDismissible: false,
@@ -51,7 +50,47 @@ Future<GeminiOrcamentoResult?> showGeminiOrcamentoImportDialog({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dialog 1 — Progresso
+// Função pública de entrada — Múltiplos Orçamentos
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Exibe o fluxo completo de importação Gemini para múltiplos orçamentos
+/// extraídos de um único arquivo.
+/// 1. Chama o serviço com [pdfPath] e a lista de [itensEstimativa].
+/// 2. Exibe o dialog de revisão com abas (uma por empresa).
+/// 3. Retorna uma lista de [GeminiOrcamentoResult] (apenas empresas com itens
+///    aceitos) ou null se cancelado.
+Future<List<GeminiOrcamentoResult>?> showGeminiMultiOrcamentoImportDialog({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String pdfPath,
+  required List<Map<String, dynamic>> itensEstimativa,
+}) async {
+  final results = await showAudespDialog<List<GeminiOrcamentoResult>?>(
+    context: context,
+    barrierDismissible: false,
+    size: DialogSize.medium,
+    builder: (_) => _GeminiMultiLoadingDialog(
+      ref: ref,
+      pdfPath: pdfPath,
+      itensEstimativa: itensEstimativa,
+    ),
+  );
+
+  if (results == null || results.isEmpty || !context.mounted) return null;
+
+  return showAudespDialog<List<GeminiOrcamentoResult>?>(
+    context: context,
+    barrierDismissible: false,
+    size: DialogSize.large,
+    builder: (_) => _GeminiMultiOrcamentoReviewDialog(
+      suggestedValues: results,
+      itensEstimativa: itensEstimativa,
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dialog 1a — Progresso (único)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _GeminiLoadingDialog extends StatefulWidget {
@@ -148,26 +187,125 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dialog 2 — Revisão dos campos sugeridos
+// Dialog 1b — Progresso (múltiplos)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _GeminiOrcamentoReviewDialog extends StatefulWidget {
-  final GeminiOrcamentoResult suggestedValues;
+class _GeminiMultiLoadingDialog extends StatefulWidget {
+  final WidgetRef ref;
+  final String pdfPath;
   final List<Map<String, dynamic>> itensEstimativa;
 
-  const _GeminiOrcamentoReviewDialog({
-    required this.suggestedValues,
+  const _GeminiMultiLoadingDialog({
+    required this.ref,
+    required this.pdfPath,
     required this.itensEstimativa,
   });
 
   @override
-  State<_GeminiOrcamentoReviewDialog> createState() =>
-      _GeminiOrcamentoReviewDialogState();
+  State<_GeminiMultiLoadingDialog> createState() =>
+      _GeminiMultiLoadingDialogState();
 }
 
-class _GeminiOrcamentoReviewDialogState
-    extends State<_GeminiOrcamentoReviewDialog> {
-  final _formKey = GlobalKey<FormState>();
+class _GeminiMultiLoadingDialogState extends State<_GeminiMultiLoadingDialog> {
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+
+  Future<void> _start() async {
+    try {
+      final service = widget.ref.read(geminiServiceProvider);
+      final result = await service.extractMultiOrcamentoFromFile(
+        filePath: widget.pdfPath,
+        itensEstimativa: widget.itensEstimativa,
+      );
+      if (mounted) Navigator.of(context).pop(result);
+    } on GeminiException catch (e) {
+      if (mounted) setState(() => _errorMessage = e.message);
+    } catch (e) {
+      if (mounted) setState(() => _errorMessage = e.toString());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.auto_fix_high),
+          const SizedBox(width: 12),
+          const Text('Analisando Orçamentos...'),
+        ],
+      ),
+      content: _errorMessage != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: const [
+                SizedBox(height: 8),
+                LinearProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'O Gemini está lendo os orçamentos e buscando os itens da estimativa. Aguarde…',
+                ),
+              ],
+            ),
+      actions: [
+        if (_errorMessage != null)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Fechar'),
+          )
+        else
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Cancelar'),
+          ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card reutilizável — Revisão dos campos de UMA empresa
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CompanyReviewCard extends StatefulWidget {
+  final GeminiOrcamentoResult suggestedValues;
+  final List<Map<String, dynamic>> itensEstimativa;
+  final VoidCallback? onChanged;
+
+  const _CompanyReviewCard({
+    super.key,
+    required this.suggestedValues,
+    required this.itensEstimativa,
+    this.onChanged,
+  });
+
+  @override
+  State<_CompanyReviewCard> createState() => _CompanyReviewCardState();
+}
+
+class _CompanyReviewCardState extends State<_CompanyReviewCard> {
+  final formKey = GlobalKey<FormState>();
   final _razaoSocialCtrl = TextEditingController();
   final _cnpjCtrl = TextEditingController();
   DateTime? _data;
@@ -187,7 +325,6 @@ class _GeminiOrcamentoReviewDialogState
       } catch (_) {}
     }
 
-    // Pré-seleciona todos os itens que tiveram valor retornado.
     _acceptedItems = {
       for (final item in widget.itensEstimativa)
         if (item['id'] != null &&
@@ -203,14 +340,23 @@ class _GeminiOrcamentoReviewDialogState
     super.dispose();
   }
 
-  void _acceptAll() => setState(() => _acceptedItems.updateAll((k, v) => true));
+  int get acceptedCount => _acceptedItems.values.where((v) => v).length;
 
-  void _rejectAll() =>
-      setState(() => _acceptedItems.updateAll((k, v) => false));
+  void _acceptAll() {
+    setState(() => _acceptedItems.updateAll((k, v) => true));
+    widget.onChanged?.call();
+  }
 
-  int get _acceptedCount => _acceptedItems.values.where((v) => v).length;
+  void _rejectAll() {
+    setState(() => _acceptedItems.updateAll((k, v) => false));
+    widget.onChanged?.call();
+  }
 
-  GeminiOrcamentoResult _buildResult() {
+  /// Retorna o [GeminiOrcamentoResult] apenas com os itens aceitos, ou null
+  /// se o formulário for inválido.
+  GeminiOrcamentoResult? buildResult() {
+    if (!(formKey.currentState?.validate() ?? false)) return null;
+
     final acceptedMap = <String, double>{};
     for (final entry in _acceptedItems.entries) {
       if (entry.value) {
@@ -233,133 +379,104 @@ class _GeminiOrcamentoReviewDialogState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.auto_fix_high),
-          const SizedBox(width: 12),
-          const Expanded(child: Text('Revisão da Importação de Orçamento')),
-        ],
-      ),
-      content: SizedBox(
-        width: 600,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Fornecedor e Data do Orçamento (Edite se necessário)',
+          style: theme.textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Form(
+          key: formKey,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: AudespTextField(
+                  label: 'Razão Social',
+                  controller: _razaoSocialCtrl,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AudespTextField(
+                  label: 'CNPJ',
+                  controller: _cnpjCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Obrigatório' : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AudespDatePickerField(
+                  label: 'Data *',
+                  value: _data,
+                  onChanged: (d) => setState(() => _data = d),
+                  validator: (d) => d == null ? 'Obrigatório' : null,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Divider(height: 1),
+        const SizedBox(height: 8),
+        Text('Itens Encontrados no PDF', style: theme.textTheme.titleSmall),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(
-              'Fornecedor e Data do Orçamento (Edite se necessário)',
-              style: theme.textTheme.titleSmall,
+            TextButton(
+              onPressed: _acceptAll,
+              child: const Text('Selecionar todos'),
             ),
-            const SizedBox(height: 8),
-            Form(
-              key: _formKey,
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: AudespTextField(
-                      label: 'Razão Social',
-                      controller: _razaoSocialCtrl,
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AudespTextField(
-                      label: 'CNPJ',
-                      controller: _cnpjCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AudespDatePickerField(
-                      label: 'Data *',
-                      value: _data,
-                      onChanged: (d) => setState(() => _data = d),
-                      validator: (d) => d == null ? 'Obrigatório' : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            Text('Itens Encontrados no PDF', style: theme.textTheme.titleSmall),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _acceptAll,
-                  child: const Text('Selecionar todos'),
-                ),
-                const SizedBox(width: 4),
-                TextButton(
-                  onPressed: _rejectAll,
-                  child: const Text('Desmarcar todos'),
-                ),
-              ],
-            ),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(4),
-                    1: FlexColumnWidth(2),
-                    2: FixedColumnWidth(48),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                      ),
-                      children: [
-                        _tableHeader('Item da Estimativa'),
-                        _tableHeader('V. Unitário (Sugerido)'),
-                        _tableHeader(''),
-                      ],
-                    ),
-                    for (final item in widget.itensEstimativa)
-                      if (item['id'] != null &&
-                          widget.suggestedValues.itens.containsKey(item['id']))
-                        _buildRow(item, colorScheme, fmt),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '$_acceptedCount item(ns) selecionado(s) para importação.',
-                style: theme.textTheme.bodySmall,
-              ),
+            const SizedBox(width: 4),
+            TextButton(
+              onPressed: _rejectAll,
+              child: const Text('Desmarcar todos'),
             ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancelar'),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(4),
+                1: FlexColumnWidth(2),
+                2: FixedColumnWidth(48),
+              },
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                  ),
+                  children: [
+                    _tableHeader('Item da Estimativa'),
+                    _tableHeader('V. Unitário (Sugerido)'),
+                    _tableHeader(''),
+                  ],
+                ),
+                for (final item in widget.itensEstimativa)
+                  if (item['id'] != null &&
+                      widget.suggestedValues.itens.containsKey(item['id']))
+                    _buildRow(item, colorScheme),
+              ],
+            ),
+          ),
         ),
-        FilledButton(
-          onPressed: _acceptedCount == 0
-              ? null
-              : () {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    Navigator.of(context).pop(_buildResult());
-                  }
-                },
-          child: const Text('Importar Valores'),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '$acceptedCount item(ns) selecionado(s) para importação.',
+            style: theme.textTheme.bodySmall,
+          ),
         ),
       ],
     );
@@ -368,7 +485,6 @@ class _GeminiOrcamentoReviewDialogState
   TableRow _buildRow(
     Map<String, dynamic> item,
     ColorScheme colorScheme,
-    NumberFormat fmt,
   ) {
     final id = item['id'] as String?;
     final desc = item['descricao'] as String? ?? '';
@@ -391,7 +507,7 @@ class _GeminiOrcamentoReviewDialogState
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(
-            hasValue ? fmt.format(suggested) : '—',
+            hasValue ? formatBRL(suggested) : '—',
             style: TextStyle(
               fontSize: 12,
               color: hasValue ? colorScheme.primary : colorScheme.outline,
@@ -402,7 +518,10 @@ class _GeminiOrcamentoReviewDialogState
         Checkbox(
           value: isAccepted,
           onChanged: hasValue && id != null
-              ? (v) => setState(() => _acceptedItems[id] = v ?? false)
+              ? (v) {
+                  setState(() => _acceptedItems[id] = v ?? false);
+                  widget.onChanged?.call();
+                }
               : null,
         ),
       ],
@@ -416,4 +535,206 @@ class _GeminiOrcamentoReviewDialogState
       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
     ),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dialog 2a — Revisão (único)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GeminiOrcamentoReviewDialog extends StatefulWidget {
+  final GeminiOrcamentoResult suggestedValues;
+  final List<Map<String, dynamic>> itensEstimativa;
+
+  const _GeminiOrcamentoReviewDialog({
+    required this.suggestedValues,
+    required this.itensEstimativa,
+  });
+
+  @override
+  State<_GeminiOrcamentoReviewDialog> createState() =>
+      _GeminiOrcamentoReviewDialogState();
+}
+
+class _GeminiOrcamentoReviewDialogState
+    extends State<_GeminiOrcamentoReviewDialog> {
+  final _cardKey = GlobalKey<_CompanyReviewCardState>();
+  int _acceptedCount = 0;
+
+  void _onCardChanged() {
+    setState(() {
+      _acceptedCount = _cardKey.currentState?.acceptedCount ?? 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.auto_fix_high),
+          const SizedBox(width: 12),
+          const Expanded(child: Text('Revisão da Importação de Orçamento')),
+        ],
+      ),
+      content: SizedBox(
+        width: 600,
+        child: _CompanyReviewCard(
+          key: _cardKey,
+          suggestedValues: widget.suggestedValues,
+          itensEstimativa: widget.itensEstimativa,
+          onChanged: _onCardChanged,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _acceptedCount == 0
+              ? null
+              : () {
+                  final result = _cardKey.currentState?.buildResult();
+                  if (result != null) {
+                    Navigator.of(context).pop(result);
+                  }
+                },
+          child: const Text('Importar Valores'),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dialog 2b — Revisão (múltiplos, com abas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GeminiMultiOrcamentoReviewDialog extends StatefulWidget {
+  final List<GeminiOrcamentoResult> suggestedValues;
+  final List<Map<String, dynamic>> itensEstimativa;
+
+  const _GeminiMultiOrcamentoReviewDialog({
+    required this.suggestedValues,
+    required this.itensEstimativa,
+  });
+
+  @override
+  State<_GeminiMultiOrcamentoReviewDialog> createState() =>
+      _GeminiMultiOrcamentoReviewDialogState();
+}
+
+class _GeminiMultiOrcamentoReviewDialogState
+    extends State<_GeminiMultiOrcamentoReviewDialog> {
+  late final List<GlobalKey<_CompanyReviewCardState>> _cardKeys;
+
+  @override
+  void initState() {
+    super.initState();
+    _cardKeys = List.generate(
+      widget.suggestedValues.length,
+      (_) => GlobalKey<_CompanyReviewCardState>(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalCompanies = widget.suggestedValues.length;
+    final tabLabels = List.generate(totalCompanies, (i) {
+      final empresa = widget.suggestedValues[i];
+      return empresa.razaoSocial?.isNotEmpty == true
+          ? empresa.razaoSocial!
+          : 'Orçamento ${i + 1}';
+    });
+
+    const tabWidth = 200.0;
+
+    return DefaultTabController(
+      length: totalCompanies,
+      child: Builder(
+        builder: (tabCtx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.auto_fix_high),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Revisão da Importação de Orçamentos')),
+          ],
+        ),
+        content: SizedBox(
+          width: 700,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TabBar(
+                isScrollable: true,
+                tabs: List.generate(totalCompanies, (i) {
+                  return SizedBox(
+                    width: tabWidth,
+                    child: Tab(
+                      child: Text(
+                        tabLabels[i],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: IndexedStack(
+                  index: DefaultTabController.of(tabCtx).index,
+                  children: List.generate(totalCompanies, (i) {
+                    return SingleChildScrollView(
+                      child: _CompanyReviewCard(
+                        key: _cardKeys[i],
+                        suggestedValues: widget.suggestedValues[i],
+                        itensEstimativa: widget.itensEstimativa,
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: _totalAcceptedCount > 0
+                ? () {
+                    final results = <GeminiOrcamentoResult>[];
+                    for (final key in _cardKeys) {
+                      final state = key.currentState;
+                      if (state != null) {
+                        final result = state.buildResult();
+                        if (result != null && result.itens.isNotEmpty) {
+                          results.add(result);
+                        }
+                      }
+                    }
+                    if (results.isNotEmpty) {
+                      Navigator.of(context).pop(results);
+                    }
+                  }
+                : null,
+            child: Text(
+              'Importar Valores Selecionados ($totalCompanies empresa(s))',
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  int get _totalAcceptedCount {
+    var count = 0;
+    for (final key in _cardKeys) {
+      count += key.currentState?.acceptedCount ?? 0;
+    }
+    return count;
+  }
 }

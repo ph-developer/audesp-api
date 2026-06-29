@@ -163,18 +163,8 @@ Exemplo de resposta esperada:
     required String filePath,
     required List<Map<String, dynamic>> itensEstimativa,
   }) async {
-    final apiKey = await _settings.get(SettingsKeys.geminiApiKey);
-    if (apiKey == null || apiKey.trim().isEmpty) {
-      throw GeminiException(
-        'Chave de API do Gemini não configurada. '
-        'Configure-a no painel de Administração → IA / Gemini.',
-      );
-    }
-
-    final modelName = await _settings.get(SettingsKeys.geminiModel);
-    final model = (modelName != null && modelName.trim().isNotEmpty)
-        ? modelName.trim()
-        : 'gemini-3.1-flash-lite';
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
 
     final itensJson = jsonEncode(itensEstimativa);
 
@@ -205,33 +195,11 @@ Exemplo de resposta esperada:
 }
 ''';
 
-    final generativeModel = GenerativeModel(
-      model: model,
-      apiKey: apiKey.trim(),
-    );
-
-    final lowerPath = filePath.toLowerCase();
-    final isWordDoc = lowerPath.endsWith('.docx');
-    final isPdf = lowerPath.endsWith('.pdf');
-    if (!isWordDoc && !isPdf) {
-      throw const GeminiException('Formato não suportado. Use PDF ou DOCX.');
-    }
-
-    Part filePart;
-    if (isWordDoc) {
-      final bytes = await File(filePath).readAsBytes();
-      final text = docxToText(bytes);
-      filePart = TextPart(text);
-    } else {
-      final pdfBytes = await File(filePath).readAsBytes();
-      filePart = DataPart('application/pdf', pdfBytes);
-    }
-
     final content = [
       Content.multi([filePart, TextPart(prompt)]),
     ];
 
-    final response = await generativeModel.generateContent(content);
+    final response = await model.generateContent(content);
     final text = response.text;
 
     if (text == null || text.trim().isEmpty) {
@@ -239,6 +207,111 @@ Exemplo de resposta esperada:
     }
 
     return _parseOrcamentoResult(text.trim());
+  }
+
+  /// Extrai dados de MÚLTIPLOS fornecedores de um único documento (orçamentos
+  /// compilados de várias empresas em sequência).
+  Future<List<GeminiOrcamentoResult>> extractMultiOrcamentoFromFile({
+    required String filePath,
+    required List<Map<String, dynamic>> itensEstimativa,
+  }) async {
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
+
+    final itensJson = jsonEncode(itensEstimativa);
+
+    final prompt =
+        '''
+Você é um assistente especializado em licitações públicas brasileiras.
+Analise o documento de orçamento fornecido. Este documento contém orçamentos de MÚLTIPLAS empresas em sequência.
+Para CADA empresa identificada, extraia:
+1. "razaoSocial": Razão social da empresa fornecedora.
+2. "cnpj": CNPJ da empresa fornecedora (formatado). IMPORTANTE: Ignore o CNPJ 49.576.416/0001-41 (e suas variações de formatação), pois pertence à prefeitura e não ao fornecedor.
+3. "data": Data da emissão do orçamento (formato dd/MM/yyyy).
+4. "itens": Uma lista de objetos para os itens encontrados no documento que correspondam aos itens da estimativa abaixo. Para cada item encontrado, retorne "id" (string, conforme a lista abaixo) e "valorUnitario" (número de ponto flutuante, ex: 15.50).
+
+Itens da estimativa para cruzar:
+$itensJson
+
+Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional, com a seguinte estrutura:
+{
+  "empresas": [
+    {
+      "razaoSocial": "Empresa A LTDA",
+      "cnpj": "12.345.678/0001-90",
+      "data": "10/05/2026",
+      "itens": [
+        { "id": "1", "valorUnitario": 1500.50 },
+        { "id": "2", "valorUnitario": 45.0 }
+      ]
+    },
+    {
+      "razaoSocial": "Empresa B LTDA",
+      "cnpj": "98.765.432/0001-10",
+      "data": "15/05/2026",
+      "itens": [
+        { "id": "1", "valorUnitario": 1600.00 }
+      ]
+    }
+  ]
+}
+
+Se um campo (razaoSocial, cnpj, data) não for encontrado para uma empresa, use null.
+Se nenhuma empresa for encontrada, retorne {"empresas": []}.
+''';
+
+    final content = [
+      Content.multi([filePart, TextPart(prompt)]),
+    ];
+
+    final response = await model.generateContent(content);
+    final text = response.text;
+
+    if (text == null || text.trim().isEmpty) {
+      throw GeminiException('O modelo não retornou nenhuma resposta.');
+    }
+
+    return _parseMultiOrcamentoResult(text.trim());
+  }
+
+  /// Constrói o [GenerativeModel] com base nas configurações do banco.
+  Future<GenerativeModel> _buildModel() async {
+    final apiKey = await _settings.get(SettingsKeys.geminiApiKey);
+    if (apiKey == null || apiKey.trim().isEmpty) {
+      throw GeminiException(
+        'Chave de API do Gemini não configurada. '
+        'Configure-a no painel de Administração → IA / Gemini.',
+      );
+    }
+
+    final modelName = await _settings.get(SettingsKeys.geminiModel);
+    final model = (modelName != null && modelName.trim().isNotEmpty)
+        ? modelName.trim()
+        : 'gemini-3.1-flash-lite';
+
+    return GenerativeModel(
+      model: model,
+      apiKey: apiKey.trim(),
+    );
+  }
+
+  /// Lê o arquivo e retorna a [Part] correspondente (PDF ou DOCX).
+  Future<Part> _readFilePart(String filePath) async {
+    final lowerPath = filePath.toLowerCase();
+    final isWordDoc = lowerPath.endsWith('.docx');
+    final isPdf = lowerPath.endsWith('.pdf');
+    if (!isWordDoc && !isPdf) {
+      throw const GeminiException('Formato não suportado. Use PDF ou DOCX.');
+    }
+
+    if (isWordDoc) {
+      final bytes = await File(filePath).readAsBytes();
+      final text = docxToText(bytes);
+      return TextPart(text);
+    } else {
+      final pdfBytes = await File(filePath).readAsBytes();
+      return DataPart('application/pdf', pdfBytes);
+    }
   }
 
   GeminiOrcamentoResult _parseOrcamentoResult(String raw) {
@@ -290,6 +363,75 @@ Exemplo de resposta esperada:
       data: decoded['data']?.toString(),
       itens: mapItens,
     );
+  }
+
+  List<GeminiOrcamentoResult> _parseMultiOrcamentoResult(String raw) {
+    var cleaned = raw;
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned
+          .replaceFirst(RegExp(r'^```(?:json)?\s*'), '')
+          .replaceFirst(RegExp(r'\s*```$'), '');
+    }
+
+    Map<String, dynamic> decoded;
+    try {
+      final parsed = jsonDecode(cleaned);
+      if (parsed is! Map<String, dynamic>) {
+        throw const FormatException('Root element is not a JSON object.');
+      }
+      decoded = parsed;
+    } catch (e) {
+      throw GeminiException(
+        'Resposta do Gemini não é JSON válido: $e\n\nResposta original:\n$raw',
+      );
+    }
+
+    final empresas = decoded['empresas'] as List<dynamic>? ?? [];
+    if (empresas.isEmpty) {
+      throw const GeminiException(
+        'Nenhum orçamento foi identificado no documento.',
+      );
+    }
+
+    final results = <GeminiOrcamentoResult>[];
+    for (final rawEmpresa in empresas) {
+      if (rawEmpresa is! Map<String, dynamic>) continue;
+
+      final mapItens = <String, double>{};
+      final listItens = rawEmpresa['itens'] as List<dynamic>? ?? [];
+      for (final item in listItens) {
+        if (item is Map<String, dynamic>) {
+          final idVal = item['id'];
+          final val = item['valorUnitario'];
+          if (idVal != null && val != null) {
+            final strId = idVal.toString();
+            final doubleVal = val is num
+                ? val.toDouble()
+                : double.tryParse(val.toString());
+            if (doubleVal != null) {
+              mapItens[strId] = doubleVal;
+            }
+          }
+        }
+      }
+
+      if (mapItens.isNotEmpty) {
+        results.add(GeminiOrcamentoResult(
+          razaoSocial: rawEmpresa['razaoSocial']?.toString(),
+          cnpj: rawEmpresa['cnpj']?.toString(),
+          data: rawEmpresa['data']?.toString(),
+          itens: mapItens,
+        ));
+      }
+    }
+
+    if (results.isEmpty) {
+      throw const GeminiException(
+        'Nenhum item de orçamento foi identificado no documento.',
+      );
+    }
+
+    return results;
   }
 }
 

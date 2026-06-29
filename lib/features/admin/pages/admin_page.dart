@@ -9,6 +9,7 @@ import '../../../core/database/daos/app_settings_dao.dart';
 import '../../../shared/widgets/audesp_delete_dialog.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
@@ -125,11 +126,11 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
         Positioned(
           right: 16,
           bottom: 16,
-          child: FloatingActionButton.extended(
-            heroTag: 'admin_users_fab',
+          child: HoverExpandFab(
+            heroTag: 'novoUsuario',
             onPressed: () => _openForm(null),
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Novo usuário'),
+            icon: Icons.person_add,
+            tooltip: 'Novo usuário',
           ),
         ),
       ],

@@ -27,6 +27,7 @@ import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../edital/domain/edital_domain.dart';
 
@@ -287,15 +288,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: AudespDropdown<bool>(
-                label: 'Registro de Preços? *',
-                value: _registroPrecos,
-                items: const {true: 'Sim', false: 'Não'},
-                onChanged: (v) => setState(() => _registroPrecos = v ?? false),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -414,6 +406,15 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Expanded(
+              child: AudespDropdown<bool>(
+                label: 'Registro de Preços? *',
+                value: _registroPrecos,
+                items: const {true: 'Sim', false: 'Não'},
+                onChanged: (v) => setState(() => _registroPrecos = v ?? false),
+              ),
+            ),
+            const SizedBox(width: 16),
             Expanded(
               child: AudespTextField(
                 label: 'Prazo de Vigência',
@@ -1419,6 +1420,31 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     final path = result.files.single.path;
     if (path == null) return;
 
+    if (!mounted) return;
+
+    final isMulti = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Múltiplos orçamentos'),
+        content: const Text(
+          'O arquivo selecionado contém orçamentos de múltiplas empresas?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Não'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sim'),
+          ),
+        ],
+      ),
+    );
+    if (isMulti == null) return;
+
+    if (!mounted) return;
+
     final isLote = _tipoEstimativa == 'lote';
 
     // Preparar lista de itens para o Gemini
@@ -1447,65 +1473,92 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     if (!mounted) return;
 
-    final orcamentoResult = await showGeminiOrcamentoImportDialog(
-      context: context,
-      ref: ref,
-      pdfPath: path,
-      itensEstimativa: itensEstimativa,
-    );
-
-    if (orcamentoResult == null) return;
-
-    // Aplicar os resultados
-    setState(() {
-      final novoFornecedor = EstimativaFornecedor(
-        razaoSocial: orcamentoResult.razaoSocial ?? '',
-        cnpj: orcamentoResult.cnpj ?? '',
-        data: orcamentoResult.data ?? '',
+    if (isMulti) {
+      final resultados = await showGeminiMultiOrcamentoImportDialog(
+        context: context,
+        ref: ref,
+        pdfPath: path,
+        itensEstimativa: itensEstimativa,
       );
-      _fornecedores.add(novoFornecedor);
+      if (resultados == null || resultados.isEmpty) return;
 
-      if (isLote) {
-        for (int l = 0; l < _lotes.length; l++) {
-          final lote = _lotes[l];
-          final novosItens = <EstimativaItem>[];
-          for (final item in lote.itens) {
-            final val = orcamentoResult.itens['${lote.numero}-${item.numero}'];
-            if (val != null) {
-              final newOrcamento = EstimativaOrcamento(
-                fornecedorId: novoFornecedor.id,
-                valorUnitario: val,
-              );
-              novosItens.add(
-                item.copyWith(orcamentos: [...item.orcamentos, newOrcamento]),
-              );
-            } else {
-              novosItens.add(item);
-            }
-          }
-          _lotes[l] = lote.copyWith(itens: novosItens);
+      setState(() {
+        for (final orcamentoResult in resultados) {
+          _applyOrcamentoResult(orcamentoResult, isLote);
         }
-      } else {
-        for (int i = 0; i < _itens.length; i++) {
-          final item = _itens[i];
-          final val = orcamentoResult.itens['${item.numero}'];
+      });
+    } else {
+      final orcamentoResult = await showGeminiOrcamentoImportDialog(
+        context: context,
+        ref: ref,
+        pdfPath: path,
+        itensEstimativa: itensEstimativa,
+      );
+      if (orcamentoResult == null) return;
+
+      setState(() {
+        _applyOrcamentoResult(orcamentoResult, isLote);
+      });
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isMulti
+                ? 'Orçamentos importados com sucesso!'
+                : 'Orçamento importado com sucesso!',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _applyOrcamentoResult(
+    GeminiOrcamentoResult orcamentoResult,
+    bool isLote,
+  ) {
+    final novoFornecedor = EstimativaFornecedor(
+      razaoSocial: orcamentoResult.razaoSocial ?? '',
+      cnpj: orcamentoResult.cnpj ?? '',
+      data: orcamentoResult.data ?? '',
+    );
+    _fornecedores.add(novoFornecedor);
+
+    if (isLote) {
+      for (int l = 0; l < _lotes.length; l++) {
+        final lote = _lotes[l];
+        final novosItens = <EstimativaItem>[];
+        for (final item in lote.itens) {
+          final val = orcamentoResult.itens['${lote.numero}-${item.numero}'];
           if (val != null) {
             final newOrcamento = EstimativaOrcamento(
               fornecedorId: novoFornecedor.id,
               valorUnitario: val,
             );
-            _itens[i] = item.copyWith(
-              orcamentos: [...item.orcamentos, newOrcamento],
+            novosItens.add(
+              item.copyWith(orcamentos: [...item.orcamentos, newOrcamento]),
             );
+          } else {
+            novosItens.add(item);
           }
         }
+        _lotes[l] = lote.copyWith(itens: novosItens);
       }
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Orçamento importado com sucesso!')),
-      );
+    } else {
+      for (int i = 0; i < _itens.length; i++) {
+        final item = _itens[i];
+        final val = orcamentoResult.itens['${item.numero}'];
+        if (val != null) {
+          final newOrcamento = EstimativaOrcamento(
+            fornecedorId: novoFornecedor.id,
+            valorUnitario: val,
+          );
+          _itens[i] = item.copyWith(
+            orcamentos: [...item.orcamentos, newOrcamento],
+          );
+        }
+      }
     }
   }
 
