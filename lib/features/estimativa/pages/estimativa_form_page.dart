@@ -773,7 +773,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _itens.length,
-      onReorder: _reorderItens,
+      onReorderItem: _reorderItens,
       itemBuilder: (context, index) {
         final item = _itens[index];
         return _buildItemRow(
@@ -793,7 +793,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _lotes.length,
-      onReorder: _reorderLotes,
+      onReorderItem: _reorderLotes,
       itemBuilder: (context, loteIndex) {
         final lote = _lotes[loteIndex];
         final loteTotal = lote.getValorTotal(_calculoGlobal);
@@ -913,8 +913,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: lote.itens.length,
-                          onReorder: (oldIndex, newIndex) =>
-                              _reorderLoteItens(loteIndex, oldIndex, newIndex),
+                           onReorderItem: (oldIndex, newIndex) =>
+                               _reorderLoteItens(loteIndex, oldIndex, newIndex),
                           itemBuilder: (context, itemIndex) {
                             final item = lote.itens[itemIndex];
                             return _buildItemRow(
@@ -970,9 +970,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       decoration: BoxDecoration(
         border: showBottomBorder
             ? Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor.withOpacity(0.3),
-                ),
+                 bottom: BorderSide(
+                   color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                 ),
               )
             : null,
       ),

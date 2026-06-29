@@ -23,10 +23,7 @@ dependencies:
 
   # Roteamento declarativo
   go_router: ^17.2.0
-
-  # Armazenamento seguro de senhas locais (DPAPI no Windows)
-  flutter_secure_storage: ^10.0.0
-
+  
   # Formatação de datas
   intl: ^0.20.2
 
@@ -40,10 +37,6 @@ dependencies:
 
   # Extração de texto de DOC/DOCX para envio ao Gemini
   docx_to_text: ^1.0.1
-
-  # Modelos imutáveis + serialização
-  freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
 
   # Driver MySQL
   mysql_client: ^0.0.27
@@ -64,8 +57,6 @@ dev_dependencies:
 
   # Code generation
   build_runner: ^2.4.13
-  freezed: ^3.2.5
-  json_serializable: ^6.9.0
   flutter_launcher_icons: ^0.14.4
 
 flutter:
