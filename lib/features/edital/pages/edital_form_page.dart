@@ -24,6 +24,7 @@ import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
@@ -199,21 +200,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'tipoInstrumentoConvocatorioId': _tipoInstrumento,
       'modalidadeId': _modalidade,
       'modoDisputaId': _modoDisputa,
+      'criterioJulgamentoId': _criterioJulgamentoId,
       'numeroCompra': _numeroCompraCtrl.text.trim(),
       'anoCompra': int.tryParse(_anoCompraCtrl.text.trim()) ?? 0,
       'numeroProcesso': _numeroProcessoCtrl.text.trim(),
       'objetoCompra': _objetoCompraCtrl.text.trim(),
       'srp': _srp,
       'amparoLegalId': int.tryParse(_amparoLegalCtrl.text.trim()),
-      'itensCompra': _itens.map((item) {
-        if (_criterioJulgamentoId != null) {
-          return <String, dynamic>{
-            ...item,
-            'criterioJulgamentoId': _criterioJulgamentoId,
-          };
-        }
-        return item;
-      }).toList(),
+      'itensCompra': _itens.toList(),
     };
 
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
@@ -322,6 +316,15 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ref,
       onConfirm: (token) async {
         final doc = _buildJson();
+        if (_criterioJulgamentoId != null) {
+          final itens = (doc['itensCompra'] as List<dynamic>)
+              .map((item) => <String, dynamic>{
+                    ...(item as Map<String, dynamic>),
+                    'criterioJulgamentoId': _criterioJulgamentoId,
+                  })
+              .toList();
+          doc['itensCompra'] = itens;
+        }
         final jsonStr = jsonEncode(doc);
         final service = ref.read(editalServiceProvider);
 
@@ -374,6 +377,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         'tipoInstrumentoConvocatorioId': _tipoInstrumento?.toString() ?? '',
         'modalidadeId': _modalidade?.toString() ?? '',
         'modoDisputaId': _modoDisputa?.toString() ?? '',
+        'criterioJulgamentoId': _criterioJulgamentoId?.toString() ?? '',
         'numeroCompra': _numeroCompraCtrl.text.trim(),
         'anoCompra': _anoCompraCtrl.text.trim(),
         'numeroProcesso': _numeroProcessoCtrl.text.trim(),
@@ -438,6 +442,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             accepted['amparoLegalId']!,
           );
         }
+        if (accepted.containsKey('criterioJulgamentoId')) {
+          _criterioJulgamentoId = _sanitizeCriterioJulgamento(
+            accepted['criterioJulgamentoId']!,
+          );
+        }
         if (accepted.containsKey('dataAberturaProposta') &&
             accepted['dataAberturaProposta']!.isNotEmpty) {
           try {
@@ -487,6 +496,32 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (match != null) return match.group(0)!;
 
     return trimmed;
+  }
+
+  /// Tenta converter o valor bruto do Gemini em código numérico do critério de julgamento.
+  /// Ex.: "Menor preço" → 1, "4" → 4, "Técnica e preço" → 4
+  static int? _sanitizeCriterioJulgamento(String raw) {
+    final trimmed = raw.trim();
+
+    // Tenta parse numérico direto
+    final asInt = int.tryParse(trimmed);
+    if (asInt != null) return asInt;
+
+    // Match textual via EditalComplementoCsvMapper
+    final fromMapper = EditalComplementoCsvMapper.criterioJulgamentoId(trimmed);
+    if (fromMapper != null) return fromMapper;
+
+    // Busca por correspondência parcial no mapa de domínio
+    final normalized = trimmed.toLowerCase();
+    for (final entry in kCriterioJulgamento.entries) {
+      if (entry.value.toLowerCase().contains(normalized)) return entry.key;
+    }
+
+    // Tenta extrair o primeiro número inteiro do texto
+    final match = RegExp(r'\d+').firstMatch(trimmed);
+    if (match != null) return int.tryParse(match.group(0)!);
+
+    return null;
   }
 
   // ── Date/datetime helpers ─────────────────────────────────────────────────

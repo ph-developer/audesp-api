@@ -8,6 +8,6 @@
 - [x] Arredondar estimativa para cima (valores finais)
 - [x] Opção de estimativa de 2 e 4 casas decimais (com arredondamento)
 - [x] Incluir cálculo de percentual reservado para ME/EPP na estimativa
-- [ ] Integrar Gemini para extrair critério de julgamento do edital
+- [x] Integrar Gemini para extrair critério de julgamento do edital
 - [ ] Remover quebra de linha ao colar descrição do item/lote (confirmar com usuário) na estimativa (verificar a possibilidade de colocar no componente de texto)
 - [ ] Implementar importação de cotação compilada na estimativa

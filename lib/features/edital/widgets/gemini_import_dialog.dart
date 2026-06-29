@@ -40,6 +40,15 @@ final _kEditalFields = <GeminiField>[
         '1=Aberto, 2=Fechado, 3=Aberto-Fechado, 4=Dispensa com Disputa, 5=Não se aplica, 6=Fechado-Aberto',
   ),
   GeminiField(
+    key: 'criterioJulgamentoId',
+    label: 'Critério de Julgamento',
+    hint:
+        '1=Menor preço, 2=Maior desconto, 4=Técnica e preço, 5=Maior lance, '
+        '6=Maior retorno econômico, 7=Não se aplica, 8=Melhor técnica, '
+        '9=Conteúdo artístico, 1000=Melhor destinação de bens alienados, '
+        '1001=Maior oferta de preço',
+  ),
+  GeminiField(
     key: 'numeroCompra',
     label: 'Número da Compra',
     hint:
@@ -97,6 +106,9 @@ String _displayValue(String key, String raw) {
     case 'modoDisputaId':
       final id = int.tryParse(raw);
       return id != null ? (kModoDisputa[id] ?? raw) : raw;
+    case 'criterioJulgamentoId':
+      final id = int.tryParse(raw);
+      return id != null ? (kCriterioJulgamento[id] ?? raw) : raw;
     case 'amparoLegalId':
       final id = int.tryParse(raw);
       return id != null ? (kAmparosLegais[id] ?? raw) : raw;
