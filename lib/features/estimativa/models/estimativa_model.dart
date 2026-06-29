@@ -173,4 +173,25 @@ class EstimativaModel {
       );
     }
   }
+
+  double get valorTotalMeEpp {
+    if (exclusividadeMeEpp == 'exclusiva') return valorTotalGlobal;
+    if (exclusividadeMeEpp != 'reservada') return 0.0;
+
+    if (tipoEstimativa == 'lote') {
+      return lotes
+          .where((l) => l.exclusivoMeEpp)
+          .fold(0.0, (sum, lote) => sum + lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais));
+    } else {
+      return itens
+          .where((i) => i.exclusivoMeEpp)
+          .fold(0.0, (sum, item) => sum + item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais));
+    }
+  }
+
+  double get percentualMeEpp {
+    final total = valorTotalGlobal;
+    if (total == 0) return 0.0;
+    return (valorTotalMeEpp / total) * 100;
+  }
 }
