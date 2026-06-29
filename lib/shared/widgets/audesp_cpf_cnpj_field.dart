@@ -42,6 +42,31 @@ class AudespCpfCnpjField extends StatelessWidget {
   /// Remove tudo que não é dígito.
   static String strip(String value) => value.replaceAll(RegExp(r'\D'), '');
 
+  /// Formata CPF (11 dígitos) ou CNPJ (14 dígitos) com máscara.
+  static String formatDocument(String value) {
+    final digits = strip(value);
+    if (digits.length == 11) {
+      final buffer = StringBuffer();
+      for (var i = 0; i < 11; i++) {
+        if (i == 3 || i == 6) buffer.write('.');
+        if (i == 9) buffer.write('-');
+        buffer.write(digits[i]);
+      }
+      return buffer.toString();
+    }
+    if (digits.length == 14) {
+      final buffer = StringBuffer();
+      for (var i = 0; i < 14; i++) {
+        if (i == 2 || i == 5) buffer.write('.');
+        if (i == 8) buffer.write('/');
+        if (i == 12) buffer.write('-');
+        buffer.write(digits[i]);
+      }
+      return buffer.toString();
+    }
+    return value;
+  }
+
   /// Valida se o valor é um CPF ou CNPJ válido (apenas dígitos).
   static bool isValid(String value) {
     final digits = strip(value);

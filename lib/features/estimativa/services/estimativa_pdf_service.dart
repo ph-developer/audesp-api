@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_fornecedor_model.dart';
@@ -326,7 +327,7 @@ class EstimativaPdfService {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                'Qquantidade: ${item.quantidade} ${item.unidade} | '
+                'Quantidade: ${item.quantidade} ${item.unidade} | '
                 '${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | '
                 'Regra Ref.: ${_getCalculoLabel(calculoUsado)}',
                 style: const pw.TextStyle(
@@ -364,7 +365,7 @@ class EstimativaPdfService {
                       .firstOrNull;
                   return [
                     fornecedor?.razaoSocial ?? '-',
-                    fornecedor?.cnpj ?? '-',
+                    AudespCpfCnpjField.formatDocument(fornecedor?.cnpj ?? ''),
                     fornecedor?.data ?? '-',
                     _fmt.format(o.valorUnitario),
                   ];
