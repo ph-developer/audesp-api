@@ -99,11 +99,7 @@ class _AjusteMeEppDialogState extends State<_AjusteMeEppDialog> {
                         ),
                         const SizedBox(width: 16),
                         AudespSegmentedButton<int>(
-                          segments: const {
-                            1: 'ME',
-                            2: 'EPP',
-                            3: 'NÃO',
-                          },
+                          segments: const {1: 'ME', 2: 'EPP', 3: 'NÃO'},
                           selected: {_status[ni] ?? 3},
                           onSelectionChanged: (s) =>
                               setState(() => _status[ni] = s.first),

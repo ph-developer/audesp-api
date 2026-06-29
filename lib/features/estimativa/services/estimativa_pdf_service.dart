@@ -221,7 +221,10 @@ class EstimativaPdfService {
     );
   }
 
-  static List<pw.Widget> _buildLotes(EstimativaModel estimativa, NumberFormat fmt) {
+  static List<pw.Widget> _buildLotes(
+    EstimativaModel estimativa,
+    NumberFormat fmt,
+  ) {
     final widgets = <pw.Widget>[];
     for (final lote in estimativa.lotes) {
       widgets.add(

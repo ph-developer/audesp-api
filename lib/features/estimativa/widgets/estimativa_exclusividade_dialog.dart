@@ -48,7 +48,7 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                                 onChanged: (v) {
                                   setModalState(() {
                                     tempLotes[index] = lote.copyWith(
-                                      exclusivoMeEpp: v ?? false,
+                                      exclusivoMeEpp: v,
                                     );
                                   });
                                 },
@@ -68,7 +68,7 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                           onChanged: (v) {
                             setModalState(() {
                               tempItens[index] = item.copyWith(
-                                exclusivoMeEpp: v ?? false,
+                                exclusivoMeEpp: v,
                               );
                             });
                           },

@@ -164,12 +164,16 @@ class EstimativaModel {
     if (tipoEstimativa == 'lote') {
       return lotes.fold(
         0.0,
-        (sum, lote) => sum + lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+        (sum, lote) =>
+            sum +
+            lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
       );
     } else {
       return itens.fold(
         0.0,
-        (sum, item) => sum + item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+        (sum, item) =>
+            sum +
+            item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
       );
     }
   }
@@ -181,11 +185,21 @@ class EstimativaModel {
     if (tipoEstimativa == 'lote') {
       return lotes
           .where((l) => l.exclusivoMeEpp)
-          .fold(0.0, (sum, lote) => sum + lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais));
+          .fold(
+            0.0,
+            (sum, lote) =>
+                sum +
+                lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+          );
     } else {
       return itens
           .where((i) => i.exclusivoMeEpp)
-          .fold(0.0, (sum, item) => sum + item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais));
+          .fold(
+            0.0,
+            (sum, item) =>
+                sum +
+                item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+          );
     }
   }
 

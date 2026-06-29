@@ -103,7 +103,10 @@ class EstimativaItem {
     return 0.0;
   }
 
-  double getValorReferenciaUnitario(String calculoGlobal, {int casasDecimais = 2}) {
+  double getValorReferenciaUnitario(
+    String calculoGlobal, {
+    int casasDecimais = 2,
+  }) {
     if (orcamentos.isEmpty) return 0.0;
 
     final strategy = calculoGlobal;
@@ -134,12 +137,18 @@ class EstimativaItem {
 
   double getValorMensal(String calculoGlobal, {int casasDecimais = 2}) {
     if (tipoFornecimento != 'mensal') return 0.0;
-    final vUnit = getValorReferenciaUnitario(calculoGlobal, casasDecimais: casasDecimais);
+    final vUnit = getValorReferenciaUnitario(
+      calculoGlobal,
+      casasDecimais: casasDecimais,
+    );
     return arredondarParaCima(quantidade * vUnit, casasDecimais);
   }
 
   double getValorTotal(String calculoGlobal, {int casasDecimais = 2}) {
-    final vUnit = getValorReferenciaUnitario(calculoGlobal, casasDecimais: casasDecimais);
+    final vUnit = getValorReferenciaUnitario(
+      calculoGlobal,
+      casasDecimais: casasDecimais,
+    );
     if (tipoFornecimento == 'mensal') {
       final vMensal = quantidade * vUnit;
       return arredondarParaCima(vMensal * quantidadeMeses, casasDecimais);

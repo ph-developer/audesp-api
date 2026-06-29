@@ -46,10 +46,7 @@ class _EditalPageState extends ConsumerState<EditalPage> {
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
             child: AudespSegmentedButton<String>(
               width: 260,
-              segments: const {
-                'draft': 'Rascunhos',
-                'sent': 'Enviados',
-              },
+              segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
               icons: const {
                 'draft': Icons.edit_note,
                 'sent': Icons.check_circle_outline,
@@ -136,8 +133,8 @@ class _EditalList extends ConsumerWidget {
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
                 : status == 'draft'
-                    ? 'Nenhum rascunho de edital'
-                    : 'Nenhum edital enviado',
+                ? 'Nenhum rascunho de edital'
+                : 'Nenhum edital enviado',
           );
         }
         return ListView.builder(

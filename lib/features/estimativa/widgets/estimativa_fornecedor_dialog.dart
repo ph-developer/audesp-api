@@ -51,8 +51,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       text: widget.fornecedor?.razaoSocial,
     );
     _cnpjCtrl = TextEditingController(text: widget.fornecedor?.cnpj);
-    if (widget.fornecedor?.data != null &&
-        widget.fornecedor!.data.isNotEmpty) {
+    if (widget.fornecedor?.data != null && widget.fornecedor!.data.isNotEmpty) {
       try {
         _data = DateFormat('dd/MM/yyyy').parse(widget.fornecedor!.data);
       } catch (_) {}

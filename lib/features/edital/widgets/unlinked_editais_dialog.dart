@@ -11,11 +11,8 @@ import 'pcnp_input_formatter.dart';
 
 enum UnlinkedEditaisTarget { licitacao, ata, ajuste }
 
-final unlinkedEditaisProvider =
-    FutureProvider.autoDispose.family<List<Edital>, UnlinkedEditaisTarget>((
-      ref,
-      target,
-    ) async {
+final unlinkedEditaisProvider = FutureProvider.autoDispose
+    .family<List<Edital>, UnlinkedEditaisTarget>((ref, target) async {
       final editais = await ref.watch(editaisDaoProvider).watchAll();
 
       switch (target) {
@@ -145,9 +142,7 @@ class _UnlinkedEditaisDialogState
                             return ListTile(
                               leading: const Icon(Icons.article_outlined),
                               title: Text(
-                                compra.isEmpty
-                                    ? edital.dropdownLabel
-                                    : compra,
+                                compra.isEmpty ? edital.dropdownLabel : compra,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -162,8 +157,7 @@ class _UnlinkedEditaisDialogState
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              onTap: () =>
-                                  Navigator.of(context).pop(edital),
+                              onTap: () => Navigator.of(context).pop(edital),
                             );
                           },
                         ),

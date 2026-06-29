@@ -482,10 +482,7 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
     );
   }
 
-  TableRow _buildRow(
-    Map<String, dynamic> item,
-    ColorScheme colorScheme,
-  ) {
+  TableRow _buildRow(Map<String, dynamic> item, ColorScheme colorScheme) {
     final id = item['id'] as String?;
     final desc = item['descricao'] as String? ?? '';
     final suggested = id != null ? widget.suggestedValues.itens[id] : null;
@@ -653,79 +650,81 @@ class _GeminiMultiOrcamentoReviewDialogState
       length: totalCompanies,
       child: Builder(
         builder: (tabCtx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.auto_fix_high),
-            const SizedBox(width: 12),
-            const Expanded(child: Text('Revisão da Importação de Orçamentos')),
-          ],
-        ),
-        content: SizedBox(
-          width: 700,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          title: Row(
             children: [
-              TabBar(
-                isScrollable: true,
-                tabs: List.generate(totalCompanies, (i) {
-                  return SizedBox(
-                    width: tabWidth,
-                    child: Tab(
-                      child: Text(
-                        tabLabels[i],
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  );
-                }),
+              const Icon(Icons.auto_fix_high),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Revisão da Importação de Orçamentos'),
               ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: IndexedStack(
-                  index: DefaultTabController.of(tabCtx).index,
-                  children: List.generate(totalCompanies, (i) {
-                    return SingleChildScrollView(
-                      child: _CompanyReviewCard(
-                        key: _cardKeys[i],
-                        suggestedValues: widget.suggestedValues[i],
-                        itensEstimativa: widget.itensEstimativa,
+            ],
+          ),
+          content: SizedBox(
+            width: 700,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TabBar(
+                  isScrollable: true,
+                  tabs: List.generate(totalCompanies, (i) {
+                    return SizedBox(
+                      width: tabWidth,
+                      child: Tab(
+                        child: Text(
+                          tabLabels[i],
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     );
                   }),
                 ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: _totalAcceptedCount > 0
-                ? () {
-                    final results = <GeminiOrcamentoResult>[];
-                    for (final key in _cardKeys) {
-                      final state = key.currentState;
-                      if (state != null) {
-                        final result = state.buildResult();
-                        if (result != null && result.itens.isNotEmpty) {
-                          results.add(result);
-                        }
-                      }
-                    }
-                    if (results.isNotEmpty) {
-                      Navigator.of(context).pop(results);
-                    }
-                  }
-                : null,
-            child: Text(
-              'Importar Valores Selecionados ($totalCompanies empresa(s))',
+                const SizedBox(height: 8),
+                Flexible(
+                  child: IndexedStack(
+                    index: DefaultTabController.of(tabCtx).index,
+                    children: List.generate(totalCompanies, (i) {
+                      return SingleChildScrollView(
+                        child: _CompanyReviewCard(
+                          key: _cardKeys[i],
+                          suggestedValues: widget.suggestedValues[i],
+                          itensEstimativa: widget.itensEstimativa,
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: _totalAcceptedCount > 0
+                  ? () {
+                      final results = <GeminiOrcamentoResult>[];
+                      for (final key in _cardKeys) {
+                        final state = key.currentState;
+                        if (state != null) {
+                          final result = state.buildResult();
+                          if (result != null && result.itens.isNotEmpty) {
+                            results.add(result);
+                          }
+                        }
+                      }
+                      if (results.isNotEmpty) {
+                        Navigator.of(context).pop(results);
+                      }
+                    }
+                  : null,
+              child: Text(
+                'Importar Valores Selecionados ($totalCompanies empresa(s))',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

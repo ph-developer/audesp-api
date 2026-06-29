@@ -10,13 +10,13 @@ import 'package:flutter/material.dart';
 /// AudespCheckbox(
 ///   label: 'Retificação',
 ///   value: _retificacao,
-///   onChanged: (v) => setState(() => _retificacao = v ?? false),
+///   onChanged: (v) => setState(() => _retificacao = v),
 /// )
 /// ```
 class AudespCheckbox extends StatelessWidget {
   final String label;
   final bool value;
-  final ValueChanged<bool?>? onChanged;
+  final ValueChanged<bool>? onChanged;
   final bool readOnly;
 
   const AudespCheckbox({
@@ -34,7 +34,9 @@ class AudespCheckbox extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       title: Text(label),
       value: value,
-      onChanged: readOnly ? null : onChanged,
+      onChanged: readOnly || onChanged == null
+          ? null
+          : (value) => onChanged!(value ?? false),
     );
   }
 }

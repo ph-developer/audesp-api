@@ -126,6 +126,14 @@ class AjustesDao {
     await stmt.execute(['sent', now, id]);
   }
 
+  Future<void> markAsDraft(int id) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE ajustes SET status = ?, updated_at = ? WHERE id = ?',
+    );
+    await stmt.execute(['draft', now, id]);
+  }
+
   Future<int> deleteById(int id) async {
     final stmt = await _db.pool.prepare('DELETE FROM ajustes WHERE id = ?');
     final result = await stmt.execute([id]);

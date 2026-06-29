@@ -106,28 +106,33 @@ String _displayValue(String key, String raw) {
       if (['true', 'sim'].contains(raw.toLowerCase())) return 'Sim';
       if (['false', 'não', 'nao'].contains(raw.toLowerCase())) return 'Não';
       return raw;
-    case 'tipoInstrumentoConvocatorioId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kTipoInstrumento[id] ?? raw)) : raw;
-    }
-    case 'modalidadeId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kModalidades[id] ?? raw)) : raw;
-    }
-    case 'modoDisputaId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kModoDisputa[id] ?? raw)) : raw;
-    }
-    case 'criterioJulgamentoId': {
-      final id = int.tryParse(raw);
-      return id != null
-          ? (_stripIdPrefix(kCriterioJulgamento[id] ?? raw))
-          : raw;
-    }
-    case 'amparoLegalId': {
-      final id = int.tryParse(raw);
-      return id != null ? (_stripIdPrefix(kAmparosLegais[id] ?? raw)) : raw;
-    }
+    case 'tipoInstrumentoConvocatorioId':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kTipoInstrumento[id] ?? raw)) : raw;
+      }
+    case 'modalidadeId':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kModalidades[id] ?? raw)) : raw;
+      }
+    case 'modoDisputaId':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kModoDisputa[id] ?? raw)) : raw;
+      }
+    case 'criterioJulgamentoId':
+      {
+        final id = int.tryParse(raw);
+        return id != null
+            ? (_stripIdPrefix(kCriterioJulgamento[id] ?? raw))
+            : raw;
+      }
+    case 'amparoLegalId':
+      {
+        final id = int.tryParse(raw);
+        return id != null ? (_stripIdPrefix(kAmparosLegais[id] ?? raw)) : raw;
+      }
     default:
       return raw;
   }

@@ -293,10 +293,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
         ? modelName.trim()
         : 'gemini-3.1-flash-lite';
 
-    return GenerativeModel(
-      model: model,
-      apiKey: apiKey.trim(),
-    );
+    return GenerativeModel(model: model, apiKey: apiKey.trim());
   }
 
   /// Lê o arquivo e retorna a [Part] correspondente (PDF ou DOCX).
@@ -420,12 +417,14 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
       }
 
       if (mapItens.isNotEmpty) {
-        results.add(GeminiOrcamentoResult(
-          razaoSocial: rawEmpresa['razaoSocial']?.toString(),
-          cnpj: rawEmpresa['cnpj']?.toString(),
-          data: rawEmpresa['data']?.toString(),
-          itens: mapItens,
-        ));
+        results.add(
+          GeminiOrcamentoResult(
+            razaoSocial: rawEmpresa['razaoSocial']?.toString(),
+            cnpj: rawEmpresa['cnpj']?.toString(),
+            data: rawEmpresa['data']?.toString(),
+            itens: mapItens,
+          ),
+        );
       }
     }
 

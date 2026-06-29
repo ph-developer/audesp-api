@@ -148,10 +148,7 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   AudespSegmentedButton<String>(
-                    segments: const {
-                      'M': 'Material',
-                      'S': 'Serviço',
-                    },
+                    segments: const {'M': 'Material', 'S': 'Serviço'},
                     selected: {_materialOuServico},
                     onSelectionChanged: (s) =>
                         setState(() => _materialOuServico = s.first),
@@ -175,16 +172,14 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                     child: AudespCheckbox(
                       label: 'Incentivo Produtivo Básico (PPB)',
                       value: _incentivoBasico,
-                      onChanged: (v) =>
-                          setState(() => _incentivoBasico = v ?? false),
+                      onChanged: (v) => setState(() => _incentivoBasico = v),
                     ),
                   ),
                   AudespFieldRowItem(
                     child: AudespCheckbox(
                       label: 'Orçamento Sigiloso',
                       value: _orcamentoSigiloso,
-                      onChanged: (v) =>
-                          setState(() => _orcamentoSigiloso = v ?? false),
+                      onChanged: (v) => setState(() => _orcamentoSigiloso = v),
                     ),
                   ),
                 ],

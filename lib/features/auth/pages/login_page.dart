@@ -250,10 +250,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           icon: _obscure
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          tooltip:
-                              _obscure ? 'Mostrar senha' : 'Ocultar senha',
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                         errorText: _error,
                       ),

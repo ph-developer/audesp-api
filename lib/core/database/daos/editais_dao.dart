@@ -104,6 +104,14 @@ class EditaisDao {
     await stmt.execute(['sent', now, id]);
   }
 
+  Future<void> markAsDraft(int id) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE editais SET status = ?, updated_at = ? WHERE id = ?',
+    );
+    await stmt.execute(['draft', now, id]);
+  }
+
   Future<void> updateJson(int id, String json) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(

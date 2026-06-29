@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../app_database.dart';
 import '../database_service.dart';
 
@@ -35,6 +37,109 @@ class ApiLogsDao {
     final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : ApiLog.fromMap(rows.first.typedAssoc());
+  }
+
+  Future<ApiLog?> findLatestEditalSendLog({
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+  }) async {
+    return _findLatestSendLogByDescritor(
+      endpointContains: 'enviar-edital',
+      expected: {
+        'municipio': municipio,
+        'entidade': entidade,
+        'codigoEdital': codigoEdital,
+        'retificacao': retificacao,
+      },
+    );
+  }
+
+  Future<ApiLog?> findLatestLicitacaoSendLog({
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required bool retificacao,
+  }) async {
+    return _findLatestSendLogByDescritor(
+      endpointContains: 'enviar-licitacao',
+      expected: {
+        'municipio': municipio,
+        'entidade': entidade,
+        'codigoEdital': codigoEdital,
+        'retificacao': retificacao,
+      },
+    );
+  }
+
+  Future<ApiLog?> findLatestAtaSendLog({
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    required String codigoAta,
+    required bool retificacao,
+  }) async {
+    return _findLatestSendLogByDescritor(
+      endpointContains: 'enviar-ata',
+      expected: {
+        'municipio': municipio,
+        'entidade': entidade,
+        'codigoEdital': codigoEdital,
+        'codigoAta': codigoAta,
+        'retificacao': retificacao,
+      },
+    );
+  }
+
+  Future<ApiLog?> findLatestAjusteSendLog({
+    required String municipio,
+    required String entidade,
+    required String codigoEdital,
+    String? codigoAta,
+    required String codigoContrato,
+    required bool retificacao,
+  }) async {
+    return _findLatestSendLogByDescritor(
+      endpointContains: 'enviar-ajuste',
+      expected: {
+        'municipio': municipio,
+        'entidade': entidade,
+        'codigoEdital': codigoEdital,
+        if (codigoAta != null && codigoAta.isNotEmpty) 'codigoAta': codigoAta,
+        'codigoContrato': codigoContrato,
+        'retificacao': retificacao,
+      },
+    );
+  }
+
+  Future<ApiLog?> _findLatestSendLogByDescritor({
+    required String endpointContains,
+    required Map<String, Object?> expected,
+  }) async {
+    final stmt = await _db.pool.prepare(
+      "SELECT * FROM api_logs WHERE endpoint LIKE ? ORDER BY timestamp DESC, id DESC",
+    );
+    final result = await stmt.execute(['%$endpointContains%']);
+
+    for (final row in result.rows) {
+      final log = ApiLog.fromMap(row.typedAssoc());
+      try {
+        final doc = jsonDecode(log.request) as Map<String, dynamic>;
+        final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
+        final matches = expected.entries.every((entry) {
+          final actual = descritor[entry.key];
+          final expectedValue = entry.value;
+          if (expectedValue is bool) return actual == expectedValue;
+          return actual?.toString() == expectedValue?.toString();
+        });
+        if (matches) {
+          return log;
+        }
+      } catch (_) {}
+    }
+
+    return null;
   }
 
   Future<int> insertLog({

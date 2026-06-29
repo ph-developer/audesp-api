@@ -10,6 +10,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
@@ -44,7 +45,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   bool _loading = true;
   bool _saving = false;
   bool _isSent = false;
+  bool _updatingStatus = false;
   int? _loadedId;
+  ApiLog? _lastSendLog;
 
   // ── Vínculo com Edital ─────────────────────────────────────────────────
   int? _editalId;
@@ -180,6 +183,18 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _numerosItem = (doc['numeroItem'] as List<dynamic>? ?? [])
         .map((e) => (e as num).toInt())
         .toList();
+
+    if (_isSent) {
+      _lastSendLog = await ref
+          .read(apiLogsDaoProvider)
+          .findLatestAtaSendLog(
+            municipio: ata.municipio,
+            entidade: ata.entidade,
+            codigoEdital: ata.codigoEdital,
+            codigoAta: ata.codigoAta,
+            retificacao: ata.retificacao,
+          );
+    }
 
     if (mounted) setState(() => _loading = false);
   }
@@ -337,6 +352,162 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   // ── Itens ─────────────────────────────────────────────────────────────
 
+  bool _isRejectedStatus(String? status) {
+    return status?.toLowerCase().contains('rejeitado') ?? false;
+  }
+
+  bool _isProtocoloUpdatable(String? status) {
+    if (status == null) return false;
+    final s = status.toLowerCase();
+    if (s.contains('rejeitado') ||
+        s.contains('arquivado') ||
+        s.contains('exclu') ||
+        s.contains('armazenado') ||
+        s.contains('substitu')) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _reloadLatestSendLog() async {
+    if (_loadedId == null) return;
+    final ata = await ref.read(atasDaoProvider).findById(_loadedId!);
+    if (ata == null) return;
+    final log = await ref
+        .read(apiLogsDaoProvider)
+        .findLatestAtaSendLog(
+          municipio: ata.municipio,
+          entidade: ata.entidade,
+          codigoEdital: ata.codigoEdital,
+          codigoAta: ata.codigoAta,
+          retificacao: ata.retificacao,
+        );
+    if (mounted) setState(() => _lastSendLog = log);
+  }
+
+  Future<void> _updateProtocoloStatus() async {
+    final log = _lastSendLog;
+    if (log?.protocolo == null) return;
+
+    await showAudespAuthDialog(
+      context,
+      ref,
+      actionLabel: 'Autenticar e Atualizar',
+      onConfirm: (token) async {
+        setState(() => _updatingStatus = true);
+        try {
+          final jsonRetorno = await ref
+              .read(consultaServiceProvider)
+              .consultarStatus(log!.protocolo!);
+          final json = jsonDecode(jsonRetorno);
+          final novoStatus = json['status']?.toString() ?? 'Desconhecido';
+
+          await ref
+              .read(apiLogsDaoProvider)
+              .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          await _reloadLatestSendLog();
+
+          if (mounted) {
+            AudespSnackBar.success(
+              context,
+              'Status atualizado para: $novoStatus',
+            );
+          }
+        } catch (e) {
+          _showError('Erro ao atualizar status: $e');
+        } finally {
+          if (mounted) setState(() => _updatingStatus = false);
+        }
+      },
+    );
+  }
+
+  Future<void> _returnToDraft() async {
+    if (_loadedId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Retornar para rascunho?'),
+        content: const Text(
+          'A ata voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Retornar para rascunho'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(atasDaoProvider).markAsDraft(_loadedId!);
+      ref.invalidate(atasDraftProvider);
+      ref.invalidate(atasEnviadasProvider);
+      if (mounted) {
+        setState(() {
+          _isSent = false;
+          _lastSendLog = null;
+        });
+        AudespSnackBar.success(context, 'Ata retornada para rascunho.');
+      }
+    } catch (e) {
+      _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  Widget _buildSentHeaderActions() {
+    final status = _lastSendLog?.statusProtocolo;
+    final rejected = _isRejectedStatus(status);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_lastSendLog?.protocolo != null &&
+            _isProtocoloUpdatable(status)) ...[
+          IconButton(
+            tooltip: 'Atualizar status',
+            onPressed: _updatingStatus ? null : _updateProtocoloStatus,
+            icon: _updatingStatus
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+          const SizedBox(width: 4),
+        ],
+        if (rejected) ...[
+          TextButton.icon(
+            onPressed: _returnToDraft,
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Retornar para rascunho'),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: StatusChip(
+            label: status?.isNotEmpty == true ? status! : 'Enviado',
+            color: rejected ? scheme.error : null,
+            backgroundColor: rejected ? scheme.errorContainer : null,
+            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _addItem() {
     final raw = _itemCtrl.text.trim();
     final num = int.tryParse(raw);
@@ -405,11 +576,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               const SizedBox(width: 8),
             ],
           ],
-          if (_isSent)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: StatusChip.document('sent'),
-            ),
+          if (_isSent) _buildSentHeaderActions(),
         ],
       ),
       body: Form(
@@ -449,8 +616,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           value: _retificacao,
                           onChanged: readOnly
                               ? null
-                              : (v) =>
-                                    setState(() => _retificacao = v ?? false),
+                              : (v) => setState(() => _retificacao = v),
                         ),
                       ),
                     ],

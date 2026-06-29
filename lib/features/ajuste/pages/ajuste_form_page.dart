@@ -11,6 +11,7 @@ import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
+import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
@@ -50,7 +51,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   bool _saving = false;
   bool _isSent = false;
   bool _importingGemini = false;
+  bool _updatingStatus = false;
   int? _loadedId;
+  ApiLog? _lastSendLog;
 
   // ── Vínculo com Edital e Ata ──────────────────────────────────────────
   int? _editalId;
@@ -146,9 +149,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    final editaisEnviados = await ref.read(editaisDaoProvider).watchByStatus(
-      'sent',
-    );
+    final editaisEnviados = await ref
+        .read(editaisDaoProvider)
+        .watchByStatus('sent');
     _editais = editaisEnviados.where((e) => !e.isSrp).toList();
     _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
 
@@ -282,6 +285,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _vigenciaMesesCtrl.text = (doc['vigenciaMeses'] as num?)?.toString() ?? '';
 
     _tipoObjetoContrato = doc['tipoObjetoContrato'] as int?;
+
+    if (_isSent) {
+      _lastSendLog = await ref
+          .read(apiLogsDaoProvider)
+          .findLatestAjusteSendLog(
+            municipio: ajuste.municipio,
+            entidade: ajuste.entidade,
+            codigoEdital: ajuste.codigoEdital,
+            codigoAta: ajuste.codigoAta,
+            codigoContrato: ajuste.codigoContrato,
+            retificacao: ajuste.retificacao,
+          );
+    }
 
     if (mounted) setState(() => _loading = false);
   }
@@ -545,6 +561,163 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     AudespSnackBar.error(context, msg);
   }
 
+  bool _isRejectedStatus(String? status) {
+    return status?.toLowerCase().contains('rejeitado') ?? false;
+  }
+
+  bool _isProtocoloUpdatable(String? status) {
+    if (status == null) return false;
+    final s = status.toLowerCase();
+    if (s.contains('rejeitado') ||
+        s.contains('arquivado') ||
+        s.contains('exclu') ||
+        s.contains('armazenado') ||
+        s.contains('substitu')) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _reloadLatestSendLog() async {
+    if (_loadedId == null) return;
+    final ajuste = await ref.read(ajustesDaoProvider).findById(_loadedId!);
+    if (ajuste == null) return;
+    final log = await ref
+        .read(apiLogsDaoProvider)
+        .findLatestAjusteSendLog(
+          municipio: ajuste.municipio,
+          entidade: ajuste.entidade,
+          codigoEdital: ajuste.codigoEdital,
+          codigoAta: ajuste.codigoAta,
+          codigoContrato: ajuste.codigoContrato,
+          retificacao: ajuste.retificacao,
+        );
+    if (mounted) setState(() => _lastSendLog = log);
+  }
+
+  Future<void> _updateProtocoloStatus() async {
+    final log = _lastSendLog;
+    if (log?.protocolo == null) return;
+
+    await showAudespAuthDialog(
+      context,
+      ref,
+      actionLabel: 'Autenticar e Atualizar',
+      onConfirm: (token) async {
+        setState(() => _updatingStatus = true);
+        try {
+          final jsonRetorno = await ref
+              .read(consultaServiceProvider)
+              .consultarStatus(log!.protocolo!);
+          final json = jsonDecode(jsonRetorno);
+          final novoStatus = json['status']?.toString() ?? 'Desconhecido';
+
+          await ref
+              .read(apiLogsDaoProvider)
+              .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          await _reloadLatestSendLog();
+
+          if (mounted) {
+            AudespSnackBar.success(
+              context,
+              'Status atualizado para: $novoStatus',
+            );
+          }
+        } catch (e) {
+          _showError('Erro ao atualizar status: $e');
+        } finally {
+          if (mounted) setState(() => _updatingStatus = false);
+        }
+      },
+    );
+  }
+
+  Future<void> _returnToDraft() async {
+    if (_loadedId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Retornar para rascunho?'),
+        content: const Text(
+          'O ajuste voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Retornar para rascunho'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(ajustesDaoProvider).markAsDraft(_loadedId!);
+      ref.invalidate(ajustesDraftProvider);
+      ref.invalidate(ajustesEnviadosProvider);
+      if (mounted) {
+        setState(() {
+          _isSent = false;
+          _lastSendLog = null;
+        });
+        AudespSnackBar.success(context, 'Ajuste retornado para rascunho.');
+      }
+    } catch (e) {
+      _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  Widget _buildSentHeaderActions() {
+    final status = _lastSendLog?.statusProtocolo;
+    final rejected = _isRejectedStatus(status);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_lastSendLog?.protocolo != null &&
+            _isProtocoloUpdatable(status)) ...[
+          IconButton(
+            tooltip: 'Atualizar status',
+            onPressed: _updatingStatus ? null : _updateProtocoloStatus,
+            icon: _updatingStatus
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+          const SizedBox(width: 4),
+        ],
+        if (rejected) ...[
+          TextButton.icon(
+            onPressed: _returnToDraft,
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Retornar para rascunho'),
+          ),
+          const SizedBox(width: 8),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: StatusChip(
+            label: status?.isNotEmpty == true ? status! : 'Enviado',
+            color: rejected ? scheme.error : null,
+            backgroundColor: rejected ? scheme.errorContainer : null,
+            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _addItem() {
     final val = int.tryParse(_itemCtrl.text.trim());
     if (val == null || val < 1) {
@@ -765,7 +938,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     void add(String value) {
       final digits = value.replaceAll(RegExp(r'\D'), '');
-      final trimmed = digits.length > 8 ? digits.substring(digits.length - 8) : digits;
+      final trimmed = digits.length > 8
+          ? digits.substring(digits.length - 8)
+          : digits;
       if (trimmed.length == 8 && !result.contains(trimmed)) {
         result.add(trimmed);
       }
@@ -861,11 +1036,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(width: 8),
             ],
           ],
-          if (_isSent)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: StatusChip.document('sent'),
-            ),
+          if (_isSent) _buildSentHeaderActions(),
         ],
       ),
       body: Form(
@@ -973,8 +1144,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           value: _retificacao,
                           onChanged: readOnly
                               ? null
-                              : (v) =>
-                                    setState(() => _retificacao = v ?? false),
+                              : (v) => setState(() => _retificacao = v),
                         ),
                       ),
                     ],
@@ -992,8 +1162,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     value: _adesaoParticipacao,
                     onChanged: readOnly
                         ? null
-                        : (v) =>
-                              setState(() => _adesaoParticipacao = v ?? false),
+                        : (v) => setState(() => _adesaoParticipacao = v),
                   ),
                   if (_adesaoParticipacao) ...[
                     AudespCheckbox(
@@ -1001,9 +1170,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       value: _gerenciadoraJurisdicionada,
                       onChanged: readOnly
                           ? null
-                          : (v) => setState(
-                              () => _gerenciadoraJurisdicionada = v ?? false,
-                            ),
+                          : (v) =>
+                                setState(() => _gerenciadoraJurisdicionada = v),
                     ),
                     if (_gerenciadoraJurisdicionada) ...[
                       Row(
@@ -1221,10 +1389,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: AudespSegmentedButton<bool>(
                       label: 'Receita ou Despesa *',
-                      segments: const {
-                        false: 'Despesa',
-                        true: 'Receita',
-                      },
+                      segments: const {false: 'Despesa', true: 'Receita'},
                       icons: const {
                         false: Icons.arrow_circle_up_outlined,
                         true: Icons.arrow_circle_down_outlined,

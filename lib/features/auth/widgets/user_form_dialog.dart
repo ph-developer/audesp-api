@@ -176,29 +176,27 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                   AudespCheckbox(
                     label: 'Edital',
                     value: _permEdital,
-                    onChanged: (v) => setState(() => _permEdital = v ?? false),
+                    onChanged: (v) => setState(() => _permEdital = v),
                   ),
                   AudespCheckbox(
                     label: 'Licitação',
                     value: _permLicitacao,
-                    onChanged: (v) =>
-                        setState(() => _permLicitacao = v ?? false),
+                    onChanged: (v) => setState(() => _permLicitacao = v),
                   ),
                   AudespCheckbox(
                     label: 'Ata',
                     value: _permAta,
-                    onChanged: (v) => setState(() => _permAta = v ?? false),
+                    onChanged: (v) => setState(() => _permAta = v),
                   ),
                   AudespCheckbox(
                     label: 'Ajuste',
                     value: _permAjuste,
-                    onChanged: (v) => setState(() => _permAjuste = v ?? false),
+                    onChanged: (v) => setState(() => _permAjuste = v),
                   ),
                   AudespCheckbox(
                     label: 'Estimativa',
                     value: _permEstimativa,
-                    onChanged: (v) =>
-                        setState(() => _permEstimativa = v ?? false),
+                    onChanged: (v) => setState(() => _permEstimativa = v),
                   ),
                 ],
               ],
