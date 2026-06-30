@@ -64,7 +64,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   bool _retificacao = false;
 
   // ── Publicidade ──────────────────────────────────────────────────────────
-  bool _houvePublicacao = false;
+  bool _houvePublicacao = true;
   List<Map<String, dynamic>> _publicacoes = [];
 
   // ── Dados Gerais ─────────────────────────────────────────────────────────

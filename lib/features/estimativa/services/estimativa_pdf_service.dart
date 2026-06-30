@@ -61,10 +61,6 @@ class EstimativaPdfService {
                   : 'Mediana',
             ),
             _buildInfoRow(
-              'Casas Decimais:',
-              '${estimativa.casasDecimais} (sempre arredondar para cima)',
-            ),
-            _buildInfoRow(
               'Registro de Preços:',
               estimativa.registroPrecos ? 'Sim' : 'Não',
             ),
@@ -85,10 +81,26 @@ class EstimativaPdfService {
               'Exclusividade ME/EPP:',
               _getExclusividadeLabel(estimativa),
             ),
-            if (estimativa.fontesRecurso.isNotEmpty)
+            if (estimativa.fontesRecurso.isEmpty)
+              _buildInfoRow('Fontes de Recurso/Aplicação:', 'A definir')
+            else
               _buildInfoRow(
                 'Fontes de Recurso/Aplicação:',
-                estimativa.fontesRecurso.join('; '),
+                estimativa.fontesRecurso
+                    .map((e) {
+                      var text = '${e['fonteRecurso']}/${e['aplicacao']}';
+                      if ((e['descricao'] as String).isNotEmpty) {
+                        text += ' (${e['descricao']})';
+                      }
+                      if ((e['reserva'] as String).isNotEmpty) {
+                        text += ' - Reserva ${e['reserva']}';
+                      }
+                      if ((e['ficha'] as String).isNotEmpty) {
+                        text += ' - Ficha ${e['ficha']}';
+                      }
+                      return text;
+                    })
+                    .join('; '),
               ),
 
             pw.SizedBox(height: 20),

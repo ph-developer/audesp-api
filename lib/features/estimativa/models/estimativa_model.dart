@@ -23,7 +23,7 @@ class EstimativaModel {
   // Novas propriedades solicitadas
   final bool registroPrecos;
   final bool temGarantia;
-  final List<String> fontesRecurso;
+  final List<Map<String, dynamic>> fontesRecurso;
   final String exclusividadeMeEpp;
 
   // Conteúdo
@@ -94,7 +94,18 @@ class EstimativaModel {
       temGarantia: map['temGarantia'] ?? false,
       prazoVigencia: map['prazoVigencia'] ?? '',
       formaPagamento: map['formaPagamento'] ?? '',
-      fontesRecurso: List<String>.from(map['fontesRecurso'] ?? []),
+      fontesRecurso: (map['fontesRecurso'] as List<dynamic>? ?? []).map((x) {
+        if (x is String) {
+          return {
+            'fonteRecurso': '',
+            'aplicacao': '',
+            'descricao': x,
+            'reserva': '',
+            'ficha': '',
+          };
+        }
+        return Map<String, dynamic>.from(x as Map);
+      }).toList(),
       exclusividadeMeEpp: map['exclusividadeMeEpp'] ?? 'nenhuma',
       fornecedores: List<EstimativaFornecedor>.from(
         (map['fornecedores'] as List<dynamic>? ?? []).map(
@@ -129,7 +140,7 @@ class EstimativaModel {
     bool? temGarantia,
     String? prazoVigencia,
     String? formaPagamento,
-    List<String>? fontesRecurso,
+    List<Map<String, dynamic>>? fontesRecurso,
     String? exclusividadeMeEpp,
     List<EstimativaFornecedor>? fornecedores,
     List<EstimativaLote>? lotes,

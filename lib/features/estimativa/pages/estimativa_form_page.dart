@@ -24,6 +24,7 @@ import '../widgets/estimativa_fornecedor_dialog.dart';
 import '../widgets/estimativa_valor_dialog.dart';
 import '../widgets/estimativa_exclusividade_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
+import '../widgets/estimativa_fonte_recurso_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
@@ -93,8 +94,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   bool _registroPrecos = false;
   bool _temGarantia = false;
   String _exclusividadeMeEpp = 'nenhuma';
-  List<String> _fontesRecurso = [];
-  final _fonteRecursoInputCtrl = TextEditingController();
+  List<Map<String, dynamic>> _fontesRecurso = [];
 
   // ── Conteúdo ─────────────────────────────────────────────────────────────
   List<EstimativaLote> _lotes = [];
@@ -114,7 +114,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     _anoCtrl.dispose();
     _prazoVigenciaCtrl.dispose();
     _formaPagamentoCtrl.dispose();
-    _fonteRecursoInputCtrl.dispose();
     super.dispose();
   }
 
@@ -147,7 +146,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     _registroPrecos = est.registroPrecos;
     _temGarantia = est.temGarantia;
     _exclusividadeMeEpp = est.exclusividadeMeEpp;
-    _fontesRecurso = List.from(est.fontesRecurso);
+    _fontesRecurso = List<Map<String, dynamic>>.from(est.fontesRecurso);
 
     _prazoVigenciaCtrl.text = est.prazoVigencia;
     _formaPagamentoCtrl.text = est.formaPagamento;
@@ -457,57 +456,86 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     return SectionCard(
       title: 'Fontes de Recurso/Aplicação',
       children: [
-        AudespTextField(
-          label: 'Nova Fonte (ex: xx/xxxxx)',
-          controller: _fonteRecursoInputCtrl,
-          suffixIcon: AudespIconButton(
-            icon: Icons.add,
-            tooltip: 'Adicionar',
-            onPressed: () {
-              final v = _fonteRecursoInputCtrl.text.trim();
-              if (v.isNotEmpty && !_fontesRecurso.contains(v)) {
-                setState(() {
-                  _fontesRecurso.add(v);
-                  _fonteRecursoInputCtrl.clear();
-                });
+        if (_fontesRecurso.isEmpty)
+          const Text(
+            'Nenhuma fonte de recurso adicionada, será considerado "A Definir".',
+          )
+        else
+          Column(
+            children: [
+              for (int i = 0; i < _fontesRecurso.length; i++)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 14,
+                      child: Text(
+                        '${i + 1}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    title: Text(
+                      'Fonte: ${_fontesRecurso[i]['fonteRecurso']} / Aplicação: ${_fontesRecurso[i]['aplicacao']}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      [
+                        if ((_fontesRecurso[i]['descricao'] as String)
+                            .isNotEmpty)
+                          'Descrição: ${_fontesRecurso[i]['descricao']}',
+                        if ((_fontesRecurso[i]['reserva'] as String).isNotEmpty)
+                          'Reserva: ${_fontesRecurso[i]['reserva']}',
+                        if ((_fontesRecurso[i]['ficha'] as String).isNotEmpty)
+                          'Ficha: ${_fontesRecurso[i]['ficha']}',
+                      ].join(' | '),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          tooltip: 'Editar fonte',
+                          onPressed: () async {
+                            final result =
+                                await showEstimativaFonteRecursoDialog(
+                                  context,
+                                  initial: _fontesRecurso[i],
+                                );
+                            if (result != null) {
+                              setState(() => _fontesRecurso[i] = result);
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 20),
+                          tooltip: 'Excluir fonte',
+                          color: Theme.of(context).colorScheme.error,
+                          onPressed: () {
+                            setState(() => _fontesRecurso.removeAt(i));
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () async {
+              final result = await showEstimativaFonteRecursoDialog(context);
+              if (result != null) {
+                setState(() => _fontesRecurso.add(result));
               }
             },
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar Fonte de Recurso'),
           ),
-          onFieldSubmitted: (v) {
-            if (v.trim().isNotEmpty && !_fontesRecurso.contains(v.trim())) {
-              setState(() {
-                _fontesRecurso.add(v.trim());
-                _fonteRecursoInputCtrl.clear();
-              });
-            }
-          },
         ),
-        if (_fontesRecurso.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'Nenhuma fonte adicionada.',
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          )
-        else ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: _fontesRecurso.map((fonte) {
-              return Chip(
-                label: Text(fonte),
-                deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: () {
-                  setState(() {
-                    _fontesRecurso.remove(fonte);
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ],
       ],
     );
   }
