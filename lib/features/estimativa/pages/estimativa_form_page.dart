@@ -50,12 +50,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   static const double _colValorUnit = 100;
   static const double _colValorTotal = 100;
   static const double _colAcoes = 60;
-  static const double _larguraDesc = 200;
+  static const double _minLarguraDesc = 400;
 
-  double _totalTableWidth() =>
+  double get _fixedColumnsWidth =>
       _colDrag +
       _colItem +
-      _larguraDesc +
       _colQuant +
       _colUnidade +
       (_fornecedores.length * _colFornecedor) +
@@ -63,6 +62,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       _colValorTotal +
       _colAcoes +
       8; // container horizontal padding (4 each side)
+
+  double _tableWidth(double availableWidth) {
+    final descWidth = math.max(
+      _minLarguraDesc,
+      availableWidth - _fixedColumnsWidth,
+    );
+    return _fixedColumnsWidth + descWidth;
+  }
 
   final _formKey = GlobalKey<FormState>();
 
@@ -367,7 +374,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   'min': 'Menor Preço',
                   'avg': 'Média',
                   'median': 'Mediana',
-                  //'desc': 'Maior Desconto', // TODO
                 },
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);
@@ -563,17 +569,15 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         else if (isLote)
           _buildLotesList(fmt)
         else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: math.max(
-                _totalTableWidth(),
-                MediaQuery.sizeOf(context).width,
-              ),
-              child: Column(
-                children: [_buildTableHeader(fmt), _buildItensList(fmt)],
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return _HorizontalScrollableTable(
+                tableWidth: _tableWidth(constraints.maxWidth),
+                child: Column(
+                  children: [_buildTableHeader(fmt), _buildItensList(fmt)],
+                ),
+              );
+            },
           ),
       ],
     );
@@ -787,7 +791,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ),
           Expanded(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: _larguraDesc),
+              constraints: const BoxConstraints(minWidth: _minLarguraDesc),
               child: const Text(
                 'Descrição',
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -979,50 +983,53 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   ],
                 ),
               ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: math.max(
-                    _totalTableWidth(),
-                    MediaQuery.sizeOf(context).width,
-                  ),
-                  child: Column(
-                    children: [
-                      _buildTableHeader(fmt),
-                      if (lote.itens.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text(
-                            'Nenhum item neste lote.',
-                            textAlign: TextAlign.center,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return _HorizontalScrollableTable(
+                    tableWidth: _tableWidth(constraints.maxWidth),
+                    isLote: true,
+                    child: Column(
+                      children: [
+                        _buildTableHeader(fmt),
+                        if (lote.itens.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              'Nenhum item neste lote.',
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else
+                          ReorderableListView.builder(
+                            buildDefaultDragHandles: false,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: lote.itens.length,
+                            onReorderItem: (oldIndex, newIndex) =>
+                                _reorderLoteItens(
+                                  loteIndex,
+                                  oldIndex,
+                                  newIndex,
+                                ),
+                            itemBuilder: (context, itemIndex) {
+                              final item = lote.itens[itemIndex];
+                              return _buildItemRow(
+                                item: item,
+                                loteIndex: loteIndex,
+                                itemIndex: itemIndex,
+                                fmt: fmt,
+                                key: ValueKey(
+                                  'lote_${loteIndex}_item_${item.numero}_${item.descricao.hashCode}',
+                                ),
+                                showBottomBorder:
+                                    itemIndex < lote.itens.length - 1,
+                              );
+                            },
                           ),
-                        )
-                      else
-                        ReorderableListView.builder(
-                          buildDefaultDragHandles: false,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: lote.itens.length,
-                          onReorderItem: (oldIndex, newIndex) =>
-                              _reorderLoteItens(loteIndex, oldIndex, newIndex),
-                          itemBuilder: (context, itemIndex) {
-                            final item = lote.itens[itemIndex];
-                            return _buildItemRow(
-                              item: item,
-                              loteIndex: loteIndex,
-                              itemIndex: itemIndex,
-                              fmt: fmt,
-                              key: ValueKey(
-                                'lote_${loteIndex}_item_${item.numero}_${item.descricao.hashCode}',
-                              ),
-                              showBottomBorder:
-                                  itemIndex < lote.itens.length - 1,
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -1110,7 +1117,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ),
           Expanded(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: _larguraDesc),
+              constraints: const BoxConstraints(minWidth: _minLarguraDesc),
               child: HoverCellText(
                 text: item.descricao,
                 onTap: () => loteIndex != null
@@ -1616,6 +1623,58 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               _buildMeEppSection(),
               _buildItensOuLotesSection(),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HorizontalScrollableTable extends StatefulWidget {
+  final double tableWidth;
+  final Widget child;
+  final bool isLote;
+
+  const _HorizontalScrollableTable({
+    required this.tableWidth,
+    required this.child,
+    this.isLote = false,
+  });
+
+  @override
+  State<_HorizontalScrollableTable> createState() =>
+      _HorizontalScrollableTableState();
+}
+
+class _HorizontalScrollableTableState
+    extends State<_HorizontalScrollableTable> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScrollbarTheme(
+      data: ScrollbarThemeData(
+        mainAxisMargin: widget.isLote ? 6.0 : 0.0,
+        crossAxisMargin: 1.0,
+      ),
+      child: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        trackVisibility: true,
+        thickness: 4.0,
+        interactive: true,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: SizedBox(width: widget.tableWidth, child: widget.child),
           ),
         ),
       ),

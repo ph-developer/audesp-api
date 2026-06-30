@@ -555,12 +555,23 @@ class _GeminiOrcamentoReviewDialog extends StatefulWidget {
 class _GeminiOrcamentoReviewDialogState
     extends State<_GeminiOrcamentoReviewDialog> {
   final _cardKey = GlobalKey<_CompanyReviewCardState>();
-  int _acceptedCount = 0;
+
+  int get _acceptedCount {
+    final state = _cardKey.currentState;
+    if (state != null) return state.acceptedCount;
+
+    int count = 0;
+    for (final item in widget.itensEstimativa) {
+      if (item['id'] != null &&
+          widget.suggestedValues.itens.containsKey(item['id'])) {
+        count++;
+      }
+    }
+    return count;
+  }
 
   void _onCardChanged() {
-    setState(() {
-      _acceptedCount = _cardKey.currentState?.acceptedCount ?? 0;
-    });
+    setState(() {});
   }
 
   @override
@@ -634,6 +645,10 @@ class _GeminiMultiOrcamentoReviewDialogState
     );
   }
 
+  void _onCardChanged() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalCompanies = widget.suggestedValues.length;
@@ -645,6 +660,17 @@ class _GeminiMultiOrcamentoReviewDialogState
     });
 
     const tabWidth = 200.0;
+
+    final childrenWidgets = List.generate(totalCompanies, (i) {
+      return SingleChildScrollView(
+        child: _CompanyReviewCard(
+          key: _cardKeys[i],
+          suggestedValues: widget.suggestedValues[i],
+          itensEstimativa: widget.itensEstimativa,
+          onChanged: _onCardChanged,
+        ),
+      );
+    });
 
     return DefaultTabController(
       length: totalCompanies,
@@ -680,17 +706,14 @@ class _GeminiMultiOrcamentoReviewDialogState
                 ),
                 const SizedBox(height: 8),
                 Flexible(
-                  child: IndexedStack(
-                    index: DefaultTabController.of(tabCtx).index,
-                    children: List.generate(totalCompanies, (i) {
-                      return SingleChildScrollView(
-                        child: _CompanyReviewCard(
-                          key: _cardKeys[i],
-                          suggestedValues: widget.suggestedValues[i],
-                          itensEstimativa: widget.itensEstimativa,
-                        ),
+                  child: AnimatedBuilder(
+                    animation: DefaultTabController.of(tabCtx),
+                    builder: (context, _) {
+                      return IndexedStack(
+                        index: DefaultTabController.of(tabCtx).index,
+                        children: childrenWidgets,
                       );
-                    }),
+                    },
                   ),
                 ),
               ],
@@ -731,8 +754,18 @@ class _GeminiMultiOrcamentoReviewDialogState
 
   int get _totalAcceptedCount {
     var count = 0;
-    for (final key in _cardKeys) {
-      count += key.currentState?.acceptedCount ?? 0;
+    for (int i = 0; i < _cardKeys.length; i++) {
+      final state = _cardKeys[i].currentState;
+      if (state != null) {
+        count += state.acceptedCount;
+      } else {
+        final suggested = widget.suggestedValues[i];
+        for (final item in widget.itensEstimativa) {
+          if (item['id'] != null && suggested.itens.containsKey(item['id'])) {
+            count++;
+          }
+        }
+      }
     }
     return count;
   }
