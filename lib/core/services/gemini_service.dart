@@ -436,6 +436,132 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
 
     return results;
   }
+
+
+  /// Extrai lista de itens para uma estimativa a partir de um PDF (Termo de Referência, etc).
+  Future<List<GeminiEstimativaItemResult>> extractItensEstimativaFromFile({
+    required String filePath,
+  }) async {
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
+
+    final prompt =
+        '''
+Você é um assistente especializado em licitações públicas brasileiras.
+Analise o documento fornecido (provavelmente um Termo de Referência ou edital) e extraia a lista de ITENS a serem contratados/adquiridos.
+Para cada item identificado, retorne um objeto com os seguintes campos:
+1. "descricao": String com a descrição detalhada do item.
+2. "quantidade": Número (int ou float) com a quantidade total.
+3. "unidade": String com a unidade de medida (ex: "UN", "Mês", "Serviço", "KG").
+4. "materialOuServico": String sendo obrigatoriamente "M" (para material/produto) ou "S" (para serviço).
+5. "itemCategoriaId": Inteiro representando a categoria do item, devendo ser APENAS um dos seguintes valores (deduza o mais adequado):
+   - 1 para "Bens Imóveis"
+   - 2 para "Bens Móveis" (materiais, produtos em geral)
+   - 3 para "Não se aplica" (serviços em geral)
+
+Retorne APENAS um objeto JSON válido, sem markdown, com a seguinte estrutura:
+{
+  "itens": [
+    {
+      "descricao": "Caneta esferográfica azul...",
+      "quantidade": 1000,
+      "unidade": "UN",
+      "materialOuServico": "M",
+      "itemCategoriaId": 2
+    },
+    {
+      "descricao": "Serviço de limpeza...",
+      "quantidade": 12,
+      "unidade": "Mês",
+      "materialOuServico": "S",
+      "itemCategoriaId": 3
+    }
+  ]
+}
+
+Se nenhum item for encontrado, retorne {"itens": []}.
+''';
+
+    final content = [
+      Content.multi([filePart, TextPart(prompt)]),
+    ];
+
+    final response = await model.generateContent(content);
+    final text = response.text;
+
+    if (text == null || text.trim().isEmpty) {
+      throw GeminiException('O modelo não retornou nenhuma resposta.');
+    }
+
+    return _parseItensEstimativaResult(text.trim());
+  }
+
+  List<GeminiEstimativaItemResult> _parseItensEstimativaResult(String raw) {
+    var cleaned = raw;
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned
+          .replaceFirst(RegExp(r'^```(?:json)?\s*'), '')
+          .replaceFirst(RegExp(r'\s*```$'), '');
+    }
+
+    Map<String, dynamic> decoded;
+    try {
+      final parsed = jsonDecode(cleaned);
+      if (parsed is! Map<String, dynamic>) {
+        throw const FormatException('Root element is not a JSON object.');
+      }
+      decoded = parsed;
+    } catch (e) {
+      throw GeminiException(
+        'Resposta do Gemini não é JSON válido: $e\n\nResposta original:\n$raw',
+      );
+    }
+
+    final itens = decoded['itens'] as List<dynamic>? ?? [];
+    if (itens.isEmpty) {
+      throw const GeminiException(
+        'Nenhum item foi identificado no documento.',
+      );
+    }
+
+    final results = <GeminiEstimativaItemResult>[];
+    for (final rawItem in itens) {
+      if (rawItem is! Map<String, dynamic>) continue;
+
+      final desc = rawItem['descricao']?.toString();
+      final quantRaw = rawItem['quantidade'];
+      final unid = rawItem['unidade']?.toString();
+      final ms = rawItem['materialOuServico']?.toString().toUpperCase();
+      final catId = rawItem['itemCategoriaId'];
+
+      if (desc != null && quantRaw != null && unid != null) {
+        final doubleQuant = quantRaw is num
+            ? quantRaw.toDouble()
+            : double.tryParse(quantRaw.toString()) ?? 0.0;
+        
+        final finalMs = (ms == 'M' || ms == 'S') ? ms! : 'M';
+        final finalCatId = catId is int ? catId : int.tryParse(catId.toString()) ?? 2;
+
+        results.add(
+          GeminiEstimativaItemResult(
+            descricao: desc,
+            quantidade: doubleQuant,
+            unidade: unid,
+            materialOuServico: finalMs,
+            itemCategoriaId: finalCatId,
+          ),
+        );
+      }
+    }
+
+    if (results.isEmpty) {
+      throw const GeminiException(
+        'Não foi possível extrair os itens com os campos obrigatórios.',
+      );
+    }
+
+    return results;
+  }
 }
 
 /// Resultado da extração de um orçamento via Gemini.
@@ -450,6 +576,23 @@ class GeminiOrcamentoResult {
     this.cnpj,
     this.data,
     required this.itens,
+  });
+}
+
+/// Resultado da extração de um item de estimativa via Gemini.
+class GeminiEstimativaItemResult {
+  final String descricao;
+  final double quantidade;
+  final String unidade;
+  final String materialOuServico;
+  final int itemCategoriaId;
+
+  const GeminiEstimativaItemResult({
+    required this.descricao,
+    required this.quantidade,
+    required this.unidade,
+    required this.materialOuServico,
+    required this.itemCategoriaId,
   });
 }
 

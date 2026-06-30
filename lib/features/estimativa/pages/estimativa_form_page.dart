@@ -24,6 +24,7 @@ import '../widgets/estimativa_fornecedor_dialog.dart';
 import '../widgets/estimativa_valor_dialog.dart';
 import '../widgets/estimativa_exclusividade_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
+import '../widgets/gemini_itens_import_dialog.dart';
 import '../widgets/estimativa_fonte_recurso_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
@@ -551,14 +552,32 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     return SectionCard(
       title: isLote ? 'Lotes da Estimativa' : 'Itens da Estimativa',
       titleActions: [
-        if (_exclusividadeMeEpp == 'reservada') ...[
+        if (isLote)
           TextButton.icon(
-            onPressed: _showExclusividadeDialog,
-            icon: const Icon(Icons.checklist),
-            label: const Text('Selecionar Exclusivos'),
+            onPressed: _addLote,
+            icon: const Icon(Icons.add_to_photos),
+            label: const Text('Incluir Lote'),
+          )
+        else ...[
+          TextButton.icon(
+            onPressed: _importarItensIa,
+            icon: const Icon(Icons.document_scanner),
+            label: const Text('Importar Itens via IA'),
           ),
           const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _addItem,
+            icon: const Icon(Icons.add),
+            label: const Text('Incluir Item'),
+          ),
         ],
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: _showFornecedorDialog,
+          icon: const Icon(Icons.person_add),
+          label: const Text('Incluir Fornecedor'),
+        ),
+        const SizedBox(width: 8),
         if (_itens.isNotEmpty || _lotes.any((l) => l.itens.isNotEmpty)) ...[
           TextButton.icon(
             onPressed: _importarOrcamentoIa,
@@ -567,24 +586,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           ),
           const SizedBox(width: 8),
         ],
-        TextButton.icon(
-          onPressed: _showFornecedorDialog,
-          icon: const Icon(Icons.person_add),
-          label: const Text('Incluir Fornecedor'),
-        ),
-        const SizedBox(width: 8),
-        if (isLote)
+        if (_exclusividadeMeEpp == 'reservada') ...[
           TextButton.icon(
-            onPressed: _addLote,
-            icon: const Icon(Icons.add_to_photos),
-            label: const Text('Incluir Lote'),
-          )
-        else
-          TextButton.icon(
-            onPressed: _addItem,
-            icon: const Icon(Icons.add),
-            label: const Text('Incluir Item'),
+            onPressed: _showExclusividadeDialog,
+            icon: const Icon(Icons.checklist),
+            label: const Text('Selecionar Exclusivos'),
           ),
+        ],
       ],
       children: [
         if ((isLote && _lotes.isEmpty) || (!isLote && _itens.isEmpty))
@@ -1598,6 +1606,79 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+
+  Future<void> _importarItensIa() async {
+    bool replace = false;
+
+    if (_itens.isNotEmpty) {
+      final mode = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Itens já existentes'),
+          content: const Text(
+            'Esta estimativa já possui itens. Você deseja acrescentar os novos itens ao final ou substituir todos os existentes?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'append'),
+              child: const Text('Acrescentar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, 'replace'),
+              child: const Text('Substituir'),
+            ),
+          ],
+        ),
+      );
+
+      if (mode == null || mode == 'cancel') return;
+      replace = mode == 'replace';
+    }
+
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final path = result.files.single.path;
+    if (path == null) return;
+
+    if (!mounted) return;
+
+    final nextNumero = replace
+        ? 1
+        : (_itens.isEmpty
+              ? 1
+              : _itens.map((e) => e.numero).reduce(math.max) + 1);
+
+    final novosItens = await showGeminiItensImportDialog(
+      context: context,
+      ref: ref,
+      pdfPath: path,
+      nextNumero: nextNumero,
+    );
+
+    if (novosItens == null || novosItens.isEmpty) return;
+
+    setState(() {
+      if (replace) {
+        _itens.clear();
+      }
+      _itens.addAll(novosItens);
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Itens importados com sucesso!')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
