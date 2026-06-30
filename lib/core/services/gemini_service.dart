@@ -67,29 +67,7 @@ class GeminiService {
         ? modelName.trim()
         : 'gemini-3.1-flash-lite';
 
-    final fieldDescriptions = fields
-        .map((f) {
-          final hint = f.hint != null ? ' (${f.hint})' : '';
-          return '- "${f.key}": ${f.label}$hint';
-        })
-        .join('\n');
-
-    final prompt =
-        '''
-Você é um assistente especializado em licitações públicas brasileiras.
-Analise o documento fornecido e extraia os seguintes campos no formato JSON.
-Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional.
-Se um campo não for encontrado ou não puder ser determinado, use null como valor.
-
-Campos a extrair:
-$fieldDescriptions
-
-Exemplo de resposta esperada:
-{
-  "campo1": "valor encontrado",
-  "campo2": null
-}
-''';
+    final prompt = generatePromptFromFields(fields);
 
     final generativeModel = GenerativeModel(
       model: model,
@@ -124,11 +102,37 @@ Exemplo de resposta esperada:
       throw GeminiException('O modelo não retornou nenhuma resposta.');
     }
 
-    return _parseResult(text.trim(), fields);
+    return parseResult(text.trim(), fields);
+  }
+
+  /// Gera o prompt para extração de campos baseados numa lista de [GeminiField].
+  String generatePromptFromFields(List<GeminiField> fields) {
+    final fieldDescriptions = fields
+        .map((f) {
+          final hint = f.hint != null ? ' (${f.hint})' : '';
+          return '- "${f.key}": ${f.label}$hint';
+        })
+        .join('\n');
+
+    return '''
+Você é um assistente especializado em licitações públicas brasileiras.
+Analise o documento fornecido e extraia os seguintes campos no formato JSON.
+Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional.
+Se um campo não for encontrado ou não puder ser determinado, use null como valor.
+
+Campos a extrair:
+$fieldDescriptions
+
+Exemplo de resposta esperada:
+{
+  "campo1": "valor encontrado",
+  "campo2": null
+}
+''';
   }
 
   /// Extrai e valida o JSON retornado pelo modelo.
-  GeminiExtractionResult _parseResult(String raw, List<GeminiField> fields) {
+  GeminiExtractionResult parseResult(String raw, List<GeminiField> fields) {
     // Remove possível bloco ```json ... ``` caso o modelo ignore a instrução.
     var cleaned = raw;
     if (cleaned.startsWith('```')) {
@@ -162,18 +166,9 @@ Exemplo de resposta esperada:
     return result;
   }
 
-  /// Extrai dados de fornecedor e valores unitários de itens a partir de um PDF de orçamento.
-  Future<GeminiOrcamentoResult> extractOrcamentoFromFile({
-    required String filePath,
-    required List<Map<String, dynamic>> itensEstimativa,
-  }) async {
-    final model = await _buildModel();
-    final filePart = await _readFilePart(filePath);
-
+  String getOrcamentoPrompt(List<Map<String, dynamic>> itensEstimativa) {
     final itensJson = jsonEncode(itensEstimativa);
-
-    final prompt =
-        '''
+    return '''
 Você é um assistente especializado em licitações públicas brasileiras.
 Analise o documento de orçamento fornecido e extraia as seguintes informações no formato JSON:
 1. "razaoSocial": Razão social da empresa fornecedora.
@@ -198,6 +193,17 @@ Exemplo de resposta esperada:
   ]
 }
 ''';
+  }
+
+  /// Extrai dados de fornecedor e valores unitários de itens a partir de um PDF de orçamento.
+  Future<GeminiOrcamentoResult> extractOrcamentoFromFile({
+    required String filePath,
+    required List<Map<String, dynamic>> itensEstimativa,
+  }) async {
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
+
+    final prompt = getOrcamentoPrompt(itensEstimativa);
 
     final content = [
       Content.multi([filePart, TextPart(prompt)]),
@@ -210,22 +216,12 @@ Exemplo de resposta esperada:
       throw GeminiException('O modelo não retornou nenhuma resposta.');
     }
 
-    return _parseOrcamentoResult(text.trim());
+    return parseOrcamentoResult(text.trim());
   }
 
-  /// Extrai dados de MÚLTIPLOS fornecedores de um único documento (orçamentos
-  /// compilados de várias empresas em sequência).
-  Future<List<GeminiOrcamentoResult>> extractMultiOrcamentoFromFile({
-    required String filePath,
-    required List<Map<String, dynamic>> itensEstimativa,
-  }) async {
-    final model = await _buildModel();
-    final filePart = await _readFilePart(filePath);
-
+  String getMultiOrcamentoPrompt(List<Map<String, dynamic>> itensEstimativa) {
     final itensJson = jsonEncode(itensEstimativa);
-
-    final prompt =
-        '''
+    return '''
 Você é um assistente especializado em licitações públicas brasileiras.
 Analise o documento de orçamento fornecido. Este documento contém orçamentos de MÚLTIPLAS empresas em sequência.
 Para CADA empresa identificada, extraia:
@@ -263,6 +259,18 @@ Retorne APENAS um objeto JSON válido, sem markdown, sem texto adicional, com a 
 Se um campo (razaoSocial, cnpj, data) não for encontrado para uma empresa, use null.
 Se nenhuma empresa for encontrada, retorne {"empresas": []}.
 ''';
+  }
+
+  /// Extrai dados de MÚLTIPLOS fornecedores de um único documento (orçamentos
+  /// compilados de várias empresas em sequência).
+  Future<List<GeminiOrcamentoResult>> extractMultiOrcamentoFromFile({
+    required String filePath,
+    required List<Map<String, dynamic>> itensEstimativa,
+  }) async {
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
+
+    final prompt = getMultiOrcamentoPrompt(itensEstimativa);
 
     final content = [
       Content.multi([filePart, TextPart(prompt)]),
@@ -275,7 +283,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
       throw GeminiException('O modelo não retornou nenhuma resposta.');
     }
 
-    return _parseMultiOrcamentoResult(text.trim());
+    return parseMultiOrcamentoResult(text.trim());
   }
 
   /// Constrói o [GenerativeModel] com base nas configurações do banco.
@@ -315,7 +323,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
     }
   }
 
-  GeminiOrcamentoResult _parseOrcamentoResult(String raw) {
+  GeminiOrcamentoResult parseOrcamentoResult(String raw) {
     var cleaned = raw;
     if (cleaned.startsWith('```')) {
       cleaned = cleaned
@@ -366,7 +374,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
     );
   }
 
-  List<GeminiOrcamentoResult> _parseMultiOrcamentoResult(String raw) {
+  List<GeminiOrcamentoResult> parseMultiOrcamentoResult(String raw) {
     var cleaned = raw;
     if (cleaned.startsWith('```')) {
       cleaned = cleaned
@@ -438,15 +446,8 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
   }
 
 
-  /// Extrai lista de itens para uma estimativa a partir de um PDF (Termo de Referência, etc).
-  Future<List<GeminiEstimativaItemResult>> extractItensEstimativaFromFile({
-    required String filePath,
-  }) async {
-    final model = await _buildModel();
-    final filePart = await _readFilePart(filePath);
-
-    final prompt =
-        '''
+  String getItensEstimativaPrompt() {
+    return '''
 Você é um assistente especializado em licitações públicas brasileiras.
 Analise o documento fornecido (provavelmente um Termo de Referência ou edital) e extraia a lista de ITENS a serem contratados/adquiridos.
 Para cada item identificado, retorne um objeto com os seguintes campos:
@@ -481,6 +482,16 @@ Retorne APENAS um objeto JSON válido, sem markdown, com a seguinte estrutura:
 
 Se nenhum item for encontrado, retorne {"itens": []}.
 ''';
+  }
+
+  /// Extrai lista de itens para uma estimativa a partir de um PDF (Termo de Referência, etc).
+  Future<List<GeminiEstimativaItemResult>> extractItensEstimativaFromFile({
+    required String filePath,
+  }) async {
+    final model = await _buildModel();
+    final filePart = await _readFilePart(filePath);
+
+    final prompt = getItensEstimativaPrompt();
 
     final content = [
       Content.multi([filePart, TextPart(prompt)]),
@@ -493,10 +504,10 @@ Se nenhum item for encontrado, retorne {"itens": []}.
       throw GeminiException('O modelo não retornou nenhuma resposta.');
     }
 
-    return _parseItensEstimativaResult(text.trim());
+    return parseItensEstimativaResult(text.trim());
   }
 
-  List<GeminiEstimativaItemResult> _parseItensEstimativaResult(String raw) {
+  List<GeminiEstimativaItemResult> parseItensEstimativaResult(String raw) {
     var cleaned = raw;
     if (cleaned.startsWith('```')) {
       cleaned = cleaned

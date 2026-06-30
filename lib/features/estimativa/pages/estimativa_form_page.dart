@@ -10,6 +10,7 @@ import '../../../shared/widgets/hover_cell_text.dart';
 import '../../../shared/widgets/hover_underline_text.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../core/database/database_providers.dart';
 import '../estimativa_providers.dart';
@@ -28,10 +29,12 @@ import '../widgets/gemini_itens_import_dialog.dart';
 import '../widgets/estimativa_fonte_recurso_dialog.dart';
 import '../services/estimativa_pdf_service.dart';
 import 'package:intl/intl.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../edital/domain/edital_domain.dart';
+
+enum AiItensAction { replace, append }
+enum AiOrcamentoType { single, multi }
 
 class EstimativaFormPage extends ConsumerStatefulWidget {
   final int? estimativaId;
@@ -1453,41 +1456,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Future<void> _importarOrcamentoIa() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
-    );
-
-    if (result == null || result.files.isEmpty) return;
-
-    final path = result.files.single.path;
-    if (path == null) return;
-
-    if (!mounted) return;
-
-    final isMulti = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Múltiplos orçamentos'),
-        content: const Text(
-          'O arquivo selecionado contém orçamentos de múltiplas empresas?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Não'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sim'),
-          ),
-        ],
-      ),
-    );
-    if (isMulti == null) return;
-
-    if (!mounted) return;
-
     final isLote = _tipoEstimativa == 'lote';
 
     // Preparar lista de itens para o Gemini
@@ -1514,34 +1482,99 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       }
     }
 
-    if (!mounted) return;
+    final geminiService = ref.read(geminiServiceProvider);
+    
+    final result = await showAudespAiImportDialog<AiOrcamentoType>(
+      context,
+      title: 'Importar Orçamentos via IA',
+      promptText: geminiService.getOrcamentoPrompt(itensEstimativa),
+      initialExtraState: AiOrcamentoType.single,
+      extraOptionsBuilder: (state, onChanged) {
+        return AudespDropdown<AiOrcamentoType>(
+          label: 'Tipo de Orçamento',
+          value: state,
+          items: const {
+            AiOrcamentoType.single: 'Orçamento Único',
+            AiOrcamentoType.multi: 'Múltiplos Orçamentos (Quadro)',
+          },
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        );
+      },
+    );
+    
+    if (result == null || !mounted) return;
 
-    if (isMulti) {
-      final resultados = await showGeminiMultiOrcamentoImportDialog(
-        context: context,
-        ref: ref,
-        pdfPath: path,
-        itensEstimativa: itensEstimativa,
-      );
-      if (resultados == null || resultados.isEmpty) return;
+    final isMulti = result.extraState == AiOrcamentoType.multi;
 
-      setState(() {
-        for (final orcamentoResult in resultados) {
-          _applyOrcamentoResult(orcamentoResult, isLote);
+    if (result.mode == AiImportMode.manual) {
+      if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
+
+      try {
+        if (isMulti) {
+          final parsed = geminiService.parseMultiOrcamentoResult(result.jsonResponse!);
+          final resultados = await showGeminiMultiOrcamentoReviewDialog(
+            context: context,
+            suggestedValues: parsed,
+            itensEstimativa: itensEstimativa,
+          );
+          if (resultados == null || resultados.isEmpty || !mounted) return;
+          setState(() {
+            for (final orcamentoResult in resultados) {
+              _applyOrcamentoResult(orcamentoResult, isLote);
+            }
+          });
+        } else {
+          final parsed = geminiService.parseOrcamentoResult(result.jsonResponse!);
+          final orcamentoResult = await showGeminiOrcamentoReviewDialog(
+            context: context,
+            suggestedValues: parsed,
+            itensEstimativa: itensEstimativa,
+          );
+          if (orcamentoResult == null || !mounted) return;
+          setState(() {
+            _applyOrcamentoResult(orcamentoResult, isLote);
+          });
         }
-      });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao analisar JSON: $e')),
+          );
+        }
+        return;
+      }
     } else {
-      final orcamentoResult = await showGeminiOrcamentoImportDialog(
-        context: context,
-        ref: ref,
-        pdfPath: path,
-        itensEstimativa: itensEstimativa,
-      );
-      if (orcamentoResult == null) return;
+      if (result.filePath == null) return;
 
-      setState(() {
-        _applyOrcamentoResult(orcamentoResult, isLote);
-      });
+      if (isMulti) {
+        final resultados = await showGeminiMultiOrcamentoImportDialog(
+          context: context,
+          ref: ref,
+          pdfPath: result.filePath!,
+          itensEstimativa: itensEstimativa,
+        );
+        if (resultados == null || resultados.isEmpty || !mounted) return;
+
+        setState(() {
+          for (final orcamentoResult in resultados) {
+            _applyOrcamentoResult(orcamentoResult, isLote);
+          }
+        });
+      } else {
+        final orcamentoResult = await showGeminiOrcamentoImportDialog(
+          context: context,
+          ref: ref,
+          pdfPath: result.filePath!,
+          itensEstimativa: itensEstimativa,
+        );
+        if (orcamentoResult == null || !mounted) return;
+
+        setState(() {
+          _applyOrcamentoResult(orcamentoResult, isLote);
+        });
+      }
     }
 
     if (mounted) {
@@ -1608,69 +1641,71 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   // ──────────────────────────────────────────────────────────────────────────
 
   Future<void> _importarItensIa() async {
-    bool replace = false;
-
-    if (_itens.isNotEmpty) {
-      final mode = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Itens já existentes'),
-          content: const Text(
-            'Esta estimativa já possui itens. Você deseja acrescentar os novos itens ao final ou substituir todos os existentes?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, 'cancel'),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, 'append'),
-              child: const Text('Acrescentar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, 'replace'),
-              child: const Text('Substituir'),
-            ),
-          ],
-        ),
-      );
-
-      if (mode == null || mode == 'cancel') return;
-      replace = mode == 'replace';
-    }
-
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
+    final prompt = ref.read(geminiServiceProvider).getItensEstimativaPrompt();
+    final result = await showAudespAiImportDialog<AiItensAction>(
+      context,
+      title: 'Importar Itens via IA',
+      promptText: prompt,
+      initialExtraState: AiItensAction.replace,
+      extraOptionsBuilder: (state, onChanged) {
+        return AudespDropdown<AiItensAction>(
+          label: 'Ação',
+          value: state,
+          items: const {
+            AiItensAction.replace: 'Substituir todos os existentes',
+            AiItensAction.append: 'Acrescentar novos ao final',
+          },
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        );
+      },
     );
+    
+    if (result == null || !mounted) return;
 
-    if (result == null || result.files.isEmpty) return;
-
-    final path = result.files.single.path;
-    if (path == null) return;
-
-    if (!mounted) return;
-
-    final nextNumero = replace
+    final nextNumero = result.extraState == AiItensAction.replace
         ? 1
         : (_itens.isEmpty
               ? 1
               : _itens.map((e) => e.numero).reduce(math.max) + 1);
 
-    final novosItens = await showGeminiItensImportDialog(
-      context: context,
-      ref: ref,
-      pdfPath: path,
-      nextNumero: nextNumero,
-    );
+    List<EstimativaItem>? novosItens;
 
-    if (novosItens == null || novosItens.isEmpty) return;
+    if (result.mode == AiImportMode.manual) {
+      if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
+      try {
+        final extractedItens = ref.read(geminiServiceProvider).parseItensEstimativaResult(result.jsonResponse!);
+        novosItens = await showGeminiItensReviewDialog(
+          context: context,
+          extractedItens: extractedItens,
+          nextNumero: nextNumero,
+        );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao analisar JSON: $e')),
+          );
+        }
+        return;
+      }
+    } else {
+      if (result.filePath == null) return;
+      novosItens = await showGeminiItensImportDialog(
+        context: context,
+        ref: ref,
+        pdfPath: result.filePath!,
+        nextNumero: nextNumero,
+      );
+    }
+
+    if (novosItens == null || novosItens.isEmpty || !mounted) return;
 
     setState(() {
-      if (replace) {
+      if (result.extraState == AiItensAction.replace) {
         _itens.clear();
       }
-      _itens.addAll(novosItens);
+      _itens.addAll(novosItens!);
     });
 
     if (mounted) {

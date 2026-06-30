@@ -10,11 +10,13 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../features/auth/auth_providers.dart';
+import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
 import '../edital_providers.dart';
-import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_date_time_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
@@ -23,7 +25,6 @@ import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
-import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
@@ -378,13 +379,16 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Importação via Gemini ─────────────────────────────────────────────────
 
   Future<void> _importFromDocument() async {
-    // Seleciona o documento para análise
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
+    final geminiService = ref.read(geminiServiceProvider);
+    final prompt = geminiService.generatePromptFromFields(kEditalGeminiFields);
+
+    final result = await showAudespAiImportDialog(
+      context,
+      title: 'Importar Edital via IA',
+      promptText: prompt,
     );
-    if (result == null || result.files.single.path == null) return;
-    if (!mounted) return;
+
+    if (result == null || !mounted) return;
 
     setState(() => _importingGemini = true);
     try {
@@ -411,75 +415,92 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             : '',
       };
 
-      final accepted = await showGeminiImportDialog(
-        context: context,
-        ref: ref,
-        pdfPath: result.files.single.path!,
-        currentValues: currentValues,
-      );
+      Map<String, String>? accepted;
+
+      if (result.mode == AiImportMode.manual) {
+        if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
+        final parsed = geminiService.parseResult(
+          result.jsonResponse!,
+          kEditalGeminiFields,
+        );
+        accepted = await showGeminiReviewDialog(
+          context: context,
+          currentValues: currentValues,
+          suggestedValues: parsed,
+        );
+      } else {
+        if (result.filePath == null) return;
+        accepted = await showGeminiImportDialog(
+          context: context,
+          ref: ref,
+          pdfPath: result.filePath!,
+          currentValues: currentValues,
+        );
+      }
 
       if (!mounted || accepted == null || accepted.isEmpty) return;
 
+      final finalAccepted = accepted;
       setState(() {
-        if (accepted.containsKey('dataDocumento')) {
+        if (finalAccepted.containsKey('dataDocumento')) {
           try {
             _dataDoc = DateFormat(
               'dd/MM/yyyy',
-            ).parse(accepted['dataDocumento']!);
+            ).parse(finalAccepted['dataDocumento']!);
           } catch (_) {}
         }
-        if (accepted.containsKey('tipoInstrumentoConvocatorioId')) {
+        if (finalAccepted.containsKey('tipoInstrumentoConvocatorioId')) {
           _tipoInstrumento = int.tryParse(
-            accepted['tipoInstrumentoConvocatorioId']!,
+            finalAccepted['tipoInstrumentoConvocatorioId']!,
           );
         }
-        if (accepted.containsKey('modalidadeId')) {
-          _modalidade = int.tryParse(accepted['modalidadeId']!);
+        if (finalAccepted.containsKey('modalidadeId')) {
+          _modalidade = int.tryParse(finalAccepted['modalidadeId']!);
         }
-        if (accepted.containsKey('modoDisputaId')) {
-          _modoDisputa = int.tryParse(accepted['modoDisputaId']!);
+        if (finalAccepted.containsKey('modoDisputaId')) {
+          _modoDisputa = int.tryParse(finalAccepted['modoDisputaId']!);
         }
-        if (accepted.containsKey('numeroCompra')) {
-          var v = accepted['numeroCompra']!;
+        if (finalAccepted.containsKey('numeroCompra')) {
+          var v = finalAccepted['numeroCompra']!;
           if (v.contains('/')) v = v.split('/').first;
           _numeroCompraCtrl.text = v;
         }
-        if (accepted.containsKey('anoCompra')) {
-          _anoCompraCtrl.text = accepted['anoCompra']!;
+        if (finalAccepted.containsKey('anoCompra')) {
+          _anoCompraCtrl.text = finalAccepted['anoCompra']!;
         }
-        if (accepted.containsKey('numeroProcesso')) {
-          _numeroProcessoCtrl.text = accepted['numeroProcesso']!;
+        if (finalAccepted.containsKey('numeroProcesso')) {
+          _numeroProcessoCtrl.text = finalAccepted['numeroProcesso']!;
         }
-        if (accepted.containsKey('objetoCompra')) {
-          _objetoCompraCtrl.text = accepted['objetoCompra']!;
+        if (finalAccepted.containsKey('objetoCompra')) {
+          _objetoCompraCtrl.text = finalAccepted['objetoCompra']!;
         }
-        if (accepted.containsKey('srp')) {
-          _srp = ['true', 'sim'].contains(accepted['srp']?.toLowerCase());
+        if (finalAccepted.containsKey('srp')) {
+          _srp = ['true', 'sim'].contains(finalAccepted['srp']?.toLowerCase());
         }
-        if (accepted.containsKey('amparoLegalId')) {
+        if (finalAccepted.containsKey('amparoLegalId')) {
           _amparoLegalCtrl.text = _sanitizeAmparoLegal(
-            accepted['amparoLegalId']!,
+            finalAccepted['amparoLegalId']!,
           );
         }
-        if (accepted.containsKey('criterioJulgamentoId')) {
+        if (finalAccepted.containsKey('criterioJulgamentoId')) {
           _criterioJulgamentoId = _sanitizeCriterioJulgamento(
-            accepted['criterioJulgamentoId']!,
+            finalAccepted['criterioJulgamentoId']!,
           );
         }
-        if (accepted.containsKey('dataAberturaProposta') &&
-            accepted['dataAberturaProposta']!.isNotEmpty) {
+        if (finalAccepted.containsKey('dataAberturaProposta') &&
+            finalAccepted['dataAberturaProposta']!.isNotEmpty) {
           try {
             _dataAbertura = DateFormat(
               'dd/MM/yyyy HH:mm',
-            ).parse(accepted['dataAberturaProposta']!);
+            ).parse(finalAccepted['dataAberturaProposta']!);
           } catch (_) {}
         }
-        if (accepted.containsKey('dataEncerramentoProposta') &&
-            accepted['dataEncerramentoProposta']!.isNotEmpty) {
+        if (finalAccepted.containsKey('dataEncerramentoProposta') &&
+            finalAccepted['dataEncerramentoProposta']!.isNotEmpty) {
           try {
             _dataEncerramento = DateFormat(
               'dd/MM/yyyy HH:mm',
-            ).parse(accepted['dataEncerramentoProposta']!);
+            ).parse(finalAccepted['dataEncerramentoProposta']!);
           } catch (_) {}
         }
       });
@@ -488,7 +509,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+              '${finalAccepted.length} campo(s) preenchido(s) pelo Gemini.',
             ),
           ),
         );
@@ -762,7 +783,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_fix_high),
-                label: const Text('Importar PDF/DOCX'),
+                label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 4),
               TextButton.icon(

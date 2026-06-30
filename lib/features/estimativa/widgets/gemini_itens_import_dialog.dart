@@ -28,6 +28,18 @@ Future<List<EstimativaItem>?> showGeminiItensImportDialog({
     return null;
   }
 
+  return showGeminiItensReviewDialog(
+    context: context,
+    extractedItens: extractedItens,
+    nextNumero: nextNumero,
+  );
+}
+
+Future<List<EstimativaItem>?> showGeminiItensReviewDialog({
+  required BuildContext context,
+  required List<GeminiEstimativaItemResult> extractedItens,
+  required int nextNumero,
+}) async {
   return showAudespDialog<List<EstimativaItem>?>(
     context: context,
     barrierDismissible: false,

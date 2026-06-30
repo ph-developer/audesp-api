@@ -17,6 +17,7 @@ import '../../../shared/widgets/audesp_currency_field.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_pncp_field.dart';
 import '../../../shared/widgets/audesp_segmented_button.dart';
@@ -29,7 +30,6 @@ import '../domain/ajuste_domain.dart';
 import '../ajuste_providers.dart';
 import '../services/ajuste_service.dart';
 import '../widgets/gemini_ajuste_import_dialog.dart';
-import 'package:file_picker/file_picker.dart';
 
 /// Formulário de criação/edição de Ajuste (Fase 7 – Módulo 4).
 ///
@@ -754,12 +754,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── Importação via Gemini ─────────────────────────────────────────────
 
   Future<void> _importFromDocument() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
+    final geminiService = ref.read(geminiServiceProvider);
+    final prompt = geminiService.generatePromptFromFields(kAjusteGeminiFields);
+
+    final result = await showAudespAiImportDialog(
+      context,
+      title: 'Importar Ajuste via IA',
+      promptText: prompt,
     );
-    if (result == null || result.files.single.path == null) return;
-    if (!mounted) return;
+
+    if (result == null || !mounted) return;
 
     setState(() => _importingGemini = true);
     try {
@@ -792,32 +796,55 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             : '',
       };
 
-      final accepted = await showGeminiAjusteImportDialog(
-        context: context,
-        ref: ref,
-        filePath: result.files.single.path!,
-        currentValues: currentValues,
-      );
+      Map<String, String>? accepted;
+
+      if (result.mode == AiImportMode.manual) {
+        if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
+        final parsed = geminiService.parseResult(
+          result.jsonResponse!,
+          kAjusteGeminiFields,
+        );
+        accepted = await showGeminiReviewDialog(
+          context: context,
+          currentValues: currentValues,
+          suggestedValues: parsed,
+        );
+      } else {
+        if (result.filePath == null) return;
+        accepted = await showGeminiAjusteImportDialog(
+          context: context,
+          ref: ref,
+          filePath: result.filePath!,
+          currentValues: currentValues,
+        );
+      }
 
       if (!mounted || accepted == null || accepted.isEmpty) return;
 
+      final finalAccepted = accepted;
       setState(() {
-        if (accepted.containsKey('tipoContratoId')) {
-          final match = RegExp(r'\d+').firstMatch(accepted['tipoContratoId']!);
+        if (finalAccepted.containsKey('tipoContratoId')) {
+          final match = RegExp(
+            r'\d+',
+          ).firstMatch(finalAccepted['tipoContratoId']!);
           if (match != null) _tipoContratoId = int.tryParse(match.group(0)!);
         }
-        if (accepted.containsKey('numeroContratoEmpenho')) {
-          _numeroContratoEmpenhoCtrl.text = accepted['numeroContratoEmpenho']!;
+        if (finalAccepted.containsKey('numeroContratoEmpenho')) {
+          _numeroContratoEmpenhoCtrl.text =
+              finalAccepted['numeroContratoEmpenho']!;
         }
-        if (accepted.containsKey('anoContrato')) {
-          _anoContratoCtrl.text = accepted['anoContrato']!;
+        if (finalAccepted.containsKey('anoContrato')) {
+          _anoContratoCtrl.text = finalAccepted['anoContrato']!;
         }
-        if (accepted.containsKey('processo')) {
-          _processoCtrl.text = accepted['processo']!;
+        if (finalAccepted.containsKey('processo')) {
+          _processoCtrl.text = finalAccepted['processo']!;
         }
-        if (accepted.containsKey('niFornecedor')) {
-          final ni = accepted['niFornecedor']!.replaceAll(RegExp(r'\D'), '');
-          _niFornecedorCtrl.text = accepted['niFornecedor']!;
+        if (finalAccepted.containsKey('niFornecedor')) {
+          final ni = finalAccepted['niFornecedor']!.replaceAll(
+            RegExp(r'\D'),
+            '',
+          );
+          _niFornecedorCtrl.text = finalAccepted['niFornecedor']!;
           if (ni.length == 11) {
             _tipoPessoaFornecedor = 'PF';
           } else if (ni.length == 14) {
@@ -826,8 +853,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             _tipoPessoaFornecedor = 'PE';
           }
         }
-        if (accepted.containsKey('itens')) {
-          final itemsRaw = accepted['itens']!;
+        if (finalAccepted.containsKey('itens')) {
+          final itemsRaw = finalAccepted['itens']!;
           final regex = RegExp(r'\d+');
           _itens.clear();
           for (final match in regex.allMatches(itemsRaw)) {
@@ -838,56 +865,56 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           }
           _itens.sort();
         }
-        if (accepted.containsKey('fonteRecursosContratacao')) {
+        if (finalAccepted.containsKey('fonteRecursosContratacao')) {
           _fontesRecurso = _parseFontesRecurso(
-            accepted['fonteRecursosContratacao']!,
+            finalAccepted['fonteRecursosContratacao']!,
           );
         }
-        if (accepted.containsKey('despesas')) {
-          _despesas = _parseDespesas(accepted['despesas']!);
+        if (finalAccepted.containsKey('despesas')) {
+          _despesas = _parseDespesas(finalAccepted['despesas']!);
         }
-        if (accepted.containsKey('categoriaProcessoId')) {
+        if (finalAccepted.containsKey('categoriaProcessoId')) {
           final match = RegExp(
             r'\d+',
-          ).firstMatch(accepted['categoriaProcessoId']!);
+          ).firstMatch(finalAccepted['categoriaProcessoId']!);
           if (match != null) {
             _categoriaProcessoId = int.tryParse(match.group(0)!);
           }
         }
-        if (accepted.containsKey('nomeRazaoSocialFornecedor')) {
+        if (finalAccepted.containsKey('nomeRazaoSocialFornecedor')) {
           _nomeRazaoSocialFornecedorCtrl.text =
-              accepted['nomeRazaoSocialFornecedor']!;
+              finalAccepted['nomeRazaoSocialFornecedor']!;
         }
-        if (accepted.containsKey('tipoObjetoContrato')) {
+        if (finalAccepted.containsKey('tipoObjetoContrato')) {
           final match = RegExp(
             r'\d+',
-          ).firstMatch(accepted['tipoObjetoContrato']!);
+          ).firstMatch(finalAccepted['tipoObjetoContrato']!);
           if (match != null) {
             _tipoObjetoContrato = int.tryParse(match.group(0)!);
           }
         }
-        if (accepted.containsKey('objetoContrato')) {
-          _objetoContratoCtrl.text = accepted['objetoContrato']!;
+        if (finalAccepted.containsKey('objetoContrato')) {
+          _objetoContratoCtrl.text = finalAccepted['objetoContrato']!;
         }
-        if (accepted.containsKey('valorInicial')) {
-          _valorInicialCtrl.text = accepted['valorInicial']!;
+        if (finalAccepted.containsKey('valorInicial')) {
+          _valorInicialCtrl.text = finalAccepted['valorInicial']!;
         }
-        if (accepted.containsKey('dataAssinatura')) {
+        if (finalAccepted.containsKey('dataAssinatura')) {
           try {
             _dataAssinatura = DateFormat(
               'dd/MM/yyyy',
-            ).parse(accepted['dataAssinatura']!);
+            ).parse(finalAccepted['dataAssinatura']!);
           } catch (_) {}
         }
-        if (accepted.containsKey('dataVigenciaInicio')) {
+        if (finalAccepted.containsKey('dataVigenciaInicio')) {
           try {
             _dataVigenciaInicio = DateFormat(
               'dd/MM/yyyy',
-            ).parse(accepted['dataVigenciaInicio']!);
+            ).parse(finalAccepted['dataVigenciaInicio']!);
           } catch (_) {}
         }
-        if (accepted.containsKey('prazoVigenciaMeses')) {
-          final raw = accepted['prazoVigenciaMeses']!;
+        if (finalAccepted.containsKey('prazoVigenciaMeses')) {
+          final raw = finalAccepted['prazoVigenciaMeses']!;
           if (raw.endsWith('d')) {
             final dias = _parseFirstInt(raw);
             if (dias != null) _vigenciaMesesCtrl.text = '';
@@ -909,7 +936,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+              '${finalAccepted.length} campo(s) preenchido(s) pelo Gemini.',
             ),
           ),
         );
@@ -1019,7 +1046,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_fix_high),
-                label: const Text('Importar PDF/DOCX'),
+                label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 4),
               TextButton.icon(

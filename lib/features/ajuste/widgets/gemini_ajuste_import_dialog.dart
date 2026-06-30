@@ -10,7 +10,7 @@ import '../domain/ajuste_domain.dart';
 // Campos extraídos pelo Gemini para o Ajuste (Contrato)
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _kAjusteFields = <GeminiField>[
+final kAjusteGeminiFields = <GeminiField>[
   GeminiField(
     key: 'tipoContratoId',
     label: 'Tipo de Contrato',
@@ -249,14 +249,27 @@ Future<Map<String, String>?> showGeminiAjusteImportDialog({
     if (calc.isNotEmpty) result['dataVigenciaFim'] = calc;
   }
 
+  return showGeminiReviewDialog(
+    context: context,
+    currentValues: currentValues,
+    suggestedValues: result,
+  );
+}
+
+/// Exibe apenas o dialog de revisão, útil para a importação manual (BYO-AI).
+Future<Map<String, String>?> showGeminiReviewDialog({
+  required BuildContext context,
+  required Map<String, String> currentValues,
+  required GeminiExtractionResult suggestedValues,
+}) {
   return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
-      fields: _kAjusteFields,
+      fields: kAjusteGeminiFields,
       currentValues: currentValues,
-      suggestedValues: result,
+      suggestedValues: suggestedValues,
     ),
   );
 }
@@ -289,7 +302,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
       final service = widget.ref.read(geminiServiceProvider);
       final result = await service.extractFromFile(
         filePath: widget.filePath,
-        fields: _kAjusteFields,
+        fields: kAjusteGeminiFields,
       );
       if (mounted) Navigator.of(context).pop(result);
     } on GeminiException catch (e) {

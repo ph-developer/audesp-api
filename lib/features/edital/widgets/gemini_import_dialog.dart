@@ -10,7 +10,7 @@ import '../domain/edital_domain.dart';
 // Campos extraídos pelo Gemini para o Edital
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _kEditalFields = <GeminiField>[
+final kEditalGeminiFields = <GeminiField>[
   GeminiField(
     key: 'dataDocumento',
     label: 'Data do Edital',
@@ -166,14 +166,27 @@ Future<Map<String, String>?> showGeminiImportDialog({
   if (result == null || !context.mounted) return null;
 
   // Exibe o dialog de revisão
+  return showGeminiReviewDialog(
+    context: context,
+    currentValues: currentValues,
+    suggestedValues: result,
+  );
+}
+
+/// Exibe apenas o dialog de revisão, útil para a importação manual (BYO-AI).
+Future<Map<String, String>?> showGeminiReviewDialog({
+  required BuildContext context,
+  required Map<String, String> currentValues,
+  required GeminiExtractionResult suggestedValues,
+}) {
   return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
-      fields: _kEditalFields,
+      fields: kEditalGeminiFields,
       currentValues: currentValues,
-      suggestedValues: result,
+      suggestedValues: suggestedValues,
     ),
   );
 }
@@ -206,7 +219,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
       final service = widget.ref.read(geminiServiceProvider);
       final result = await service.extractFromPdf(
         pdfPath: widget.pdfPath,
-        fields: _kEditalFields,
+        fields: kEditalGeminiFields,
       );
       if (mounted) Navigator.of(context).pop(result);
     } on GeminiException catch (e) {

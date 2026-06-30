@@ -14,13 +14,14 @@ import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_chip_input.dart';
+import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
-import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
@@ -32,7 +33,6 @@ import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
 import '../widgets/ajuste_situacao_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
-import 'package:file_picker/file_picker.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -764,12 +764,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   // ── Importação via IA (Gemini) ─────────────────────────────────────────
 
   Future<void> _importFromDocument() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
+    final geminiService = ref.read(geminiServiceProvider);
+    final prompt = geminiService.generatePromptFromFields(
+      kLicitacaoGeminiFields,
     );
-    if (result == null || result.files.single.path == null) return;
-    if (!mounted) return;
+
+    final result = await showAudespAiImportDialog(
+      context,
+      title: 'Importar Licitação via IA',
+      promptText: prompt,
+    );
+
+    if (result == null || !mounted) return;
 
     setState(() => _importingGemini = true);
     try {
@@ -797,67 +803,83 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         'audienciaPublica': _audienciaPublica?.toString() ?? '',
       };
 
-      final accepted = await showGeminiImportDialog(
-        context: context,
-        ref: ref,
-        pdfPath: result.files.single.path!,
-        currentValues: currentValues,
-      );
+      Map<String, String>? accepted;
+
+      if (result.mode == AiImportMode.manual) {
+        if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
+        final parsed = geminiService.parseResult(
+          result.jsonResponse!,
+          kLicitacaoGeminiFields,
+        );
+        accepted = await showGeminiReviewDialog(
+          context: context,
+          currentValues: currentValues,
+          suggestedValues: parsed,
+        );
+      } else {
+        if (result.filePath == null) return;
+        accepted = await showGeminiImportDialog(
+          context: context,
+          ref: ref,
+          pdfPath: result.filePath!,
+          currentValues: currentValues,
+        );
+      }
 
       if (!mounted || accepted == null || accepted.isEmpty) return;
 
+      final finalAccepted = accepted;
       setState(() {
-        if (accepted.containsKey('tipoNatureza')) {
-          _tipoNatureza = int.tryParse(accepted['tipoNatureza']!);
+        if (finalAccepted.containsKey('tipoNatureza')) {
+          _tipoNatureza = int.tryParse(finalAccepted['tipoNatureza']!);
         }
-        if (accepted.containsKey('exigenciaAmostra')) {
-          _exigenciaAmostra = int.tryParse(accepted['exigenciaAmostra']!);
+        if (finalAccepted.containsKey('exigenciaAmostra')) {
+          _exigenciaAmostra = int.tryParse(finalAccepted['exigenciaAmostra']!);
         }
-        if (accepted.containsKey('exigenciaCurriculo')) {
+        if (finalAccepted.containsKey('exigenciaCurriculo')) {
           _exigenciaCurriculo = [
             'true',
             'sim',
-          ].contains(accepted['exigenciaCurriculo']?.toLowerCase());
+          ].contains(finalAccepted['exigenciaCurriculo']?.toLowerCase());
         }
-        if (accepted.containsKey('exigenciaVistoCREA')) {
+        if (finalAccepted.containsKey('exigenciaVistoCREA')) {
           _exigenciaVistoCREA = [
             'true',
             'sim',
-          ].contains(accepted['exigenciaVistoCREA']?.toLowerCase());
+          ].contains(finalAccepted['exigenciaVistoCREA']?.toLowerCase());
         }
-        if (accepted.containsKey('exigenciaVisitaTecnica')) {
+        if (finalAccepted.containsKey('exigenciaVisitaTecnica')) {
           _exigenciaVisitaTecnica = int.tryParse(
-            accepted['exigenciaVisitaTecnica']!,
+            finalAccepted['exigenciaVisitaTecnica']!,
           );
         }
-        if (accepted.containsKey('exigenciaGarantiaLicitantes')) {
+        if (finalAccepted.containsKey('exigenciaGarantiaLicitantes')) {
           _exigenciaGarantiaLicitantes = int.tryParse(
-            accepted['exigenciaGarantiaLicitantes']!,
+            finalAccepted['exigenciaGarantiaLicitantes']!,
           );
         }
-        if (accepted.containsKey('percentualGarantia')) {
-          _percentualValorCtrl.text = accepted['percentualGarantia']!;
+        if (finalAccepted.containsKey('percentualGarantia')) {
+          _percentualValorCtrl.text = finalAccepted['percentualGarantia']!;
         }
-        if (accepted.containsKey('quitacaoTributosFederais')) {
+        if (finalAccepted.containsKey('quitacaoTributosFederais')) {
           _quitacaoFederal = [
             'true',
             'sim',
-          ].contains(accepted['quitacaoTributosFederais']?.toLowerCase());
+          ].contains(finalAccepted['quitacaoTributosFederais']?.toLowerCase());
         }
-        if (accepted.containsKey('quitacaoTributosEstaduais')) {
+        if (finalAccepted.containsKey('quitacaoTributosEstaduais')) {
           _quitacaoEstadual = [
             'true',
             'sim',
-          ].contains(accepted['quitacaoTributosEstaduais']?.toLowerCase());
+          ].contains(finalAccepted['quitacaoTributosEstaduais']?.toLowerCase());
         }
-        if (accepted.containsKey('quitacaoTributosMunicipais')) {
-          _quitacaoMunicipal = [
-            'true',
-            'sim',
-          ].contains(accepted['quitacaoTributosMunicipais']?.toLowerCase());
+        if (finalAccepted.containsKey('quitacaoTributosMunicipais')) {
+          _quitacaoMunicipal = ['true', 'sim'].contains(
+            finalAccepted['quitacaoTributosMunicipais']?.toLowerCase(),
+          );
         }
-        if (accepted.containsKey('fonteRecursosContratacao')) {
-          final raw = accepted['fonteRecursosContratacao']!;
+        if (finalAccepted.containsKey('fonteRecursosContratacao')) {
+          final raw = finalAccepted['fonteRecursosContratacao']!;
           Set<int> parsed;
           if (raw.trim().startsWith('[')) {
             try {
@@ -880,24 +902,25 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           }
           if (parsed.isNotEmpty) _fontesRecurso = parsed;
         }
-        if (accepted.containsKey('exigenciaIndicesEconomicos')) {
+        if (finalAccepted.containsKey('exigenciaIndicesEconomicos')) {
           _exigenciaIndicesEconomicos = int.tryParse(
-            accepted['exigenciaIndicesEconomicos']!,
+            finalAccepted['exigenciaIndicesEconomicos']!,
           );
         }
-        if (accepted.containsKey('indicesEconomicos')) {
+        if (finalAccepted.containsKey('indicesEconomicos')) {
           try {
-            final parsed = jsonDecode(accepted['indicesEconomicos']!) as List;
+            final parsed =
+                jsonDecode(finalAccepted['indicesEconomicos']!) as List;
             _indicesEconomicos = parsed
                 .map((e) => Map<String, dynamic>.from(e as Map))
                 .toList();
           } catch (_) {}
         }
-        if (accepted.containsKey('recursoBID')) {
-          _recursoBID = int.tryParse(accepted['recursoBID']!);
+        if (finalAccepted.containsKey('recursoBID')) {
+          _recursoBID = int.tryParse(finalAccepted['recursoBID']!);
         }
-        if (accepted.containsKey('audienciaPublica')) {
-          _audienciaPublica = int.tryParse(accepted['audienciaPublica']!);
+        if (finalAccepted.containsKey('audienciaPublica')) {
+          _audienciaPublica = int.tryParse(finalAccepted['audienciaPublica']!);
         }
       });
 
@@ -905,7 +928,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${accepted.length} campo(s) preenchido(s) pelo Gemini.',
+              '${finalAccepted.length} campo(s) preenchido(s) pelo Gemini.',
             ),
           ),
         );
@@ -1049,7 +1072,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               TextButton.icon(
                 onPressed: _importFromDocument,
                 icon: const Icon(Icons.auto_fix_high),
-                label: const Text('Importar PDF/DOCX'),
+                label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 8),
               TextButton.icon(

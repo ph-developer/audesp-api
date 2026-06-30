@@ -12,7 +12,7 @@ import '../domain/licitacao_domain.dart';
 // Campos extraídos pelo Gemini para a Licitação (Fase 5)
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _kLicitacaoFields = <GeminiField>[
+final kLicitacaoGeminiFields = <GeminiField>[
   GeminiField(
     key: 'tipoNatureza',
     label: 'Tipo de Natureza',
@@ -250,14 +250,27 @@ Future<Map<String, String>?> showGeminiImportDialog({
 
   if (result == null || !context.mounted) return null;
 
+  return showGeminiReviewDialog(
+    context: context,
+    currentValues: currentValues,
+    suggestedValues: result,
+  );
+}
+
+/// Exibe apenas o dialog de revisão, útil para a importação manual (BYO-AI).
+Future<Map<String, String>?> showGeminiReviewDialog({
+  required BuildContext context,
+  required Map<String, String> currentValues,
+  required GeminiExtractionResult suggestedValues,
+}) {
   return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
-      fields: _kLicitacaoFields,
+      fields: kLicitacaoGeminiFields,
       currentValues: currentValues,
-      suggestedValues: result,
+      suggestedValues: suggestedValues,
     ),
   );
 }
@@ -290,7 +303,7 @@ class _GeminiLoadingDialogState extends State<_GeminiLoadingDialog> {
       final service = widget.ref.read(geminiServiceProvider);
       final result = await service.extractFromPdf(
         pdfPath: widget.pdfPath,
-        fields: _kLicitacaoFields,
+        fields: kLicitacaoGeminiFields,
       );
       if (mounted) Navigator.of(context).pop(result);
     } on GeminiException catch (e) {

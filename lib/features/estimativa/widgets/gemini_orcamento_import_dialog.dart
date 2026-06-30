@@ -38,12 +38,24 @@ Future<GeminiOrcamentoResult?> showGeminiOrcamentoImportDialog({
 
   if (result == null || !context.mounted) return null;
 
+  return showGeminiOrcamentoReviewDialog(
+    context: context,
+    suggestedValues: result,
+    itensEstimativa: itensEstimativa,
+  );
+}
+
+Future<GeminiOrcamentoResult?> showGeminiOrcamentoReviewDialog({
+  required BuildContext context,
+  required GeminiOrcamentoResult suggestedValues,
+  required List<Map<String, dynamic>> itensEstimativa,
+}) async {
   return showAudespDialog<GeminiOrcamentoResult?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiOrcamentoReviewDialog(
-      suggestedValues: result,
+      suggestedValues: suggestedValues,
       itensEstimativa: itensEstimativa,
     ),
   );
@@ -78,12 +90,24 @@ Future<List<GeminiOrcamentoResult>?> showGeminiMultiOrcamentoImportDialog({
 
   if (results == null || results.isEmpty || !context.mounted) return null;
 
+  return showGeminiMultiOrcamentoReviewDialog(
+    context: context,
+    suggestedValues: results,
+    itensEstimativa: itensEstimativa,
+  );
+}
+
+Future<List<GeminiOrcamentoResult>?> showGeminiMultiOrcamentoReviewDialog({
+  required BuildContext context,
+  required List<GeminiOrcamentoResult> suggestedValues,
+  required List<Map<String, dynamic>> itensEstimativa,
+}) async {
   return showAudespDialog<List<GeminiOrcamentoResult>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiMultiOrcamentoReviewDialog(
-      suggestedValues: results,
+      suggestedValues: suggestedValues,
       itensEstimativa: itensEstimativa,
     ),
   );
