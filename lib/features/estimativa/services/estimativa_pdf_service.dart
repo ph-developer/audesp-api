@@ -77,10 +77,11 @@ class EstimativaPdfService {
               ),
             if (estimativa.formaPagamento.isNotEmpty)
               _buildInfoRow('Forma de Pagamento:', estimativa.formaPagamento),
-            _buildInfoRow(
-              'Exclusividade ME/EPP:',
-              _getExclusividadeLabel(estimativa),
-            ),
+            if (estimativa.exclusividadeMeEpp != 'nao_aplica')
+              _buildInfoRow(
+                'Exclusividade ME/EPP:',
+                _getExclusividadeLabel(estimativa),
+              ),
             if (estimativa.fontesRecurso.isEmpty)
               _buildInfoRow('Fontes de Recurso/Aplicação:', 'A definir')
             else

@@ -64,7 +64,9 @@ class EstimativaHtmlService {
       addInfo('Forma de Pagamento:', estimativa.formaPagamento);
     }
 
-    addInfo('Exclusividade ME/EPP:', _getExclusividadeLabel(estimativa));
+    if (estimativa.exclusividadeMeEpp != 'nao_aplica') {
+      addInfo('Exclusividade ME/EPP:', _getExclusividadeLabel(estimativa));
+    }
 
     if (estimativa.fontesRecurso.isEmpty) {
       addInfo('Fontes de Recurso/Aplicação:', 'A definir');

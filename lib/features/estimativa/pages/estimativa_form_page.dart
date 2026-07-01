@@ -426,6 +426,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   'exclusiva': 'Exclusiva para ME/EPP (Art. 48, I)',
                   'reservada':
                       'Itens/Lotes reservados para ME/EPP (Art. 48, III)',
+                  'nao_aplica': 'Não se aplica',
                 },
                 onChanged: (v) =>
                     setState(() => _exclusividadeMeEpp = v ?? 'nenhuma'),
@@ -656,7 +657,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Widget _buildMeEppSection() {
-    if (_exclusividadeMeEpp == 'nenhuma') return const SizedBox.shrink();
+    if (_exclusividadeMeEpp == 'nenhuma' || _exclusividadeMeEpp == 'nao_aplica') {
+      return const SizedBox.shrink();
+    }
 
     final isLote = _tipoEstimativa == 'lote';
 
