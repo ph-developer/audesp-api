@@ -12,7 +12,7 @@ import '../../estimativa/models/estimativa_model.dart';
 import '../../estimativa/widgets/estimativa_import_dialog.dart';
 import '../csv/csv.dart';
 
-enum PortalType { bll, brConectado }
+enum PortalType { bll, brConectado, estimativa }
 
 enum ComplementoType { planilha, estimativa }
 
@@ -122,7 +122,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         );
         return;
       }
-    } else {
+    } else if (_portal == PortalType.brConectado) {
       if (_brRelatClassificacao?.bytes == null || _brPropostas?.bytes == null) {
         setState(
           () => _errorMessage =
@@ -130,44 +130,56 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         );
         return;
       }
-    }
-    if (_complementoType == ComplementoType.planilha) {
-      if (_complemento?.bytes == null) {
-        setState(
-          () => _errorMessage =
-              'Selecione a planilha complementar para importar.',
-        );
-        return;
-      }
-    } else {
+    } else if (_portal == PortalType.estimativa) {
       if (_estimativaSelecionada == null) {
         setState(() => _errorMessage = 'Selecione a estimativa para importar.');
         return;
       }
     }
 
+    if (_portal != PortalType.estimativa) {
+      if (_complementoType == ComplementoType.planilha) {
+        if (_complemento?.bytes == null) {
+          setState(
+            () => _errorMessage =
+                'Selecione a planilha complementar para importar.',
+          );
+          return;
+        }
+      } else {
+        if (_estimativaSelecionada == null) {
+          setState(() => _errorMessage = 'Selecione a estimativa para importar.');
+          return;
+        }
+      }
+    }
+
     setState(() => _loading = true);
     try {
-      final Map<String, List<int>> csvFiles;
-      final PortalCsvParser parser;
+      List<LicitacaoItemCsvModel> itens = [];
 
-      if (_portal == PortalType.bll) {
-        csvFiles = {CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!};
-        parser = const BllCsvParser();
-      } else {
-        csvFiles = {
-          CsvFileKeys.brRelatClassificacao: _brRelatClassificacao!.bytes!,
-          CsvFileKeys.brPropostas: _brPropostas!.bytes!,
-        };
-        parser = const BrConectadoCsvParser();
+      if (_portal != PortalType.estimativa) {
+        final Map<String, List<int>> csvFiles;
+        final PortalCsvParser parser;
+
+        if (_portal == PortalType.bll) {
+          csvFiles = {CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!};
+          parser = const BllCsvParser();
+        } else {
+          csvFiles = {
+            CsvFileKeys.brRelatClassificacao: _brRelatClassificacao!.bytes!,
+            CsvFileKeys.brPropostas: _brPropostas!.bytes!,
+          };
+          parser = const BrConectadoCsvParser();
+        }
+
+        await Future.delayed(const Duration(milliseconds: 300));
+        itens = parser.parse(csvFiles);
       }
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      List<LicitacaoItemCsvModel> itens = parser.parse(csvFiles);
 
       final Map<int, LicitacaoItemCsvModel> complementoMap;
 
-      if (_complementoType == ComplementoType.planilha) {
+      if (_portal != PortalType.estimativa && _complementoType == ComplementoType.planilha) {
         complementoMap = const ComplementoCsvParser().parse(
           _complemento!.bytes!,
         );
@@ -187,30 +199,71 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
         if (_estimativaSelecionada!.tipoEstimativa == 'lote') {
           for (final lote in _estimativaSelecionada!.lotes) {
-            String dataOrcamento = DateTime.now().toIso8601String().substring(
-              0,
-              10,
-            );
-            final datas = lote.itens
-                .expand((i) => i.orcamentos)
-                .map(
-                  (o) =>
-                      _estimativaSelecionada!.fornecedores
-                          .where((f) => f.id == o.fornecedorId)
-                          .firstOrNull
-                          ?.data ??
-                      '',
-                )
-                .where((d) => d.isNotEmpty)
-                .toList();
-            if (datas.isNotEmpty) {
-              datas.sort();
-              dataOrcamento = datas.first;
+            String dataOrcamento = DateTime.now().toIso8601String().substring(0, 10);
+            DateTime? oldestDate;
+            for (final o in lote.itens.expand((i) => i.orcamentos)) {
+              final f = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.id == o.fornecedorId).firstOrNull;
+              if (f != null && f.data.isNotEmpty) {
+                try {
+                  final parts = f.data.split('/');
+                  if (parts.length == 3) {
+                    final d = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                    if (oldestDate == null || d.isBefore(oldestDate)) {
+                      oldestDate = d;
+                    }
+                  }
+                } catch (_) {}
+              }
+            }
+            if (oldestDate != null) {
+              dataOrcamento = oldestDate.toIso8601String().substring(0, 10);
+            }
+
+            final Map<String, double> totalsPorFornecedor = {};
+            for (final i in lote.itens) {
+              for (final o in i.orcamentos) {
+                 totalsPorFornecedor[o.fornecedorId] = (totalsPorFornecedor[o.fornecedorId] ?? 0.0) + (o.valorUnitario * i.quantidade);
+              }
+            }
+            
+            final List<LicitanteCsvModel> licitantes = [];
+            for (final entry in totalsPorFornecedor.entries) {
+              final fornecedor = _estimativaSelecionada!.fornecedores.where((f) => f.id == entry.key).firstOrNull;
+              if (fornecedor == null) continue;
+              final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
+              final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
+              
+              licitantes.add(LicitanteCsvModel(
+                niPessoa: cnpjLimpo,
+                tipoPessoaId: tipoPessoa,
+                nomeRazaoSocial: fornecedor.razaoSocial,
+                declaracaoMEouEPP: 3,
+                valorProposta: entry.value,
+                resultadoHabilitacao: 2,
+              ));
+            }
+            
+            if (licitantes.isNotEmpty) {
+               if (tipoOrcamentoBase == 3) {
+                 licitantes.sort((a, b) => b.valorProposta.compareTo(a.valorProposta));
+               } else {
+                 licitantes.sort((a, b) => a.valorProposta.compareTo(b.valorProposta));
+               }
+               final vencedor = licitantes.first;
+               licitantes[0] = LicitanteCsvModel(
+                 niPessoa: vencedor.niPessoa,
+                 tipoPessoaId: vencedor.tipoPessoaId,
+                 nomeRazaoSocial: vencedor.nomeRazaoSocial,
+                 declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
+                 valorProposta: vencedor.valorProposta,
+                 resultadoHabilitacao: 1,
+               );
             }
 
             complementoMap[lote.numero] = LicitacaoItemCsvModel(
               numeroItem: lote.numero,
-              licitantes: const [],
+              licitantes: licitantes,
               tipoOrcamento: tipoOrcamentoBase,
               valorEstimado: lote.itens.fold<double>(
                 0.0,
@@ -229,29 +282,64 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
           }
         } else {
           for (final item in _estimativaSelecionada!.itens) {
-            String dataOrcamento = DateTime.now().toIso8601String().substring(
-              0,
-              10,
-            );
-            final datas = item.orcamentos
-                .map(
-                  (o) =>
-                      _estimativaSelecionada!.fornecedores
-                          .where((f) => f.id == o.fornecedorId)
-                          .firstOrNull
-                          ?.data ??
-                      '',
-                )
-                .where((d) => d.isNotEmpty)
-                .toList();
-            if (datas.isNotEmpty) {
-              datas.sort();
-              dataOrcamento = datas.first;
+            String dataOrcamento = DateTime.now().toIso8601String().substring(0, 10);
+            DateTime? oldestDate;
+            for (final o in item.orcamentos) {
+              final f = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.id == o.fornecedorId).firstOrNull;
+              if (f != null && f.data.isNotEmpty) {
+                try {
+                  final parts = f.data.split('/');
+                  if (parts.length == 3) {
+                    final d = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                    if (oldestDate == null || d.isBefore(oldestDate)) {
+                      oldestDate = d;
+                    }
+                  }
+                } catch (_) {}
+              }
+            }
+            if (oldestDate != null) {
+              dataOrcamento = oldestDate.toIso8601String().substring(0, 10);
+            }
+
+            final List<LicitanteCsvModel> licitantes = [];
+            for (final o in item.orcamentos) {
+              final fornecedor = _estimativaSelecionada!.fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
+              if (fornecedor == null) continue;
+              final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
+              final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
+              
+              licitantes.add(LicitanteCsvModel(
+                niPessoa: cnpjLimpo,
+                tipoPessoaId: tipoPessoa,
+                nomeRazaoSocial: fornecedor.razaoSocial,
+                declaracaoMEouEPP: 3,
+                valorProposta: tipoPropostaBase == 1 ? (o.valorUnitario * item.quantidade) : o.valorUnitario,
+                resultadoHabilitacao: 2,
+              ));
+            }
+            
+            if (licitantes.isNotEmpty) {
+               if (tipoOrcamentoBase == 3) {
+                 licitantes.sort((a, b) => b.valorProposta.compareTo(a.valorProposta));
+               } else {
+                 licitantes.sort((a, b) => a.valorProposta.compareTo(b.valorProposta));
+               }
+               final vencedor = licitantes.first;
+               licitantes[0] = LicitanteCsvModel(
+                 niPessoa: vencedor.niPessoa,
+                 tipoPessoaId: vencedor.tipoPessoaId,
+                 nomeRazaoSocial: vencedor.nomeRazaoSocial,
+                 declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
+                 valorProposta: vencedor.valorProposta,
+                 resultadoHabilitacao: 1,
+               );
             }
 
             complementoMap[item.numero] = LicitacaoItemCsvModel(
               numeroItem: item.numero,
-              licitantes: const [],
+              licitantes: licitantes,
               tipoOrcamento: tipoOrcamentoBase,
               valorEstimado: item.getValorReferenciaUnitario(calculoGlobal),
               dataOrcamento: dataOrcamento,
@@ -268,19 +356,23 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         }
       }
 
-      itens = itens.map((item) {
-        final extra = complementoMap[item.numeroItem];
-        if (extra == null) return item;
-        return item.copyWith(
-          tipoOrcamento: extra.tipoOrcamento,
-          valorEstimado: extra.valorEstimado,
-          dataOrcamento: extra.dataOrcamento,
-          situacaoCompraItemId: extra.situacaoCompraItemId,
-          dataSituacao: extra.dataSituacao,
-          tipoValor: extra.tipoValor,
-          tipoProposta: extra.tipoProposta,
-        );
-      }).toList();
+      if (_portal == PortalType.estimativa) {
+        itens = complementoMap.values.toList();
+      } else {
+        itens = itens.map((item) {
+          final extra = complementoMap[item.numeroItem];
+          if (extra == null) return item;
+          return item.copyWith(
+            tipoOrcamento: extra.tipoOrcamento,
+            valorEstimado: extra.valorEstimado,
+            dataOrcamento: extra.dataOrcamento,
+            situacaoCompraItemId: extra.situacaoCompraItemId,
+            dataSituacao: extra.dataSituacao,
+            tipoValor: extra.tipoValor,
+            tipoProposta: extra.tipoProposta,
+          );
+        }).toList();
+      }
 
       if (mounted) Navigator.of(context).pop(itens);
     } on CsvParseException catch (e) {
@@ -299,6 +391,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
     return AlertDialog(
       title: const Text('Importar Itens'),
       content: SizedBox(
+        width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,10 +401,12 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                 segments: const {
                   PortalType.bll: 'BLL',
                   PortalType.brConectado: 'BRConectado',
+                  PortalType.estimativa: 'Estimativa',
                 },
                 icons: const {
                   PortalType.bll: Icons.source_outlined,
                   PortalType.brConectado: Icons.source_outlined,
+                  PortalType.estimativa: Icons.calculate_outlined,
                 },
                 selected: {_portal},
                 onSelectionChanged: _loading
@@ -331,7 +426,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     ? null
                     : () => _pickFile(CsvFileKeys.bllClassificacao),
               ),
-            ] else ...[
+            ] else if (_portal == PortalType.brConectado) ...[
               _FilePickerRow(
                 label: 'Relatório de classificação',
                 fileName: _brRelatClassificacao?.name,
@@ -348,49 +443,56 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     : () => _pickFile(CsvFileKeys.brPropostas),
               ),
             ],
-            const SizedBox(height: 16),
-            Center(
-              child: AudespSegmentedButton<ComplementoType>(
-                segments: const {
-                  ComplementoType.planilha: 'Planilha',
-                  ComplementoType.estimativa: 'Estimativa',
-                },
-                icons: const {
-                  ComplementoType.planilha: Icons.upload_file_outlined,
-                  ComplementoType.estimativa: Icons.calculate_outlined,
-                },
-                selected: {_complementoType},
-                onSelectionChanged: _loading
-                    ? null
-                    : (s) => setState(() {
-                        _complementoType = s.first;
-                        _errorMessage = null;
-                      }),
+            if (_portal != PortalType.estimativa) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: AudespSegmentedButton<ComplementoType>(
+                  segments: const {
+                    ComplementoType.planilha: 'Planilha',
+                    ComplementoType.estimativa: 'Estimativa',
+                  },
+                  icons: const {
+                    ComplementoType.planilha: Icons.upload_file_outlined,
+                    ComplementoType.estimativa: Icons.calculate_outlined,
+                  },
+                  selected: {_complementoType},
+                  onSelectionChanged: _loading
+                      ? null
+                      : (s) => setState(() {
+                          _complementoType = s.first;
+                          _errorMessage = null;
+                        }),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            if (_complementoType == ComplementoType.planilha) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _FilePickerRow(
-                      label: 'Planilha Complementar',
-                      fileName: _complemento?.name,
-                      onPick: _loading
-                          ? null
-                          : () => _pickFile(_complementoKey),
+              const SizedBox(height: 24),
+              if (_complementoType == ComplementoType.planilha) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FilePickerRow(
+                        label: 'Planilha Complementar',
+                        fileName: _complemento?.name,
+                        onPick: _loading
+                            ? null
+                            : () => _pickFile(_complementoKey),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: 'Baixar Template',
-                    child: IconButton.outlined(
-                      icon: const Icon(Icons.download_outlined, size: 18),
-                      onPressed: _loading ? null : _downloadTemplate,
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'Baixar Template',
+                      child: IconButton.outlined(
+                        icon: const Icon(Icons.download_outlined, size: 18),
+                        onPressed: _loading ? null : _downloadTemplate,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ] else ...[
+                _EstimativaPickerRow(
+                  estimativa: _estimativaSelecionada,
+                  onPick: _loading ? null : _pickEstimativa,
+                ),
+              ],
             ] else ...[
               _EstimativaPickerRow(
                 estimativa: _estimativaSelecionada,

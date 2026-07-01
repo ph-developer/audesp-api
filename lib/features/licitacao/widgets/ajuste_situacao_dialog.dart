@@ -178,12 +178,13 @@ class _AjusteSituacaoDialogState extends State<_AjusteSituacaoDialog> {
             const SizedBox(height: 8),
             Row(
               children: [
-                AudespTriStateCheckbox(
-                  label: 'Selecionar Todos',
-                  value: allSelected ? true : (someSelected ? null : false),
-                  onChanged: _toggleSelectAll,
+                Expanded(
+                  child: AudespTriStateCheckbox(
+                    label: 'Selecionar Todos',
+                    value: allSelected ? true : (someSelected ? null : false),
+                    onChanged: _toggleSelectAll,
+                  ),
                 ),
-                const Spacer(),
                 Text('${_selectedIndices.length} selecionado(s)'),
               ],
             ),
