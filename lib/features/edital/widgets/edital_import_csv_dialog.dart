@@ -383,7 +383,10 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
                 child: SingleChildScrollView(
-                  child: _PreviewTable(items: preview),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _PreviewTable(items: preview),
+                  ),
                 ),
               ),
             ],
