@@ -59,7 +59,7 @@ class _EstimativaFonteRecursoDialogState
 
   void _confirm() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     // Pad left 0 if 1 digit for Fonte de Recurso
     String fonte = _fonteCtrl.text.trim();
     if (fonte.length == 1) {

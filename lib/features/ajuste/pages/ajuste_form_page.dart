@@ -1087,14 +1087,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           items: {
                             for (final e in _editais) e.id: e.dropdownLabel,
                           },
-                          onChanged: readOnly
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    _editalId = v;
-                                    _fillEditalDescriptor();
-                                  });
-                                },
+                          readOnly: readOnly,
+                          onChanged: (v) {
+                            setState(() {
+                              _editalId = v;
+                              _fillEditalDescriptor();
+                            });
+                          },
                           validator: (v) =>
                               v == null ? 'Selecione o edital vinculado' : null,
                         ),
@@ -1109,23 +1108,22 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             null: '— Nenhuma —',
                             for (final a in _atas) a.id: a.dropdownLabel,
                           },
-                          onChanged: readOnly
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    _ataId = v;
-                                    if (v != null) {
-                                      final ata = _atas
-                                          .where((a) => a.id == v)
-                                          .firstOrNull;
-                                      if (ata != null) {
-                                        _codigoAtaCtrl.text = ata.codigoAta;
-                                      }
-                                    } else {
-                                      _codigoAtaCtrl.clear();
-                                    }
-                                  });
-                                },
+                          readOnly: readOnly,
+                          onChanged: (v) {
+                            setState(() {
+                              _ataId = v;
+                              if (v != null) {
+                                final ata = _atas
+                                    .where((a) => a.id == v)
+                                    .firstOrNull;
+                                if (ata != null) {
+                                  _codigoAtaCtrl.text = ata.codigoAta;
+                                }
+                              } else {
+                                _codigoAtaCtrl.clear();
+                              }
+                            });
+                          },
                         ),
                       ),
                     ],
@@ -1341,9 +1339,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Tipo de Contrato *',
                     value: _tipoContratoId,
                     items: kTipoContrato,
-                    onChanged: readOnly
-                        ? null
-                        : (v) => setState(() => _tipoContratoId = v),
+                    readOnly: readOnly,
+                    onChanged: (v) => setState(() => _tipoContratoId = v),
                     validator: (v) =>
                         v == null ? 'Selecione o tipo de contrato' : null,
                   ),
@@ -1400,9 +1397,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Categoria do Processo *',
                           value: _categoriaProcessoId,
                           items: kCategoriaProcesso,
-                          onChanged: readOnly
-                              ? null
-                              : (v) => setState(() => _categoriaProcessoId = v),
+                          readOnly: readOnly,
+                          onChanged: (v) =>
+                              setState(() => _categoriaProcessoId = v),
                           validator: (v) => v == null
                               ? 'Selecione a categoria do processo'
                               : null,
@@ -1508,10 +1505,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Tipo de Pessoa *',
                           value: _tipoPessoaFornecedor,
                           items: kTipoPessoaFornecedor,
-                          onChanged: readOnly
-                              ? null
-                              : (v) =>
-                                    setState(() => _tipoPessoaFornecedor = v),
+                          readOnly: readOnly,
+                          onChanged: (v) =>
+                              setState(() => _tipoPessoaFornecedor = v),
                           validator: (v) =>
                               v == null ? 'Selecione o tipo de pessoa' : null,
                         ),
@@ -1553,11 +1549,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             for (final e in kTipoPessoaFornecedor.entries)
                               e.key: e.value,
                           },
-                          onChanged: readOnly
-                              ? null
-                              : (v) => setState(
-                                  () => _tipoPessoaFornecedorSub = v,
-                                ),
+                          readOnly: readOnly,
+                          onChanged: (v) =>
+                              setState(() => _tipoPessoaFornecedorSub = v),
                         ),
                       ),
                     ],
@@ -1580,9 +1574,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Tipo de Objeto do Contrato *',
                     value: _tipoObjetoContrato,
                     items: kTipoObjetoContrato,
-                    onChanged: readOnly
-                        ? null
-                        : (v) => setState(() => _tipoObjetoContrato = v),
+                    readOnly: readOnly,
+                    onChanged: (v) => setState(() => _tipoObjetoContrato = v),
                     validator: (v) =>
                         v == null ? 'Selecione o tipo de objeto' : null,
                   ),

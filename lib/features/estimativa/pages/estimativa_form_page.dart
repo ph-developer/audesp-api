@@ -34,6 +34,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../edital/domain/edital_domain.dart';
 
 enum AiItensAction { replace, append }
+
 enum AiOrcamentoType { single, multi }
 
 class EstimativaFormPage extends ConsumerStatefulWidget {
@@ -1483,7 +1484,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     }
 
     final geminiService = ref.read(geminiServiceProvider);
-    
+
     final result = await showAudespAiImportDialog<AiOrcamentoType>(
       context,
       title: 'Importar Orçamentos via IA',
@@ -1503,7 +1504,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         );
       },
     );
-    
+
     if (result == null || !mounted) return;
 
     final isMulti = result.extraState == AiOrcamentoType.multi;
@@ -1513,7 +1514,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
       try {
         if (isMulti) {
-          final parsed = geminiService.parseMultiOrcamentoResult(result.jsonResponse!);
+          final parsed = geminiService.parseMultiOrcamentoResult(
+            result.jsonResponse!,
+          );
           final resultados = await showGeminiMultiOrcamentoReviewDialog(
             context: context,
             suggestedValues: parsed,
@@ -1526,7 +1529,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             }
           });
         } else {
-          final parsed = geminiService.parseOrcamentoResult(result.jsonResponse!);
+          final parsed = geminiService.parseOrcamentoResult(
+            result.jsonResponse!,
+          );
           final orcamentoResult = await showGeminiOrcamentoReviewDialog(
             context: context,
             suggestedValues: parsed,
@@ -1539,9 +1544,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao analisar JSON: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erro ao analisar JSON: $e')));
         }
         return;
       }
@@ -1661,7 +1666,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         );
       },
     );
-    
+
     if (result == null || !mounted) return;
 
     final nextNumero = result.extraState == AiItensAction.replace
@@ -1675,7 +1680,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (result.mode == AiImportMode.manual) {
       if (result.jsonResponse == null || result.jsonResponse!.isEmpty) return;
       try {
-        final extractedItens = ref.read(geminiServiceProvider).parseItensEstimativaResult(result.jsonResponse!);
+        final extractedItens = ref
+            .read(geminiServiceProvider)
+            .parseItensEstimativaResult(result.jsonResponse!);
         novosItens = await showGeminiItensReviewDialog(
           context: context,
           extractedItens: extractedItens,
@@ -1683,9 +1690,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         );
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao analisar JSON: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erro ao analisar JSON: $e')));
         }
         return;
       }

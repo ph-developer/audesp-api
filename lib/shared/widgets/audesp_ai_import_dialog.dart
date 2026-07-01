@@ -45,7 +45,8 @@ class _AudespAiImportDialog<T> extends StatefulWidget {
   final String title;
   final String promptText;
   final T? initialExtraState;
-  final Widget Function(T? state, ValueChanged<T?> onChanged)? extraOptionsBuilder;
+  final Widget Function(T? state, ValueChanged<T?> onChanged)?
+  extraOptionsBuilder;
 
   const _AudespAiImportDialog({
     required this.title,
@@ -55,7 +56,8 @@ class _AudespAiImportDialog<T> extends StatefulWidget {
   });
 
   @override
-  State<_AudespAiImportDialog<T>> createState() => _AudespAiImportDialogState<T>();
+  State<_AudespAiImportDialog<T>> createState() =>
+      _AudespAiImportDialogState<T>();
 }
 
 class _AudespAiImportDialogState<T> extends State<_AudespAiImportDialog<T>> {
@@ -243,10 +245,7 @@ class _AudespAiImportDialogState<T> extends State<_AudespAiImportDialog<T>> {
                     border: OutlineInputBorder(),
                     hintText: 'Cole aqui o JSON gerado pela sua IA...',
                   ),
-                  style: const TextStyle(
-                    fontFamily: 'Courier',
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
                 ),
               ],
               if (widget.extraOptionsBuilder != null) ...[

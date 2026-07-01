@@ -15,6 +15,7 @@ class AudespTextField extends StatefulWidget {
   final String? prefixText;
   final String? suffixText;
   final String? helperText;
+  final String? errorText;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final FormFieldValidator<String>? validator;
@@ -42,6 +43,7 @@ class AudespTextField extends StatefulWidget {
     this.prefixText,
     this.suffixText,
     this.helperText,
+    this.errorText,
     this.keyboardType,
     this.inputFormatters,
     this.validator,
@@ -205,6 +207,7 @@ class _AudespTextFieldState extends State<AudespTextField> {
             prefixText: widget.prefixText,
             suffixText: widget.suffixText,
             helperText: widget.helperText,
+            errorText: widget.errorText,
             prefixIcon: Container(
               width: widget.prefixIcon == null ? 12.0 : 32.0,
               padding: const EdgeInsets.all(4.0),

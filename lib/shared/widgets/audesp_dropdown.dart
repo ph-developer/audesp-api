@@ -85,14 +85,28 @@ class AudespDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = !enabled || readOnly;
     return DropdownButtonFormField<T>(
       key: value != null ? ValueKey('dd_${label}_$value') : null,
       initialValue: value,
       isExpanded: true,
       isDense: true,
-      decoration: InputDecoration(labelText: label),
+      style: isDisabled
+          ? Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+            )
+          : Theme.of(context).textTheme.titleMedium,
+      decoration: InputDecoration(
+        labelText: label,
+        enabled: !isDisabled,
+        disabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+          ),
+        ),
+      ),
       items: _buildItems(),
-      onChanged: readOnly ? null : onChanged,
+      onChanged: isDisabled ? null : onChanged,
       validator: validator,
     );
   }

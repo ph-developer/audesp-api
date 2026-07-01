@@ -105,6 +105,7 @@ class _AudespDateTimePickerFieldState extends State<AudespDateTimePickerField> {
               labelText: widget.label,
               border: const OutlineInputBorder(),
               errorText: hasError ? state.errorText : null,
+              enabled: !widget.readOnly,
               suffixIconConstraints: const BoxConstraints(
                 minWidth: 32,
                 minHeight: 32,
@@ -115,7 +116,13 @@ class _AudespDateTimePickerFieldState extends State<AudespDateTimePickerField> {
             ),
             child: Text(
               widget.value != null ? _fmt.format(widget.value!) : '—',
-              style: widget.value == null
+              style: widget.readOnly
+                  ? TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.38),
+                    )
+                  : widget.value == null
                   ? TextStyle(color: Theme.of(context).colorScheme.outline)
                   : null,
             ),

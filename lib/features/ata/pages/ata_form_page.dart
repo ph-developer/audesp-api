@@ -599,12 +599,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           items: {
                             for (final e in _editais) e.id: e.dropdownLabel,
                           },
-                          onChanged: readOnly
-                              ? null
-                              : (v) {
-                                  setState(() => _editalId = v);
-                                  _fillEditalDescriptor();
-                                },
+                          readOnly: readOnly,
+                          onChanged: (v) {
+                            setState(() => _editalId = v);
+                            _fillEditalDescriptor();
+                          },
                           validator: (v) =>
                               v == null ? 'Selecione o edital vinculado' : null,
                         ),
@@ -614,9 +613,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                         child: AudespCheckbox(
                           label: 'Retificação',
                           value: _retificacao,
-                          onChanged: readOnly
-                              ? null
-                              : (v) => setState(() => _retificacao = v),
+                          readOnly: readOnly,
+                          onChanged: (v) => setState(() => _retificacao = v),
                         ),
                       ),
                     ],

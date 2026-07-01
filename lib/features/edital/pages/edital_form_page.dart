@@ -1007,9 +1007,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           label: 'Tipo de Instrumento Convocatório *',
           value: _tipoInstrumento,
           items: kTipoInstrumento,
-          onChanged: readOnly
-              ? null
-              : (v) => setState(() => _tipoInstrumento = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _tipoInstrumento = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -1018,7 +1017,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           label: 'Modalidade de Contratação *',
           value: _modalidade,
           items: kModalidades,
-          onChanged: readOnly ? null : (v) => setState(() => _modalidade = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _modalidade = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -1027,7 +1027,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           label: 'Modo de Disputa *',
           value: _modoDisputa,
           items: kModoDisputa,
-          onChanged: readOnly ? null : (v) => setState(() => _modoDisputa = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _modoDisputa = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),
@@ -1036,9 +1037,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           label: 'Critério de Julgamento *',
           value: _criterioJulgamentoId,
           items: kCriterioJulgamento,
-          onChanged: readOnly
-              ? null
-              : (v) => setState(() => _criterioJulgamentoId = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _criterioJulgamentoId = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         const SizedBox(height: 12),

@@ -238,23 +238,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AudespTextField(
+                      label: 'Senha',
                       controller: _passwordCtrl,
                       focusNode: _passwordFocus,
                       obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        isDense: true,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: AudespIconButton(
-                          icon: _obscure
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                        ),
-                        errorText: _error,
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: AudespIconButton(
+                        icon: _obscure
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
+                      errorText: _error,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _doLogin(),
                       validator: (v) => null, // Validated manually in _doLogin

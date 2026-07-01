@@ -445,7 +445,6 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
     return results;
   }
 
-
   String getItensEstimativaPrompt() {
     return '''
 Você é um assistente especializado em licitações públicas brasileiras.
@@ -530,9 +529,7 @@ Se nenhum item for encontrado, retorne {"itens": []}.
 
     final itens = decoded['itens'] as List<dynamic>? ?? [];
     if (itens.isEmpty) {
-      throw const GeminiException(
-        'Nenhum item foi identificado no documento.',
-      );
+      throw const GeminiException('Nenhum item foi identificado no documento.');
     }
 
     final results = <GeminiEstimativaItemResult>[];
@@ -549,9 +546,11 @@ Se nenhum item for encontrado, retorne {"itens": []}.
         final doubleQuant = quantRaw is num
             ? quantRaw.toDouble()
             : double.tryParse(quantRaw.toString()) ?? 0.0;
-        
+
         final finalMs = (ms == 'M' || ms == 'S') ? ms! : 'M';
-        final finalCatId = catId is int ? catId : int.tryParse(catId.toString()) ?? 2;
+        final finalCatId = catId is int
+            ? catId
+            : int.tryParse(catId.toString()) ?? 2;
 
         results.add(
           GeminiEstimativaItemResult(

@@ -1143,14 +1143,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Edital *',
                 value: _editalId,
                 items: {for (final e in _editais) e.id: e.dropdownLabel},
-                onChanged: readOnly
-                    ? null
-                    : (v) {
-                        setState(() {
-                          _editalId = v;
-                          _fillEditalDescriptor();
-                        });
-                      },
+                readOnly: readOnly,
+                onChanged: (v) {
+                  setState(() {
+                    _editalId = v;
+                    _fillEditalDescriptor();
+                  });
+                },
                 validator: (v) =>
                     v == null ? 'Selecione o edital vinculado' : null,
               ),
@@ -1160,9 +1159,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               child: AudespCheckbox(
                 label: 'Retificação',
                 value: _retificacao,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _retificacao = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _retificacao = v),
               ),
             ),
           ],
@@ -1197,7 +1195,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           label: 'Recurso BID *',
           value: _recursoBID,
           items: kRecursoBID,
-          onChanged: readOnly ? null : (v) => setState(() => _recursoBID = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _recursoBID = v),
           validator: (v) => v == null ? 'Obrigatório' : null,
         ),
         if (_recursoBID == 1) ...[
@@ -1214,9 +1213,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Abertura Pré-Qualificação',
                   value: _aberturaPreQualificacaoBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) => setState(() => _aberturaPreQualificacaoBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) =>
+                      setState(() => _aberturaPreQualificacaoBID = v),
                 ),
               ),
               AudespFieldRowItem(
@@ -1224,9 +1223,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Edital Pré-Qualificação',
                   value: _editalPreQualificacaoBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) => setState(() => _editalPreQualificacaoBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) =>
+                      setState(() => _editalPreQualificacaoBID = v),
                 ),
               ),
               AudespFieldRowItem(
@@ -1234,10 +1233,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Julgamento Pré-Qualificação',
                   value: _julgamentoPreQualificacaoBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) =>
-                            setState(() => _julgamentoPreQualificacaoBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) =>
+                      setState(() => _julgamentoPreQualificacaoBID = v),
                 ),
               ),
             ],
@@ -1250,9 +1248,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Edital 2ª Fase',
                   value: _edital2FaseBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) => setState(() => _edital2FaseBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) => setState(() => _edital2FaseBID = v),
                 ),
               ),
               AudespFieldRowItem(
@@ -1260,9 +1257,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Julgamento de Propostas',
                   value: _julgamentoPropostasBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) => setState(() => _julgamentoPropostasBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) => setState(() => _julgamentoPropostasBID = v),
                 ),
               ),
               AudespFieldRowItem(
@@ -1270,9 +1266,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   label: 'Julgamento/Negociação',
                   value: _julgamentoNegociacaoBID,
                   items: kTriState,
-                  onChanged: readOnly
-                      ? null
-                      : (v) => setState(() => _julgamentoNegociacaoBID = v),
+                  readOnly: readOnly,
+                  onChanged: (v) =>
+                      setState(() => _julgamentoNegociacaoBID = v),
                 ),
               ),
             ],
@@ -1293,9 +1289,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Tipo de Natureza *',
                 value: _tipoNatureza,
                 items: kTipoNatureza,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _tipoNatureza = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _tipoNatureza = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
@@ -1304,9 +1299,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Viabilidade de Contratação',
                 value: _viabilidadeContratacao,
                 items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _viabilidadeContratacao = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _viabilidadeContratacao = v),
               ),
             ),
           ],
@@ -1319,9 +1313,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Interposição de Recurso *',
                 value: _interposicaoRecurso,
                 items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _interposicaoRecurso = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _interposicaoRecurso = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
@@ -1330,9 +1323,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Audiência Pública',
                 value: _audienciaPublica,
                 items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _audienciaPublica = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _audienciaPublica = v),
               ),
             ),
           ],
@@ -1345,9 +1337,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Exigência de Amostra',
                 value: _exigenciaAmostra,
                 items: kExigenciaAmostra,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _exigenciaAmostra = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _exigenciaAmostra = v),
               ),
             ),
             AudespFieldRowItem(
@@ -1355,9 +1346,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Exigência de Visita Técnica',
                 value: _exigenciaVisitaTecnica,
                 items: kExigenciaVisitaTecnica,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _exigenciaVisitaTecnica = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _exigenciaVisitaTecnica = v),
               ),
             ),
           ],
@@ -1369,27 +1359,24 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               child: AudespCheckbox(
                 label: 'Exige Currículo',
                 value: _exigenciaCurriculo,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _exigenciaCurriculo = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _exigenciaCurriculo = v),
               ),
             ),
             AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Exige Visto CREA',
                 value: _exigenciaVistoCREA,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _exigenciaVistoCREA = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _exigenciaVistoCREA = v),
               ),
             ),
             AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Declaração de Recursos',
                 value: _declaracaoRecursos,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _declaracaoRecursos = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _declaracaoRecursos = v),
               ),
             ),
           ],
@@ -1409,9 +1396,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Exigência de Garantia *',
                 value: _exigenciaGarantiaLicitantes,
                 items: kTriState,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _exigenciaGarantiaLicitantes = v),
+                readOnly: readOnly,
+                onChanged: (v) =>
+                    setState(() => _exigenciaGarantiaLicitantes = v),
                 validator: (v) => v == null ? 'Obrigatório' : null,
               ),
             ),
@@ -1449,27 +1436,24 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               child: AudespCheckbox(
                 label: 'Tributos Federais',
                 value: _quitacaoFederal,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _quitacaoFederal = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _quitacaoFederal = v),
               ),
             ),
             AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Tributos Estaduais',
                 value: _quitacaoEstadual,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _quitacaoEstadual = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _quitacaoEstadual = v),
               ),
             ),
             AudespFieldRowItem(
               child: AudespCheckbox(
                 label: 'Tributos Municipais',
                 value: _quitacaoMunicipal,
-                onChanged: readOnly
-                    ? null
-                    : (v) => setState(() => _quitacaoMunicipal = v),
+                readOnly: readOnly,
+                onChanged: (v) => setState(() => _quitacaoMunicipal = v),
               ),
             ),
           ],
@@ -1513,9 +1497,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         AudespCheckbox(
           label: 'Contratação Conduzida por Órgão Externo',
           value: _contratacaoConduzida,
-          onChanged: readOnly
-              ? null
-              : (v) => setState(() => _contratacaoConduzida = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _contratacaoConduzida = v),
         ),
         if (_contratacaoConduzida) ...[
           const SizedBox(height: 12),
@@ -1551,9 +1534,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           label: 'Exigência de Índices Econômicos',
           value: _exigenciaIndicesEconomicos,
           items: kTriState,
-          onChanged: readOnly
-              ? null
-              : (v) => setState(() => _exigenciaIndicesEconomicos = v),
+          readOnly: readOnly,
+          onChanged: (v) => setState(() => _exigenciaIndicesEconomicos = v),
         ),
         if (_exigenciaIndicesEconomicos == 1) ...[
           const SizedBox(height: 12),
