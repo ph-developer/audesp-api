@@ -44,6 +44,18 @@ class EditalService {
   }) async {
     final endpoint = '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-edital';
 
+    // Remover o critério de julgamento da parte principal do edital
+    // (Audesp Fase 4 exige apenas nos itens)
+    try {
+      final Map<String, dynamic> docMap = jsonDecode(documentoJson);
+      if (docMap.containsKey('criterioJulgamentoId')) {
+        docMap.remove('criterioJulgamentoId');
+        documentoJson = jsonEncode(docMap);
+      }
+    } catch (_) {
+      // Ignora erro de parse e segue com a string original
+    }
+
     final fields = <String, dynamic>{
       'documentoJSON': MultipartFile.fromString(
         documentoJson,
