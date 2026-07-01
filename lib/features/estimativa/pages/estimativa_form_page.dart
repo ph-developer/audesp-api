@@ -27,7 +27,11 @@ import '../widgets/estimativa_exclusividade_dialog.dart';
 import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../widgets/gemini_itens_import_dialog.dart';
 import '../widgets/estimativa_fonte_recurso_dialog.dart';
+import '../widgets/estimativa_assinaturas_dialog.dart';
+import '../models/assinatura_model.dart';
 import '../services/estimativa_pdf_service.dart';
+import '../services/estimativa_html_service.dart';
+import '../../../core/utils/html_clipboard.dart';
 import 'package:intl/intl.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -227,6 +231,34 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     if (mounted) {
       await EstimativaPdfService.gerarPdfEstimativa(context, estimativa);
+    }
+  }
+
+  Future<void> _copiarHtml() async {
+    final estimativa = await _saveEstimativa();
+    if (estimativa == null) return;
+    if (!mounted) return;
+
+    final assinaturasSelecionadas = await showDialog<List<AssinaturaModel>>(
+      context: context,
+      builder: (ctx) => const EstimativaAssinaturasDialog(),
+    );
+
+    if (assinaturasSelecionadas == null) return; // User cancelled
+
+    final html = EstimativaHtmlService.gerarHtmlEstimativa(
+      estimativa,
+      assinaturas: assinaturasSelecionadas,
+    );
+
+    HtmlClipboard.copyHtml(html);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('HTML copiado para a área de transferência!'),
+        ),
+      );
     }
   }
 
@@ -1755,6 +1787,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               onPressed: _gerarPdf,
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text('Gerar PDF'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.tonalIcon(
+              onPressed: _copiarHtml,
+              icon: const Icon(Icons.file_copy_outlined),
+              label: const Text('Exportação SEI'),
             ),
             const SizedBox(width: 8),
           ],

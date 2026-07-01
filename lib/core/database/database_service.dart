@@ -224,6 +224,18 @@ class DatabaseService {
       ''');
       await setSchemaVersion(6);
     }
+
+    if (version < 7) {
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS assinaturas_predefinidas (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          nome TEXT NOT NULL,
+          cargo TEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+      await setSchemaVersion(7);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {
