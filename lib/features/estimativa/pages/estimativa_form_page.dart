@@ -28,6 +28,7 @@ import '../widgets/gemini_orcamento_import_dialog.dart';
 import '../widgets/gemini_itens_import_dialog.dart';
 import '../widgets/estimativa_fonte_recurso_dialog.dart';
 import '../widgets/estimativa_assinaturas_dialog.dart';
+import '../widgets/estimativa_transferir_itens_dialog.dart';
 import '../models/assinatura_model.dart';
 import '../services/estimativa_pdf_service.dart';
 import '../services/estimativa_html_service.dart';
@@ -59,7 +60,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   static const double _colFornecedor = 100;
   static const double _colValorUnit = 100;
   static const double _colValorTotal = 100;
-  static const double _colAcoes = 60;
+  static const double _colAcoes = 90;
   static const double _minLarguraDesc = 400;
 
   double get _fixedColumnsWidth =>
@@ -589,13 +590,19 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     return SectionCard(
       title: isLote ? 'Lotes da Estimativa' : 'Itens da Estimativa',
       titleActions: [
-        if (isLote)
+        if (isLote) ...[
+          TextButton.icon(
+            onPressed: _importarItensIa,
+            icon: const Icon(Icons.document_scanner),
+            label: const Text('Importar Itens via IA'),
+          ),
+          const SizedBox(width: 8),
           TextButton.icon(
             onPressed: _addLote,
             icon: const Icon(Icons.add_to_photos),
             label: const Text('Incluir Lote'),
-          )
-        else ...[
+          ),
+        ] else ...[
           TextButton.icon(
             onPressed: _importarItensIa,
             icon: const Icon(Icons.document_scanner),
@@ -1049,6 +1056,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                       label: const Text('Incluir Item'),
                     ),
                     const SizedBox(width: 4),
+                    if (lote.itens.isNotEmpty && _lotes.length > 1) ...[
+                      TextButton.icon(
+                        onPressed: () => _transferirItensMassa(loteIndex),
+                        icon: const Icon(Icons.drive_file_move_outline, size: 18),
+                        label: const Text('Transferir Itens'),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                     AudespIconButton(
                       icon: Icons.delete,
                       tooltip: 'Excluir Lote',
@@ -1309,6 +1324,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 children: [
                   statusIcon,
                   const SizedBox(width: 8),
+                  if (loteIndex != null && _lotes.length > 1) ...[
+                    AudespIconButton(
+                      icon: Icons.drive_file_move_outline,
+                      tooltip: 'Transferir Item',
+                      onPressed: () => _transferirItem(loteIndex, itemIndex),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   AudespIconButton(
                     icon: Icons.delete,
                     tooltip: 'Excluir Item',
@@ -1429,6 +1452,125 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           }
         }
       });
+    }
+  }
+
+  Future<void> _transferirItem(int loteOrigemIndex, int itemIndex) async {
+    final loteOrigem = _lotes[loteOrigemIndex];
+    final item = loteOrigem.itens[itemIndex];
+
+    final Map<int, String> lotesDisponiveis = {};
+    for (int i = 0; i < _lotes.length; i++) {
+      if (i != loteOrigemIndex) {
+        lotesDisponiveis[i] = 'Lote ${_lotes[i].numero} - ${_lotes[i].descricao}';
+      }
+    }
+
+    if (lotesDisponiveis.isEmpty) return;
+
+    int? loteDestinoIndex;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Transferir Item'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Origem: Lote ${loteOrigem.numero}'),
+                Text('Item: ${item.numero} - ${item.descricao}'),
+                const SizedBox(height: 16),
+                AudespDropdown<int>(
+                  label: 'Lote de Destino *',
+                  value: loteDestinoIndex,
+                  items: lotesDisponiveis,
+                  onChanged: (v) => setState(() => loteDestinoIndex = v),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: loteDestinoIndex == null
+                    ? null
+                    : () => Navigator.pop(ctx, true),
+                child: const Text('Transferir'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result == true && loteDestinoIndex != null) {
+      setState(() {
+        final novosItensOrigem = List<EstimativaItem>.from(loteOrigem.itens)
+          ..removeAt(itemIndex);
+        
+        final loteDestino = _lotes[loteDestinoIndex!];
+        final novosItensDestino = List<EstimativaItem>.from(loteDestino.itens)
+          ..add(item);
+
+        _lotes[loteOrigemIndex] = loteOrigem.copyWith(
+          itens: _renumerarItens(novosItensOrigem),
+        );
+        _lotes[loteDestinoIndex!] = loteDestino.copyWith(
+          itens: _renumerarItens(novosItensDestino),
+        );
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item transferido com sucesso.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _transferirItensMassa(int loteOrigemIndex) async {
+    final result = await showEstimativaTransferirItensDialog(
+      context: context,
+      lotes: _lotes,
+      loteOrigemIndex: loteOrigemIndex,
+    );
+
+    if (result != null) {
+      setState(() {
+        final loteOrigem = _lotes[loteOrigemIndex];
+        final loteDestino = _lotes[result.loteDestinoIndex];
+
+        final itensParaTransferir = <EstimativaItem>[];
+        final novosItensOrigem = <EstimativaItem>[];
+
+        for (int i = 0; i < loteOrigem.itens.length; i++) {
+          if (result.itensIndexes.contains(i)) {
+            itensParaTransferir.add(loteOrigem.itens[i]);
+          } else {
+            novosItensOrigem.add(loteOrigem.itens[i]);
+          }
+        }
+
+        final novosItensDestino = List<EstimativaItem>.from(loteDestino.itens)
+          ..addAll(itensParaTransferir);
+
+        _lotes[loteOrigemIndex] = loteOrigem.copyWith(
+          itens: _renumerarItens(novosItensOrigem),
+        );
+        _lotes[result.loteDestinoIndex] = loteDestino.copyWith(
+          itens: _renumerarItens(novosItensDestino),
+        );
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Itens transferidos com sucesso.')),
+        );
+      }
     }
   }
 
@@ -1704,11 +1846,17 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     if (result == null || !mounted) return;
 
+    final isLote = _tipoEstimativa == 'lote';
+
     final nextNumero = result.extraState == AiItensAction.replace
         ? 1
-        : (_itens.isEmpty
-              ? 1
-              : _itens.map((e) => e.numero).reduce(math.max) + 1);
+        : isLote
+            ? (_lotes.isEmpty || _lotes.first.itens.isEmpty
+                ? 1
+                : _lotes.first.itens.map((e) => e.numero).reduce(math.max) + 1)
+            : (_itens.isEmpty
+                ? 1
+                : _itens.map((e) => e.numero).reduce(math.max) + 1);
 
     List<EstimativaItem>? novosItens;
 
@@ -1744,10 +1892,26 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (novosItens == null || novosItens.isEmpty || !mounted) return;
 
     setState(() {
-      if (result.extraState == AiItensAction.replace) {
-        _itens.clear();
+      if (isLote) {
+        if (result.extraState == AiItensAction.replace) {
+          _lotes.clear();
+          _lotes.add(_converterItensToSingleLote(novosItens!));
+        } else {
+          if (_lotes.isEmpty) {
+            _lotes.add(_converterItensToSingleLote(novosItens!));
+          } else {
+            final firstLote = _lotes.first;
+            final newItens = List<EstimativaItem>.from(firstLote.itens)
+              ..addAll(novosItens!);
+            _lotes[0] = firstLote.copyWith(itens: _renumerarItens(newItens));
+          }
+        }
+      } else {
+        if (result.extraState == AiItensAction.replace) {
+          _itens.clear();
+        }
+        _itens.addAll(novosItens!);
       }
-      _itens.addAll(novosItens!);
     });
 
     if (mounted) {
