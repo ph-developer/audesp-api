@@ -166,7 +166,7 @@ class PdfComprovanteService {
     );
 
     // Save File
-    final outputFile = await FilePicker.saveFile(
+    String? outputFile = await FilePicker.saveFile(
       dialogTitle: 'Salvar Comprovante PDF',
       fileName: 'comprovante_${log.protocolo ?? "log"}.pdf',
       type: FileType.custom,
@@ -174,6 +174,10 @@ class PdfComprovanteService {
     );
 
     if (outputFile == null) return; // User canceled
+
+    if (!outputFile.toLowerCase().endsWith('.pdf')) {
+      outputFile = '$outputFile.pdf';
+    }
 
     try {
       final file = File(outputFile);

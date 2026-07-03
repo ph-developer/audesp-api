@@ -139,7 +139,7 @@ class EstimativaPdfService {
     );
 
     // Save File
-    final outputFile = await FilePicker.saveFile(
+    String? outputFile = await FilePicker.saveFile(
       dialogTitle: 'Salvar PDF Estimativa',
       fileName: 'estimativa_${estimativa.numero}_${estimativa.ano}.pdf',
       type: FileType.custom,
@@ -147,6 +147,10 @@ class EstimativaPdfService {
     );
 
     if (outputFile == null) return; // User canceled
+
+    if (!outputFile.toLowerCase().endsWith('.pdf')) {
+      outputFile = '$outputFile.pdf';
+    }
 
     try {
       final file = File(outputFile);
