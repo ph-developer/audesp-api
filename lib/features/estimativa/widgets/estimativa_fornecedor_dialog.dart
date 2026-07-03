@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_checkbox.dart';
 import '../models/estimativa_fornecedor_model.dart';
 
 enum FornecedorDialogAction { cancel, delete }
@@ -43,6 +44,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
   late final TextEditingController _razaoSocialCtrl;
   late final TextEditingController _cnpjCtrl;
   DateTime? _data;
+  bool _desclassificado = false;
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
         _data = DateFormat('dd/MM/yyyy').parse(widget.fornecedor!.data);
       } catch (_) {}
     }
+    _desclassificado = widget.fornecedor?.desclassificado ?? false;
   }
 
   @override
@@ -91,6 +94,12 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
               value: _data,
               onChanged: (d) => setState(() => _data = d),
             ),
+            const SizedBox(height: 12),
+            AudespCheckbox(
+              label: 'Desclassificado (Ignorar no cálculo)',
+              value: _desclassificado,
+              onChanged: (v) => setState(() => _desclassificado = v),
+            ),
           ],
         ),
       ),
@@ -123,6 +132,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       razaoSocial: _razaoSocialCtrl.text.trim(),
       cnpj: _cnpjCtrl.text.trim(),
       data: _data != null ? DateFormat('dd/MM/yyyy').format(_data!) : '',
+      desclassificado: _desclassificado,
     );
     Navigator.pop(context, FornecedorDialogResult.save(result));
   }

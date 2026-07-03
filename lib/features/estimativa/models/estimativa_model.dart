@@ -171,20 +171,32 @@ class EstimativaModel {
     );
   }
 
+  List<String> get fornecedoresDesclassificadosIds =>
+      fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
+
   double get valorTotalGlobal {
+    final desclassificados = fornecedoresDesclassificadosIds;
     if (tipoEstimativa == 'lote') {
       return lotes.fold(
         0.0,
         (sum, lote) =>
             sum +
-            lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+            lote.getValorTotal(
+              calculoGlobal,
+              casasDecimais: casasDecimais,
+              desclassificadosIds: desclassificados,
+            ),
       );
     } else {
       return itens.fold(
         0.0,
         (sum, item) =>
             sum +
-            item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+            item.getValorTotal(
+              calculoGlobal,
+              casasDecimais: casasDecimais,
+              desclassificadosIds: desclassificados,
+            ),
       );
     }
   }
@@ -193,6 +205,8 @@ class EstimativaModel {
     if (exclusividadeMeEpp == 'exclusiva') return valorTotalGlobal;
     if (exclusividadeMeEpp != 'reservada') return 0.0;
 
+    final desclassificados = fornecedoresDesclassificadosIds;
+
     if (tipoEstimativa == 'lote') {
       return lotes
           .where((l) => l.exclusivoMeEpp)
@@ -200,7 +214,11 @@ class EstimativaModel {
             0.0,
             (sum, lote) =>
                 sum +
-                lote.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+                lote.getValorTotal(
+                  calculoGlobal,
+                  casasDecimais: casasDecimais,
+                  desclassificadosIds: desclassificados,
+                ),
           );
     } else {
       return itens
@@ -209,7 +227,11 @@ class EstimativaModel {
             0.0,
             (sum, item) =>
                 sum +
-                item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+                item.getValorTotal(
+                  calculoGlobal,
+                  casasDecimais: casasDecimais,
+                  desclassificadosIds: desclassificados,
+                ),
           );
     }
   }

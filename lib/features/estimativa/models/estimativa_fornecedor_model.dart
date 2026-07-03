@@ -5,16 +5,24 @@ class EstimativaFornecedor {
   final String razaoSocial;
   final String cnpj;
   final String data;
+  final bool desclassificado;
 
   EstimativaFornecedor({
     String? id,
     required this.razaoSocial,
     required this.cnpj,
     required this.data,
+    this.desclassificado = false,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'razaoSocial': razaoSocial, 'cnpj': cnpj, 'data': data};
+    return {
+      'id': id,
+      'razaoSocial': razaoSocial,
+      'cnpj': cnpj,
+      'data': data,
+      'desclassificado': desclassificado,
+    };
   }
 
   factory EstimativaFornecedor.fromMap(Map<String, dynamic> map) {
@@ -23,6 +31,7 @@ class EstimativaFornecedor {
       razaoSocial: map['razaoSocial'] ?? '',
       cnpj: map['cnpj'] ?? '',
       data: map['data'] ?? '',
+      desclassificado: map['desclassificado'] ?? false,
     );
   }
 
@@ -31,12 +40,14 @@ class EstimativaFornecedor {
     String? razaoSocial,
     String? cnpj,
     String? data,
+    bool? desclassificado,
   }) {
     return EstimativaFornecedor(
       id: id ?? this.id,
       razaoSocial: razaoSocial ?? this.razaoSocial,
       cnpj: cnpj ?? this.cnpj,
       data: data ?? this.data,
+      desclassificado: desclassificado ?? this.desclassificado,
     );
   }
 }

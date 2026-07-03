@@ -305,6 +305,7 @@ class EstimativaPdfService {
     String exclusividadeGlobal = 'nenhuma',
     int casasDecimais = 2,
   }) {
+    final desclassificadosIds = fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
     final widgets = <pw.Widget>[];
 
     for (final item in itens) {
@@ -391,8 +392,33 @@ class EstimativaPdfService {
                   final fornecedor = fornecedores
                       .where((f) => f.id == o.fornecedorId)
                       .firstOrNull;
+                  
+                  pw.Widget razaoSocialWidget;
+                  if (fornecedor?.desclassificado == true) {
+                    razaoSocialWidget = pw.RichText(
+                      text: pw.TextSpan(
+                        text: fornecedor?.razaoSocial ?? '-',
+                        style: const pw.TextStyle(fontSize: 9),
+                        children: [
+                          pw.TextSpan(
+                            text: ' (DESCLASSIFICADO)',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              color: PdfColors.red800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    razaoSocialWidget = pw.Text(
+                      fornecedor?.razaoSocial ?? '-',
+                      style: const pw.TextStyle(fontSize: 9),
+                    );
+                  }
+
                   return [
-                    fornecedor?.razaoSocial ?? '-',
+                    razaoSocialWidget,
                     AudespCpfCnpjField.formatDocument(fornecedor?.cnpj ?? ''),
                     fornecedor?.data ?? '-',
                     fmt.format(o.valorUnitario),
@@ -410,16 +436,16 @@ class EstimativaPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais))}',
+                        'Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                       if (isMensal)
                         pw.Text(
-                          'Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais))}',
+                          'Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
                           style: const pw.TextStyle(fontSize: 10),
                         ),
                       pw.Text(
-                        'Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais))}',
+                        'Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
                         style: pw.TextStyle(
                           fontSize: 11,
                           fontWeight: pw.FontWeight.bold,

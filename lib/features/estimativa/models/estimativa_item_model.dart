@@ -106,11 +106,16 @@ class EstimativaItem {
   double getValorReferenciaUnitario(
     String calculoGlobal, {
     int casasDecimais = 2,
+    List<String> desclassificadosIds = const [],
   }) {
-    if (orcamentos.isEmpty) return 0.0;
+    final validOrcamentos = orcamentos
+        .where((e) => !desclassificadosIds.contains(e.fornecedorId))
+        .toList();
+    
+    if (validOrcamentos.isEmpty) return 0.0;
 
     final strategy = calculoGlobal;
-    final valores = orcamentos.map((e) => e.valorUnitario).toList();
+    final valores = validOrcamentos.map((e) => e.valorUnitario).toList();
 
     double raw;
     if (strategy == 'min') {
@@ -135,19 +140,29 @@ class EstimativaItem {
     return arredondarParaCima(raw, casasDecimais);
   }
 
-  double getValorMensal(String calculoGlobal, {int casasDecimais = 2}) {
+  double getValorMensal(
+    String calculoGlobal, {
+    int casasDecimais = 2,
+    List<String> desclassificadosIds = const [],
+  }) {
     if (tipoFornecimento != 'mensal') return 0.0;
     final vUnit = getValorReferenciaUnitario(
       calculoGlobal,
       casasDecimais: casasDecimais,
+      desclassificadosIds: desclassificadosIds,
     );
     return arredondarParaCima(quantidade * vUnit, casasDecimais);
   }
 
-  double getValorTotal(String calculoGlobal, {int casasDecimais = 2}) {
+  double getValorTotal(
+    String calculoGlobal, {
+    int casasDecimais = 2,
+    List<String> desclassificadosIds = const [],
+  }) {
     final vUnit = getValorReferenciaUnitario(
       calculoGlobal,
       casasDecimais: casasDecimais,
+      desclassificadosIds: desclassificadosIds,
     );
     if (tipoFornecimento == 'mensal') {
       final vMensal = quantidade * vUnit;

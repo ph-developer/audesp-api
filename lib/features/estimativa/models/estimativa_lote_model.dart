@@ -73,11 +73,20 @@ class EstimativaLote {
     );
   }
 
-  double getValorTotal(String calculoGlobal, {int casasDecimais = 2}) {
+  double getValorTotal(
+    String calculoGlobal, {
+    int casasDecimais = 2,
+    List<String> desclassificadosIds = const [],
+  }) {
     return itens.fold(
       0.0,
       (sum, item) =>
-          sum + item.getValorTotal(calculoGlobal, casasDecimais: casasDecimais),
+          sum +
+          item.getValorTotal(
+            calculoGlobal,
+            casasDecimais: casasDecimais,
+            desclassificadosIds: desclassificadosIds,
+          ),
     );
   }
 }

@@ -168,6 +168,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     if (mounted) setState(() => _loading = false);
   }
 
+  List<String> get _desclassificadosIds =>
+      _fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
+
   Future<EstimativaModel?> _saveEstimativa() async {
     if (!_formKey.currentState!.validate()) return null;
 
@@ -678,7 +681,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         0.0,
         (sum, l) =>
             sum +
-            l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais),
+            l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
       );
       totalMeEpp = _lotes
           .where((l) => l.exclusivoMeEpp)
@@ -686,14 +689,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             0.0,
             (sum, l) =>
                 sum +
-                l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais),
+                l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
           );
     } else {
       totalGlobal = _itens.fold(
         0.0,
         (sum, i) =>
             sum +
-            i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais),
+            i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
       );
       totalMeEpp = _itens
           .where((i) => i.exclusivoMeEpp)
@@ -701,7 +704,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             0.0,
             (sum, i) =>
                 sum +
-                i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais),
+                i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
           );
     }
 
@@ -972,6 +975,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         final loteTotal = lote.getValorTotal(
           _calculoGlobal,
           casasDecimais: _casasDecimais,
+          desclassificadosIds: _desclassificadosIds,
         );
         return Card(
           key: ValueKey('lote_${lote.numero}_${lote.descricao.hashCode}'),
@@ -1278,6 +1282,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     item.getValorReferenciaUnitario(
                       _calculoGlobal,
                       casasDecimais: _casasDecimais,
+                      desclassificadosIds: _desclassificadosIds,
                     ),
                     casasDecimais: _casasDecimais,
                   ),
@@ -1292,12 +1297,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: item.tipoFornecimento == 'mensal'
                   ? Tooltip(
                       message:
-                          '${formatBRL(item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais), casasDecimais: _casasDecimais)}/mês',
+                          '${formatBRL(item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds), casasDecimais: _casasDecimais)}/mês',
                       child: Text(
                         formatBRL(
                           item.getValorTotal(
                             _calculoGlobal,
                             casasDecimais: _casasDecimais,
+                            desclassificadosIds: _desclassificadosIds,
                           ),
                           casasDecimais: _casasDecimais,
                         ),
@@ -1309,6 +1315,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         item.getValorTotal(
                           _calculoGlobal,
                           casasDecimais: _casasDecimais,
+                          desclassificadosIds: _desclassificadosIds,
                         ),
                         casasDecimais: _casasDecimais,
                       ),
