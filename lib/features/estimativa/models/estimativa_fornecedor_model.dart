@@ -6,6 +6,7 @@ class EstimativaFornecedor {
   final String cnpj;
   final String data;
   final bool desclassificado;
+  final bool bancoDePrecos;
 
   EstimativaFornecedor({
     String? id,
@@ -13,6 +14,7 @@ class EstimativaFornecedor {
     required this.cnpj,
     required this.data,
     this.desclassificado = false,
+    this.bancoDePrecos = false,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -22,6 +24,7 @@ class EstimativaFornecedor {
       'cnpj': cnpj,
       'data': data,
       'desclassificado': desclassificado,
+      'bancoDePrecos': bancoDePrecos,
     };
   }
 
@@ -32,6 +35,7 @@ class EstimativaFornecedor {
       cnpj: map['cnpj'] ?? '',
       data: map['data'] ?? '',
       desclassificado: map['desclassificado'] ?? false,
+      bancoDePrecos: map['bancoDePrecos'] ?? false,
     );
   }
 
@@ -41,6 +45,7 @@ class EstimativaFornecedor {
     String? cnpj,
     String? data,
     bool? desclassificado,
+    bool? bancoDePrecos,
   }) {
     return EstimativaFornecedor(
       id: id ?? this.id,
@@ -48,6 +53,7 @@ class EstimativaFornecedor {
       cnpj: cnpj ?? this.cnpj,
       data: data ?? this.data,
       desclassificado: desclassificado ?? this.desclassificado,
+      bancoDePrecos: bancoDePrecos ?? this.bancoDePrecos,
     );
   }
 }

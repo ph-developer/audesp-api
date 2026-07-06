@@ -919,6 +919,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
           ),
           ..._fornecedores.map((f) {
+            final tooltipText = '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}'
+                '${f.bancoDePrecos ? '\nBanco de Preços' : ''}'
+                '${f.desclassificado ? '\nDesclassificado' : ''}';
+
             return SizedBox(
               width: _colFornecedor,
               child: HoverCellText(
@@ -926,8 +930,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     ? f.razaoSocial
                     : 'Novo Fornecedor',
                 onTap: () => _showFornecedorDialog(f),
-                tooltip: '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                tooltip: tooltipText,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: f.desclassificado ? Colors.red.shade900 : null,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1157,20 +1164,33 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     required Key key,
     bool showBottomBorder = true,
   }) {
-    final statusIcon = item.orcamentos.length >= 3
-        ? const Tooltip(
-            message: '3 ou mais orçamentos',
-            child: Icon(Icons.check_circle, color: Colors.green, size: 16),
-          )
-        : item.orcamentos.isNotEmpty
-        ? const Tooltip(
-            message: 'Menos de 3 orçamentos',
-            child: Icon(Icons.warning, color: Colors.amber, size: 16),
-          )
-        : const Tooltip(
-            message: 'Sem orçamentos',
-            child: Icon(Icons.cancel, color: Colors.red, size: 16),
-          );
+    final temBancoPreco = item.orcamentos.any((orc) {
+      final f = _fornecedores.where((f) => f.id == orc.fornecedorId).firstOrNull;
+      return f?.bancoDePrecos == true;
+    });
+
+    final Widget statusIcon;
+    if (temBancoPreco) {
+      statusIcon = const Tooltip(
+        message: 'Possui orçamento de Banco de Preços',
+        child: Icon(Icons.check_circle, color: Colors.green, size: 16),
+      );
+    } else if (item.orcamentos.length >= 3) {
+      statusIcon = const Tooltip(
+        message: '3 ou mais orçamentos',
+        child: Icon(Icons.check_circle, color: Colors.green, size: 16),
+      );
+    } else if (item.orcamentos.isNotEmpty) {
+      statusIcon = const Tooltip(
+        message: 'Menos de 3 orçamentos',
+        child: Icon(Icons.warning, color: Colors.amber, size: 16),
+      );
+    } else {
+      statusIcon = const Tooltip(
+        message: 'Sem orçamentos',
+        child: Icon(Icons.cancel, color: Colors.red, size: 16),
+      );
+    }
 
     return Container(
       key: key,

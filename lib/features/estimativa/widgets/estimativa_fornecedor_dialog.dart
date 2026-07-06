@@ -6,6 +6,7 @@ import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../models/estimativa_fornecedor_model.dart';
+import '../constants/fornecedores_predefinidos.dart';
 
 enum FornecedorDialogAction { cancel, delete }
 
@@ -45,6 +46,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
   late final TextEditingController _cnpjCtrl;
   DateTime? _data;
   bool _desclassificado = false;
+  bool _bancoDePrecos = false;
 
   @override
   void initState() {
@@ -59,6 +61,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       } catch (_) {}
     }
     _desclassificado = widget.fornecedor?.desclassificado ?? false;
+    _bancoDePrecos = widget.fornecedor?.bancoDePrecos ?? false;
   }
 
   @override
@@ -73,7 +76,26 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
     final isEditing = widget.fornecedor != null;
 
     return AlertDialog(
-      title: Text(isEditing ? 'Editar Fornecedor' : 'Incluir Fornecedor'),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(isEditing ? 'Editar Fornecedor' : 'Incluir Fornecedor'),
+          PopupMenuButton<FornecedorPredefinido>(
+            icon: const Icon(Icons.list),
+            tooltip: 'Fornecedores Predefinidos',
+            onSelected: (f) {
+              setState(() {
+                _razaoSocialCtrl.text = f.razaoSocial;
+                _cnpjCtrl.text = f.cnpj;
+                _bancoDePrecos = f.bancoDePrecos;
+              });
+            },
+            itemBuilder: (ctx) => fornecedoresPredefinidos
+                .map((f) => PopupMenuItem(value: f, child: Text(f.razaoSocial)))
+                .toList(),
+          ),
+        ],
+      ),
       content: SizedBox(
         width: 500,
         child: Column(
@@ -93,6 +115,12 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
               label: 'Data do Orçamento',
               value: _data,
               onChanged: (d) => setState(() => _data = d),
+            ),
+            const SizedBox(height: 12),
+            AudespCheckbox(
+              label: 'Banco de Preços',
+              value: _bancoDePrecos,
+              onChanged: (v) => setState(() => _bancoDePrecos = v),
             ),
             const SizedBox(height: 12),
             AudespCheckbox(
@@ -133,6 +161,7 @@ class _FornecedorDialogState extends State<_FornecedorDialog> {
       cnpj: _cnpjCtrl.text.trim(),
       data: _data != null ? DateFormat('dd/MM/yyyy').format(_data!) : '',
       desclassificado: _desclassificado,
+      bancoDePrecos: _bancoDePrecos,
     );
     Navigator.pop(context, FornecedorDialogResult.save(result));
   }
