@@ -121,9 +121,11 @@ class EstimativasDao {
     final jsonStr = jsonEncode(estimativaToSave.toMap());
 
     final stmt = await _db.pool.prepare(
-      'UPDATE estimativas SET objeto = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      'UPDATE estimativas SET numero = ?, ano = ?, objeto = ?, documento_json = ?, updated_at = ? WHERE id = ?',
     );
     final result = await stmt.execute([
+      estimativaToSave.numero,
+      estimativaToSave.ano,
       estimativaToSave.objeto,
       jsonStr,
       now,
@@ -136,5 +138,21 @@ class EstimativasDao {
     final stmt = await _db.pool.prepare('DELETE FROM estimativas WHERE id = ?');
     final result = await stmt.execute([id]);
     return result.affectedRows.toInt();
+  }
+
+  Future<bool> checkNumeroExists(int numero, int ano, {int? excludeId}) async {
+    if (excludeId != null && excludeId > 0) {
+      final stmt = await _db.pool.prepare(
+        'SELECT 1 FROM estimativas WHERE numero = ? AND ano = ? AND id != ? LIMIT 1',
+      );
+      final result = await stmt.execute([numero, ano, excludeId]);
+      return result.rows.isNotEmpty;
+    } else {
+      final stmt = await _db.pool.prepare(
+        'SELECT 1 FROM estimativas WHERE numero = ? AND ano = ? LIMIT 1',
+      );
+      final result = await stmt.execute([numero, ano]);
+      return result.rows.isNotEmpty;
+    }
   }
 }

@@ -176,12 +176,30 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     setState(() => _saving = true);
     try {
+      final dao = ref.read(estimativasDaoProvider);
+      final numero = int.tryParse(_numeroCtrl.text) ?? 0;
+      final ano = int.tryParse(_anoCtrl.text) ?? 0;
+
+      final exists = await dao.checkNumeroExists(numero, ano, excludeId: _loadedId);
+      if (exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Já existe uma estimativa com este número e ano!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _saving = false);
+        return null;
+      }
+
       final textos = <String, String>{};
 
       final estimativa = EstimativaModel(
         id: _loadedId ?? 0,
-        numero: int.tryParse(_numeroCtrl.text) ?? 0,
-        ano: int.tryParse(_anoCtrl.text) ?? 0,
+        numero: numero,
+        ano: ano,
         objeto: _objetoCtrl.text.trim(),
         tipoEstimativa: _tipoEstimativa,
         calculoGlobal: _calculoGlobal,
@@ -198,7 +216,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         itens: _tipoEstimativa == 'item' ? _itens : [],
       );
 
-      final dao = ref.read(estimativasDaoProvider);
       if (_loadedId == null) {
         final newId = await dao.insertEstimativa(estimativa);
         _loadedId = newId;
