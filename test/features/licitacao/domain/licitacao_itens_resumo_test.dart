@@ -71,4 +71,25 @@ void main() {
     expect(valorMedioDoItem(item), 500);
     expect(valorVencedorDoItem(item), 400);
   });
+
+  test('retorna os nomes distintos dos vencedores do item', () {
+    final item = <String, dynamic>{
+      'licitantes': [
+        {
+          'nomeRazaoSocial': 'Fornecedor Vencedor',
+          'resultadoHabilitacao': 1,
+        },
+        {
+          'nomeRazaoSocial': 'Fornecedor Classificado',
+          'resultadoHabilitacao': 2,
+        },
+        {
+          'nomeRazaoSocial': 'Fornecedor Vencedor',
+          'resultadoHabilitacao': 1,
+        },
+      ],
+    };
+
+    expect(nomesVencedoresDoItem(item), ['Fornecedor Vencedor']);
+  });
 }

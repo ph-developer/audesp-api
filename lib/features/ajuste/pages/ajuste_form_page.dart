@@ -367,7 +367,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (_processoCtrl.text.trim().isNotEmpty) {
       map['processo'] = _processoCtrl.text.trim();
     }
-    if (_despesas.isNotEmpty && !_receita) map['despesas'] = _despesas;
+    final exigeClassificacaoDespesa = _tipoContratoId == 7 || !_receita;
+    if (_despesas.isNotEmpty && exigeClassificacaoDespesa) {
+      map['despesas'] = _despesas;
+    }
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
       map['codigoUnidade'] = _codigoUnidadeCtrl.text.trim();
     }
@@ -1429,7 +1432,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(height: 16),
 
               // ── Classificações de Despesa ─────────────────────────────
-              if (!_receita)
+              if (!_receita || _tipoContratoId == 7)
                 SectionCard(
                   title: 'Classificações de Despesa',
                   children: [

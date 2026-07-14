@@ -75,6 +75,18 @@ double? valorVencedorDoItem(Map<String, dynamic> item) {
   return valores.fold<double>(0.0, (total, valor) => total + valor);
 }
 
+List<String> nomesVencedoresDoItem(Map<String, dynamic> item) {
+  return _licitantesDoItem(item)
+      .where(_isVencedor)
+      .map(
+        (licitante) =>
+            (licitante['nomeRazaoSocial'] as String? ?? '').trim(),
+      )
+      .where((nome) => nome.isNotEmpty)
+      .toSet()
+      .toList();
+}
+
 List<Map<String, dynamic>> _licitantesDoItem(Map<String, dynamic> item) {
   return (item['licitantes'] as List<dynamic>? ?? const [])
       .whereType<Map<String, dynamic>>()

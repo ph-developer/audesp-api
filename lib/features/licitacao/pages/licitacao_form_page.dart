@@ -1653,6 +1653,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 (item['licitantes'] as List<dynamic>? ?? []).length;
             final valorMedio = valorMedioDoItem(item);
             final valorVencedor = valorVencedorDoItem(item);
+            final nomesVencedores = nomesVencedoresDoItem(item);
+            final resumoItem = [
+              if (situacao.isNotEmpty) situacao,
+              '$numLicitantes licitante(s)',
+            ].join(' | ');
+            final detalhesItem = [
+              'Valor Médio dos Orçamentos: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
+              'Valor Homologado: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
+              if (nomesVencedores.isNotEmpty)
+                '${nomesVencedores.length == 1 ? 'Vencedor' : 'Vencedores'}: ${nomesVencedores.join(', ')}',
+            ].join(' | ');
             return Card(
               margin: const EdgeInsets.only(top: 4),
               child: ListTile(
@@ -1665,20 +1676,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$situacao  |  $numLicitantes licitante(s)'),
+                    Text(resumoItem),
                     const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 4,
-                      children: [
-                        Text(
-                          'Valor médio: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
-                        ),
-                        Text(
-                          'Valor do vencedor: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
-                        ),
-                      ],
-                    ),
+                    Text(detalhesItem),
                   ],
                 ),
                 trailing: readOnly
