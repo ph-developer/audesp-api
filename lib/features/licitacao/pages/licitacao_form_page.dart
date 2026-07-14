@@ -672,7 +672,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     maxLength: 50,
                   ),
                 const SizedBox(height: 12),
-                AudespNumberField(label: 'Valor *', controller: valorCtrl),
+                AudespNumberField(label: 'Índice *', controller: valorCtrl),
               ],
             ),
           ),
@@ -1568,7 +1568,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 dense: true,
                 title: Text(kTipoIndice[idx['tipoIndice']] ?? ''),
                 subtitle: Text(
-                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Valor: ${formatBRL((idx['valorIndice'] as num?)?.toDouble())}',
+                  '${idx['nomeIndice'] != null ? '${idx['nomeIndice']}  ' : ''}Índice: ${formatNumberBR((idx['valorIndice'] as num?)?.toDouble())}',
                 ),
                 trailing: readOnly
                     ? null

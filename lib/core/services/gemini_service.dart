@@ -174,7 +174,7 @@ Analise o documento de orçamento fornecido e extraia as seguintes informações
 1. "razaoSocial": Razão social da empresa fornecedora.
 2. "cnpj": CNPJ da empresa fornecedora (formatado). IMPORTANTE: Ignore o CNPJ 49.576.416/0001-41 (e suas variações de formatação), pois pertence à prefeitura e não ao fornecedor.
 3. "data": Data da emissão do orçamento (formato dd/MM/yyyy).
-4. "itens": Uma lista de objetos para os itens encontrados no documento que correspondam aos itens da estimativa abaixo. Para cada item encontrado, retorne "id" (string, conforme a lista abaixo) e "valorUnitario" (número de ponto flutuante, ex: 15.50).
+4. "itens": Uma lista de objetos para os itens encontrados no documento que correspondam aos itens da estimativa abaixo. Para cada item cotado com valor maior que zero, retorne "id" (string, conforme a lista abaixo) e "valorUnitario" (número de ponto flutuante, ex: 15.50). Valores iguais a zero significam item não cotado e devem ser omitidos.
 
 Itens da estimativa para cruzar:
 $itensJson
@@ -228,7 +228,7 @@ Para CADA empresa identificada, extraia:
 1. "razaoSocial": Razão social da empresa fornecedora.
 2. "cnpj": CNPJ da empresa fornecedora (formatado). IMPORTANTE: Ignore o CNPJ 49.576.416/0001-41 (e suas variações de formatação), pois pertence à prefeitura e não ao fornecedor.
 3. "data": Data da emissão do orçamento (formato dd/MM/yyyy).
-4. "itens": Uma lista de objetos para os itens encontrados no documento que correspondam aos itens da estimativa abaixo. Para cada item encontrado, retorne "id" (string, conforme a lista abaixo) e "valorUnitario" (número de ponto flutuante, ex: 15.50).
+4. "itens": Uma lista de objetos para os itens encontrados no documento que correspondam aos itens da estimativa abaixo. Para cada item cotado com valor maior que zero, retorne "id" (string, conforme a lista abaixo) e "valorUnitario" (número de ponto flutuante, ex: 15.50). Valores iguais a zero significam item não cotado e devem ser omitidos.
 
 Itens da estimativa para cruzar:
 $itensJson
@@ -355,7 +355,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
           final doubleVal = val is num
               ? val.toDouble()
               : double.tryParse(val.toString());
-          if (doubleVal != null) {
+          if (doubleVal != null && doubleVal > 0) {
             mapItens[strId] = doubleVal;
           }
         }
@@ -417,7 +417,7 @@ Se nenhuma empresa for encontrada, retorne {"empresas": []}.
             final doubleVal = val is num
                 ? val.toDouble()
                 : double.tryParse(val.toString());
-            if (doubleVal != null) {
+            if (doubleVal != null && doubleVal > 0) {
               mapItens[strId] = doubleVal;
             }
           }

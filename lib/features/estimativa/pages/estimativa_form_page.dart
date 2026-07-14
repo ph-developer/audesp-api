@@ -1836,7 +1836,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         final novosItens = <EstimativaItem>[];
         for (final item in lote.itens) {
           final val = orcamentoResult.itens['${lote.numero}-${item.numero}'];
-          if (val != null) {
+          if (val != null && val > 0) {
             final newOrcamento = EstimativaOrcamento(
               fornecedorId: novoFornecedor.id,
               valorUnitario: val,
@@ -1854,7 +1854,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       for (int i = 0; i < _itens.length; i++) {
         final item = _itens[i];
         final val = orcamentoResult.itens['${item.numero}'];
-        if (val != null) {
+        if (val != null && val > 0) {
           final newOrcamento = EstimativaOrcamento(
             fornecedorId: novoFornecedor.id,
             valorUnitario: val,
