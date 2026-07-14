@@ -1006,9 +1006,17 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             .whereType<Map<String, dynamic>>()
             .map((l) {
               final ni = l['niPessoa'] as String? ?? '';
-              final novoStatus = resultado[ni];
-              if (novoStatus == null) return l;
-              return {...l, 'declaracaoMEouEPP': novoStatus};
+              final novoStatus = resultado.declaracoesMeEpp[ni];
+              final novaRazaoSocial = resultado.razoesSociaisAlteradas[ni];
+              if (novoStatus == null && novaRazaoSocial == null) return l;
+              final licitanteAtualizado = Map<String, dynamic>.from(l);
+              if (novoStatus != null) {
+                licitanteAtualizado['declaracaoMEouEPP'] = novoStatus;
+              }
+              if (novaRazaoSocial != null) {
+                licitanteAtualizado['nomeRazaoSocial'] = novaRazaoSocial;
+              }
+              return licitanteAtualizado;
             })
             .toList();
         return {...item, 'licitantes': licitantes};
