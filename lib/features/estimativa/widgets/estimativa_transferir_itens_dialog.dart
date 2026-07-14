@@ -20,10 +20,8 @@ Future<TransferirItensMassaResult?> showEstimativaTransferirItensDialog({
 }) {
   return showDialog<TransferirItensMassaResult>(
     context: context,
-    builder: (ctx) => _TransferirItensDialog(
-      lotes: lotes,
-      loteOrigemIndex: loteOrigemIndex,
-    ),
+    builder: (ctx) =>
+        _TransferirItensDialog(lotes: lotes, loteOrigemIndex: loteOrigemIndex),
   );
 }
 
@@ -111,7 +109,9 @@ class _TransferirItensDialogState extends State<_TransferirItensDialog> {
             if (lotesDisponiveis.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Text('Não há outros lotes disponíveis para transferência.'),
+                child: Text(
+                  'Não há outros lotes disponíveis para transferência.',
+                ),
               )
             else ...[
               AudespDropdown<int>(
@@ -182,7 +182,7 @@ class _TransferirItensDialogState extends State<_TransferirItensDialog> {
                   style: theme.textTheme.bodySmall,
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),
@@ -193,10 +193,9 @@ class _TransferirItensDialogState extends State<_TransferirItensDialog> {
         ),
         if (lotesDisponiveis.isNotEmpty)
           FilledButton(
-            onPressed:
-                (_loteDestinoIndex == null || _selectedCount == 0)
-                    ? null
-                    : _confirm,
+            onPressed: (_loteDestinoIndex == null || _selectedCount == 0)
+                ? null
+                : _confirm,
             child: const Text('Transferir'),
           ),
       ],
@@ -214,7 +213,11 @@ class _TransferirItensDialogState extends State<_TransferirItensDialog> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Text('${item.numero}', style: const TextStyle(fontSize: 12), textAlign: TextAlign.center),
+          child: Text(
+            '${item.numero}',
+            style: const TextStyle(fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

@@ -167,7 +167,10 @@ class EstimativaHtmlService {
     String exclusividadeGlobal = 'nenhuma',
     int casasDecimais = 2,
   }) {
-    final desclassificadosIds = fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
+    final desclassificadosIds = fornecedores
+        .where((f) => f.desclassificado)
+        .map((f) => f.id)
+        .toList();
     final sb = StringBuffer();
     for (final item in itens) {
       final isMensal = item.tipoFornecimento == 'mensal';
@@ -200,13 +203,11 @@ class EstimativaHtmlService {
       for (final o in item.orcamentos) {
         final f = fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
         final razaoSocial = f?.razaoSocial ?? '-';
-        final nomeComSufixo = f?.desclassificado == true 
-          ? '$razaoSocial <span style="color: darkred;">(DESCLASSIFICADO)</span>'
-          : razaoSocial;
+        final nomeComSufixo = f?.desclassificado == true
+            ? '$razaoSocial <span style="color: darkred;">(DESCLASSIFICADO)</span>'
+            : razaoSocial;
         sb.writeln('<tr>');
-        sb.writeln(
-          '<td style="border: 1px solid #ccc;">$nomeComSufixo</td>',
-        );
+        sb.writeln('<td style="border: 1px solid #ccc;">$nomeComSufixo</td>');
         sb.writeln(
           '<td align="center" style="white-space: nowrap; border: 1px solid #ccc;">${AudespCpfCnpjField.formatDocument(f?.cnpj ?? '')}</td>',
         );

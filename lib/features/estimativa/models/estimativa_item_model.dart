@@ -111,7 +111,7 @@ class EstimativaItem {
     final validOrcamentos = orcamentos
         .where((e) => !desclassificadosIds.contains(e.fornecedorId))
         .toList();
-    
+
     if (validOrcamentos.isEmpty) return 0.0;
 
     final strategy = calculoGlobal;

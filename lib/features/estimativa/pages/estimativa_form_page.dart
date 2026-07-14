@@ -180,7 +180,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       final numero = int.tryParse(_numeroCtrl.text) ?? 0;
       final ano = int.tryParse(_anoCtrl.text) ?? 0;
 
-      final exists = await dao.checkNumeroExists(numero, ano, excludeId: _loadedId);
+      final exists = await dao.checkNumeroExists(
+        numero,
+        ano,
+        excludeId: _loadedId,
+      );
       if (exists) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -684,7 +688,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Widget _buildMeEppSection() {
-    if (_exclusividadeMeEpp == 'nenhuma' || _exclusividadeMeEpp == 'nao_aplica') {
+    if (_exclusividadeMeEpp == 'nenhuma' ||
+        _exclusividadeMeEpp == 'nao_aplica') {
       return const SizedBox.shrink();
     }
 
@@ -698,7 +703,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         0.0,
         (sum, l) =>
             sum +
-            l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+            l.getValorTotal(
+              _calculoGlobal,
+              casasDecimais: _casasDecimais,
+              desclassificadosIds: _desclassificadosIds,
+            ),
       );
       totalMeEpp = _lotes
           .where((l) => l.exclusivoMeEpp)
@@ -706,14 +715,22 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             0.0,
             (sum, l) =>
                 sum +
-                l.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+                l.getValorTotal(
+                  _calculoGlobal,
+                  casasDecimais: _casasDecimais,
+                  desclassificadosIds: _desclassificadosIds,
+                ),
           );
     } else {
       totalGlobal = _itens.fold(
         0.0,
         (sum, i) =>
             sum +
-            i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+            i.getValorTotal(
+              _calculoGlobal,
+              casasDecimais: _casasDecimais,
+              desclassificadosIds: _desclassificadosIds,
+            ),
       );
       totalMeEpp = _itens
           .where((i) => i.exclusivoMeEpp)
@@ -721,7 +738,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             0.0,
             (sum, i) =>
                 sum +
-                i.getValorTotal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+                i.getValorTotal(
+                  _calculoGlobal,
+                  casasDecimais: _casasDecimais,
+                  desclassificadosIds: _desclassificadosIds,
+                ),
           );
     }
 
@@ -922,7 +943,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             ),
           ),
           ..._fornecedores.map((f) {
-            final tooltipText = '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}'
+            final tooltipText =
+                '${f.razaoSocial}\nCNPJ: ${f.cnpj}\nData: ${f.data}'
                 '${f.bancoDePrecos ? '\nBanco de Preços' : ''}'
                 '${f.desclassificado ? '\nDesclassificado' : ''}';
 
@@ -1090,7 +1112,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     if (lote.itens.isNotEmpty && _lotes.length > 1) ...[
                       TextButton.icon(
                         onPressed: () => _transferirItensMassa(loteIndex),
-                        icon: const Icon(Icons.drive_file_move_outline, size: 18),
+                        icon: const Icon(
+                          Icons.drive_file_move_outline,
+                          size: 18,
+                        ),
                         label: const Text('Transferir Itens'),
                       ),
                       const SizedBox(width: 4),
@@ -1168,7 +1193,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     bool showBottomBorder = true,
   }) {
     final temBancoPreco = item.orcamentos.any((orc) {
-      final f = _fornecedores.where((f) => f.id == orc.fornecedorId).firstOrNull;
+      final f = _fornecedores
+          .where((f) => f.id == orc.fornecedorId)
+          .firstOrNull;
       return f?.bancoDePrecos == true;
     });
 
@@ -1337,7 +1364,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: item.tipoFornecimento == 'mensal'
                   ? Tooltip(
                       message:
-                          '${formatBRL(item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds), casasDecimais: _casasDecimais)}/mês',
+                          '${formatBRL(
+                            item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+                            casasDecimais: _casasDecimais,
+                          )}/mês',
                       child: Text(
                         formatBRL(
                           item.getValorTotal(
@@ -1509,7 +1539,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     final Map<int, String> lotesDisponiveis = {};
     for (int i = 0; i < _lotes.length; i++) {
       if (i != loteOrigemIndex) {
-        lotesDisponiveis[i] = 'Lote ${_lotes[i].numero} - ${_lotes[i].descricao}';
+        lotesDisponiveis[i] =
+            'Lote ${_lotes[i].numero} - ${_lotes[i].descricao}';
       }
     }
 
@@ -1559,7 +1590,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       setState(() {
         final novosItensOrigem = List<EstimativaItem>.from(loteOrigem.itens)
           ..removeAt(itemIndex);
-        
+
         final loteDestino = _lotes[loteDestinoIndex!];
         final novosItensDestino = List<EstimativaItem>.from(loteDestino.itens)
           ..add(item);
@@ -1612,7 +1643,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           itens: _renumerarItens(novosItensDestino),
         );
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Itens transferidos com sucesso.')),
@@ -1898,12 +1929,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     final nextNumero = result.extraState == AiItensAction.replace
         ? 1
         : isLote
-            ? (_lotes.isEmpty || _lotes.first.itens.isEmpty
-                ? 1
-                : _lotes.first.itens.map((e) => e.numero).reduce(math.max) + 1)
-            : (_itens.isEmpty
-                ? 1
-                : _itens.map((e) => e.numero).reduce(math.max) + 1);
+        ? (_lotes.isEmpty || _lotes.first.itens.isEmpty
+              ? 1
+              : _lotes.first.itens.map((e) => e.numero).reduce(math.max) + 1)
+        : (_itens.isEmpty
+              ? 1
+              : _itens.map((e) => e.numero).reduce(math.max) + 1);
 
     List<EstimativaItem>? novosItens;
 

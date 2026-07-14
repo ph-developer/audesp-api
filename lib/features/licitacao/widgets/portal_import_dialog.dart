@@ -148,7 +148,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         }
       } else {
         if (_estimativaSelecionada == null) {
-          setState(() => _errorMessage = 'Selecione a estimativa para importar.');
+          setState(
+            () => _errorMessage = 'Selecione a estimativa para importar.',
+          );
           return;
         }
       }
@@ -179,7 +181,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
       final Map<int, LicitacaoItemCsvModel> complementoMap;
 
-      if (_portal != PortalType.estimativa && _complementoType == ComplementoType.planilha) {
+      if (_portal != PortalType.estimativa &&
+          _complementoType == ComplementoType.planilha) {
         complementoMap = const ComplementoCsvParser().parse(
           _complemento!.bytes!,
         );
@@ -199,16 +202,24 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
         if (_estimativaSelecionada!.tipoEstimativa == 'lote') {
           for (final lote in _estimativaSelecionada!.lotes) {
-            String dataOrcamento = DateTime.now().toIso8601String().substring(0, 10);
+            String dataOrcamento = DateTime.now().toIso8601String().substring(
+              0,
+              10,
+            );
             DateTime? oldestDate;
             for (final o in lote.itens.expand((i) => i.orcamentos)) {
               final f = _estimativaSelecionada!.fornecedores
-                  .where((f) => f.id == o.fornecedorId).firstOrNull;
+                  .where((f) => f.id == o.fornecedorId)
+                  .firstOrNull;
               if (f != null && f.data.isNotEmpty) {
                 try {
                   final parts = f.data.split('/');
                   if (parts.length == 3) {
-                    final d = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                    final d = DateTime(
+                      int.parse(parts[2]),
+                      int.parse(parts[1]),
+                      int.parse(parts[0]),
+                    );
                     if (oldestDate == null || d.isBefore(oldestDate)) {
                       oldestDate = d;
                     }
@@ -223,53 +234,67 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
             final Map<String, double> totalsPorFornecedor = {};
             for (final i in lote.itens) {
               for (final o in i.orcamentos) {
-                 totalsPorFornecedor[o.fornecedorId] = (totalsPorFornecedor[o.fornecedorId] ?? 0.0) + (o.valorUnitario * i.quantidade);
+                totalsPorFornecedor[o.fornecedorId] =
+                    (totalsPorFornecedor[o.fornecedorId] ?? 0.0) +
+                    (o.valorUnitario * i.quantidade);
               }
             }
-            
+
             final List<LicitanteCsvModel> licitantes = [];
             for (final entry in totalsPorFornecedor.entries) {
-              final fornecedor = _estimativaSelecionada!.fornecedores.where((f) => f.id == entry.key).firstOrNull;
+              final fornecedor = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.id == entry.key)
+                  .firstOrNull;
               if (fornecedor == null) continue;
-              if (_portal != PortalType.estimativa && fornecedor.desclassificado) continue;
+              if (_portal != PortalType.estimativa &&
+                  fornecedor.desclassificado)
+                continue;
               final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
               final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
-              
-              licitantes.add(LicitanteCsvModel(
-                niPessoa: cnpjLimpo,
-                tipoPessoaId: tipoPessoa,
-                nomeRazaoSocial: fornecedor.razaoSocial,
-                declaracaoMEouEPP: 3,
-                valorProposta: entry.value,
-                resultadoHabilitacao: fornecedor.desclassificado ? 4 : 2,
-              ));
+
+              licitantes.add(
+                LicitanteCsvModel(
+                  niPessoa: cnpjLimpo,
+                  tipoPessoaId: tipoPessoa,
+                  nomeRazaoSocial: fornecedor.razaoSocial,
+                  declaracaoMEouEPP: 3,
+                  valorProposta: entry.value,
+                  resultadoHabilitacao: fornecedor.desclassificado ? 4 : 2,
+                ),
+              );
             }
-            
+
             if (licitantes.isNotEmpty) {
-               if (tipoOrcamentoBase == 3) {
-                 licitantes.sort((a, b) => b.valorProposta.compareTo(a.valorProposta));
-               } else {
-                 licitantes.sort((a, b) => a.valorProposta.compareTo(b.valorProposta));
-               }
-               
-               final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
-                   .where((f) => f.desclassificado)
-                   .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
-                   .toList();
-               
-               final vencedorIndex = licitantes.indexWhere((l) => !disqualifiedCnpjs.contains(l.niPessoa));
-               
-               if (vencedorIndex != -1) {
-                 final vencedor = licitantes[vencedorIndex];
-                 licitantes[vencedorIndex] = LicitanteCsvModel(
-                   niPessoa: vencedor.niPessoa,
-                   tipoPessoaId: vencedor.tipoPessoaId,
-                   nomeRazaoSocial: vencedor.nomeRazaoSocial,
-                   declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
-                   valorProposta: vencedor.valorProposta,
-                   resultadoHabilitacao: 1,
-                 );
-               }
+              if (tipoOrcamentoBase == 3) {
+                licitantes.sort(
+                  (a, b) => b.valorProposta.compareTo(a.valorProposta),
+                );
+              } else {
+                licitantes.sort(
+                  (a, b) => a.valorProposta.compareTo(b.valorProposta),
+                );
+              }
+
+              final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.desclassificado)
+                  .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
+                  .toList();
+
+              final vencedorIndex = licitantes.indexWhere(
+                (l) => !disqualifiedCnpjs.contains(l.niPessoa),
+              );
+
+              if (vencedorIndex != -1) {
+                final vencedor = licitantes[vencedorIndex];
+                licitantes[vencedorIndex] = LicitanteCsvModel(
+                  niPessoa: vencedor.niPessoa,
+                  tipoPessoaId: vencedor.tipoPessoaId,
+                  nomeRazaoSocial: vencedor.nomeRazaoSocial,
+                  declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
+                  valorProposta: vencedor.valorProposta,
+                  resultadoHabilitacao: 1,
+                );
+              }
             }
 
             complementoMap[lote.numero] = LicitacaoItemCsvModel(
@@ -278,10 +303,13 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               tipoOrcamento: tipoOrcamentoBase,
               valorEstimado: lote.itens.fold<double>(
                 0.0,
-                (sum, i) => sum + i.getValorTotal(
-                  calculoGlobal,
-                  desclassificadosIds: _estimativaSelecionada!.fornecedoresDesclassificadosIds,
-                ),
+                (sum, i) =>
+                    sum +
+                    i.getValorTotal(
+                      calculoGlobal,
+                      desclassificadosIds: _estimativaSelecionada!
+                          .fornecedoresDesclassificadosIds,
+                    ),
               ),
               dataOrcamento: dataOrcamento,
               situacaoCompraItemId:
@@ -296,16 +324,24 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
           }
         } else {
           for (final item in _estimativaSelecionada!.itens) {
-            String dataOrcamento = DateTime.now().toIso8601String().substring(0, 10);
+            String dataOrcamento = DateTime.now().toIso8601String().substring(
+              0,
+              10,
+            );
             DateTime? oldestDate;
             for (final o in item.orcamentos) {
               final f = _estimativaSelecionada!.fornecedores
-                  .where((f) => f.id == o.fornecedorId).firstOrNull;
+                  .where((f) => f.id == o.fornecedorId)
+                  .firstOrNull;
               if (f != null && f.data.isNotEmpty) {
                 try {
                   final parts = f.data.split('/');
                   if (parts.length == 3) {
-                    final d = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                    final d = DateTime(
+                      int.parse(parts[2]),
+                      int.parse(parts[1]),
+                      int.parse(parts[0]),
+                    );
                     if (oldestDate == null || d.isBefore(oldestDate)) {
                       oldestDate = d;
                     }
@@ -319,47 +355,61 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
             final List<LicitanteCsvModel> licitantes = [];
             for (final o in item.orcamentos) {
-              final fornecedor = _estimativaSelecionada!.fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
+              final fornecedor = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.id == o.fornecedorId)
+                  .firstOrNull;
               if (fornecedor == null) continue;
-              if (_portal != PortalType.estimativa && fornecedor.desclassificado) continue;
+              if (_portal != PortalType.estimativa &&
+                  fornecedor.desclassificado)
+                continue;
               final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
               final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
-              
-              licitantes.add(LicitanteCsvModel(
-                niPessoa: cnpjLimpo,
-                tipoPessoaId: tipoPessoa,
-                nomeRazaoSocial: fornecedor.razaoSocial,
-                declaracaoMEouEPP: 3,
-                valorProposta: tipoPropostaBase == 1 ? (o.valorUnitario * item.quantidade) : o.valorUnitario,
-                resultadoHabilitacao: fornecedor.desclassificado ? 4 : 2,
-              ));
+
+              licitantes.add(
+                LicitanteCsvModel(
+                  niPessoa: cnpjLimpo,
+                  tipoPessoaId: tipoPessoa,
+                  nomeRazaoSocial: fornecedor.razaoSocial,
+                  declaracaoMEouEPP: 3,
+                  valorProposta: tipoPropostaBase == 1
+                      ? (o.valorUnitario * item.quantidade)
+                      : o.valorUnitario,
+                  resultadoHabilitacao: fornecedor.desclassificado ? 4 : 2,
+                ),
+              );
             }
-            
+
             if (licitantes.isNotEmpty) {
-               if (tipoOrcamentoBase == 3) {
-                 licitantes.sort((a, b) => b.valorProposta.compareTo(a.valorProposta));
-               } else {
-                 licitantes.sort((a, b) => a.valorProposta.compareTo(b.valorProposta));
-               }
-               
-               final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
-                   .where((f) => f.desclassificado)
-                   .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
-                   .toList();
-               
-               final vencedorIndex = licitantes.indexWhere((l) => !disqualifiedCnpjs.contains(l.niPessoa));
-               
-               if (vencedorIndex != -1) {
-                 final vencedor = licitantes[vencedorIndex];
-                 licitantes[vencedorIndex] = LicitanteCsvModel(
-                   niPessoa: vencedor.niPessoa,
-                   tipoPessoaId: vencedor.tipoPessoaId,
-                   nomeRazaoSocial: vencedor.nomeRazaoSocial,
-                   declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
-                   valorProposta: vencedor.valorProposta,
-                   resultadoHabilitacao: 1,
-                 );
-               }
+              if (tipoOrcamentoBase == 3) {
+                licitantes.sort(
+                  (a, b) => b.valorProposta.compareTo(a.valorProposta),
+                );
+              } else {
+                licitantes.sort(
+                  (a, b) => a.valorProposta.compareTo(b.valorProposta),
+                );
+              }
+
+              final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
+                  .where((f) => f.desclassificado)
+                  .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
+                  .toList();
+
+              final vencedorIndex = licitantes.indexWhere(
+                (l) => !disqualifiedCnpjs.contains(l.niPessoa),
+              );
+
+              if (vencedorIndex != -1) {
+                final vencedor = licitantes[vencedorIndex];
+                licitantes[vencedorIndex] = LicitanteCsvModel(
+                  niPessoa: vencedor.niPessoa,
+                  tipoPessoaId: vencedor.tipoPessoaId,
+                  nomeRazaoSocial: vencedor.nomeRazaoSocial,
+                  declaracaoMEouEPP: vencedor.declaracaoMEouEPP,
+                  valorProposta: vencedor.valorProposta,
+                  resultadoHabilitacao: 1,
+                );
+              }
             }
 
             complementoMap[item.numero] = LicitacaoItemCsvModel(
@@ -368,7 +418,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               tipoOrcamento: tipoOrcamentoBase,
               valorEstimado: item.getValorTotal(
                 calculoGlobal,
-                desclassificadosIds: _estimativaSelecionada!.fornecedoresDesclassificadosIds,
+                desclassificadosIds:
+                    _estimativaSelecionada!.fornecedoresDesclassificadosIds,
               ),
               dataOrcamento: dataOrcamento,
               situacaoCompraItemId:

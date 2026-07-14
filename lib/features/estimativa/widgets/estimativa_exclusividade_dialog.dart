@@ -106,8 +106,7 @@ Future<EstimativaExclusividadeResult?> showEstimativaExclusividadeDialog({
                                   valor,
                                   casasDecimais: casasDecimais,
                                 ),
-                                percentual:
-                                    '${percentual.toStringAsFixed(2)}%',
+                                percentual: '${percentual.toStringAsFixed(2)}%',
                                 onChanged: (value) {
                                   setModalState(() {
                                     if (isLote) {
@@ -215,10 +214,7 @@ Widget _buildRow({
             child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ),
-        SizedBox(
-          width: 150,
-          child: Text(valor, textAlign: TextAlign.right),
-        ),
+        SizedBox(width: 150, child: Text(valor, textAlign: TextAlign.right)),
         SizedBox(
           width: 110,
           child: Text(percentual, textAlign: TextAlign.right),

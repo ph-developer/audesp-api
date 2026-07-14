@@ -63,10 +63,22 @@ EndFragment:0000000000\r
 
     // Replace the placeholders with actual offsets
     final result = header
-        .replaceFirst('StartHTML:0000000000', 'StartHTML:${startHtml.toString().padLeft(10, '0')}')
-        .replaceFirst('EndHTML:0000000000', 'EndHTML:${endHtml.toString().padLeft(10, '0')}')
-        .replaceFirst('StartFragment:0000000000', 'StartFragment:${startFragment.toString().padLeft(10, '0')}')
-        .replaceFirst('EndFragment:0000000000', 'EndFragment:${endFragment.toString().padLeft(10, '0')}');
+        .replaceFirst(
+          'StartHTML:0000000000',
+          'StartHTML:${startHtml.toString().padLeft(10, '0')}',
+        )
+        .replaceFirst(
+          'EndHTML:0000000000',
+          'EndHTML:${endHtml.toString().padLeft(10, '0')}',
+        )
+        .replaceFirst(
+          'StartFragment:0000000000',
+          'StartFragment:${startFragment.toString().padLeft(10, '0')}',
+        )
+        .replaceFirst(
+          'EndFragment:0000000000',
+          'EndFragment:${endFragment.toString().padLeft(10, '0')}',
+        );
 
     return result + fullHtml;
   }

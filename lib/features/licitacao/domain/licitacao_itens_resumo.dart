@@ -17,9 +17,7 @@ class LicitacaoItensResumo {
     required this.valorVencedores,
   });
 
-  factory LicitacaoItensResumo.calcular(
-    Iterable<Map<String, dynamic>> itens,
-  ) {
+  factory LicitacaoItensResumo.calcular(Iterable<Map<String, dynamic>> itens) {
     final lista = itens.toList();
     final licitantesDistintos = <String>{};
     final porSituacao = <int?, int>{
@@ -65,8 +63,7 @@ class LicitacaoItensResumo {
   }
 }
 
-double? valorMedioDoItem(Map<String, dynamic> item) =>
-    _toDouble(item['valor']);
+double? valorMedioDoItem(Map<String, dynamic> item) => _toDouble(item['valor']);
 
 double? valorVencedorDoItem(Map<String, dynamic> item) {
   final valores = _licitantesDoItem(item)

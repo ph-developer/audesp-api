@@ -309,7 +309,10 @@ class EstimativaPdfService {
     String exclusividadeGlobal = 'nenhuma',
     int casasDecimais = 2,
   }) {
-    final desclassificadosIds = fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
+    final desclassificadosIds = fornecedores
+        .where((f) => f.desclassificado)
+        .map((f) => f.id)
+        .toList();
     final widgets = <pw.Widget>[];
 
     for (final item in itens) {
@@ -396,7 +399,7 @@ class EstimativaPdfService {
                   final fornecedor = fornecedores
                       .where((f) => f.id == o.fornecedorId)
                       .firstOrNull;
-                  
+
                   pw.Widget razaoSocialWidget;
                   if (fornecedor?.desclassificado == true) {
                     razaoSocialWidget = pw.RichText(

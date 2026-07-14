@@ -18,18 +18,10 @@ class AssinaturaModel {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nome': nome,
-      'cargo': cargo,
-    };
+    return {'id': id, 'nome': nome, 'cargo': cargo};
   }
 
-  AssinaturaModel copyWith({
-    int? id,
-    String? nome,
-    String? cargo,
-  }) {
+  AssinaturaModel copyWith({int? id, String? nome, String? cargo}) {
     return AssinaturaModel(
       id: id ?? this.id,
       nome: nome ?? this.nome,

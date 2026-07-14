@@ -1640,78 +1640,76 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
           )
-        else
-          ...[
-            ...List.generate(_itens.length, (i) {
-              final item = _itens[i];
-              final numItem = item['numeroItem'];
-              final situacao = item['situacaoCompraItemId'] != null
-                  ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
-                            .toInt()] ??
-                        ''
-                  : '';
-              final numLicitantes =
-                  (item['licitantes'] as List<dynamic>? ?? []).length;
-              final valorMedio = valorMedioDoItem(item);
-              final valorVencedor = valorVencedorDoItem(item);
-              return Card(
-                margin: const EdgeInsets.only(top: 4),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: CircleAvatar(child: Text('$numItem')),
-                  title: Text('Item $numItem'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('$situacao  |  $numLicitantes licitante(s)'),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 4,
+        else ...[
+          ...List.generate(_itens.length, (i) {
+            final item = _itens[i];
+            final numItem = item['numeroItem'];
+            final situacao = item['situacaoCompraItemId'] != null
+                ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
+                          .toInt()] ??
+                      ''
+                : '';
+            final numLicitantes =
+                (item['licitantes'] as List<dynamic>? ?? []).length;
+            final valorMedio = valorMedioDoItem(item);
+            final valorVencedor = valorVencedorDoItem(item);
+            return Card(
+              margin: const EdgeInsets.only(top: 4),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                leading: CircleAvatar(child: Text('$numItem')),
+                title: Text('Item $numItem'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$situacao  |  $numLicitantes licitante(s)'),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          'Valor médio: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
+                        ),
+                        Text(
+                          'Valor do vencedor: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                trailing: readOnly
+                    ? null
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Valor médio: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
+                          AudespIconButton(
+                            icon: Icons.edit_outlined,
+                            tooltip: 'Editar',
+                            onPressed: () async {
+                              final result = await showItemLicitacaoDialog(
+                                context,
+                                initial: item,
+                              );
+                              if (result != null) {
+                                setState(() => _itens[i] = result);
+                              }
+                            },
                           ),
-                          Text(
-                            'Valor do vencedor: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
+                          AudespIconButton(
+                            icon: Icons.delete_outline,
+                            tooltip: 'Remover',
+                            onPressed: () => setState(() => _itens.removeAt(i)),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  trailing: readOnly
-                      ? null
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AudespIconButton(
-                              icon: Icons.edit_outlined,
-                              tooltip: 'Editar',
-                              onPressed: () async {
-                                final result = await showItemLicitacaoDialog(
-                                  context,
-                                  initial: item,
-                                );
-                                if (result != null) {
-                                  setState(() => _itens[i] = result);
-                                }
-                              },
-                            ),
-                            AudespIconButton(
-                              icon: Icons.delete_outline,
-                              tooltip: 'Remover',
-                              onPressed: () =>
-                                  setState(() => _itens.removeAt(i)),
-                            ),
-                          ],
-                        ),
-                ),
-              );
-            }),
-          ],
+              ),
+            );
+          }),
+        ],
       ],
     );
   }
@@ -1761,7 +1759,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
               ...kSituacaoCompraItem.entries.map(
                 (entry) => _ResumoItem(
-                  label: entry.value.replaceFirst(RegExp(r'^\d+\s*[–-]\s*'), ''),
+                  label: entry.value.replaceFirst(
+                    RegExp(r'^\d+\s*[–-]\s*'),
+                    '',
+                  ),
                   value: (resumo.itensPorSituacao[entry.key] ?? 0).toString(),
                 ),
               ),
@@ -1781,10 +1782,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             children: [
               _ResumoItem(
                 label: 'Valor médio de todos os itens',
-                value: formatBRL(
-                  resumo.valorMedioTodosItens,
-                  casasDecimais: 2,
-                ),
+                value: formatBRL(resumo.valorMedioTodosItens, casasDecimais: 2),
               ),
               _ResumoItem(
                 label: 'Valor médio dos itens com vencedor',
@@ -1795,10 +1793,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
               _ResumoItem(
                 label: 'Valor total dos vencedores',
-                value: formatBRL(
-                  resumo.valorVencedores,
-                  casasDecimais: 2,
-                ),
+                value: formatBRL(resumo.valorVencedores, casasDecimais: 2),
               ),
             ],
           ),
