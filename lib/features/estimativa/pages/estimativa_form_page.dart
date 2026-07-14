@@ -778,6 +778,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       tipoEstimativa: _tipoEstimativa,
       itens: _itens,
       lotes: _lotes,
+      calculoGlobal: _calculoGlobal,
+      casasDecimais: _casasDecimais,
+      desclassificadosIds: _desclassificadosIds,
     );
     if (result != null) {
       setState(() {

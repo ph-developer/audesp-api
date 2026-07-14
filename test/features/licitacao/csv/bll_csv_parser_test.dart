@@ -74,10 +74,10 @@ void main() {
       );
     });
 
-    test('resultado final ordena itens numericamente', () {
+    test('usa a coluna Lote como número do item e ordena numericamente', () {
       const multi = '''
 "Lote","Item","Posição","Razão Social","Documento","Lance","Marca","Modelo","ME","Classificado","Habilitado"
-"1","2","1","EMP B","28801237000190","500,00","x","y","NÃO","SIM","SIM"
+"2","1","1","EMP B","28801237000190","500,00","x","y","NÃO","SIM","SIM"
 "1","1","1","EMP A","14733837000154","300,00","a","b","SIM","SIM","SIM"
 ''';
       final result = parser.parse({
@@ -87,5 +87,34 @@ void main() {
       expect(result[0].numeroItem, 1);
       expect(result[1].numeroItem, 2);
     });
+
+    test(
+      'mantém um lance por fornecedor sem repetir componentes do lote',
+      () {
+        const loteCsv = '''
+"Lote","Item","Posição","Razão Social","Documento","Lance","Marca","Modelo","ME","Classificado","Habilitado"
+"1","1","1","EMP A","14733837000154","100,00","a","a","SIM","SIM","SIM"
+"1","1","2","EMP B","28801237000190","150,00","b","b","NÃO","SIM","SIM"
+"1","2","1","EMP A","14733837000154","100,00","a","a","SIM","SIM","SIM"
+"1","2","2","EMP B","28801237000190","150,00","b","b","NÃO","SIM","SIM"
+"2","1","1","EMP A","14733837000154","50,00","a","a","SIM","SIM","SIM"
+''';
+
+        final result = const BllCsvParser().parse({
+          CsvFileKeys.bllClassificacao: _toBytes(loteCsv),
+        });
+
+        expect(result, hasLength(2));
+        expect(result[0].numeroItem, 1);
+        expect(result[0].licitantes, hasLength(2));
+        expect(result[0].licitantes[0].niPessoa, '14733837000154');
+        expect(result[0].licitantes[0].valorProposta, closeTo(100, 0.001));
+        expect(result[0].licitantes[1].niPessoa, '28801237000190');
+        expect(result[0].licitantes[1].valorProposta, closeTo(150, 0.001));
+        expect(result[1].numeroItem, 2);
+        expect(result[1].licitantes, hasLength(1));
+        expect(result[1].licitantes.single.valorProposta, closeTo(50, 0.001));
+      },
+    );
   });
 }

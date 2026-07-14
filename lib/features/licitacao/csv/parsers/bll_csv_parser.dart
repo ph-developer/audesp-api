@@ -34,7 +34,8 @@ class BllCsvParser implements PortalCsvParser {
   }
 
   // ---------------------------------------------------------------------------
-  // Parseia Classificacao com itens.csv, agrupa por item e monta o modelo final.
+  // Parseia o CSV usando "Lote" como número do item da licitação. A coluna
+  // "Item" identifica apenas os componentes internos de cada lote no BLL.
   // ---------------------------------------------------------------------------
 
   List<LicitacaoItemCsvModel> _parseClassificacao(List<int> bytes) {
@@ -46,13 +47,14 @@ class BllCsvParser implements PortalCsvParser {
     }
 
     final header = CsvUtils.buildHeaderIndex(rows.first);
-    // Mapa: numeroItem → lista de licitantes
-    final itensMapa = <int, List<LicitanteCsvModel>>{};
+    // numeroLote → documento → licitante. O lance já é o total do lote e se
+    // repete em cada componente, portanto cada fornecedor entra uma única vez.
+    final lotesMapa = <int, Map<String, LicitanteCsvModel>>{};
 
     for (final row in rows.skip(1)) {
       if (row.length <= 1) continue;
       try {
-        final itemStr = CsvUtils.getField(row, header, 'item');
+        final loteStr = CsvUtils.getField(row, header, 'lote');
         final posicaoStr = CsvUtils.getField(row, header, 'posição');
         final razaoSocial = CsvUtils.getField(row, header, 'razão social');
         final documento = CsvUtils.getField(row, header, 'documento');
@@ -60,7 +62,7 @@ class BllCsvParser implements PortalCsvParser {
         final meStr = CsvUtils.getField(row, header, 'me');
         final classificadoStr = CsvUtils.getField(row, header, 'classificado');
 
-        final itemNum = int.parse(itemStr);
+        final loteNum = int.parse(loteStr);
         final posicao = int.parse(posicaoStr);
         final niLimpo = CsvMappers.cleanNiPessoa(documento);
 
@@ -76,7 +78,8 @@ class BllCsvParser implements PortalCsvParser {
           ),
         );
 
-        itensMapa.putIfAbsent(itemNum, () => []).add(licitante);
+        final licitantesDoLote = lotesMapa.putIfAbsent(loteNum, () => {});
+        licitantesDoLote.putIfAbsent(niLimpo, () => licitante);
       } catch (e) {
         throw CsvParseException(
           'Erro ao ler linha de "Classificacao com itens.csv": $e',
@@ -84,10 +87,13 @@ class BllCsvParser implements PortalCsvParser {
       }
     }
 
-    // Monta a lista final ordenada por numeroItem.
-    return itensMapa.entries
+    // Monta a lista final ordenada pelo número informado na coluna "Lote".
+    return lotesMapa.entries
         .map(
-          (e) => LicitacaoItemCsvModel(numeroItem: e.key, licitantes: e.value),
+          (e) => LicitacaoItemCsvModel(
+            numeroItem: e.key,
+            licitantes: e.value.values.toList(),
+          ),
         )
         .toList()
       ..sort((a, b) => a.numeroItem.compareTo(b.numeroItem));

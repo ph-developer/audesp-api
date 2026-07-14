@@ -25,6 +25,7 @@ import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
+import '../domain/licitacao_itens_resumo.dart';
 import '../licitacao_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../services/licitacao_service.dart';
@@ -1122,6 +1123,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               const SizedBox(height: 16),
               _buildIndicesEconomicosSection(readOnly),
               const SizedBox(height: 16),
+              if (_itens.isNotEmpty) ...[
+                _buildItensResumo(LicitacaoItensResumo.calcular(_itens)),
+                const SizedBox(height: 16),
+              ],
               _buildItensSection(readOnly),
             ],
           ),
@@ -1636,55 +1641,198 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
           )
         else
-          ...List.generate(_itens.length, (i) {
-            final item = _itens[i];
-            final numItem = item['numeroItem'];
-            final situacao = item['situacaoCompraItemId'] != null
-                ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
-                          .toInt()] ??
-                      ''
-                : '';
-            final numLicitantes =
-                (item['licitantes'] as List<dynamic>? ?? []).length;
-            return Card(
-              margin: const EdgeInsets.only(top: 4),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                leading: CircleAvatar(child: Text('$numItem')),
-                title: Text('Item $numItem'),
-                subtitle: Text('$situacao  |  $numLicitantes licitante(s)'),
-                trailing: readOnly
-                    ? null
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
+          ...[
+            ...List.generate(_itens.length, (i) {
+              final item = _itens[i];
+              final numItem = item['numeroItem'];
+              final situacao = item['situacaoCompraItemId'] != null
+                  ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
+                            .toInt()] ??
+                        ''
+                  : '';
+              final numLicitantes =
+                  (item['licitantes'] as List<dynamic>? ?? []).length;
+              final valorMedio = valorMedioDoItem(item);
+              final valorVencedor = valorVencedorDoItem(item);
+              return Card(
+                margin: const EdgeInsets.only(top: 4),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: CircleAvatar(child: Text('$numItem')),
+                  title: Text('Item $numItem'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$situacao  |  $numLicitantes licitante(s)'),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
                         children: [
-                          AudespIconButton(
-                            icon: Icons.edit_outlined,
-                            tooltip: 'Editar',
-                            onPressed: () async {
-                              final result = await showItemLicitacaoDialog(
-                                context,
-                                initial: item,
-                              );
-                              if (result != null) {
-                                setState(() => _itens[i] = result);
-                              }
-                            },
+                          Text(
+                            'Valor médio: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
                           ),
-                          AudespIconButton(
-                            icon: Icons.delete_outline,
-                            tooltip: 'Remover',
-                            onPressed: () => setState(() => _itens.removeAt(i)),
+                          Text(
+                            'Valor do vencedor: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
                           ),
                         ],
                       ),
-              ),
-            );
-          }),
+                    ],
+                  ),
+                  trailing: readOnly
+                      ? null
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AudespIconButton(
+                              icon: Icons.edit_outlined,
+                              tooltip: 'Editar',
+                              onPressed: () async {
+                                final result = await showItemLicitacaoDialog(
+                                  context,
+                                  initial: item,
+                                );
+                                if (result != null) {
+                                  setState(() => _itens[i] = result);
+                                }
+                              },
+                            ),
+                            AudespIconButton(
+                              icon: Icons.delete_outline,
+                              tooltip: 'Remover',
+                              onPressed: () =>
+                                  setState(() => _itens.removeAt(i)),
+                            ),
+                          ],
+                        ),
+                ),
+              );
+            }),
+          ],
       ],
+    );
+  }
+
+  Widget _buildItensResumo(LicitacaoItensResumo resumo) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final background = Color.alphaBlend(
+      Colors.green.withValues(alpha: 0.08),
+      colorScheme.surface,
+    );
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.summarize_outlined, color: Colors.green, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Resumo dos itens',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              _ResumoItem(
+                label: 'Itens',
+                value: resumo.quantidadeItens.toString(),
+              ),
+              _ResumoItem(
+                label: 'Licitantes distintos',
+                value: resumo.quantidadeLicitantesDistintos.toString(),
+              ),
+              ...kSituacaoCompraItem.entries.map(
+                (entry) => _ResumoItem(
+                  label: entry.value.replaceFirst(RegExp(r'^\d+\s*[–-]\s*'), ''),
+                  value: (resumo.itensPorSituacao[entry.key] ?? 0).toString(),
+                ),
+              ),
+              if ((resumo.itensPorSituacao[null] ?? 0) > 0)
+                _ResumoItem(
+                  label: 'Sem situação',
+                  value: resumo.itensPorSituacao[null].toString(),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Divider(color: Colors.green.shade200, height: 1),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 32,
+            runSpacing: 12,
+            children: [
+              _ResumoItem(
+                label: 'Valor médio de todos os itens',
+                value: formatBRL(
+                  resumo.valorMedioTodosItens,
+                  casasDecimais: 2,
+                ),
+              ),
+              _ResumoItem(
+                label: 'Valor médio dos itens com vencedor',
+                value: formatBRL(
+                  resumo.valorMedioItensComVencedor,
+                  casasDecimais: 2,
+                ),
+              ),
+              _ResumoItem(
+                label: 'Valor total dos vencedores',
+                value: formatBRL(
+                  resumo.valorVencedores,
+                  casasDecimais: 2,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResumoItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ResumoItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 130),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }
