@@ -416,8 +416,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
               numeroItem: item.numero,
               licitantes: licitantes,
               tipoOrcamento: tipoOrcamentoBase,
-              valorEstimado: item.getValorTotal(
+              valorEstimado: item.getValorReferenciaUnitario(
                 calculoGlobal,
+                casasDecimais: _estimativaSelecionada!.casasDecimais,
                 desclassificadosIds:
                     _estimativaSelecionada!.fornecedoresDesclassificadosIds,
               ),
