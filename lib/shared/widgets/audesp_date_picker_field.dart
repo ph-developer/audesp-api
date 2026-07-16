@@ -103,7 +103,7 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
                   ? TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.38),
+                      ).colorScheme.onSurface.withValues(alpha: 0.38),
                     )
                   : widget.value == null
                   ? TextStyle(color: Theme.of(context).colorScheme.outline)

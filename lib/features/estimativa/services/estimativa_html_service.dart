@@ -76,12 +76,15 @@ class EstimativaHtmlService {
         estimativa.fontesRecurso
             .map((e) {
               var text = '${e['fonteRecurso']}/${e['aplicacao']}';
-              if ((e['descricao'] as String).isNotEmpty)
+              if ((e['descricao'] as String).isNotEmpty) {
                 text += ' (${e['descricao']})';
-              if ((e['reserva'] as String).isNotEmpty)
+              }
+              if ((e['reserva'] as String).isNotEmpty) {
                 text += ' - Reserva ${e['reserva']}';
-              if ((e['ficha'] as String).isNotEmpty)
+              }
+              if ((e['ficha'] as String).isNotEmpty) {
                 text += ' - Ficha ${e['ficha']}';
+              }
               return text;
             })
             .join('; '),

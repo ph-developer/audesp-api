@@ -247,8 +247,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                   .firstOrNull;
               if (fornecedor == null) continue;
               if (_portal != PortalType.estimativa &&
-                  fornecedor.desclassificado)
+                  fornecedor.desclassificado) {
                 continue;
+              }
               final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
               final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
 
@@ -312,12 +313,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     ),
               ),
               dataOrcamento: dataOrcamento,
-              situacaoCompraItemId:
-                  1, // Em andamento / Classificado Padrão // TODO
-              dataSituacao: DateTime.now().toIso8601String().substring(
-                0,
-                10,
-              ), // TODO
+              situacaoCompraItemId: 1, // Em andamento / Classificado Padrão
+              dataSituacao: DateTime.now().toIso8601String().substring(0, 10),
               tipoValor: tipoValorBase,
               tipoProposta: tipoPropostaBase,
             );
@@ -360,8 +357,9 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                   .firstOrNull;
               if (fornecedor == null) continue;
               if (_portal != PortalType.estimativa &&
-                  fornecedor.desclassificado)
+                  fornecedor.desclassificado) {
                 continue;
+              }
               final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
               final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
 
@@ -423,12 +421,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     _estimativaSelecionada!.fornecedoresDesclassificadosIds,
               ),
               dataOrcamento: dataOrcamento,
-              situacaoCompraItemId:
-                  1, // Em andamento / Classificado Padrão // TODO
-              dataSituacao: DateTime.now().toIso8601String().substring(
-                0,
-                10,
-              ), // TODO
+              situacaoCompraItemId: 1, // Em andamento / Classificado Padrão
+              dataSituacao: DateTime.now().toIso8601String().substring(0, 10),
               tipoValor: tipoValorBase,
               tipoProposta: tipoPropostaBase,
             );

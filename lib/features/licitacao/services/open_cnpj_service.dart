@@ -10,7 +10,8 @@ class OpenCnpjService {
   final Map<String, OpenCnpjEmpresa> _cache = {};
 
   OpenCnpjService({Dio? dio})
-    : _dio = dio ??
+    : _dio =
+          dio ??
           Dio(
             BaseOptions(
               baseUrl: 'https://api.opencnpj.org',

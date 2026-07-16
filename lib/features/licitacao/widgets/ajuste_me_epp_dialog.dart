@@ -32,8 +32,7 @@ class _AjusteMeEppDialog extends ConsumerStatefulWidget {
   const _AjusteMeEppDialog({required this.licitantesUnicos});
 
   @override
-  ConsumerState<_AjusteMeEppDialog> createState() =>
-      _AjusteMeEppDialogState();
+  ConsumerState<_AjusteMeEppDialog> createState() => _AjusteMeEppDialogState();
 }
 
 class AjusteMeEppDialogResult {
@@ -110,10 +109,12 @@ class _AjusteMeEppDialogState extends ConsumerState<_AjusteMeEppDialog> {
       final cnpj = entry.key.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
       return RegExp(r'^[A-Za-z0-9]{12}\d{2}$').hasMatch(cnpj);
     }).toList();
-    final cnpjsInvalidos = empresasCandidatas.where((entry) {
-      final cnpj = entry.key.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-      return !RegExp(r'^[A-Za-z0-9]{12}\d{2}$').hasMatch(cnpj);
-    }).map((entry) => entry.key);
+    final cnpjsInvalidos = empresasCandidatas
+        .where((entry) {
+          final cnpj = entry.key.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+          return !RegExp(r'^[A-Za-z0-9]{12}\d{2}$').hasMatch(cnpj);
+        })
+        .map((entry) => entry.key);
 
     setState(() {
       _consultasComFalha
@@ -323,9 +324,9 @@ class _AjusteMeEppDialogState extends ConsumerState<_AjusteMeEppDialog> {
                                           Icon(
                                             Icons.copy_outlined,
                                             size: 13,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                           ),
                                         ],
                                       ),

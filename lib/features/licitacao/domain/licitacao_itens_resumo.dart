@@ -53,8 +53,7 @@ class LicitacaoItensResumo {
 
       if (licitantes.any(_isVencedor)) {
         valorMedioComVencedor += valorMedio * quantidade;
-        valorVencedoresTotal +=
-            (valorVencedorDoItem(item) ?? 0.0) * quantidade;
+        valorVencedoresTotal += (valorVencedorDoItem(item) ?? 0.0) * quantidade;
       }
     }
 
@@ -85,8 +84,7 @@ List<String> nomesVencedoresDoItem(Map<String, dynamic> item) {
   return _licitantesDoItem(item)
       .where(_isVencedor)
       .map(
-        (licitante) =>
-            (licitante['nomeRazaoSocial'] as String? ?? '').trim(),
+        (licitante) => (licitante['nomeRazaoSocial'] as String? ?? '').trim(),
       )
       .where((nome) => nome.isNotEmpty)
       .toSet()

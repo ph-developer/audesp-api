@@ -93,7 +93,9 @@ class AudespDropdown<T> extends StatelessWidget {
       isDense: true,
       style: isDisabled
           ? Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.38),
             )
           : Theme.of(context).textTheme.titleMedium,
       decoration: InputDecoration(
@@ -101,7 +103,9 @@ class AudespDropdown<T> extends StatelessWidget {
         enabled: !isDisabled,
         disabledBorder: OutlineInputBorder(
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.12),
           ),
         ),
       ),
