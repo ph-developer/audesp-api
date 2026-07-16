@@ -5,6 +5,7 @@ void main() {
   test('calcula resumo dos itens e considera licitantes distintos', () {
     final itens = <Map<String, dynamic>>[
       {
+        'numeroItem': 1,
         'valor': 100.0,
         'situacaoCompraItemId': 2,
         'licitantes': [
@@ -23,6 +24,7 @@ void main() {
         ],
       },
       {
+        'numeroItem': 2,
         'valor': 200.0,
         'situacaoCompraItemId': 2,
         'licitantes': [
@@ -35,6 +37,7 @@ void main() {
         ],
       },
       {
+        'numeroItem': 3,
         'valor': 300.0,
         'situacaoCompraItemId': 4,
         'licitantes': [
@@ -47,16 +50,19 @@ void main() {
       },
     ];
 
-    final resumo = LicitacaoItensResumo.calcular(itens);
+    final resumo = LicitacaoItensResumo.calcular(
+      itens,
+      quantidadesPorNumeroItem: {1: 2, 2: 3, 3: 4},
+    );
 
     expect(resumo.quantidadeItens, 3);
     expect(resumo.quantidadeLicitantesDistintos, 3);
     expect(resumo.itensPorSituacao[2], 2);
     expect(resumo.itensPorSituacao[4], 1);
     expect(resumo.itensPorSituacao[1], 0);
-    expect(resumo.valorMedioTodosItens, 600);
-    expect(resumo.valorMedioItensComVencedor, 300);
-    expect(resumo.valorVencedores, 230);
+    expect(resumo.valorMedioTodosItens, 2000);
+    expect(resumo.valorMedioItensComVencedor, 800);
+    expect(resumo.valorVencedores, 610);
   });
 
   test('soma mais de um vencedor registrado no mesmo item', () {

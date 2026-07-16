@@ -1132,7 +1132,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               _buildIndicesEconomicosSection(readOnly),
               const SizedBox(height: 16),
               if (_itens.isNotEmpty) ...[
-                _buildItensResumo(LicitacaoItensResumo.calcular(_itens)),
+                _buildItensResumoOuAlerta(),
                 const SizedBox(height: 16),
               ],
               _buildItensSection(readOnly),
@@ -1789,22 +1789,109 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             runSpacing: 12,
             children: [
               _ResumoItem(
-                label: 'Valor médio de todos os itens',
+                label: 'Valor total estimado de todos os itens',
                 value: formatBRL(resumo.valorMedioTodosItens, casasDecimais: 2),
               ),
               _ResumoItem(
-                label: 'Valor médio dos itens com vencedor',
+                label: 'Valor total estimado dos itens com vencedor',
                 value: formatBRL(
                   resumo.valorMedioItensComVencedor,
                   casasDecimais: 2,
                 ),
               ),
               _ResumoItem(
-                label: 'Valor total dos vencedores',
+                label: 'Valor total homologado',
                 value: formatBRL(resumo.valorVencedores, casasDecimais: 2),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItensResumoOuAlerta() {
+    final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
+    final itensEdital = <Map<String, dynamic>>[];
+
+    if (edital != null) {
+      try {
+        final documento =
+            jsonDecode(edital.documentoJson) as Map<String, dynamic>;
+        itensEdital.addAll(
+          (documento['itensCompra'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>(),
+        );
+      } catch (_) {}
+    }
+
+    if (itensEdital.length != _itens.length) {
+      return _buildItensResumoAlerta(
+        'Não foi possível exibir o resumo: o edital vinculado possui '
+        '${itensEdital.length} item(ns)/lote(s), enquanto a licitação possui '
+        '${_itens.length}. Revise os itens antes de continuar.',
+      );
+    }
+
+    final quantidades = <int, double>{};
+    var dadosEditalValidos = true;
+    for (final item in itensEdital) {
+      final numero = (item['numeroItem'] as num?)?.toInt();
+      final quantidade = (item['quantidade'] as num?)?.toDouble();
+      if (numero == null ||
+          quantidade == null ||
+          quantidades.containsKey(numero)) {
+        dadosEditalValidos = false;
+        break;
+      }
+      quantidades[numero] = quantidade;
+    }
+
+    final numerosLicitacao = _itens
+        .map((item) => (item['numeroItem'] as num?)?.toInt())
+        .toList();
+    final numerosValidos = numerosLicitacao.every(
+      (numero) => numero != null && quantidades.containsKey(numero),
+    );
+
+    if (!dadosEditalValidos ||
+        !numerosValidos ||
+        numerosLicitacao.toSet().length != numerosLicitacao.length) {
+      return _buildItensResumoAlerta(
+        'Não foi possível exibir o resumo porque a numeração ou os '
+        'quantitativos dos itens/lotes divergem do edital vinculado.',
+      );
+    }
+
+    return _buildItensResumo(
+      LicitacaoItensResumo.calcular(
+        _itens,
+        quantidadesPorNumeroItem: quantidades,
+      ),
+    );
+  }
+
+  Widget _buildItensResumoAlerta(String mensagem) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final borderColor = Colors.orange.shade400;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          Colors.orange.withValues(alpha: 0.10),
+          colorScheme.surface,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: borderColor),
+          const SizedBox(width: 10),
+          Expanded(child: Text(mensagem)),
         ],
       ),
     );

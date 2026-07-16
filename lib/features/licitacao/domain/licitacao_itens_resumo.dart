@@ -17,7 +17,10 @@ class LicitacaoItensResumo {
     required this.valorVencedores,
   });
 
-  factory LicitacaoItensResumo.calcular(Iterable<Map<String, dynamic>> itens) {
+  factory LicitacaoItensResumo.calcular(
+    Iterable<Map<String, dynamic>> itens, {
+    required Map<int, double> quantidadesPorNumeroItem,
+  }) {
     final lista = itens.toList();
     final licitantesDistintos = <String>{};
     final porSituacao = <int?, int>{
@@ -28,11 +31,13 @@ class LicitacaoItensResumo {
     var valorVencedoresTotal = 0.0;
 
     for (final item in lista) {
+      final numeroItem = (item['numeroItem'] as num).toInt();
+      final quantidade = quantidadesPorNumeroItem[numeroItem]!;
       final situacaoId = (item['situacaoCompraItemId'] as num?)?.toInt();
       porSituacao[situacaoId] = (porSituacao[situacaoId] ?? 0) + 1;
 
       final valorMedio = valorMedioDoItem(item) ?? 0.0;
-      valorMedioTotal += valorMedio;
+      valorMedioTotal += valorMedio * quantidade;
 
       final licitantes = _licitantesDoItem(item);
       for (final licitante in licitantes) {
@@ -47,8 +52,9 @@ class LicitacaoItensResumo {
       }
 
       if (licitantes.any(_isVencedor)) {
-        valorMedioComVencedor += valorMedio;
-        valorVencedoresTotal += valorVencedorDoItem(item) ?? 0.0;
+        valorMedioComVencedor += valorMedio * quantidade;
+        valorVencedoresTotal +=
+            (valorVencedorDoItem(item) ?? 0.0) * quantidade;
       }
     }
 
