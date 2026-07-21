@@ -3,7 +3,7 @@ class BrConectadoMapper {
   BrConectadoMapper._();
 
   // ---------------------------------------------------------------------------
-  // resultadoHabilitacao  (coluna "Situação" do relatclassificacao.csv ou propostas.csv)
+  // resultadoHabilitacao  (coluna "Situação" do relatclassificacao.csv)
   // ---------------------------------------------------------------------------
 
   /// Converte o status da proposta/classificação para o código AUDESP.

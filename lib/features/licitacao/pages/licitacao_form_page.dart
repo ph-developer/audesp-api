@@ -759,8 +759,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Itens importados com sucesso! Verifique os enquadramentos de '
-            'ME/EPP dos licitantes, pois os portais não os diferenciam.',
+            'Itens importados com sucesso! Os licitantes foram marcados como '
+            'não enquadrados como ME/EPP; ajuste-os manualmente se necessário.',
           ),
           duration: Duration(seconds: 8),
         ),

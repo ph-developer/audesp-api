@@ -37,12 +37,11 @@ class _PortalImportDialog extends StatefulWidget {
 
 class _PortalImportDialogState extends State<_PortalImportDialog> {
   PortalType _portal = PortalType.bll;
-  ComplementoType _complementoType = ComplementoType.planilha;
+  ComplementoType _complementoType = ComplementoType.estimativa;
 
   PlatformFile? _bllClassificacao;
 
   PlatformFile? _brRelatClassificacao;
-  PlatformFile? _brPropostas;
 
   PlatformFile? _complemento;
   EstimativaModel? _estimativaSelecionada;
@@ -74,8 +73,6 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
           _bllClassificacao = file;
         case CsvFileKeys.brRelatClassificacao:
           _brRelatClassificacao = file;
-        case CsvFileKeys.brPropostas:
-          _brPropostas = file;
         case _complementoKey:
           _complemento = file;
       }
@@ -123,10 +120,10 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         return;
       }
     } else if (_portal == PortalType.brConectado) {
-      if (_brRelatClassificacao?.bytes == null || _brPropostas?.bytes == null) {
+      if (_brRelatClassificacao?.bytes == null) {
         setState(
           () => _errorMessage =
-              'Selecione os dois arquivos do portal BRConectado para importar.',
+              'Selecione o relatório de classificação do portal BRConectado.',
         );
         return;
       }
@@ -170,7 +167,6 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         } else {
           csvFiles = {
             CsvFileKeys.brRelatClassificacao: _brRelatClassificacao!.bytes!,
-            CsvFileKeys.brPropostas: _brPropostas!.bytes!,
           };
           parser = const BrConectadoCsvParser();
         }
@@ -508,26 +504,18 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     ? null
                     : () => _pickFile(CsvFileKeys.brRelatClassificacao),
               ),
-              const SizedBox(height: 12),
-              _FilePickerRow(
-                label: 'Propostas',
-                fileName: _brPropostas?.name,
-                onPick: _loading
-                    ? null
-                    : () => _pickFile(CsvFileKeys.brPropostas),
-              ),
             ],
             if (_portal != PortalType.estimativa) ...[
               const SizedBox(height: 16),
               Center(
                 child: AudespSegmentedButton<ComplementoType>(
                   segments: const {
-                    ComplementoType.planilha: 'Planilha',
                     ComplementoType.estimativa: 'Estimativa',
+                    ComplementoType.planilha: 'Planilha',
                   },
                   icons: const {
-                    ComplementoType.planilha: Icons.upload_file_outlined,
                     ComplementoType.estimativa: Icons.calculate_outlined,
+                    ComplementoType.planilha: Icons.upload_file_outlined,
                   },
                   selected: {_complementoType},
                   onSelectionChanged: _loading

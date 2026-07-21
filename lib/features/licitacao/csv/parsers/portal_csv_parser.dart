@@ -7,9 +7,6 @@ abstract class CsvFileKeys {
 
   /// BRConectado: arquivo `relatclassificacao.csv`.
   static const brRelatClassificacao = 'br_relat_classificacao';
-
-  /// BRConectado: arquivo `propostas.csv`.
-  static const brPropostas = 'br_propostas';
 }
 
 /// Interface que todo parser de portal de compras deve implementar.

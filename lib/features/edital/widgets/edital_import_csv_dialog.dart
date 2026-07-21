@@ -40,7 +40,7 @@ class _EditalImportCsvDialog extends StatefulWidget {
 }
 
 class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
-  ImportSource _source = ImportSource.planilha;
+  ImportSource _source = ImportSource.estimativa;
   PlatformFile? _csvFile;
   EstimativaModel? _estimativaSelecionada;
   bool _loading = false;
@@ -261,12 +261,12 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
             Center(
               child: AudespSegmentedButton<ImportSource>(
                 segments: const {
-                  ImportSource.planilha: 'Planilha',
                   ImportSource.estimativa: 'Estimativa',
+                  ImportSource.planilha: 'Planilha',
                 },
                 icons: const {
-                  ImportSource.planilha: Icons.upload_file_outlined,
                   ImportSource.estimativa: Icons.calculate_outlined,
+                  ImportSource.planilha: Icons.upload_file_outlined,
                 },
                 selected: {_source},
                 onSelectionChanged: _loading
