@@ -12,6 +12,9 @@ import '../database/daos/ajustes_dao.dart';
 import '../database/daos/api_logs_dao.dart';
 import '../database/daos/app_settings_dao.dart';
 import '../database/daos/estimativas_dao.dart';
+import '../database/daos/xsd_comissao_dao.dart';
+import '../database/daos/xsd_licitacao_logs_dao.dart';
+import '../database/daos/xsd_licitacao_profiles_dao.dart';
 import '../services/gemini_service.dart';
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
@@ -51,6 +54,18 @@ final appSettingsDaoProvider = Provider<AppSettingsDao>(
 
 final estimativasDaoProvider = Provider<EstimativasDao>(
   (ref) => EstimativasDao(ref.watch(databaseServiceProvider)),
+);
+
+final xsdComissaoDaoProvider = Provider<XsdComissaoDao>(
+  (ref) => XsdComissaoDao(ref.watch(databaseServiceProvider)),
+);
+
+final xsdLicitacaoLogsDaoProvider = Provider<XsdLicitacaoLogsDao>(
+  (ref) => XsdLicitacaoLogsDao(ref.watch(databaseServiceProvider)),
+);
+
+final xsdLicitacaoProfilesDaoProvider = Provider<XsdLicitacaoProfilesDao>(
+  (ref) => XsdLicitacaoProfilesDao(ref.watch(databaseServiceProvider)),
 );
 
 final geminiServiceProvider = Provider<GeminiService>(

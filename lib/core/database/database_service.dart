@@ -236,6 +236,69 @@ class DatabaseService {
       ''');
       await setSchemaVersion(7);
     }
+
+    if (version < 8) {
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS xsd_comissao (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          cpf TEXT NOT NULL,
+          nome TEXT NOT NULL,
+          cargo TEXT NOT NULL,
+          atribuicao INT NOT NULL DEFAULT 1,
+          natureza_cargo INT NOT NULL DEFAULT 1,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+        )
+      ''');
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS xsd_licitacao_logs (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          licitacao_id BIGINT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          FOREIGN KEY (licitacao_id) REFERENCES licitacoes(id)
+        )
+      ''');
+      await setSchemaVersion(8);
+    }
+
+    if (version < 9) {
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS xsd_licitacao_profiles (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          licitacao_id BIGINT NOT NULL,
+          revision VARCHAR(20) NOT NULL DEFAULT '2026_A',
+          profile_json LONGTEXT NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          UNIQUE KEY uq_xsd_profile_licitacao (licitacao_id),
+          FOREIGN KEY (licitacao_id) REFERENCES licitacoes(id)
+        )
+      ''');
+      final columns = <String, String>{
+        'variant': 'VARCHAR(10) NULL',
+        'revision': "VARCHAR(20) NOT NULL DEFAULT '2026_A'",
+        'base_name': 'VARCHAR(255) NULL',
+        'xml_sha256': 'CHAR(64) NULL',
+        'markdown_sha256': 'CHAR(64) NULL',
+        'edital_source_sha256': 'CHAR(64) NULL',
+        'licitacao_source_sha256': 'CHAR(64) NULL',
+        'profile_snapshot': 'LONGTEXT NULL',
+        'validation_success': 'TINYINT NOT NULL DEFAULT 0',
+      };
+      for (final entry in columns.entries) {
+        final found = await pool.execute(
+          "SELECT COUNT(*) AS c FROM information_schema.columns "
+          "WHERE table_schema = (SELECT DATABASE()) "
+          "AND table_name = 'xsd_licitacao_logs' AND column_name = :column",
+          {'column': entry.key},
+        );
+        if (found.rows.first.typedAssoc()['c'] == 0) {
+          await pool.execute(
+            'ALTER TABLE xsd_licitacao_logs ADD COLUMN `${entry.key}` ${entry.value}',
+          );
+        }
+      }
+      await setSchemaVersion(9);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

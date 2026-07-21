@@ -51,6 +51,7 @@ dependencies:
   uuid: ^4.5.3
   win32: ^5.15.0
   ffi: ^2.2.0
+  xml: ^6.6.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -66,3 +67,7 @@ flutter:
   assets:
     - assets/logo_audesp.png
     - assets/logo_audesp2.png
+    - docs/tcesp/xsd/licitacao1/
+    - docs/tcesp/xsd/licitacao3/
+    - docs/tcesp/xsd/tagcomum/
+    - docs/tcesp/xsd/generico/

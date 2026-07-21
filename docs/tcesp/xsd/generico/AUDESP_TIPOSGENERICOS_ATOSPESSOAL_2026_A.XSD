@@ -1,0 +1,816 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema 
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    xmlns:ap="http://www.tce.sp.gov.br/audesp/xml/atospessoal" 
+    xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+    xmlns:aux="http://www.tce.sp.gov.br/audesp/xml/auxiliar"
+    xmlns:xerces="http://xerces.apache.org"
+    
+    targetNamespace="http://www.tce.sp.gov.br/audesp/xml/atospessoal" 
+    
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified" 
+    version="1.0" 
+    xml:lang="pt-BR">
+    
+    <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico" schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2026_A.XSD"/>
+	<xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/auxiliar" schemaLocation="../auxiliar/AUDESP_TABELASAUXILIARES_2026_A.XSD"/>
+    
+    <xs:annotation>
+        <xs:documentation>
+            <Data>2025-12-23</Data>
+            <VersaoRevisaoAnterior/>
+            <VersaoRevisaoNova>2026_A</VersaoRevisaoNova>
+            <Descricao>XSD de Tipos Genericos de Atos de Pessoal</Descricao>
+            <Justificativa>Modelo para 2026</Justificativa>
+            <Autor>Paulo A. Veronez Jr.</Autor>
+        </xs:documentation>
+    </xs:annotation>
+    
+    <xs:simpleType name="SimNao_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="S"/> <!-- Sim -->
+			<xs:enumeration value="N"/> <!-- Não -->
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="campoOpcional_t">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="CodigoAlphaNumericoPontoBarraTraco_t">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z0-9\./-]*"/>
+            <xs:minLength value="1"/>
+            <xs:maxLength value="50"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="CodigoAlphaNumericoEspaco_t">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z0-9][A-Z0-9\s]*"/>
+            <xs:minLength value="1"/>
+            <xs:maxLength value="255"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="CodigoCargoFuncao_t">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9][A-Z0-9\./-]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="NomeMaiusculoAcentuadoComNumerosPontoBarraTraco_t">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z0-9\sÀÈÌÒÙÁÉÍÓÚÂÊÎÔÛÃÑÕÄËÏÖÜÇ\./-]*"/>
+            <xs:minLength value="4"/>
+            <xs:maxLength value="255"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PIS_PASEP_t">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{11}"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="InteiroSemZero_t">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="2147483647"/>
+        </xs:restriction>
+    </xs:simpleType>
+        
+    <xs:simpleType name="TipoNorma_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Constituição Estadual -->
+            <xs:enumeration value="2"/> <!-- Constituição Federal -->
+            <xs:enumeration value="3"/> <!-- Decreto -->
+            <xs:enumeration value="4"/> <!-- Emenda Constitucional Estadual -->
+            <xs:enumeration value="5"/> <!-- Instruções -->
+            <xs:enumeration value="6"/> <!-- Lei -->
+            <xs:enumeration value="7"/> <!-- Lei complementar -->
+            <xs:enumeration value="8"/> <!-- Portaria -->
+            <xs:enumeration value="9"/> <!-- Regimento Interno -->
+            <xs:enumeration value="10"/> <!-- Decreto Lei -->
+            <xs:enumeration value="11"/> <!-- Atos da mesa -->
+            <xs:enumeration value="12"/> <!-- Lei orgânica -->
+            <xs:enumeration value="13"/> <!-- Estatuto -->
+            <xs:enumeration value="14"/> <!-- Emenda Constitucional Federal -->
+            <xs:enumeration value="15"/> <!-- Resolução -->
+            <xs:enumeration value="16"/> <!-- Medida Provisória -->
+            <xs:enumeration value="17"/> <!-- Acordo Coletivo de Trabalho (empresas) -->
+            <xs:enumeration value="18"/> <!-- Convenção -->
+            <xs:enumeration value="19"/> <!-- Ordem de Serviço -->
+            <xs:enumeration value="20"/> <!-- Convênio -->
+            <xs:enumeration value="21"/> <!-- Parecer -->
+            <xs:enumeration value="22"/> <!-- Ata de Assembleia -->
+            <xs:enumeration value="23"/> <!-- Decisão Judicial -->
+            <xs:enumeration value="24"/> <!-- Outros -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoCargoFuncao_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Profissional da Saúde -->
+            <xs:enumeration value="2"/> <!-- Professor -->
+            <xs:enumeration value="3"/> <!-- Militar -->
+            <xs:enumeration value="4"/> <!-- Demais -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoRegimeJuridico_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- CLT -->
+            <xs:enumeration value="2"/> <!-- Estatutário -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoEscolaridade_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Sem Alfabetização -->
+            <xs:enumeration value="2"/> <!-- Alfabetização -->
+            <xs:enumeration value="3"/> <!-- Ensino Básico -->
+            <xs:enumeration value="4"/> <!-- Ensino Básico incompleto -->
+            <xs:enumeration value="5"/> <!-- Ensino Médio -->
+            <xs:enumeration value="6"/> <!-- Ensino Técnico -->
+            <xs:enumeration value="7"/> <!-- Ensino Superior -->
+            <xs:enumeration value="8"/> <!-- Especialização -->
+            <xs:enumeration value="9"/> <!-- Mestrado -->
+            <xs:enumeration value="10"/> <!-- Doutorado -->
+            <xs:enumeration value="11"/> <!-- Pós-Doutorado -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoExercicioAtividade_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Efetivo -->
+            <xs:enumeration value="2"/> <!-- Efetivo em Comissão -->
+            <xs:enumeration value="3"/> <!-- Temporário -->
+            <!--xs:enumeration value="4"/--> <!-- Aposentado -->
+            <xs:enumeration value="5"/> <!-- Exclusivamente em Comissão -->
+            <xs:enumeration value="6"/> <!-- Estável -->
+            <xs:enumeration value="7"/> <!-- Eletivo/Indicado -->
+			<xs:enumeration value="8"/> <!-- Função de Confiança -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoFormaProvimento_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Concurso público -->
+            <xs:enumeration value="2"/> <!-- Tempo determinado -->
+            <xs:enumeration value="3"/> <!-- Livre Provimento -->
+            <xs:enumeration value="4"/> <!-- Eleição/Indicação -->
+			<xs:enumeration value="5"/> <!-- Processo Seletivo -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoAlteracaoVaga_t">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="1"/> <!-- Criação de cargo -->
+            <xs:enumeration value="2"/> <!-- Extinção de cargo -->
+            <xs:enumeration value="3"/> <!-- Aumento de vaga -->
+            <xs:enumeration value="4"/> <!-- Redução de vaga -->
+        </xs:restriction>
+    </xs:simpleType>    
+    
+    <xs:simpleType name="TipoSexo_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Masculino -->
+            <xs:enumeration value="2"/> <!-- Feminino -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoNacionalidade_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Brasileiro Nato -->
+            <xs:enumeration value="2"/> <!-- Brasileiro Naturalizado -->
+            <xs:enumeration value="3"/> <!-- Estrangeiro -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoSituacao_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Ativo --> 
+            <xs:enumeration value="2"/> <!-- Aposentado -->
+            <xs:enumeration value="3"/> <!-- Cedido de --> 
+            <xs:enumeration value="4"/> <!-- Cedido para --> 
+            <xs:enumeration value="5"/> <!-- Demitido --> 
+            <xs:enumeration value="6"/> <!-- Encerramento de Lotação --> 
+            <xs:enumeration value="7"/> <!-- Exonerado --> 
+            <xs:enumeration value="8"/> <!-- Falecido --> 
+            <xs:enumeration value="9"/> <!-- Fim de cessão --> 
+            <xs:enumeration value="10"/> <!-- Licença sem vencimento -->
+            <xs:enumeration value="11"/> <!-- Licença saúde superior a 15 dias --> 
+            <xs:enumeration value="12"/> <!-- Reformado --> 
+            <xs:enumeration value="13"/> <!-- Transferido para Reserva -->
+            <xs:enumeration value="14"/> <!-- Licença por Motivo de Doença em Pessoa da Família -->
+            <xs:enumeration value="15"/> <!-- Licença por Motivo de Afastamento do Cônjuge -->
+            <xs:enumeration value="16"/> <!-- Licença para o Serviço Militar -->
+            <xs:enumeration value="17"/> <!-- Licença para Atividade Política -->
+            <xs:enumeration value="18"/> <!-- Licença para Capacitação -->
+            <xs:enumeration value="19"/> <!-- Licença Para Tratar Interesses Particulares -->
+            <xs:enumeration value="20"/> <!-- Licença para desempenho de Mandato Classista -->
+            <xs:enumeration value="21"/> <!-- Licença para Tratamento de Saúde -->
+            <xs:enumeration value="22"/> <!-- Licença-Gestante ou Adotante -->
+            <xs:enumeration value="23"/> <!-- Licença Paternidade -->
+            <xs:enumeration value="24"/> <!-- Licença por acidente no exercício de suas atribuições -->
+            <xs:enumeration value="25"/> <!-- Licença por doença profissional -->
+            <xs:enumeration value="26"/> <!-- Licença sem Prejuízo de Vencimento -->
+            <xs:enumeration value="27"/> <!-- Reintegração ao Quadro de Pessoal da Entidade -->
+            <xs:enumeration value="28"/> <!-- Reversão de Aposentadoria" -->
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="TipoSituacaoRemuneracao_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Ativo --> 
+            <xs:enumeration value="2"/> <!-- Inativo --> 
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoAposentadoria_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Compulsória -->
+            <xs:enumeration value="2"/> <!-- Invalidez -->
+            <xs:enumeration value="3"/> <!-- Voluntária -->
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="AnoAtosNormativos_t">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1916"/>
+			<xs:maxInclusive value="2050"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	
+    <xs:simpleType name="TipoRegimePrevidencia_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- GERAL (INSS) -->
+            <xs:enumeration value="2"/> <!-- Próprio -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoProventos_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Integrais -->
+            <xs:enumeration value="2"/> <!-- Proporcionais -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="TipoFormaPagamento_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Conta Corrente -->
+            <xs:enumeration value="2"/> <!-- Demais -->
+            <xs:enumeration value="3"/> <!-- Ambas -->
+        </xs:restriction>
+    </xs:simpleType>
+	
+    <xs:simpleType name="TipoAgenciaConta_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9]*[1-9]{1}[0-9]*[xXpP]{0,1}"/>
+		</xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name="TipoFormaFixacao_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Espécie -->
+            <xs:enumeration value="2"/> <!-- Outros -->
+            <xs:enumeration value="3"/> <!-- Percentual Salário Prefeito -->
+            <xs:enumeration value="4"/> <!-- Percentual Subsidio Dep. Estadual -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="moeda">
+        <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="2"/>
+            <!--<xs:assertion test="$value != 0"/>-->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="moedaAceitaZero">
+        <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+    <xs:simpleType name="moedaMaiorIgualZero">
+        <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="2"/>
+            <xs:minInclusive value="0.00"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <!--Campo utilizado no documento Cadastro de Verbas Remuneratórias -->
+    <xs:simpleType name="EntraNoCalculoDoTetoConstitucional_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration><!--Sim -->
+			<xs:enumeration value="2"></xs:enumeration><!--Não -->                        
+			<xs:enumeration value="3"></xs:enumeration><!--Não se aplica -->
+		</xs:restriction>
+	</xs:simpleType>
+    
+    <!--Tipo qualificação do pensionista -->
+	<xs:simpleType name="TipoQualificacaoPensionista_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- Companheiro --> 
+            <xs:enumeration value="2"/> <!-- Cônjuge --> 
+            <xs:enumeration value="3"/> <!-- Filho --> 
+            <xs:enumeration value="4"/> <!-- Mãe --> 
+			<xs:enumeration value="5"/> <!-- Pai --> 
+            <xs:enumeration value="6"/> <!-- Outros --> 
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <!--Natureza Verbas -->
+	<xs:simpleType name="NaturezaVerbas_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!--Atrasado -->
+			<xs:enumeration value="2"/> <!--Normal -->                    
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!--Especie Verbas -->
+	<xs:simpleType name="EspecieVerbas_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!--Desconto -->
+			<xs:enumeration value="2"/> <!--Vencimento -->                    
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!--Cargo Político -->
+	<xs:simpleType name="CargoPolitico_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration><!--Sim -->
+			<xs:enumeration value="2"></xs:enumeration><!--Não -->                     
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Tipo Outra Ocupação -->
+	<xs:simpleType name="TipoOutraOcupacao_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- Estagiário -->
+			<xs:enumeration value="2"/> <!-- Conselheiro -->
+			<xs:enumeration value="3"/> <!-- Bolsista -->
+			<xs:enumeration value="4"/> <!-- Jovem Aprendiz -->
+			<xs:enumeration value="5"/> <!-- Aposentado -->
+			<xs:enumeration value="6"/> <!-- Outros -->
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="NumeroProcessoOrgao_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Za-z0-9\-]{1,20}/[0-9]{4}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Verifica se possui autorização judicial para receber acima do teto -->
+	<xs:complexType name="PossuiAutorizacaoJudicialReceberAcimaTetoSim_t" >
+		<xs:sequence>
+			<xs:element name="PossuiAutorizacaoJudicialReceberAcimaTeto">
+				<xs:simpleType>
+					<xs:restriction base="xs:short" >
+						<xs:enumeration value="1"></xs:enumeration><!--Sim -->          
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<!-- <xs:element name="NumeroProcessoJudicial" type="ap:NumeroProcessoOrgao_t" minOccurs="0" maxOccurs="1"/> -->
+			<xs:element name="NumeroProcessoJudicial" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="PossuiAutorizacaoJudicialReceberAcimaTeto_t" >
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration><!--Sim -->
+			<xs:enumeration value="2"></xs:enumeration><!--Não -->                        
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- Verifica se possui autorização judicial para receber acima do teto -->
+	<xs:simpleType name="PossuiAutorizacaoJudicialReceberAcimaTetoNao_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="2"></xs:enumeration><!--Não -->          
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- TipoDocumentoIdentificacaoIndividual_t tipo= 01,02,03,04 -->
+	<xs:complexType name="TipoDocumentoIdentificacaoIndividual_t">
+		<xs:choice>
+			<xs:element name="CPF" type="ap:CPF_ComAtributo_t"/>
+			<xs:element name="CertidaoNascimento_ComAtributo_t" type="ap:CertidaoNascimento_ComAtributo_t"/>
+			<xs:element name="PIS_PASEP_ComAtributo_t" type="ap:PIS_PASEP_ComAtributo_t"/>
+			<xs:element name="RG_ComAtributo_t" type="ap:RG_ComAtributo_t"/>
+		</xs:choice>
+	</xs:complexType>
+	
+	<!-- CPF -> tipo 01 -->
+	<xs:complexType name="CPF_ComAtributo_t">
+		<xs:sequence>
+			<xs:element name="Numero">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[0-9]{11}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute fixed="01" name="Tipo" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<!-- Certidão de Nascimento -> tipo 02 -->
+	<xs:complexType name="CertidaoNascimento_ComAtributo_t">
+		<xs:sequence>
+			<xs:element name="Numero">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[0-9]{11}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute fixed="02" name="Tipo" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<!-- PIS/PASEP -> tipo 03 -->
+	<xs:complexType name="PIS_PASEP_ComAtributo_t">
+		<xs:sequence>
+			<xs:element name="Numero">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[0-9]{11}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute fixed="03" name="Tipo" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<!-- RG -> tipo 04 -->
+	<xs:complexType name="RG_ComAtributo_t">
+		<xs:sequence>
+			<xs:element name="Numero">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[0-9]{11}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute fixed="04" name="Tipo" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<!--TipoVerbaRemuneratoria  -->
+	<xs:simpleType name="TipoVerbaRemuneratoria_t">
+        <xs:restriction base="xs:short">
+        	<!-- REMUNERAÇÃO BRUTA -->
+			<xs:enumeration value="100"/><!-- Subsídio -->
+			<xs:enumeration value="101"/><!-- Verba de Representação -->
+			<xs:enumeration value="102"/><!-- Sessões Extraordinárias -->
+			<xs:enumeration value="103"/><!-- Vencimentos e Vantagens Fixas Pessoal Civil e Militar -->
+			<xs:enumeration value="104"/><!-- Vantagens Pessoais -->
+			<xs:enumeration value="105"/><!-- Honorários Advocatícios -->
+			<xs:enumeration value="106"/><!-- Férias 1/3 -->
+			<xs:enumeration value="107"/><!-- Hora Extra -->
+			<xs:enumeration value="108"/><!-- Jeton/Honorário Membro de Conselho -->
+			<xs:enumeration value="109"/><!-- Gratificações -->
+			<xs:enumeration value="110"/><!-- Outras Verbas Remuneratórias -->
+			<xs:enumeration value="111"/><!-- Remuneração em Atraso -->
+			<xs:enumeration value="112"/><!-- Indenizações -->
+			<xs:enumeration value="113"/><!-- Benefícios Previdenciários e Assistenciais -->
+			<xs:enumeration value="114"/><!-- Outros Benefícios -->
+			<xs:enumeration value="115"/><!-- Abono Permanência -->
+			<xs:enumeration value="116"/><!-- Proventos de Aposentadoria, de Reserva ou de Reforma -->
+			<xs:enumeration value="117"/><!-- Proventos de Pensão -->
+			<xs:enumeration value="118"/><!-- Decisão Judicial -->
+			<xs:enumeration value="119"/><!-- 13º Salário -->
+			<xs:enumeration value="120"/><!-- 14º Salário -->
+			<xs:enumeration value="121"/><!-- 15º Salário -->
+			<xs:enumeration value="122"/><!-- Benefícios Assistenciais -->
+			<xs:enumeration value="123"/><!-- Férias -->
+			<xs:enumeration value="124"/><!-- Licença-Prêmio Indenizada -->
+			
+			<!-- DESCONTOS -->
+			<xs:enumeration value="200"/><!-- Contribuição Prvidenciária Regime Geral -->
+			<xs:enumeration value="201"/><!-- Contribuição Previdenciária Regime Próprio -->
+			<xs:enumeration value="202"/><!-- Contribuição Previdenciária Complementar - Facultativa -->
+			<xs:enumeration value="203"/><!-- Outras Contribuições Previdenciárias -->
+			<xs:enumeration value="204"/><!-- Imposto de Renda Retido na Fonte - IRRF -->
+			<xs:enumeration value="205"/><!-- Imposto de Renda Retido na Fonte - IRRF s/ Férias -->
+			<xs:enumeration value="206"/><!-- Imposto de Renda Retido na Fonte - 13º Salário -->
+			<xs:enumeration value="207"/><!-- Imposto de Renda Retido na Fonte - 14º Salário -->
+			<xs:enumeration value="208"/><!-- Imposto de Renda Retido na Fonte - 15º Salário -->
+			<xs:enumeration value="209"/><!-- Pensão Alimentícia -->
+			<xs:enumeration value="210"/><!-- Redutor Salarial -->
+			<xs:enumeration value="211"/><!-- Adiantamento Salarial -->
+			<xs:enumeration value="212"/><!-- Faltas e Atrasos -->
+			<xs:enumeration value="213"/><!-- Outros Descontos -->
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <!--Tipo IdentificacaoAgentePublico_t -->
+    <xs:complexType name="IdentificacaoAgentePublico_t">
+    	<xs:sequence>
+    		<xs:element name="CPF" 		type="gen:CPF_t"		minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="Nome" 	minOccurs="1" maxOccurs="1">
+    			<xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="255"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>   			
+    		<xs:sequence>
+            	<xs:element name="MunicipioLotacao"       type="gen:CodigoMunicipio_t"   minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="EntidadeLotacao"        type="gen:CodigoEntidade_t"    minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:element name="CargoPolitico" 	type="ap:CargoPolitico_t" 	minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="FuncaoGoverno" 	type="aux:CodigoFuncaoGoverno_ListaAmpliada_t" 	minOccurs="1" maxOccurs="1"/>
+
+    		<xs:choice minOccurs="1">
+            	<xs:element name="CodigoCargo"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"	minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="CodigoFuncao"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"	minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="OutraOcupacao"	type="ap:TipoOutraOcupacao_t"					minOccurs="1" maxOccurs="1"/>
+    		</xs:choice>
+			<xs:element name="Matricula"    				type="ap:CodigoAlphaNumericoPontoBarraTraco_t"			minOccurs="0" maxOccurs="1"/>
+    		<xs:element name="Situacao" 					type="ap:TipoSituacao_t"								minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="RegimeJuridico"				type="ap:TipoRegimeJuridico_t"							minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="PossuiAutorizRecebAcimaTeto"	type="ap:PossuiAutorizacaoJudicialReceberAcimaTeto_t"	minOccurs="1" maxOccurs="1"/>
+			<xs:element name="NumeroProcessoJudicial"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"			minOccurs="0" maxOccurs="1"/>
+    	</xs:sequence>
+    </xs:complexType>
+	
+	<!--Tipo IdentificacaoAgentePublico_SEFAZ_t -->
+    <xs:complexType name="IdentificacaoAgentePublico_SEFAZ_t">
+    	<xs:sequence>
+    		<xs:element name="CPF" 		type="gen:CPF_t"		minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="Nome" 	minOccurs="1" maxOccurs="1">
+    			<xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="255"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>   			
+    		<xs:sequence>
+				<xs:element name="Municipio" type="xs:integer"></xs:element>
+			    <xs:element name="Orgao" type="xs:integer"></xs:element>
+			    <xs:element name="UO" type="xs:integer"></xs:element>
+			    <xs:element name="UGE" type="xs:integer"></xs:element>
+			    <xs:element name="UA-UGE" type="xs:integer"></xs:element>
+			    <xs:element name="UA" type="xs:integer"></xs:element>
+            </xs:sequence>
+            <xs:element name="CargoPolitico" 	type="ap:CargoPolitico_t" 	minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="FuncaoGoverno" 	type="aux:CodigoFuncaoGoverno_ListaAmpliada_t" 	minOccurs="1" maxOccurs="1"/>
+
+    		<xs:choice minOccurs="1">
+            	<xs:element name="CodigoCargo"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"	minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="CodigoFuncao"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"	minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="OutraOcupacao"	type="ap:TipoOutraOcupacao_t"					minOccurs="1" maxOccurs="1"/>
+    		</xs:choice>
+			<xs:element name="Matricula"					type="ap:CodigoAlphaNumericoPontoBarraTraco_t"			minOccurs="0" maxOccurs="1"/>
+    		<xs:element name="Situacao"						type="ap:TipoSituacao_t"								minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="RegimeJuridico"				type="ap:TipoRegimeJuridico_t"							minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="PossuiAutorizRecebAcimaTeto"	type="ap:PossuiAutorizacaoJudicialReceberAcimaTeto_t"	minOccurs="1" maxOccurs="1"/>
+			<xs:element name="NumeroProcessoJudicial"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"			minOccurs="0" maxOccurs="1"/>
+    	</xs:sequence>
+    </xs:complexType>
+    
+    <!--Tipo IdentificacaoPensionista_t -->
+    <xs:complexType name="IdentificacaoPensionista_t">
+    	<xs:sequence>
+    		<xs:element name="Nome"		minOccurs="1" maxOccurs="1">
+    			<xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="255"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>
+    		<xs:element name="DataNascimento" 	type="gen:DataNascimentoValida_t"	minOccurs="1" maxOccurs="1"/>
+    		<xs:element name="CPF" 		type="gen:CPF_t"		minOccurs="1" maxOccurs="1"/>
+			<xs:element name="QualificacaoPensionista" type="ap:TipoQualificacaoPensionista_t" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="OutraQualificacaoPensionista" 	minOccurs="0" maxOccurs="1">
+				 <xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="50"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>
+    		<xs:sequence>
+            	<xs:element name="MunicipioLotacaoAgentePublico"       type="gen:CodigoMunicipio_t"   minOccurs="1" maxOccurs="1"/>
+            	<xs:element name="EntidadeLotacaoAgentePublico"        type="gen:CodigoEntidade_t"    minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+    	</xs:sequence>
+    </xs:complexType>
+	
+	<!--Tipo IdentificacaoPensionista_SEFAZ_t -->
+    <xs:complexType name="IdentificacaoPensionista_SEFAZ_t">
+    	<xs:sequence>
+    		<xs:element name="Nome"		minOccurs="1" maxOccurs="1">
+    			<xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="255"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>
+    		<xs:element name="DataNascimento" 	type="gen:DataNascimentoValida_t"	minOccurs="0" maxOccurs="1"/>
+    		<xs:element name="CPF" 		type="gen:CPF_t"		minOccurs="1" maxOccurs="1"/>
+			<xs:element name="QualificacaoPensionista" type="ap:TipoQualificacaoPensionista_t" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="OutraQualificacaoPensionista" 	minOccurs="0" maxOccurs="1">
+				 <xs:simpleType>
+				     <xs:restriction base="xs:string">
+				         <xs:minLength value="1"/>
+				         <xs:maxLength value="50"/>
+				     </xs:restriction>
+				 </xs:simpleType>
+			</xs:element>
+    		<xs:sequence>
+				<xs:element name="Municipio" type="xs:integer"></xs:element>
+			    <xs:element name="Orgao" type="xs:integer"></xs:element>
+			    <xs:element name="UO" type="xs:integer"></xs:element>
+			    <xs:element name="UGE" type="xs:integer"></xs:element>
+			    <xs:element name="UA-UGE" type="xs:integer"></xs:element>
+			    <xs:element name="UA" type="xs:integer"></xs:element>
+            </xs:sequence>
+    	</xs:sequence>
+    </xs:complexType>
+
+    <!-- Tipo TipoEntidadeSefaz_t -->
+	<xs:simpleType name="TipoEntidadeSefaz_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- OR -->
+			<xs:enumeration value="2"/> <!-- UO -->
+			<xs:enumeration value="3"/> <!-- UGE -->
+			<xs:enumeration value="4"/> <!-- UA -->
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Identificacao do Processo de Seleção -->
+	<xs:complexType name="IdentificacaoProcessoSelecao_t"> 
+		<xs:sequence>
+			<xs:element name="numeroProcessoSelecao"		type="gen:StringNaoVazia255_t"		minOccurs="1" maxOccurs="1"/>
+			<xs:element name="anoProcessoSelecao"		type="gen:Ano_t"		minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<!-- Tipo TipoProcessoSelecao_t -->
+	<xs:simpleType name="TipoProcessoSelecao_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- Concurso Público Efetivo -->
+			<xs:enumeration value="2"/> <!-- Concurso Público Temporário -->
+			<xs:enumeration value="3"/> <!-- Processo Seletivo Simplificado -->
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Identificação da Entidade Prevista -->
+	<xs:complexType name="EntidadePrevista_t">
+		<xs:sequence>
+			<xs:element name="CodigoEntidadePrevista"		type="gen:CodigoEntidade_t"/>
+			<xs:element name="CodigoMunicipioEntidadePrevista"	type="gen:CodigoMunicipio_t"/>
+		</xs:sequence>               
+	</xs:complexType>
+	<!-- Identificação da Entidade Detentora -->
+	<xs:complexType name="EntidadeDetentora_t">
+		<xs:sequence>
+			<xs:element name="CodigoEntidadeDetentora"		type="gen:CodigoEntidade_t"/>
+			<xs:element name="CodigoMunicipioEntidadeDetentora"	type="gen:CodigoMunicipio_t"/>
+		</xs:sequence>               
+	</xs:complexType>
+
+	<!-- Identificação da do Cargo ou da Função -->
+	<xs:complexType name="CargoFuncaoEdital_t">
+		<xs:sequence>
+			<xs:element name="EntidadePrevista"		type="ap:EntidadePrevista_t"/>
+			<xs:choice>
+				<xs:element name="codigoCargo"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"		minOccurs="1" maxOccurs="1"/>
+				<xs:element name="codigoFuncao"		type="ap:CodigoAlphaNumericoPontoBarraTraco_t"		minOccurs="1" maxOccurs="1"/>
+			</xs:choice>
+		</xs:sequence>               
+	</xs:complexType>
+	
+	<!-- Prazo -->
+	<xs:complexType name="Prazo_t">
+		<xs:sequence>
+			<xs:element name="anoPrazo"		type="gen:InteiroNaoNegativo_t"		minOccurs="1" maxOccurs="1"/>
+			<xs:element name="mesPrazo"		type="gen:InteiroNaoNegativo_t"		minOccurs="1" maxOccurs="1"/>
+			<xs:element name="diaPrazo"		type="gen:InteiroNaoNegativo_t"		minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>               
+	</xs:complexType>
+
+	<!-- Fator de arredondamento de vagas -->
+	<xs:simpleType name="FatorArredondamento_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- >= 0,05 arredondar para 1 -->
+			<xs:enumeration value="2"/> <!-- > 0,05 arredondar para 1 -->
+			<xs:enumeration value="3"/> <!-- <= 0,05 desprezar -->
+			<xs:enumeration value="4"/> <!-- < 0,05 desprezar -->
+			<xs:enumeration value="5"/> <!-- >= 0,5 arredondar para 1 -->
+			<xs:enumeration value="6"/> <!-- > 0,5 arredondar para 1 -->
+			<xs:enumeration value="7"/> <!-- <= 0,5 desprezar -->
+			<xs:enumeration value="8"/> <!-- < 0,5 desprezar -->
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Atribuição de pontos por título -->
+	<xs:simpleType name="PermiteAtribPontoTitulo_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration> <!-- Sim -->
+			<xs:enumeration value="2"></xs:enumeration> <!-- Não -->                     
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Tipo do grupo especial -->
+	<xs:simpleType name="TipoGrupoEspecial_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration> <!-- Afrodescendente -->
+			<xs:enumeration value="2"></xs:enumeration> <!-- Deficiente -->                     
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Tipo de convocação -->
+	<xs:simpleType name="TipoConvocacao_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration> <!-- Convocados para própria entidade -->
+			<xs:enumeration value="2"></xs:enumeration> <!-- Convocados para outra entidade (carona) -->         
+			<xs:enumeration value="3"></xs:enumeration> <!-- Convocados temporários para própria entidade -->
+			<xs:enumeration value="4"></xs:enumeration> <!-- Convocados temporários para outra entidade (carona) -->              
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Tipo de convocação -->
+	<xs:simpleType name="SituacaoConvocado_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"></xs:enumeration> <!-- Admitido -->
+			<xs:enumeration value="2"></xs:enumeration> <!-- Classificado -->
+			<xs:enumeration value="3"></xs:enumeration> <!-- Convocado -->
+			<xs:enumeration value="4"></xs:enumeration> <!-- Desistente -->
+			<xs:enumeration value="5"></xs:enumeration> <!-- Nomeado -->
+			<xs:enumeration value="6"></xs:enumeration> <!-- Não comparecido -->
+			<xs:enumeration value="7"></xs:enumeration> <!-- Prazo prorrogado para exercício -->
+			<xs:enumeration value="8"></xs:enumeration> <!-- Prazo prorrogado para posse -->
+			<xs:enumeration value="9"></xs:enumeration> <!-- Admitido para outra entidade -->
+			<xs:enumeration value="10"></xs:enumeration> <!-- Convocado para outra entidade -->
+			<xs:enumeration value="11"></xs:enumeration> <!-- Desistente para outra entidade -->
+			<xs:enumeration value="12"></xs:enumeration> <!-- Nomeado para outra entidade -->
+			<xs:enumeration value="13"></xs:enumeration> <!-- Não comparecido para outra entidade -->
+			<xs:enumeration value="14"></xs:enumeration> <!-- Prazo prorrogado para exercício para outra entidade -->
+			<xs:enumeration value="15"></xs:enumeration> <!-- Prazo prorrogado para posse para outra entidade -->
+			<xs:enumeration value="16"></xs:enumeration> <!-- Contratado para temporário para própria entidade -->
+			<xs:enumeration value="17"></xs:enumeration> <!-- Convocado para temporário para própria entidade -->
+			<xs:enumeration value="18"></xs:enumeration> <!-- Desistente para temporário para própria entidade -->
+			<xs:enumeration value="19"></xs:enumeration> <!-- Não comparecido para temporário para própria entidade -->
+			<xs:enumeration value="20"></xs:enumeration> <!-- Contratado para temporário para outra entidade -->
+			<xs:enumeration value="21"></xs:enumeration> <!-- Convocado para temporário para outra entidade -->
+			<xs:enumeration value="22"></xs:enumeration> <!-- Desistente temporário para outra entidade -->
+			<xs:enumeration value="23"></xs:enumeration> <!-- Não comparecido para temporário para outra entidade -->
+			<xs:enumeration value="24"></xs:enumeration> <!-- Inapto -->
+			<xs:enumeration value="25"></xs:enumeration> <!-- Remanejado para o final da lista de classificação -->
+            <xs:enumeration value="26"></xs:enumeration> <!-- Prazo Suspenso" -->
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Tipo de Concessão -->
+	<xs:simpleType name="tipoConcessao_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- Refoma -->
+			<xs:enumeration value="2"/> <!-- Transferência para Reserva -->
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Tipo de Reforma -->
+	<xs:simpleType name="TipoReformaReserva_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/> <!-- A Pedido -->
+			<xs:enumeration value="2"/> <!-- Ex-Officio -->
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- Tempo de Serviço -->
+	<xs:complexType name="TempoServico_t">
+		<xs:sequence>
+			<xs:element name="anos"		type="gen:InteiroNaoNegativo_t"	minOccurs="1" maxOccurs="1"/>
+			<xs:element name="meses"	type="gen:InteiroNaoNegativo_t"	minOccurs="1" maxOccurs="1"/>
+			<xs:element name="dias"		type="gen:InteiroNaoNegativo_t"	minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>               
+	</xs:complexType>
+	
+	<xs:simpleType name="TipoDocumentoPessoal_t">
+        <xs:restriction base="xs:short">
+            <xs:enumeration value="1"/> <!-- CPF -->
+            <xs:enumeration value="2"/> <!-- Certidão de nascimento -->
+            <xs:enumeration value="3"/> <!-- PIS/PASEP -->
+            <xs:enumeration value="4"/> <!-- RG -->
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:simpleType name=" NumeroDocumento_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="6"/>
+         <xs:maxLength value="32"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+</xs:schema>

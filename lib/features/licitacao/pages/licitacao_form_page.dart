@@ -18,6 +18,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
@@ -34,6 +35,7 @@ import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
 import '../widgets/ajuste_situacao_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
+import '../../xsd_licitacao/pages/xsd_licitacao_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
 ///
@@ -57,6 +59,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   bool _loading = true;
   bool _saving = false;
   bool _importingGemini = false;
+  DateTime? _lastXsdGenerationDate;
   bool _isSent = false;
   bool _updatingStatus = false;
   int? _loadedId;
@@ -136,6 +139,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     if (widget.licitacaoId != null) {
       await _loadExisting(widget.licitacaoId!);
+      _lastXsdGenerationDate = await ref
+          .read(xsdLicitacaoLogsDaoProvider)
+          .getLastGenerationDate(widget.licitacaoId!);
     } else {
       if (mounted) setState(() => _loading = false);
     }
@@ -981,6 +987,22 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     (item) => (item['licitantes'] as List<dynamic>? ?? []).isNotEmpty,
   );
 
+  void _abrirDialogXsd() async {
+    final reloaded = await showAudespDialog<bool>(
+      context: context,
+      size: DialogSize.large,
+      barrierDismissible: false,
+      builder: (_) =>
+          XsdLicitacaoDialog(licitacaoId: _loadedId!, editalId: _editalId!),
+    );
+    if (reloaded == true && mounted) {
+      _lastXsdGenerationDate = await ref
+          .read(xsdLicitacaoLogsDaoProvider)
+          .getLastGenerationDate(_loadedId!);
+      setState(() {});
+    }
+  }
+
   Future<void> _abrirAjusteMeEpp() async {
     // Extrai licitantes únicos (por niPessoa), preservando status atual.
     final unicos = <String, Map<String, dynamic>>{};
@@ -1102,6 +1124,19 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
               const SizedBox(width: 8),
             ],
+          ],
+          if (_isSent && _editalId != null) ...[
+            Tooltip(
+              message: _lastXsdGenerationDate != null
+                  ? 'Última geração: ${_lastXsdGenerationDate!.day.toString().padLeft(2, '0')}/${_lastXsdGenerationDate!.month.toString().padLeft(2, '0')}/${_lastXsdGenerationDate!.year}'
+                  : 'Gerar arquivo XSD',
+              child: TextButton.icon(
+                onPressed: _abrirDialogXsd,
+                icon: const Icon(Icons.code),
+                label: const Text('Gerar XML'),
+              ),
+            ),
+            const SizedBox(width: 8),
           ],
           if (_isSent) _buildSentHeaderActions(),
         ],

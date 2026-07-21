@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+   xmlns:tag="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+   xmlns="http://www.tce.sp.gov.br/audesp/xml/ajuste"
+   targetNamespace="http://www.tce.sp.gov.br/audesp/xml/ajuste" elementFormDefault="qualified"
+   attributeFormDefault="unqualified" version="1.0" xml:lang="pt-BR">
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico"
+      schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2026_A.XSD"/>
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+      schemaLocation="../tagcomum/AUDESP4_COMUM_2026_A.XSD"/>
+
+  
+   <!-- ========================================================================= -->
+   <xs:annotation>
+      <xs:documentation>
+         <DataCricao>2026-01-12</DataCricao>
+         <DataModificacao>2026-01-12</DataModificacao>
+         <VersaoRevisaoAnterior>2025_A</VersaoRevisaoAnterior>
+         <VersaoRevisaoNova>2026_A</VersaoRevisaoNova>
+         <Descricao>XSD Abas de Ajuste - Contrato e Nota de Empenho</Descricao>
+         <Justificativa>XSD Abas de Ajuste - Contrato e Nota de Empenho - 2026</Justificativa>
+         <Autor>DSIS</Autor>
+      </xs:documentation>
+   </xs:annotation>
+
+
+   <!-- ========================================================================= -->
+   <!-- /root -->
+
+   <xs:element name="Ajuste">
+
+   <!-- ========================================================================= -->
+   <xs:complexType>
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="Descritor" type="gen:Descritor_t"/>
+         <xs:element name="ArrayAjuste" type="ArrayAjuste_t" minOccurs="1" maxOccurs="50"/>
+      </xs:sequence>
+   </xs:complexType>
+   </xs:element>
+
+
+   <xs:complexType name="ArrayAjuste_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <!-- Obrigatorios caso o orgao da  licitacao diferente do orgao do ajuste -->
+         <xs:choice>
+            <xs:element name="LicitacaoProprioOrgaoSim" type="tag:Sim_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="LicitacaoProprioOrgaoNao" type="tag:LicitacaoProprioOrgaoNao_t"
+               minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+         <!-- fim -->
+         <xs:element name="CodigoLicitacao" type="tag:Codigo_t" minOccurs="1" maxOccurs="1"/>
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="Contrato" type="Contrato_t" minOccurs="1" maxOccurs="50"/>
+            <xs:element name="NotaEmpenhoDocSimilar" type="NotaEmpenhoDocSimilar_t" minOccurs="1" maxOccurs="50"/>
+         </xs:choice>
+      </xs:sequence>
+   </xs:complexType>
+
+
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="Contrato_t">
+      <xs:sequence>
+         <!-- Dados iniciais -->
+         <xs:element name="CodigoAjuste" type="tag:CodigoAjuste_t" minOccurs="1"/>
+         <!-- lista de lotes do contrato -->
+         <xs:element name="NumeroLotes" type="tag:InteiroMaiorZero_t" minOccurs="1"
+            maxOccurs="unbounded"/>
+         <!--  Identificação do Contrato - apenas do contrato -->
+         <xs:element name="NumContrato" type="tag:StringAte35_t" minOccurs="1"/>
+         <xs:element name="AnoContrato" type="tag:Ano4_t" minOccurs="1"/>
+         <!-- <xs:element name="IdentificacaoAjusteFls" type="tag:Fls_t" minOccurs="1"/> -->
+        <xs:element name="ValorContrato" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="ObjetoContrato" type="tag:StringAte1000_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Quantidade" type="tag:Decimal15-5_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="UnidadeMedida" type="tag:StringAte20_t" minOccurs="1" maxOccurs="1"/>
+         <!-- Identificação do contratado  -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CNPJ" type="tag:CNPJ4_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="CPF" type="tag:CPF4_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+         <xs:element name="NomeRazaoSocial" type="tag:NomeRazaoSocial_t" minOccurs="1" maxOccurs="1"/>
+         <!-- Cláusulas Financeiras -->
+         <!-- <xs:element name="FinanceiroContratoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+         <xs:element name="ClausulasFinanceira" type="tag:StringAte250_t" minOccurs="0"/>
+         <!-- Elemento Econômico  -->
+         <xs:element name="ClassificacaoEconomica" type="tag:ClassificacaoEconomica_t" minOccurs="1"/>
+         <!-- <xs:element name="ElementoEconomicoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+         <!-- Nota de Empenho - lista de empenhos -->
+         <xs:element name="NotaEmpenho" type="tag:Empenho_t" minOccurs="0" maxOccurs="unbounded"/>
+         <!--Exigências e Cláusulas  -->
+         <!-- Exigência de garantia - Sim -->
+         <xs:choice>
+            <xs:element name="ExigenciaGarantiaSim" type="ExigenciaGarantiaSim_t" minOccurs="1"/>
+            <xs:element name="ExigenciaGarantiaNao" type="tag:Nao_t" minOccurs="1"/>
+         </xs:choice>
+         <!-- Cláusulas Penais  -->
+         <xs:choice>
+            <!-- <xs:element name="ExigenciaClausulasPenaisFls" type="tag:Fls_t" minOccurs="1"/>  -->
+            <xs:element name="ClausulasPenaisSim" type="tag:StringAte250_t" minOccurs="1"  maxOccurs="1"/>
+            <xs:element name="ClausulasPenaisNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+         <!-- Gestor e Vigência de Contrato -->
+         <xs:choice>
+            <xs:element name="GestorDoContratoSim" type="GestorDoContratoSim_t" minOccurs="1"/>
+            <xs:element name="GestorDoContratoNao" type="tag:Nao_t" minOccurs="1"/>
+         </xs:choice>
+         <!-- Vigência  -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+         	 <xs:element name="ValidadeMeses" type="tag:InteiroDe1Ate999_t" minOccurs="1"  maxOccurs="1" />
+         	 <xs:element name="VigenciaPorData" type="VigenciaPorData_t" minOccurs="1"  maxOccurs="1" />
+         </xs:choice>
+         <!-- Data da Assinatura  -->
+      	<xs:element name="AssinaturaDt" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1" />
+         <!-- Veículos de comunicação -->
+        <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="PublicacaoExtratoContratoNao" type="tag:Nao_t" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="PublicacaoExtratoContrato" type="tag:Publicacao_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+         </xs:choice>  
+         <!-- Conclusao -->
+         <xs:sequence>
+            <!-- Box Conclusão -->
+            <!-- <xs:element name="TermoCienciaNotificacaoFls" type="tag:Fls_t" minOccurs="1"/>
+            <xs:element name="CadastroResponsavelFls" type="tag:Fls_t" minOccurs="1"/>  -->
+            <!-- Contratantes para Responsável pelo Contrato  -->
+            <xs:element name="TermoCienciaContratantes" type="tag:TermoCiencia_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <!--    Contratados para Responsável pelo Contrato  -->
+            <xs:element name="TermoCienciaContratados" type="tag:TermoCiencia_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+         </xs:sequence>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="NotaEmpenhoDocSimilar_t">
+      <xs:sequence>
+         <!-- Dados iniciais -->
+         <xs:element name="CodigoAjuste" type="tag:CodigoAjuste_t" minOccurs="1"/>
+         <xs:element name="NumeroDosLotes" type="tag:InteiroMaiorZero_t" minOccurs="1"
+            maxOccurs="unbounded"/>
+         <!-- Aba Identificacao do ajuste  -->
+         <!-- Identificação do contratado  -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CNPJ" type="tag:CNPJ4_t"/>
+            <xs:element name="CPF" type="tag:CPF4_t"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         </xs:choice>
+         <xs:element name="NomeRazaoSocial" type="tag:NomeRazaoSocial_t" minOccurs="1" maxOccurs="1"/>
+         <!-- Aba Financeiro -->
+         <!-- Nota de Empenho apenas 1 empenho -->
+         <xs:element name="NotaEmpenho" type="tag:Empenho_t" minOccurs="1" maxOccurs="1"/>
+         <!-- Aba Conclusao -->
+         <xs:sequence>
+            <!-- Box Conclusão -->
+            <!-- <xs:element name="TermoCienciaNotificacaoFls" type="tag:Fls_t" minOccurs="1"/>
+            <xs:element name="CadastroResponsavelFls" type="tag:Fls_t" minOccurs="1"/>  -->
+            <!-- Contratantes para Responsável pelo Contrato  -->
+            <xs:element name="TermoCienciaContratantes" type="tag:TermoCiencia_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <!--    Contratados para Responsável pelo Contrato  -->
+            <xs:element name="TermoCienciaContratados" type="tag:TermoCiencia_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+         </xs:sequence>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ************************************************************************************************************** -->
+   <xs:complexType name="ExigenciaGarantiaSim_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="ValorGarantia" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1"/>
+         <xs:element name="ValorGarantiaPercentualContrato" type="tag:PercentualPositivoMaiorQueZero_t"  minOccurs="1"/>
+         <xs:element name="ClausulasGarantia" type="tag:StringAte250_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="GestorDoContratoSim_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="GestorCPF" type="tag:CPF4_t" minOccurs="1"/>
+         <xs:element name="GestorCargo" type="tag:StringAte50_t" minOccurs="0"/>         
+      </xs:sequence>
+   </xs:complexType>
+   
+   <xs:complexType name="VigenciaPorData_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+      	<xs:element name="InicioVigenciaDt" type="tag:ValidaData_t" minOccurs="1"  maxOccurs="1" />
+      	<xs:element name="FimVigenciaDt" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1"  />
+	  </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+
+</xs:schema>
+

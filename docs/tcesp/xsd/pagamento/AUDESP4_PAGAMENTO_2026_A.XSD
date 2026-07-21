@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+   xmlns:tag="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+   xmlns="http://www.tce.sp.gov.br/audesp/xml/pagamento"
+   targetNamespace="http://www.tce.sp.gov.br/audesp/xml/pagamento" elementFormDefault="qualified"
+   attributeFormDefault="unqualified" version="1.0" xml:lang="pt-BR">
+
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico"
+      schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2026_A.XSD"/>
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+      schemaLocation="../tagcomum/AUDESP4_COMUM_2026_A.XSD"/>
+
+ 
+
+   <!-- ========================================================================= -->
+   <xs:annotation>
+      <xs:documentation>
+         <DataCriacao>2026-01-12</DataCriacao>
+         <DataModificacao>2026-01-12</DataModificacao>
+         <VersaoRevisaoAnterior>2025_A</VersaoRevisaoAnterior>
+         <VersaoRevisaoNova>2026_A</VersaoRevisaoNova>
+         <Descricao>Pagamento</Descricao>
+         <Justificativa>Pagamento</Justificativa>
+         <Autor>DSIS</Autor>
+      </xs:documentation>
+   </xs:annotation>
+   <!-- ========================================================================= -->
+   <!-- /root -->
+   <xs:element name="Pagamento">
+
+   <!-- ========================================================================= -->
+   <xs:complexType>
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="Descritor" type="gen:Descritor_t"/>
+         <xs:element name="ArrayPagamento" type="ArrayPagamento_t" minOccurs="1" maxOccurs="50" />
+      </xs:sequence>
+   </xs:complexType>
+   </xs:element>
+
+   <xs:complexType name="ArrayPagamento_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="CodigoAjuste" type="tag:Codigo_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Pagto" type="Pagto_t" minOccurs="1" maxOccurs="1" />
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="Pagto_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="MedicaoNumero" type="tag:InteiroPositivo_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="NotaEmpenhoNumero" type="tag:StringAte35_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="NotaEmpenhoDataEmissao" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DocumentoFiscalNumero" type="tag:StringNumericaAte15_t" minOccurs="1" maxOccurs="1" />
+         <xs:element name="DocumentoFiscalDataEmissao" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DocumentoFiscalUF" type="tag:UF4_t" minOccurs="1" maxOccurs="1" />
+         <xs:element name="NotaFiscalValorPago" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1" maxOccurs="1" />
+         <xs:element name="NotaFiscalPagtoDt" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1" />
+         <xs:element name="RecolhidoEncargosPrevidenciario" type="tag:SimNao_t" minOccurs="0" maxOccurs="1" />
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+
+
+</xs:schema>

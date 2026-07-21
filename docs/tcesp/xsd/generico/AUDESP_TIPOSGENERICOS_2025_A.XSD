@@ -1,0 +1,1876 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+   targetNamespace="http://www.tce.sp.gov.br/audesp/xml/generico" version="1.0" xml:lang="pt-BR"
+   xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   <!-- xmlns:aux="http://www.tce.sp.gov.br/audesp/xml/auxiliar"  -->
+   <!-- <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/auxiliar"
+		schemaLocation="../auxiliar/AUDESP_TABELASAUXILIARES_2008_A.XSD"/>  -->
+   <!-- Namespaces: generico - prefixo: gen  Conteudo: tipos de dados genericos - tipos nao vinculados aos assuntos de fiscalizacao  -->
+
+   <!-- ========================================================================= -->
+	<xs:annotation>
+		<xs:documentation>
+			<Data>2024-12-12</Data>
+			<VersaoRevisaoAnterior>2024_A</VersaoRevisaoAnterior>
+			<VersaoRevisaoNova>2025_A</VersaoRevisaoNova>
+			<Descricao>Base-Line para 2025</Descricao>
+			<Justificativa>Modelo para início de 2025</Justificativa>
+			<Autor>Sistema Audesp</Autor>
+		</xs:documentation>
+	</xs:annotation> 
+   <!-- ======================================================================== -->
+   <!-- ======================================================================== -->
+   <!-- validação de datas -->
+   <!-- ======================================================================== -->
+   <!-- define um número decimal válido, que pode ser positivo ou negativo  -->
+   <xs:simpleType name="DecimalValido_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="-9999999999999.00"/>
+         <xs:maxInclusive value="9999999999999.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="DataValida_t">
+      <xs:restriction base="xs:date">
+         <xs:minInclusive value="1900-01-01"/>
+         <xs:maxInclusive value="2100-12-31"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal positivo maior e igual a 1  -->
+   <xs:simpleType name="DecimalPositivo_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.00"/>
+         <xs:maxInclusive value="9999999999999.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal com três dígitos com valores entre 0.01 e 999.99 -->
+   <xs:simpleType name="DecimalPositivoTresDigitos_t">
+      <xs:restriction base="xs:decimal">
+		 <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="999.99"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal com quatro dígitos com valores entre 0.01 e 9999.99 -->
+   <xs:simpleType name="DecimalPositivoQuatroDigitos_t">
+      <xs:restriction base="xs:decimal">
+		 <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="9999.99"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal livre maior ou igual a 0- -->
+   <xs:simpleType name="DecimalLivreNaoNegativo_t">
+      <xs:restriction base="xs:decimal">
+         <xs:minInclusive value="0"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal positivo menor que zero  -->
+   <xs:simpleType name="DecimalNegativo_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:maxExclusive value="0.00"/>
+         <xs:minInclusive value="-9999999999999.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um número decimal positivo acima de zero  -->
+   <xs:simpleType name="DecimalPositivoMaiorQueZero_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="9999999999999.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define um percentual -->
+   <xs:simpleType name="Percentual_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.00"/>
+         <xs:maxInclusive value="100.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="NatSaldo_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="D"/>
+         <xs:enumeration value="C"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define o dominio para a tag Operacao -->
+   <xs:simpleType name="OperacaoPlanejamento_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="INCLUSAO"/>
+         <xs:enumeration value="EXCLUSAO"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define o dominio para a tag OperacaoCadastro nos cadastros contabeis-->
+   <xs:simpleType name="OperacaoCadastro_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="INCLUSAO"/>
+         <xs:enumeration value="ALTERACAO"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- define o dominio para a tag Operacao -->
+   <xs:simpleType name="Operacao_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="INCLUSAO"/>
+         <xs:enumeration value="EXCLUSAO"/>
+         <xs:enumeration value="ALTERACAO"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- define a tag Justificativa  -->
+   <xs:simpleType name="Justificativa_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="5"/>
+         <xs:maxLength value="1000"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="TipoDocumento_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="CADASTROS-CONTABEIS"/>
+         <!-- planejamento -->
+         <xs:enumeration value="PLAN-CADASTRO"/>
+         <xs:enumeration value="PLAN-LDO-INICIAL"/>
+         <xs:enumeration value="PLAN-LOA-INICIAL"/>
+         <xs:enumeration value="PLAN-PPA-INICIAL"/>
+         <xs:enumeration value="PLAN-LDO-ATUALIZADA"/>
+         <xs:enumeration value="PLAN-LOA-ATUALIZADA"/>
+         <xs:enumeration value="PLAN-PPA-ATUALIZADO"/>
+         <xs:enumeration value="PLAN-CADASTRO-ODS"/>
+
+         <!-- balancetes mensais -->
+         <xs:enumeration value="BALANCETE-ISOLADO-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-ISOLADO-CONTA-CONTABIL"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-CONTA-CONTABIL"/>
+         <xs:enumeration value="BALANCETE-CONSOLIDADO-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-CONSOLIDADO-CONTA-CONTABIL"/>
+
+         <!-- Balancetes de encerramento parcial -->
+         <xs:enumeration value="BALANCETE-ISOLADO-ENCERRAMENTO-13-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-ISOLADO-ENCERRAMENTO-13-CONTA-CONTABIL"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-ENCERRAMENTO-13-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-ENCERRAMENTO-13-CONTA-CONTABIL"/>
+
+         <!-- balancetes de encerramento final -->
+         <xs:enumeration value="BALANCETE-ISOLADO-ENCERRAMENTO-14-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-ISOLADO-ENCERRAMENTO-14-CONTA-CONTABIL"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-ENCERRAMENTO-14-CONTA-CORRENTE"/>
+         <xs:enumeration value="BALANCETE-CONJUNTO-ENCERRAMENTO-14-CONTA-CONTABIL"/>
+
+         <!-- Contas Anuais -->
+         <xs:enumeration value="Relação de Contratos de Concessão e Permissão de Serviço Público"/>
+         <xs:enumeration value="Mapa de Precatórios"/>
+         <xs:enumeration value="Fixação da Remuneração de Agentes Políticos"/>
+         <xs:enumeration value="Concessão de Reajuste de Agentes Políticos"/>
+         <xs:enumeration value="Remuneração de Agentes Políticos"/>
+         <xs:enumeration value="Complemento de Remuneração de Agentes Políticos"/>
+         <xs:enumeration value="Dados de Balanços Isolados"/>
+         <xs:enumeration value="Dados de Balanços Consolidados"/>
+         <xs:enumeration value="Dados de Balanços Conjuntos"/>
+         <xs:enumeration value="Conciliações Bancárias"/>
+         <xs:enumeration value="Complemento de Conciliações Bancárias"/>
+         <xs:enumeration value="Conciliações Bancárias Mensais"/>
+         <xs:enumeration value="Relatório de Atividades"/>
+         <xs:enumeration value="Complemento de Relatório de Atividades"/>
+
+         <!-- Fundos de Investimento -->
+         <xs:enumeration value="Cadastro de Fundos de Investimento"/>
+         <xs:enumeration value="Fundos de Investimento"/>
+		 
+		 <!-- Demonstrativos Previdenciarios -->
+		 <xs:enumeration value="Demonstrativo de Receitas Previdenciárias"/>
+		 <xs:enumeration value="Demonstrativo da Rentabilidade e Evolução dos Investimentos"/>
+		 <xs:enumeration value="Cadastro de Parcelamentos com RPPS"/>
+		 <xs:enumeration value="Parcelamentos com RPPS"/>
+		 
+         <!-- Atos de Pessoal Fase 3 -->
+         <xs:enumeration value="Atos Normativos"/>
+         <xs:enumeration value="Cargos"/>
+         <xs:enumeration value="Funções"/>
+         <xs:enumeration value="Quadro de Pessoal"/>
+         <xs:enumeration value="Agente Público"/>
+         <xs:enumeration value="Lotação Agente Público"/>
+		 
+		<!-- Atos de Pessoal Fase 3 - Remuneração -->
+		<xs:enumeration value="Cadastro de Verbas Remuneratórias"/>
+		<xs:enumeration value="Folha Ordinária"/>
+		<xs:enumeration value="Pagamento de Folha Ordinária"/>
+		<xs:enumeration value="Folha Suplementar"/>
+		<xs:enumeration value="Resumo Mensal da Folha de Pagamento"/>
+		<xs:enumeration value="Cadastro de Aposentados e Pensionistas"/>
+	
+		<!-- Atos de Pessoal Fase 3 - Remuneração - SEFAZ -->
+		<xs:enumeration value="Cadastro de Verbas Remuneratórias - SEFAZ"/>
+		<xs:enumeration value="Folha Ordinária - SEFAZ"/>
+		<xs:enumeration value="Pagamento de Folha Ordinária - SEFAZ"/>
+		<xs:enumeration value="Folha Suplementar - SEFAZ"/>
+		<xs:enumeration value="Resumo Mensal da Folha de Pagamento - SEFAZ"/>
+		<xs:enumeration value="Cadastro de Aposentados e Pensionistas - SEFAZ"/>
+		<xs:enumeration value="Cadastro de Municípios - SEFAZ"/>
+		<xs:enumeration value="Cadastro de Entidades - SEFAZ"/>
+		
+		<!-- Atos de Pessoal Fase 3 - Processo de Seleção -->
+		<xs:enumeration value="Concurso Público Efetivo"/>
+		<xs:enumeration value="Concurso Público Temporário"/>
+		<xs:enumeration value="Processo Seletivo Simplificado"/>
+		<xs:enumeration value="Lista de Classificação"/>
+		<xs:enumeration value="Convocação"/>
+		<xs:enumeration value="Prazo de Prorrogação"/>
+
+		<!-- Atos de Pessoal Fase 3 - Admissão -->
+		<xs:enumeration value="Admissão de Efetivos"/>
+		<xs:enumeration value="Contratação de Temporários com Processo Seletivo"/>
+		<xs:enumeration value="Contratação de Temporários sem Processo Seletivo"/>
+		
+		<!-- Atos de Pessoal Fase 3 - Aposentadoria -->
+		<xs:enumeration value="Aposentadoria"/>
+		<xs:enumeration value="Apostila Retificatória de Aposentadoria"/>
+		<xs:enumeration value="Complemento de Proventos de Aposentadoria"/>
+		<xs:enumeration value="Apostila Retificatória de Complemento de Proventos de Aposentadoria"/>
+		
+   		<!-- Atos de Pessoal Fase 3 - Reforma/Transferência para Reserva -->
+		<xs:enumeration value="Reforma/Transferência para Reserva"/>
+		<xs:enumeration value="Apostila Retificatória de Reforma/Transferência para Reserva"/>
+		
+		<!-- Atos de Pessoal Fase 3 - Pensão  -->
+		<xs:enumeration value="Pensão"/>
+		<xs:enumeration value="Apostila Retificatória de Pensão"/>
+		<xs:enumeration value="Complemento de Proventos de Pensão"/>
+		<xs:enumeration value="Apostila Retificatória de Complemento de Proventos de Pensão"/>
+
+		<!-- Questionário sobre transporte -->
+         <xs:enumeration value="Questionário sobre Transporte"/>
+		 
+		 <!-- AUDESP 4 - Licitacao e Contratos  -->
+   
+		 <xs:enumeration value="LICITACAO-REGISTRO-PRECOS-SIM-TODAS-MODALIDADES"/>
+         <xs:enumeration value="LICITACAO-REGISTRO-PRECOS-NAO-TODAS-MODALIDADES-MENOS-INTERNACIONAL"/>
+         <xs:enumeration value="LICITACAO-REGISTRO-PRECOS-NAO-INTERNACIONAL"/>
+         <xs:enumeration value="LICITACAO-REGISTRO-PRECOS-NAO-CONTRATACAO-DIRETA"/>
+         <xs:enumeration value="EMPENHO"/>
+         <xs:enumeration value="EXECUCAO"/>
+         <xs:enumeration value="TERMOADITIVO"/>
+         <xs:enumeration value="AJUSTE"/>
+         <xs:enumeration value="DOCUMENTO-FISCAL"/>
+         <xs:enumeration value="EXIGENCIAS-OBRAS"/>
+         <xs:enumeration value="PAGAMENTO"/>
+		 
+		
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="AnoDoc_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="2025"/>
+         <xs:maxInclusive value="2025"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="Ano_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1970"/>
+         <xs:maxInclusive value="2050"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="Mes_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1"/>
+         <xs:maxInclusive value="12"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="Periodo_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="48"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="Descritor_t">
+      <xs:sequence>
+         <xs:element name="AnoExercicio" type="gen:AnoDoc_t"/>
+         <xs:element name="TipoDocumento" type="gen:TipoDocumento_t"/>
+         <xs:element name="Entidade" type="gen:CodigoEntidade_t"/>
+         <xs:element name="Municipio" type="gen:CodigoMunicipio_t"/>
+         <xs:element name="DataCriacaoXML" type="gen:DataValida_t"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:complexType name="DescritorContabil_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio">
+                  <xs:simpleType>
+                     <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="12"/>
+                     </xs:restriction>
+                  </xs:simpleType>
+               </xs:element>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+	<xs:complexType name="DescritorMensal_t">
+		<xs:complexContent>
+			<xs:extension base="gen:Descritor_t">
+				<xs:sequence>
+					<xs:element name="MesExercicio">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:minInclusive value="1"/>
+								<xs:maxInclusive value="12"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:complexType name="DescritorContabil_13_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio" type="xs:integer" fixed="13"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="DescritorContabil_14_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio" type="xs:integer" fixed="14"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Descritor para indicar o ano inicial do PPA para os documentos PPA (alteração)   -->
+   <xs:complexType name="DescritorPPA_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="AnoInicioPPA">
+                  <xs:simpleType>
+                     <xs:restriction base="xs:string">
+                        <xs:enumeration value="2022"/>
+                     </xs:restriction>
+                  </xs:simpleType>
+               </xs:element>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CicloOrcamento_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="5"/>
+         <!-- 5 = 2022-2025 -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="MesReferenciaPlanejamento_t">
+      <xs:restriction base="xs:integer">
+         <xs:enumeration value="4"/>
+         <xs:enumeration value="8"/>
+         <xs:enumeration value="12"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+
+   <!-- Descritor para indicar o ciclo orcamentario dos documentos do planejamento    -->
+   <xs:complexType name="DescritorPlanejamento_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="CicloOrcamento" type="gen:CicloOrcamento_t"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+
+   <!-- ======================================================================== -->
+   <!-- Descritor para indicar o mes de referencia  dos documentos de atualizacao do planejamento    -->
+   <xs:complexType name="DescritorPlanejamentoAtualizacao_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio" type="gen:MesReferenciaPlanejamento_t"/>
+            </xs:sequence>
+
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+
+   <!-- ======================================================================== -->
+   <!-- Descritor para indicar o mes de referencia  dos documentos de atualizacao do planejamento    -->
+   <xs:complexType name="DescritorPPAAtualizacao_t">
+      <xs:complexContent>
+         <xs:extension base="gen:DescritorPPA_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio" type="gen:MesReferenciaPlanejamento_t"/>
+            </xs:sequence>
+
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+
+   <!-- ======================================================================== -->
+   <!-- Descritor para indicar o ano de referência dos dados para os documentos de Contas Anuais   -->
+   <xs:complexType name="DescritorContasAnuais_t">
+      <xs:complexContent>
+         <xs:extension base="gen:Descritor_t">
+            <xs:sequence>
+               <xs:element name="AnoReferencia">
+                  <xs:simpleType>
+                     <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="2009"/>
+                        <xs:maxInclusive value="2024"/>
+                     </xs:restriction>
+                  </xs:simpleType>
+               </xs:element>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <!-- Descritor para indicar o mês de referência dos dados da Conciliação Bancária.  -->
+   <!-- A princípio serão recebidas apenas as conciliações bancárias de dezembro.  -->
+   <xs:complexType name="DescritorConciliacoesBancarias_t">
+      <xs:complexContent>
+         <xs:extension base="gen:DescritorContasAnuais_t">
+            <xs:sequence>
+               <xs:element name="MesExercicio">
+                  <xs:simpleType>
+                     <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="12"/>
+                        <xs:maxInclusive value="12"/>
+                     </xs:restriction>
+                  </xs:simpleType>
+               </xs:element>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+   
+   <!-- Descritor para indicar o mês de referência para documentos trimestrais   -->
+	<xs:complexType name="DescritorTrimestre_t">
+		<xs:complexContent>
+			<xs:extension base="gen:Descritor_t">
+				<xs:sequence>
+					<xs:element name="MesExercicio">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:enumeration value="3"/>
+								<xs:enumeration value="6"/>
+								<xs:enumeration value="9"/>
+								<xs:enumeration value="12"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+
+   <!-- Descritor para indicar o mês de referência para documentos quadrimestrais   -->
+	<xs:complexType name="DescritorQuadrimestre_t">
+		<xs:complexContent>
+			<xs:extension base="gen:Descritor_t">
+				<xs:sequence>
+					<xs:element name="MesExercicio">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:enumeration value="4"/>
+								<xs:enumeration value="8"/>
+								<xs:enumeration value="12"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<!-- ======================================================================== -->
+   <!-- criado para 2011 =  criar tabela de classificacao programa -->
+   <xs:simpleType name="ClassificacaoPrograma_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="1"/>
+         <!--1 = PROGRAMA FINALISTICO -->
+         <xs:enumeration value="2"/>
+         <!-- 2= PROGRAMA DE APOIO ADMINISTRATIVO -->
+         <xs:enumeration value="3"/>
+         <!-- 3= PROGRAMA DE OPERAÇÃO ESPECIAL -->
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- alterado para 2009 =  criar tabela de tipo de programa -->
+   <xs:simpleType name="TipoPrograma_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="1"/>
+         <!-- Programa Anual ou Programa de Carater Não Continuado -->
+         <xs:enumeration value="2"/>
+         <!-- Programa Plurianual  ou Programa de Carater Continuado -->
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- alterado para 2009 -->
+   <xs:simpleType name="TipoAcao_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="1"/>
+         <!--  1 = PROJETO  -->
+         <xs:enumeration value="2"/>
+         <!--  2 = ATIVIDADE  -->
+         <xs:enumeration value="3"/>
+         <!--  3 = OPERACAO-ESPECIAL  -->
+         <xs:enumeration value="4"/>
+         <!--  4 = RESERVA-CONTINGENCIA  -->
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- alterado para 2009  =  criar campo na tabela de programas -->
+   <xs:simpleType name="CodigoPrograma_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="32766"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoAcao_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="32766"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- alterado para 2009  -->
+   <xs:complexType name="AcaoGoverno_t">
+      <xs:sequence>
+         <xs:element name="NumeroAcao" type="gen:CodigoAcao_t"/>
+         <xs:element name="TipoAcao" type="gen:TipoAcao_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoMunicipio_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{4}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoEntidade_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1"/>
+         <xs:maxInclusive value="32767"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- entidade utilizada nos balancetes contabeis  -->
+   <xs:simpleType name="CodigoEntidadeContabil_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="32767"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <!-- Entidade Orcamentaria - Orgao-UO-UE  -->
+   <xs:complexType name="EntidadeOrcamentaria_t">
+      <xs:sequence>
+         <xs:element name="Orgao" type="gen:CodigoEntidade_t"/>
+         <xs:element name="UO" type="gen:CodigoEntidadeContabil_t"/>
+         <xs:element name="UE" type="gen:CodigoEntidadeContabil_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="NumeroProcessoNoOrgao_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[A-Za-z0-9\-]{1,20}/[0-9]{4}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="NumeroTermoAditivoContrato_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{1,12}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="NumeroTermoAditivoConvenio_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{1,12}"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoBanco_t">
+      <xs:annotation>
+         <xs:documentation>Tabela Auxiliar de Bancos</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="001"/>
+         <!--	1;"BANCO DO BRASIL SA"	-->
+         <xs:enumeration value="002"/>
+         <!--	2;"BANCO CENTRAL DO BRASIL SA"	-->
+         <xs:enumeration value="003"/>
+         <!--	3;"BANCO DA AMAZONIA SA"	-->
+         <xs:enumeration value="004"/>
+         <!--	4;"BANCO DO NORDESTE DO BRASIL SA"	-->
+         <xs:enumeration value="008"/>
+         <!--	8;"BANCO SANTANDER MERIDIONAL S.A."	-->
+         <xs:enumeration value="021"/>
+         <!--	21;"BANCO DO ESTADO DO ESPIRITO SANTO SA"	-->
+         <xs:enumeration value="024"/>
+         <!--	24;"BANCO DE PERNAMBUCO - BANDEPE"	-->
+         <xs:enumeration value="025"/>
+         <!--	25;"BANCO ALFA S/A"	-->
+         <xs:enumeration value="027"/>
+         <!--	27;"BANCO DO ESTADO DE SANTA CATARINA SA"	-->
+         <xs:enumeration value="029"/>
+         <!--	29;"BANCO BANERJ S/A"	-->
+         <xs:enumeration value="031"/>
+         <!--	31;"BANCO BEG S.A."	-->
+         <xs:enumeration value="033"/>
+         <!--	33;"BANCO DO ESTADO DE SAO PAULO S.A."	-->
+         <xs:enumeration value="035"/>
+         <!--	35;"BANCO  BEC  S/A."	-->
+         <xs:enumeration value="036"/>
+         <!--	36;"BANCO BEM S.A."	-->
+         <xs:enumeration value="037"/>
+         <!--	37;"BANCO DO ESTADO DO PARA SA"	-->
+         <xs:enumeration value="038"/>
+         <!--	38;"BANCO BANESTADO S.A."	-->
+         <xs:enumeration value="039"/>
+         <!--	39;"BANCO DO ESTADO DO PIAUI SA"	-->
+         <xs:enumeration value="040"/>
+         <!--	40;"BANCO CARGILL S/A"	-->
+         <xs:enumeration value="041"/>
+         <!--	41;"BANCO DO ESTADO DO RIO GRANDE DO SUL SA"	-->
+         <xs:enumeration value="044"/>
+         <!--	44;"BANCO BVA S/A"	-->
+         <xs:enumeration value="045"/>
+         <!--	45;"BANCO OPPORTUNITY S.A."	-->
+         <xs:enumeration value="047"/>
+         <!--	47;"BANCO DO ESTADO DE SERGIPE SA"	-->
+         <xs:enumeration value="062"/>
+         <!--	62;"HIPERCARD BANCO MULTIPLO S.A."	-->
+         <xs:enumeration value="063"/>
+         <!--	63;"IBIBANK S.A. BANCO MULTIPLO"	-->
+         <xs:enumeration value="064"/>
+         <!--	64;"GOLDMAN SACHS DO BRASIL - BANCO MULTIPLO S.A."	-->
+         <xs:enumeration value="065"/>
+         <!--	65;"LEMON BANK BANCO MULTIPLO S/A"	-->
+         <xs:enumeration value="066"/>
+         <!--	66;"BANCO MORGAN STANLEY DEAN WITTER S.A."	-->
+         <xs:enumeration value="069"/>
+         <!--	69;"BPN BRASIL BANCO MULTIPLO S/A"	-->
+         <xs:enumeration value="070"/>
+         <!--	70;"BANCO DE BRASILIA SA"	-->
+         <xs:enumeration value="072"/>
+         <!--	72;"BANCO RURAL MAIS S.A."	-->
+         <xs:enumeration value="073"/>
+         <!--	73;"BB BANCO POPULAR DO BRASIL S.A"	-->
+         <xs:enumeration value="074"/>
+         <!--	74;"BANCO J. SAFRA S/A"	-->
+         <xs:enumeration value="075"/>
+         <!--	75;"BANCO CR2 S/A"	-->
+         <xs:enumeration value="076"/>
+         <!--	76;"BANCO KDB S.A."	-->
+		 <xs:enumeration value="077"/>
+         <!--	77;"Banco Inter S.A."	-->
+         <xs:enumeration value="078"/>
+         <!--	78;"BES INVESTIMENTO DO BRASIL S.A - BANCO DE INVESTIMENTO"	-->
+         <xs:enumeration value="096"/>
+         <!--	96;"BCO BMF DE SERV DE LIQUIDACAO  CUSTODIA"	-->
+         <xs:enumeration value="104"/>
+         <!--	104;"CAIXA ECONOMICA FEDERAL SA"	-->
+         <xs:enumeration value="107"/>
+         <!--	107;"BANCO BBM S.A"	-->
+         <xs:enumeration value="116"/>
+         <!--	116;"BANCO UNICO S.A."	-->
+         <xs:enumeration value="151"/>
+         <!--	151;"BANCO NOSSA CAIXA"	-->
+         <xs:enumeration value="175"/>
+         <!--	175;"BANCO FINASA S/A"	-->
+         <xs:enumeration value="184"/>
+         <!--	184;"BANCO ITAU BBA S.A."	-->
+         <xs:enumeration value="204"/>
+         <!--	204;"AMERICAN EXPRESS BANK(BR) BCO MULTIPLO"	-->
+         <xs:enumeration value="208"/>
+         <!--	208;"BANCO PACTUAL SA"	-->
+         <xs:enumeration value="210"/>
+         <!--	210;"DRESDNER BANK LATEINAMERIKA S.A"	-->
+         <xs:enumeration value="212"/>
+         <!--	212;"BANCO MATONE SA"	-->
+         <xs:enumeration value="213"/>
+         <!--	213;"BANCO ARBI SA"	-->
+         <xs:enumeration value="214"/>
+         <!--	214;"BANCO DIBENS SA"	-->
+         <xs:enumeration value="215"/>
+         <!--	215;"BCO COML INV SUDAMERIS SA"	-->
+         <xs:enumeration value="217"/>
+         <!--	217;"BANCO JOH  DEERE S/A"	-->
+         <xs:enumeration value="218"/>
+         <!--	218;"BANCO BONSUCESSO S.A"	-->
+         <xs:enumeration value="222"/>
+         <!--	222;"BANCO CALYON BRASIL S.A."	-->
+         <xs:enumeration value="224"/>
+         <!--	224;"BANCO FIBRA SA"	-->
+         <xs:enumeration value="225"/>
+         <!--	225;"BANCO BRASCAN SA."	-->
+         <xs:enumeration value="229"/>
+         <!--	229;"BANCO CRUZEIRO S.A."	-->
+         <xs:enumeration value="230"/>
+         <!--	230;"UNICARD BANCO MULTIPLO"	-->
+         <xs:enumeration value="233"/>
+         <!--	233;"BANCO GE CAPITAL S.A"	-->
+         <xs:enumeration value="237"/>
+         <!--	237;"BANCO BRADESCO S.A"	-->
+         <xs:enumeration value="241"/>
+         <!--	241;"BANCO CLASSICO SA"	-->
+         <xs:enumeration value="243"/>
+         <!--	243;"BANCO STOCK MAXIMA S.A."	-->
+         <xs:enumeration value="244"/>
+         <!--	244;"BANCO CIDADE SA"	-->
+         <xs:enumeration value="246"/>
+         <!--	246;"BANCO ABC-BRASIL S.A"	-->
+         <xs:enumeration value="247"/>
+         <!--	247;"BANCO UBS WARBURG S/A"	-->
+         <xs:enumeration value="248"/>
+         <!--	248;"BANCO BOAVISTA INTERATLANTICO SA"	-->
+         <xs:enumeration value="249"/>
+         <!--	249;"BANCO INVESTCRED UNIBANCO SA"	-->
+         <xs:enumeration value="250"/>
+         <!--	250;"BANCO SCHAHIN S/A"	-->
+         <xs:enumeration value="252"/>
+         <!--	252;"BANCO FININVEST SA"	-->
+         <xs:enumeration value="254"/>
+         <!--	254;"BANCO PARANA BANCO SA"	-->
+         <xs:enumeration value="263"/>
+         <!--	263;"BANCO CACIQUE SA"	-->
+         <xs:enumeration value="265"/>
+         <!--	265;"BANCO FATOR SA"	-->
+         <xs:enumeration value="266"/>
+         <!--	266;"BANCO CEDULA SA"	-->
+         <xs:enumeration value="291"/>
+         <!--	291;"BANCO BCN S.A."	-->
+         <xs:enumeration value="300"/>
+         <!--	300;"BANCO DE LA NACION ARGENTINA SA"	-->
+         <xs:enumeration value="318"/>
+         <!--	318;"BANCO BMG COMERCIAL S.A."	-->
+         <xs:enumeration value="320"/>
+         <!--	320;"BANCO INDUSTRIAL E COMERCIAL SPAULO SA"	-->
+         <xs:enumeration value="341"/>
+         <!--	341;"BANCO ITAÚ SA"	-->
+         <xs:enumeration value="347"/>
+         <!--	347;"BANCO SUDAMERIS BRASIL SA"	-->
+         <xs:enumeration value="351"/>
+         <!--	351;"BANCO SANTANDER S/A"	-->
+         <xs:enumeration value="353"/>
+         <!--	353;"BANCO SANTANDER BRASIL S.A."	-->
+         <xs:enumeration value="356"/>
+         <!--	356;"BANCO ABN AMRO REAL S.A."	-->
+         <xs:enumeration value="366"/>
+         <!--	366;"BANCO SOCIETE GENERALE BRASIL S.A"	-->
+         <xs:enumeration value="370"/>
+         <!--	370;"BANCO WESTLB DO BRASIL S/A"	-->
+         <xs:enumeration value="376"/>
+         <!--	376;"BANCO JP MORGAN S.A."	-->
+         <xs:enumeration value="389"/>
+         <!--	389;"BANCO MERCANTIL DO BRASIL SA"	-->
+         <xs:enumeration value="392"/>
+         <!--	392;"BANCO MERCANTIL DE SÃO PAULO S.A."	-->
+         <xs:enumeration value="394"/>
+         <!--	394;"BANCO MERCANTIL DE CREDITO SA"	-->
+         <xs:enumeration value="399"/>
+         <!--	399;"HSBC BANK BRASIL S.A. - BANCO MULTIPLO"	-->
+         <xs:enumeration value="409"/>
+         <!--	409;"BANCO UNIBANCO SA"	-->
+         <xs:enumeration value="412"/>
+         <!--	412;"BANCO CAPITAL S.A"	-->
+         <xs:enumeration value="422"/>
+         <!--	422;"BANCO SAFRA SA"	-->
+         <xs:enumeration value="453"/>
+         <!--	453;"BANCO RURAL SA"	-->
+         <xs:enumeration value="456"/>
+         <!--	456;"BANCO TOKYO-MITSUBISHI UFJ BRASIL"	-->
+         <xs:enumeration value="464"/>
+         <!--	464;"BANCO SUMITOMO MITSUI BRASILEIRO S/A"	-->
+         <xs:enumeration value="477"/>
+         <!--	477;"CITIBANK N.A."	-->
+         <xs:enumeration value="479"/>
+         <!--	479;"BANKBOSTON-BCO MULTIPLO S.A."	-->
+         <xs:enumeration value="487"/>
+         <!--	487;"BANCO DEUTSCHE BANK SA"	-->
+         <xs:enumeration value="488"/>
+         <!--	488;"BANCO MORGAN GUARANTY TRUST COMPANY"	-->
+         <xs:enumeration value="492"/>
+         <!--	492;"BANCO NMB POSTBANK GROEP N.V. SA"	-->
+         <xs:enumeration value="494"/>
+         <!--	494;"BANCO LA REPUBL.ORIENTAL DEL URUGUAY SA"	-->
+         <xs:enumeration value="495"/>
+         <!--	495;"BANCO LA PROVINCIA DE BUENOS AIRES SA"	-->
+         <xs:enumeration value="505"/>
+         <!--	505;"BANCO CREDIT SUISSE (BRASIL) S/A"	-->
+         <xs:enumeration value="600"/>
+         <!--	600;"BANCO LUSO BRASILEIRO SA"	-->
+         <xs:enumeration value="604"/>
+         <!--	604;"BANCO INDUSTRIAL DO BRASIL S/A"	-->
+         <xs:enumeration value="610"/>
+         <!--	610;"BANCO VR S.A"	-->
+         <xs:enumeration value="611"/>
+         <!--	611;"BANCO PAULISTA S.A"	-->
+         <xs:enumeration value="612"/>
+         <!--	612;"BANCO GUANABARA SA"	-->
+         <xs:enumeration value="613"/>
+         <!--	613;"BANCO PECUNIA S.A."	-->
+         <xs:enumeration value="623"/>
+         <!--	623;"BANCO PANAMERICANO S.A."	-->
+         <xs:enumeration value="626"/>
+         <!--	626;"BANCO FICSA SA"	-->
+         <xs:enumeration value="630"/>
+         <!--	630;"BANCO INTERCAP SA"	-->
+         <xs:enumeration value="633"/>
+         <!--	633;"BANCO RENDIMENTO S.A."	-->
+         <xs:enumeration value="634"/>
+         <!--	634;"BANCO TRIANGULO SA"	-->
+         <xs:enumeration value="637"/>
+         <!--	637;"BANCO SOFISA SA"	-->
+         <xs:enumeration value="638"/>
+         <!--	638;"BANCO PROSPER SA"	-->
+         <xs:enumeration value="641"/>
+         <!--	641;"BANCO ALVORADA S.A."	-->
+         <xs:enumeration value="643"/>
+         <!--	643;"BANCO PINE S.A."	-->
+         <xs:enumeration value="650"/>
+         <!--	650;"BANCO PEBB S.A."	-->
+         <xs:enumeration value="652"/>
+         <!--	652;"BANCO ITAU HOLDING FINANCEIRA SA"	-->
+         <xs:enumeration value="653"/>
+         <!--	653;"BANCO INDUSVAL SA"	-->
+         <xs:enumeration value="654"/>
+         <!--	654;"BANCO A.J. RENNER SA"	-->
+         <xs:enumeration value="655"/>
+         <!--	655;"BANCO VOTORANTIM S.A. "	-->
+         <xs:enumeration value="707"/>
+         <!--	707;"BANCO DAYCOVAL SA"	-->
+         <xs:enumeration value="719"/>
+         <!--	719;"BANIF-BCO INTERNAC DO FUNCHAL(BR) S.A"	-->
+         <xs:enumeration value="721"/>
+         <!--	721;"BANCO CREDIBEL S.A."	-->
+         <xs:enumeration value="724"/>
+         <!--	724;"BANCO PORTO SEGURO S.A."	-->
+         <xs:enumeration value="734"/>
+         <!--	734;"BANCO GERDAU SA"	-->
+         <xs:enumeration value="735"/>
+         <!--	735;"BANCO POTTENCIAL S.A."	-->
+         <xs:enumeration value="738"/>
+         <!--	738;"BANCO MORADA SA"	-->
+         <xs:enumeration value="739"/>
+         <!--	739;"BANCO GALVAO DE NEGOCIOS SA"	-->
+         <xs:enumeration value="740"/>
+         <!--	740;"BANCO BARCLAYS  S.A."	-->
+         <xs:enumeration value="741"/>
+         <!--	741;"BANCO RIBEIRAO PRETO SA"	-->
+         <xs:enumeration value="743"/>
+         <!--	743;"BANCO EMBLEMA SA"	-->
+         <xs:enumeration value="744"/>
+         <!--	744;"BANKBOSTON N.A."	-->
+         <xs:enumeration value="745"/>
+         <!--	745;"BANCO CITIBANK S.A."	-->
+         <xs:enumeration value="746"/>
+         <!--	746;"BANCO MODAL SA"	-->
+         <xs:enumeration value="747"/>
+         <!--	747;"BANCO RABOBANK INTERNATIONAL BR S.A."	-->
+         <xs:enumeration value="748"/>
+         <!--	748;"BANCO COOPERATIVO SICREDI S.A"	-->
+         <xs:enumeration value="749"/>
+         <!--	749;"BANCO SIMPLES S.A."	-->
+         <xs:enumeration value="751"/>
+         <!--	751;"DRESDNER BANK BRASIL S.A. BANCO MULTIPLO"	-->
+         <xs:enumeration value="752"/>
+         <!--	752;"BANCO BNP PARIBAS BRASIL S/A"	-->
+         <xs:enumeration value="753"/>
+         <!--	753;"BANCO COMERCIAL URUGUAI S.A."	-->
+         <xs:enumeration value="756"/>
+         <!--	756;"BANCO COOPERATIVO DO BRASIL S.A."	-->
+         <xs:enumeration value="757"/>
+         <!--	757;"BANCO KEB DO BRASIL S.A."	-->
+         <xs:enumeration value="092"/>
+         <!--	092;"BANCO BRICKELL S.A."	-->
+         <xs:enumeration value="999"/>
+         <!--	999;"Instituição Financeira (não bancária)"	-->
+         <xs:enumeration value="089"/>
+         <!--	089;"COOPERATIVA DE CRÉDITO RURAL DA REGIÃO DA MOGIANA"	-->
+         <xs:enumeration value="094"/>
+         <!--	094;"Banco Petra S.A"	-->
+         <xs:enumeration value="090"/>
+         <!--	090;"Cooperativa Central de Economia e Crédito Mutuo das Unicreds"	-->
+         <xs:enumeration value="473"/>
+         <!--	473;"BANCO CAIXA GERAL - BRASIL S.A."	-->
+         <xs:enumeration value="100"/>
+         <!--	100;"Planner Corretora de Valores S.A."	-->
+         <xs:enumeration value="017"/>
+         <!--	017;"BNY MELLON BANCO S.A."	-->
+         <xs:enumeration value="136"/>
+         <!--	136;"CONFEDERACAO NACIONAL DAS COOPERATIVAS CENTRAIS UNICREDS"	-->
+         <xs:enumeration value="135"/>
+         <!--	135;"GRADUAL CORRETORA DE CÂMBIO, TÍTULOS E VALORES MOBILIÁRIOS S.A. "	-->
+         <xs:enumeration value="712"/>
+         <!--	712;"Banco Ourinvest S.A."	-->
+         <xs:enumeration value="085"/>
+         <!--	085;"Cooperativa Central de Crédito Urbano - Cecred "	-->
+         <xs:enumeration value="102"/>
+         <!--	102;"XP Investimentos Corretora de Câmbio Títulos e Valores Mobiliários S.A." -->
+         <xs:enumeration value="121"/>
+         <!--	121;"Banco Agiplan S.A." -->
+         <xs:enumeration value="125"/>
+         <!--	125;"Banco Brasil Plural S.A." -->
+		 <xs:enumeration value="084"/>
+         <!--	084;"UNIPRIME NORTE DO PARANÁ" -->
+         <xs:enumeration value="180"/>
+         <!--	180;"CM Capital Markets Corretora de Câmbio, Títulos e Valores Mobiliário" -->
+         <xs:enumeration value="132"/>
+         <!--	132;"ICBC do Brasil Banco Múltiplo S.A." -->
+         <xs:enumeration value="260"/>
+         <!--	260;"NU PAGAMENTOS S.A." -->
+         <xs:enumeration value="012"/>
+         <!--	012;"Banco Inbursa S.A." -->
+		 <xs:enumeration value="290"/>
+         <!--   290;"PAGSEGURO INTERNET S.A." -->
+         <xs:enumeration value="307"/>
+         <!--   307;"TERRA INVESTIMENTOS DTVM" -->
+         <xs:enumeration value="336"/>
+         <!--   336;"Banco C6 S.A." -->
+         <xs:enumeration value="329"/>
+         <!--   329;"QI Sociedade de Crédito Direto S.A." -->
+         <xs:enumeration value="323"/>
+         <!--   323;"MERCADO PAGO" -->
+         <xs:enumeration value="087"/>
+         <!--   087;"Cooperativa Central de Economia e Crédito Mútuo das Unicreds de Santa Catarina e Paraná" -->
+         <xs:enumeration value="197"/>
+         <!--   197;"Stone Pagamentos S.A." -->
+         <xs:enumeration value="274"/>
+         <!--   274;"MONEY PLUS SCMEPP LTDA" -->
+         <xs:enumeration value="403"/>
+         <!--   403;"CORA SCD S.A." -->
+         <xs:enumeration value="278"/>
+         <!--   278;"GENIAL INVESTIMENTOS CVM S.A." -->
+         <xs:enumeration value="755"/>
+         <!--   755;"BOFA MERRILL LYNCH BM S.A." -->
+         <xs:enumeration value="084"/>
+         <!--   084;"UNIPRIME NORTE DO PARANÁ - CC" -->
+         <xs:enumeration value="335"/>
+         <!--   335;"BANCO DIGIO" -->
+         <xs:enumeration value="380"/>
+         <!--   380;"PICPAY INSTITUICAO DE PAGAMENTO SA" -->
+         <xs:enumeration value="364"/>
+         <!--   364;"GERENCIANET SA" -->
+         <xs:enumeration value="306"/>
+         <!--   306;"PORTOPAR DTVM LTDA" -->
+         <xs:enumeration value="093"/>
+         <!--   093;"POLOCRED SCMEPP LTDA" -->
+         <xs:enumeration value="410"/>
+         <!--   410;"PLANNER SCM S.A." -->
+         <xs:enumeration value="174"/>
+         <!--   174;"PEFISA S.A. - CFI" -->
+         <xs:enumeration value="273"/>
+         <!--   273;"CCR DE SAO MIGUEL DO OESTE" -->
+         <xs:enumeration value="280"/>
+         <!--   280;"WILL FINANCEIRA S.A. CFI" -->
+         <xs:enumeration value="324"/>
+         <!--   324;"CARTOS SCD S.A." -->
+         <xs:enumeration value="133"/>
+         <!--   133;"CRESOL CONFEDERACAO" -->
+         <xs:enumeration value="461"/>
+         <!--   461;"ASAAS IP S.A." -->
+         <xs:enumeration value="413"/>
+         <!--   413;"BCO BV S.A." -->
+         <xs:enumeration value="007"/>
+         <!--   007;"BNDES" -->
+         <xs:enumeration value="010"/>
+         <!--   010;"CREDICOAMO" -->
+         <xs:enumeration value="011"/>
+         <!--   011;"C.SUISSE HEDGING-GRIFFO CV S/A" -->
+         <xs:enumeration value="014"/>
+         <!--   014;"STATE STREET BR S.A. BCO COMERCIAL" -->
+         <xs:enumeration value="015"/>
+         <!--   015;"UBS BRASIL CCTVM S.A." -->
+         <xs:enumeration value="016"/>
+         <!--   016;"CCM DESP TRÂNS SC E RS" -->
+         <xs:enumeration value="018"/>
+         <!--   018;"BCO TRICURY S.A." -->
+         <xs:enumeration value="060"/>
+         <!--   060;"CONFIDENCE CC S.A." -->
+         <xs:enumeration value="079"/>
+         <!--   079;"PICPAY BANK - BANCO MÚLTIPLO S.A" -->
+         <xs:enumeration value="080"/>
+         <!--   080;"B&T CC LTDA." -->
+         <xs:enumeration value="081"/>
+         <!--   081;"BANCOSEGURO S.A." -->
+         <xs:enumeration value="082"/>
+         <!--   082;"BANCO TOPÁZIO S.A." -->
+         <xs:enumeration value="083"/>
+         <!--   083;"BCO DA CHINA BRASIL S.A." -->
+         <xs:enumeration value="088"/>
+         <!--   088;"BANCO RANDON S.A." -->
+         <xs:enumeration value="095"/>
+         <!--   095;"TRAVELEX BANCO DE CÂMBIO S.A." -->
+         <xs:enumeration value="097"/>
+         <!--   097;"CREDISIS CENTRAL DE COOPERATIVAS DE CRÉDITO LTDA." -->
+         <xs:enumeration value="098"/>
+         <!--   098;"CREDIALIANÇA CCR" -->
+         <xs:enumeration value="099"/>
+         <!--   099;"UNIPRIME COOPCENTRAL LTDA." -->
+         <xs:enumeration value="101"/>
+         <!--   101;"RENASCENCA DTVM LTDA" -->
+         <xs:enumeration value="105"/>
+         <!--   105;"LECCA CFI S.A." -->
+         <xs:enumeration value="108"/>
+         <!--   108;"PORTOCRED S.A. - CFI" -->
+         <xs:enumeration value="111"/>
+         <!--   111;"OLIVEIRA TRUST DTVM S.A." -->
+         <xs:enumeration value="113"/>
+         <!--   113;"NEON CTVM S.A." -->
+         <xs:enumeration value="114"/>
+         <!--   114;"CENTRAL COOPERATIVA DE CRÉDITO NO ESTADO DO ESPÍRITO SANTO" -->
+         <xs:enumeration value="117"/>
+         <!--   117;"ADVANCED CC LTDA" -->
+         <xs:enumeration value="119"/>
+         <!--   119;"BCO WESTERN UNION" -->
+         <xs:enumeration value="120"/>
+         <!--   120;"BCO RODOBENS S.A." -->
+         <xs:enumeration value="122"/>
+         <!--   122;"BCO BRADESCO BERJ S.A." -->
+         <xs:enumeration value="124"/>
+         <!--   124;"BCO WOORI BANK DO BRASIL S.A." -->
+         <xs:enumeration value="126"/>
+         <!--   126;"BR PARTNERS BI" -->
+         <xs:enumeration value="127"/>
+         <!--   127;"CODEPE CVC S.A." -->
+         <xs:enumeration value="128"/>
+         <!--   128;"MS BANK S.A. BCO DE CÂMBIO" -->
+         <xs:enumeration value="129"/>
+         <!--   129;"UBS BRASIL BI S.A." -->
+         <xs:enumeration value="130"/>
+         <!--   130;"CARUANA SCFI" -->
+         <xs:enumeration value="131"/>
+         <!--   131;"TULLETT PREBON BRASIL CVC LTDA" -->
+         <xs:enumeration value="134"/>
+         <!--   134;"BGC LIQUIDEZ DTVM LTDA" -->
+         <xs:enumeration value="138"/>
+         <!--   138;"GET MONEY CC LTDA" -->
+         <xs:enumeration value="139"/>
+         <!--   139;"INTESA SANPAOLO BRASIL S.A. BM" -->
+         <xs:enumeration value="140"/>
+         <!--   140;"NU INVEST CORRETORA DE VALORES S.A." -->
+         <xs:enumeration value="142"/>
+         <!--   142;"BROKER BRASIL CC LTDA." -->
+         <xs:enumeration value="143"/>
+         <!--   143;"TREVISO CC S.A." -->
+         <xs:enumeration value="144"/>
+         <!--   144;"BEXS BCO DE CAMBIO S.A." -->
+         <xs:enumeration value="145"/>
+         <!--   145;"LEVYCAM CCV LTDA" -->
+         <xs:enumeration value="146"/>
+         <!--   146;"GUITTA CC LTDA" -->
+         <xs:enumeration value="149"/>
+         <!--   149;"FACTA S.A. CFI" -->
+         <xs:enumeration value="157"/>
+         <!--   157;"ICAP DO BRASIL CTVM LTDA." -->
+         <xs:enumeration value="159"/>
+         <!--   159;"CASA CREDITO S.A. SCM" -->
+         <xs:enumeration value="163"/>
+         <!--   163;"COMMERZBANK BRASIL S.A. - BCO MÚLTIPLO" -->
+         <xs:enumeration value="173"/>
+         <!--   173;"BRL TRUST DTVM SA" -->
+         <xs:enumeration value="177"/>
+         <!--   177;"GUIDE" -->
+         <xs:enumeration value="183"/>
+         <!--   183;"SOCRED SA - SCMEPP" -->
+         <xs:enumeration value="188"/>
+         <!--   188;"ATIVA S.A. INVESTIMENTOS CCTVM" -->
+         <xs:enumeration value="189"/>
+         <!--   189;"HS FINANCEIRA" -->
+         <xs:enumeration value="190"/>
+         <!--   190;"SERVICOOP" -->
+         <xs:enumeration value="191"/>
+         <!--   191;"NOVA FUTURA CTVM LTDA." -->
+         <xs:enumeration value="194"/>
+         <!--   194;"PARMETAL DTVM LTDA" -->
+         <xs:enumeration value="195"/>
+         <!--   195;"VALOR SCD S.A." -->
+         <xs:enumeration value="196"/>
+         <!--   196;"FAIR CC S.A." -->
+         <xs:enumeration value="253"/>
+         <!--   253;"BEXS CC S.A." -->
+         <xs:enumeration value="259"/>
+         <!--   259;"MONEYCORP BCO DE CÂMBIO S.A." -->
+         <xs:enumeration value="268"/>
+         <!--   268;"BARI CIA HIPOTECÁRIA" -->
+         <xs:enumeration value="269"/>
+         <!--   269;"BCO HSBC S.A." -->
+         <xs:enumeration value="270"/>
+         <!--   270;"SAGITUR CC" -->
+         <xs:enumeration value="271"/>
+         <!--   271;"IB CCTVM S.A." -->
+         <xs:enumeration value="272"/>
+         <!--   272;"AGK CC S.A." -->
+         <xs:enumeration value="276"/>
+         <!--   276;"BCO SENFF S.A." -->
+         <xs:enumeration value="279"/>
+         <!--   279;"CCR DE PRIMAVERA DO LESTE" -->
+         <xs:enumeration value="281"/>
+         <!--   281;"CCR COOPAVEL" -->
+         <xs:enumeration value="283"/>
+         <!--   283;"RB INVESTIMENTOS DTVM LTDA." -->
+         <xs:enumeration value="285"/>
+         <!--   285;"FRENTE CC LTDA." -->
+         <xs:enumeration value="286"/>
+         <!--   286;"CCR DE OURO" -->
+         <xs:enumeration value="288"/>
+         <!--   288;"CAROL DTVM LTDA." -->
+         <xs:enumeration value="289"/>
+         <!--   289;"EFX CC LTDA." -->
+         <xs:enumeration value="292"/>
+         <!--   292;"BS2 DTVM S.A." -->
+         <xs:enumeration value="293"/>
+         <!--   293;"LASTRO RDV DTVM LTDA" -->
+         <xs:enumeration value="296"/>
+         <!--   296;"OZ CORRETORA DE CÂMBIO S.A." -->
+         <xs:enumeration value="298"/>
+         <!--   298;"VIPS CC LTDA." -->
+         <xs:enumeration value="299"/>
+         <!--   299;"BCO SOROCRED S.A. - BM" -->
+         <xs:enumeration value="301"/>
+         <!--   301;"BPP IP S.A." -->
+         <xs:enumeration value="309"/>
+         <!--   309;"CAMBIONET CC LTDA" -->
+         <xs:enumeration value="310"/>
+         <!--   310;"VORTX DTVM LTDA." -->
+         <xs:enumeration value="311"/>
+         <!--   311;"DOURADA CORRETORA" -->
+         <xs:enumeration value="312"/>
+         <!--   312;"HSCM SCMEPP LTDA." -->
+         <xs:enumeration value="313"/>
+         <!--   313;"AMAZÔNIA CC LTDA." -->
+         <xs:enumeration value="319"/>
+         <!--   319;"OM DTVM LTDA" -->
+         <xs:enumeration value="321"/>
+         <!--   321;"CREFAZ SCMEPP LTDA" -->
+         <xs:enumeration value="322"/>
+         <!--   322;"CCR DE ABELARDO LUZ" -->
+         <xs:enumeration value="325"/>
+         <!--   325;"ÓRAMA DTVM S.A." -->
+         <xs:enumeration value="326"/>
+         <!--   326;"PARATI - CFI S.A." -->
+         <xs:enumeration value="328"/>
+         <!--   328;"CECM FABRIC CALÇADOS SAPIRANGA" -->
+         <xs:enumeration value="330"/>
+         <!--   330;"BANCO BARI S.A." -->
+         <xs:enumeration value="331"/>
+         <!--   331;"FRAM CAPITAL DTVM S.A." -->
+         <xs:enumeration value="332"/>
+         <!--   332;"ACESSO SOLUCOES PAGAMENTO SA" -->
+         <xs:enumeration value="340"/>
+         <!--   340;"SUPERDIGITAL I.P. S.A." -->
+         <xs:enumeration value="342"/>
+         <!--   342;"CREDITAS SCD" -->
+         <xs:enumeration value="343"/>
+         <!--   343;"FFA SCMEPP LTDA." -->
+         <xs:enumeration value="348"/>
+         <!--   348;"BCO XP S.A." -->
+         <xs:enumeration value="349"/>
+         <!--   349;"AL5 S.A. CFI" -->
+         <xs:enumeration value="350"/>
+         <!--   350;"CREHNOR LARANJEIRAS" -->
+         <xs:enumeration value="352"/>
+         <!--   352;"TORO CTVM S.A." -->
+         <xs:enumeration value="354"/>
+         <!--   354;"NECTON INVESTIMENTOS S.A CVM" -->
+         <xs:enumeration value="355"/>
+         <!--   355;"ÓTIMO SCD S.A." -->
+         <xs:enumeration value="358"/>
+         <!--   358;"MIDWAY S.A. - SCFI" -->
+         <xs:enumeration value="359"/>
+         <!--   359;"ZEMA CFI S/A" -->
+         <xs:enumeration value="360"/>
+         <!--   360;"TRINUS CAPITAL DTVM" -->
+         <xs:enumeration value="362"/>
+         <!--   362;"CIELO S.A." -->
+         <xs:enumeration value="363"/>
+         <!--   363;"SINGULARE CTVM S.A." -->
+         <xs:enumeration value="365"/>
+         <!--   365;"SIMPAUL" -->
+         <xs:enumeration value="367"/>
+         <!--   367;"VITREO DTVM S.A." -->
+         <xs:enumeration value="368"/>
+         <!--   368;"BCO CSF S.A." -->
+         <xs:enumeration value="371"/>
+         <!--   371;"WARREN CVMC LTDA" -->
+         <xs:enumeration value="373"/>
+         <!--   373;"UP.P SEP S.A." -->
+         <xs:enumeration value="374"/>
+         <!--   374;"REALIZE CFI S.A." -->
+         <xs:enumeration value="377"/>
+         <!--   377;"BMS SCD S.A." -->
+         <xs:enumeration value="378"/>
+         <!--   378;"BCO BRASILEIRO DE CRÉDITO S.A." -->
+         <xs:enumeration value="379"/>
+         <!--   379;"CECM COOPERFORTE" -->
+         <xs:enumeration value="381"/>
+         <!--   381;"BCO MERCEDES-BENZ S.A." -->
+         <xs:enumeration value="382"/>
+         <!--   382;"FIDUCIA SCMEPP LTDA" -->
+         <xs:enumeration value="383"/>
+         <!--   383;"EBANX IP LTDA." -->
+         <xs:enumeration value="384"/>
+         <!--   384;"GLOBAL SCM LTDA" -->
+         <xs:enumeration value="385"/>
+         <!--   385;"CECM DOS TRAB.PORT. DA G.VITOR" -->
+         <xs:enumeration value="386"/>
+         <!--   386;"NU FINANCEIRA S.A. CFI" -->
+         <xs:enumeration value="387"/>
+         <!--   387;"BCO TOYOTA DO BRASIL S.A." -->
+         <xs:enumeration value="390"/>
+         <!--   390;"BCO GM S.A." -->
+         <xs:enumeration value="391"/>
+         <!--   391;"CCR DE IBIAM" -->
+         <xs:enumeration value="393"/>
+         <!--   393;"BCO VOLKSWAGEN S.A" -->
+         <xs:enumeration value="395"/>
+         <!--   395;"F D GOLD DTVM LTDA" -->
+         <xs:enumeration value="396"/>
+         <!--   396;"HUB PAGAMENTOS" -->
+         <xs:enumeration value="397"/>
+         <!--   397;"LISTO SCD S.A." -->
+         <xs:enumeration value="398"/>
+         <!--   398;"IDEAL CTVM S.A." -->
+         <xs:enumeration value="400"/>
+         <!--   400;"COOP CREDITAG" -->
+         <xs:enumeration value="401"/>
+         <!--   401;"IUGU IP S.A." -->
+         <xs:enumeration value="402"/>
+         <!--   402;"COBUCCIO SCD S.A." -->
+         <xs:enumeration value="404"/>
+         <!--   404;"SUMUP SCD S.A." -->
+         <xs:enumeration value="406"/>
+         <!--   406;"ACCREDITO SCD S.A." -->
+         <xs:enumeration value="407"/>
+         <!--   407;"ÍNDIGO INVESTIMENTOS DTVM LTDA." -->
+         <xs:enumeration value="408"/>
+         <!--   408;"BONUSPAGO SCD S.A." -->
+         <xs:enumeration value="411"/>
+         <!--   411;"VIA CERTA FINANCIADORA S.A. - CFI" -->
+         <xs:enumeration value="414"/>
+         <!--   414;"WORK SCD S.A." -->
+         <xs:enumeration value="416"/>
+         <!--   416;"LAMARA SCD S.A." -->
+         <xs:enumeration value="418"/>
+         <!--   418;"ZIPDIN SCD S.A." -->
+         <xs:enumeration value="419"/>
+         <!--   419;"NUMBRS SCD S.A." -->
+         <xs:enumeration value="421"/>
+         <!--   421;"CC LAR CREDI" -->
+         <xs:enumeration value="423"/>
+         <!--   423;"COLUNA S.A. DTVM" -->
+         <xs:enumeration value="425"/>
+         <!--   425;"SOCINAL S.A. CFI" -->
+         <xs:enumeration value="426"/>
+         <!--   426;"BIORC FINANCEIRA - CFI S.A." -->
+         <xs:enumeration value="427"/>
+         <!--   427;"CRED-UFES" -->
+         <xs:enumeration value="428"/>
+         <!--   428;"CREDSYSTEM SCD S.A." -->
+         <xs:enumeration value="429"/>
+         <!--   429;"CREDIARE CFI S.A." -->
+         <xs:enumeration value="430"/>
+         <!--   430;"CCR SEARA" -->
+         <xs:enumeration value="433"/>
+         <!--   433;"BR-CAPITAL DTVM S.A." -->
+         <xs:enumeration value="435"/>
+         <!--   435;"DELCRED SCD S.A." -->
+         <xs:enumeration value="438"/>
+         <!--   438;"TRUSTEE DTVM LTDA." -->
+         <xs:enumeration value="439"/>
+         <!--   439;"ID CTVM" -->
+         <xs:enumeration value="440"/>
+         <!--   440;"CREDIBRF COOP" -->
+         <xs:enumeration value="442"/>
+         <!--   442;"MAGNETIS - DTVM" -->
+         <xs:enumeration value="443"/>
+         <!--   443;"CREDIHOME SCD" -->
+         <xs:enumeration value="444"/>
+         <!--   444;"TRINUS SCD S.A." -->
+         <xs:enumeration value="445"/>
+         <!--   445;"PLANTAE CFI" -->
+         <xs:enumeration value="447"/>
+         <!--   447;"MIRAE ASSET CCTVM LTDA" -->
+         <xs:enumeration value="448"/>
+         <!--   448;"HEMERA DTVM LTDA." -->
+         <xs:enumeration value="449"/>
+         <!--   449;"DMCARD SCD S.A." -->
+         <xs:enumeration value="450"/>
+         <!--   450;"FITBANK PAGAMENTOS ELETRONICOS S.A." -->
+         <xs:enumeration value="451"/>
+         <!--   451;"J17 - SCD S/A" -->
+         <xs:enumeration value="452"/>
+         <!--   452;"CREDIFIT SCD S.A." -->
+         <xs:enumeration value="454"/>
+         <!--   454;"MÉRITO DTVM LTDA." -->
+         <xs:enumeration value="457"/>
+         <!--   457;"UY3 SCD S/A" -->
+         <xs:enumeration value="458"/>
+         <!--   458;"HEDGE INVESTMENTS DTVM LTDA." -->
+         <xs:enumeration value="459"/>
+         <!--   459;"CCM SERV. PÚBLICOS SP" -->
+         <xs:enumeration value="460"/>
+         <!--   460;"UNAVANTI SCD S/A" -->
+         <xs:enumeration value="462"/>
+         <!--   462;"STARK SCD S.A." -->
+         <xs:enumeration value="463"/>
+         <!--   463;"AZUMI DTVM" -->
+         <xs:enumeration value="465"/>
+         <!--   465;"CAPITAL CONSIG SCD S.A." -->
+         <xs:enumeration value="467"/>
+         <!--   467;"MASTER S/A CCTVM" -->
+         <xs:enumeration value="468"/>
+         <!--   468;"PORTOSEG S.A. CFI" -->
+         <xs:enumeration value="469"/>
+         <!--   469;"LIGA INVEST DTVM LTDA." -->
+         <xs:enumeration value="470"/>
+         <!--   470;"CDC SOCIEDADE DE CRÉDITO" -->
+         <xs:enumeration value="471"/>
+         <!--   471;"CECM SERV PUBL PINHÃO" -->
+         <xs:enumeration value="475"/>
+         <!--   475;"BCO YAMAHA MOTOR S.A." -->
+         <xs:enumeration value="478"/>
+         <!--   478;"GAZINCRED S.A. SCFI" -->
+         <xs:enumeration value="481"/>
+         <!--   481;"SUPERLÓGICA SCD S.A." -->
+         <xs:enumeration value="484"/>
+         <!--   484;"MAF DTVM SA" -->
+         <xs:enumeration value="506"/>
+         <!--   506;"RJI" -->
+         <xs:enumeration value="508"/>
+         <!--   508;"AVENUE SECURITIES DTVM LTDA." -->
+         <xs:enumeration value="511"/>
+         <!--   511;"MAGNUM SCD" -->
+         <xs:enumeration value="512"/>
+         <!--   512;"CAPTALYS DTVM LTDA." -->
+         <xs:enumeration value="545"/>
+         <!--   545;"SENSO CCVM S.A." -->
+         <xs:enumeration value="720"/>
+         <!--   720;"BCO RNX S.A." -->
+         <xs:enumeration value="754"/>
+         <!--   754;"BANCO SISTEMA" -->
+         <xs:enumeration value="141"/>
+         <!--	141;"BANCO MASTER DE INVESTIMENTO S.A."	-->
+         <xs:enumeration value="334"/>
+         <!--	334;"BANCO BESA S.A."	-->
+         <xs:enumeration value="509"/>
+         <!--	509;"CELCOIN INSTITUICAO DE PAGAMENTO S.A."	-->
+         <xs:enumeration value="518"/>
+         <!--	518;"MERCADO CRÉDITO SOCIEDADE DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO S.A."	-->
+         <xs:enumeration value="521"/>
+         <!--	521;"PEAK SOCIEDADE DE EMPRÉSTIMO ENTRE PESSOAS S.A."	-->
+         <xs:enumeration value="522"/>
+         <!--	522;"RED SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="523"/>
+         <!--	523;"HR DIGITAL - SOCIEDADE DE CRÉDITO DIRETO S/A"	-->
+         <xs:enumeration value="524"/>
+         <!--	524;"WNT CAPITAL DISTRIBUIDORA DE TÍTULOS E VALORES MOBILIÁRIOS S.A."	-->
+         <xs:enumeration value="526"/>
+         <!--	526;"MONETARIE SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="527"/>
+         <!--	527;"ATICCA - SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="528"/>
+         <!--	528;"REAG DISTRIBUIDORA DE TÍTULOS E VALORES MOBILIÁRIOS S.A."	-->
+         <xs:enumeration value="530"/>
+         <!--	530;"SER FINANCE SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="532"/>
+         <!--	532;"EAGLE SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="534"/> 
+		 <!--	534;"EWALLY INSTITUIÇÃO DE PAGAMENTO S.A."	-->
+         <xs:enumeration value="535"/>
+         <!--	535;"MARÚ SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+         <xs:enumeration value="536"/>
+         <!--	536;"NEON PAGAMENTOS S.A. - INSTITUIÇÃO DE PAGAMENTO"	-->
+         <xs:enumeration value="537"/>
+         <!--	537;"MICROCASH SOCIEDADE DE CRÉDITO AO MICROEMPREENDEDOR E À EMPRESA DE PEQUENO PORTE"	-->
+         <xs:enumeration value="539"/>
+         <!--	539;"SANTINVEST S.A. - CREDITO, FINANCIAMENTO E INVESTIMENTOS"	-->
+         <xs:enumeration value="541"/>
+         <!--	541;"FUNDO GARANTIDOR DE CREDITOS - FGC"	-->
+         <xs:enumeration value="546"/>
+         <!--	546;"U4C INSTITUIÇÃO DE PAGAMENTO S.A."	-->
+         <xs:enumeration value="529"/>
+         <!--	529;"PINBANK"	-->
+         <xs:enumeration value="547"/>
+         <!--	547;"BNK DIGITAL SOCIEDADE DE CRÉDITO DIRETO S.A."	-->
+		 </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoAgenciaBancaria_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{5}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="DigitoVerificador_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[A-Z0-9]{1}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="NumeroContaCorrenteBancaria_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{1,20}"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="UF_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="AC"/>
+         <xs:enumeration value="AL"/>
+         <xs:enumeration value="AM"/>
+         <xs:enumeration value="AP"/>
+         <xs:enumeration value="BA"/>
+         <xs:enumeration value="CE"/>
+         <xs:enumeration value="DF"/>
+         <xs:enumeration value="ES"/>
+         <xs:enumeration value="GO"/>
+         <xs:enumeration value="MA"/>
+         <xs:enumeration value="MG"/>
+         <xs:enumeration value="MS"/>
+         <xs:enumeration value="MT"/>
+         <xs:enumeration value="PA"/>
+         <xs:enumeration value="PB"/>
+         <xs:enumeration value="PE"/>
+         <xs:enumeration value="PI"/>
+         <xs:enumeration value="PR"/>
+         <xs:enumeration value="RJ"/>
+         <xs:enumeration value="RN"/>
+         <xs:enumeration value="RO"/>
+         <xs:enumeration value="RR"/>
+         <xs:enumeration value="RS"/>
+         <xs:enumeration value="SC"/>
+         <xs:enumeration value="SE"/>
+         <xs:enumeration value="SP"/>
+         <xs:enumeration value="TO"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- TIPOS COMPLEXOS -->
+   <!-- ======================================================================== -->
+   <xs:complexType name="NumeroEmpenho_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[a-zA-Z0-9\-]{1,12}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Ano" type="gen:Ano_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="NumeroConvenio_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[a-zA-Z0-9\-]{1,12}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Ano" type="gen:Ano_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="NumeroContrato_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[a-zA-Z0-9\-]{1,12}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Ano" type="gen:Ano_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== 
+	Tags regerentes a legislação foram transferidas para o aquivo AUDESP_TABELASAUXILIARES_2008_A.XSD
+	 ======================================================================== -->
+   <!-- VERSAO COM A UTILIZACAO DE ATRIBUTOS PARA DIFERENCIAR OS TIPOS -->
+   <xs:complexType name="CNPJ_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{14}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+      <xs:attribute fixed="01" name="Tipo" type="xs:string" use="required"/>
+   </xs:complexType>
+   <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+   <xs:complexType name="CPF_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{11}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+      <xs:attribute fixed="02" name="Tipo" type="xs:string" use="required"/>
+   </xs:complexType>
+   <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+   <xs:complexType name="IdentificacaoEspecial_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{1,20}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Tipo" use="required">
+         <xs:simpleType>
+            <xs:restriction base="xs:string">
+               <xs:enumeration value="03"/> <!-- Não usar para novos cadastros em 2023 -->
+               <xs:enumeration value="10"/> <!-- INTERNACIONAL -->
+            </xs:restriction>
+         </xs:simpleType>
+      </xs:attribute>
+   </xs:complexType>
+   <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+   <xs:complexType name="IdentificacaoInscricaoGenerica_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[A-Za-z0-9]{1,20}"/>
+                  <!-- alterado na versao 2006 - D -->
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Tipo" use="required">
+         <xs:simpleType>
+            <xs:restriction base="xs:string">
+               <xs:enumeration value="04"/>
+               <xs:enumeration value="05"/>
+               <xs:enumeration value="06"/>
+               <xs:enumeration value="07"/>
+               <xs:enumeration value="08"/>
+               <xs:enumeration value="09"/>
+            </xs:restriction>
+         </xs:simpleType>
+      </xs:attribute>
+   </xs:complexType>
+   <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+   <!-- Identificacao_t tipo= 1,2,3 -->
+   <xs:complexType name="IdentificacaoIndividual_t">
+      <xs:choice>
+         <xs:element name="CNPJ" type="gen:CNPJ_t"/>
+         <xs:element name="CPF" type="gen:CPF_t"/>
+         <xs:element name="IdentificacaoEspecial" type="gen:IdentificacaoEspecial_t"/>
+      </xs:choice>
+   </xs:complexType>
+   <!-- Identificacao_t tipo de 1 a 9 -->
+   <xs:complexType name="Identificacao_t">
+      <xs:choice>
+         <xs:element name="CNPJ" type="gen:CNPJ_t"/>
+         <xs:element name="CPF" type="gen:CPF_t"/>
+         <xs:element name="IdentificacaoEspecial" type="gen:IdentificacaoEspecial_t"/>
+         <xs:element name="InscricaoGenerica" type="gen:IdentificacaoInscricaoGenerica_t"/>
+      </xs:choice>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="ContaCorrenteBancaria_t">
+      <xs:sequence>
+         <xs:element name="Banco" type="gen:CodigoBanco_t"/>
+         <xs:element name="Agencia" type="gen:CodigoAgenciaBancaria_t"/>
+         <xs:element minOccurs="0" name="DVAgencia" type="gen:DigitoVerificador_t"/>
+         <xs:element name="ContaCorrente" type="gen:NumeroContaCorrenteBancaria_t"/>
+         <xs:element minOccurs="0" name="DVContaCorrente" type="gen:DigitoVerificador_t"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="Endereco_t">
+      <xs:sequence>
+         <xs:element name="Logradouro">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:minLength value="3"/>
+                  <xs:maxLength value="100"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Bairro">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:minLength value="1"/>
+                  <xs:maxLength value="50"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Cidade">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:minLength value="3"/>
+                  <xs:maxLength value="50"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="UF" type="gen:UF_t"/>
+         <xs:element name="CEP">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{5}-[0-9]{3}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="Telefone_t">
+      <xs:sequence>
+         <xs:element name="DDD">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{2}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[0-9]{6,9}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+
+   <!-- Tipos específicos para o assunto Contas Anuais -->
+
+   <!-- ========================================================================= -->
+   <!-- Declaração Negativa -->
+   <xs:simpleType name="DeclaracaoNegativa_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="Nenhum dado a declarar"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ========================================================================= -->
+   <!-- Cargos de Agentes Políticos -->
+   <xs:simpleType name="CargoAgentePolitico_t">
+      <xs:restriction base="xs:integer">
+         <xs:enumeration value="1"/>
+         <!-- 1 - PREFEITO -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - VICE-PREFEITO -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - SECRETARIO MUNCIIPAL -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - PRESIDENTE DA CAMARA MUNICIPAL  -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - VEREADOR -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - GESTOR - Para Fundos de Previdência  -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - DIRIGENTE - Para demais entidades  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+	<!-- ========================================================================= -->
+
+      <xs:simpleType name="DataNascimentoValida_t">
+		<xs:restriction base="xs:date">
+			<xs:minInclusive value="1910-01-01"/>
+			<xs:maxInclusive value="2050-12-31"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+
+	<!-- ========================================================================= -->
+	<!-- Tipo RG -->
+	<xs:simpleType name="RG_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9]{11}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- Tipo CertidÃ£o Nascimento -->
+	<xs:simpleType name="CertidaoNascimento_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9]{11}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- ========================================================================= -->
+	
+	
+
+	<xs:simpleType name="StringNaoVazia255_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="255"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="String255_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="255"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="StringNaoVazia500_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="500"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="StringNaoVazia1000_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="1000"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="InteiroNaoNegativo_t">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="0"/> 
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="InteiroPositivo_t">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- ======================================================================== -->
+	<!-- define um número decimal com três dígitos com valores entre 0.01 e 999.99 -->	
+	<xs:simpleType name="InteiroPositivoTresDigitos_t">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="999"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- ======================================================================== -->
+	<!-- define um número decimal com quatro dígitos com valores entre 0.01 e 9999.99 -->
+	<xs:simpleType name="InteiroPositivoQuatroDigitos_t">
+	  <xs:restriction base="xs:decimal">
+		 <xs:fractionDigits value="2"/>
+		 <xs:minInclusive value="0.01"/>
+		 <xs:maxInclusive value="9999.99"/>
+	  </xs:restriction>
+	</xs:simpleType>
+	<!-- ======================================================================== -->
+	<xs:simpleType name="StringNaoVazia_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<!-- ========================================================================= -->
+	
+	<xs:complexType name="CPFSemTipo_t">
+		<xs:sequence>
+			<xs:element name="Numero">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[0-9]{11}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<!--Município e Entidade  -->
+	<xs:complexType name="MunicipioEntidade_t">
+		<xs:sequence>
+			<xs:element name="codigoMunicipio" type="gen:CodigoMunicipio_t"   minOccurs="1" maxOccurs="1"/>
+			<xs:element name="codigoEntidade"  type="gen:CodigoEntidade_t"    minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	 </xs:complexType>
+   <!-- ========================================================================= -->
+
+
+	<!-- Observação -->
+	<xs:simpleType name="ObservacaoF_t">
+		<xs:restriction base="xs:normalizedString">
+			<xs:minLength value="3"/>
+			<xs:maxLength value="500"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- SEM USO
+		<xs:simpleType name="AnoPPA_t">
+		<xs:restriction base="xs:string">
+		<xs:enumeration value="2006"/>
+		<xs:enumeration value="2010"/>
+		</xs:restriction>
+		</xs:simpleType>
+	-->
+
+   <!-- ======================================================================== -->
+   <!-- SEM USO
+		<xs:simpleType name="MesContabil_t">
+		<xs:restriction base="xs:integer">
+		<xs:minInclusive value="1"/>
+		<xs:maxInclusive value="13"/>
+		</xs:restriction>
+		</xs:simpleType>
+	-->
+   <!-- ======================================================================== -->
+
+</xs:schema>

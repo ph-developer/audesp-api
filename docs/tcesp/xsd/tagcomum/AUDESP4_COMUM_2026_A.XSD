@@ -1,0 +1,2110 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+   targetNamespace="http://www.tce.sp.gov.br/audesp/xml/tagcomum" version="1.0" xml:lang="pt-BR"
+   xmlns:tag="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+   xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico"
+      schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2026_A.XSD"/>
+
+
+   <!-- ========================================================================= -->
+   <xs:annotation>
+      <xs:documentation>
+         <DataCriacao>2026-01-12</DataCriacao>
+         <DataModificacao>2026-01-12</DataModificacao>
+         <VersaoRevisaoAnterior>2025_A</VersaoRevisaoAnterior>
+         <VersaoRevisaoNova>2026_A</VersaoRevisaoNova>
+         <Descricao>XSD Tags Comuns - tags utlilizadas nos demais arquivos</Descricao>
+         <Justificativa>XSD Tags Comuns - tags utlilizadas nos demais arquivos</Justificativa>
+         <Autor>DSIS</Autor>
+      </xs:documentation>
+   </xs:annotation>
+   <!-- ========================================================================= -->
+   <!-- Tags Comuns do Audesp4 -->
+   <!-- ======================================================================== -->
+   <!-- ======================================================================== -->
+
+   <!-- Valida numeros  -->
+
+   <!-- define um número Codigo Licitacao  -->
+   <xs:simpleType name="CodigoLicitacao_t">
+      <xs:restriction base="xs:long">
+         <xs:minInclusive value="2026000000000"/>
+         <xs:maxInclusive value="2026999999999"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="CodigoAjuste_t">
+      <xs:restriction base="xs:long">
+         <xs:minInclusive value="2026000000000"/>
+         <xs:maxInclusive value="2026999999999"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="CodigoTermo_t">
+      <xs:restriction base="xs:long">
+         <xs:minInclusive value="2026000000000"/>
+         <xs:maxInclusive value="2026999999999"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   
+   <!-- define um número Codigo Licitacao  -->
+   <xs:simpleType name="Codigo_t">
+      <xs:restriction base="xs:long">
+         <xs:minInclusive value="0000000000000"/>
+         <xs:maxInclusive value="9999999999999"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+
+   <!-- define um número Inteiro maior que 0 até o limite de 32767 -->
+   <xs:simpleType name="InteiroRestritoMaiorZero_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="32767"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   
+   <!-- define um número Inteiro maior que 0  -->
+   <xs:simpleType name="InteiroMaiorZero_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1"/>
+         <xs:maxInclusive value="99999"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+      <!-- define um número Inteiro maior que 0  -->
+   <xs:simpleType name="InteiroMaiorIgualZero_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="99999"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+     <!-- define um número Inteiro Positivo -->
+   <xs:simpleType name="InteiroPositivo_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1"/>
+         <xs:maxInclusive value="999999"/>
+      </xs:restriction>
+   </xs:simpleType> 
+   
+   <!-- define um número Inteiro maior que 0  -->
+   <xs:simpleType name="InteiroMaior_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="999999999"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="InteiroDe1Ate999_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1"/>
+         <xs:maxInclusive value="999"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define um número decimal maior que 0 -->
+   <xs:simpleType name="DecimalMaiorQueZero_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="9999999999999.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define um número decimal maior que 0  -->
+  <xs:simpleType name="Decimal20-5_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="5"/>
+         <xs:minInclusive value="0.00001"/>
+         <xs:maxInclusive value="999999999999999.99999"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+    <!-- define um número decimal -->
+   <xs:simpleType name="Decimal17-2_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.00"/>
+         <xs:maxInclusive value="999999999999999.99"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+    <!-- define um número decimal maior que 0-->
+   <xs:simpleType name="DecimalMaiorQueZero17-2_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="999999999999999.99"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define um número decimal maior que 0  -->
+   <xs:simpleType name="Decimal15-5_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="5"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="9999999999.99999"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="LatitudeLongitude_t">
+      <xs:restriction base="xs:decimal">
+         <xs:pattern value="-?\d{2}\.\d{7}"/>
+         <xs:totalDigits value="9"/>
+         <xs:fractionDigits value="7"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="PercentualPositivo_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.00"/>
+         <xs:maxInclusive value="100.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="PercentualPositivoMaiorQueZero_t">
+      <xs:restriction base="xs:decimal">
+         <xs:fractionDigits value="2"/>
+         <xs:minInclusive value="0.01"/>
+         <xs:maxInclusive value="100.00"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- VALIDAÇÃO DE DATA -->
+   <xs:simpleType name="ValidaData_t">
+      <xs:restriction base="xs:date">
+         <xs:pattern value="\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define um Ano  -->
+   <xs:simpleType name="Ano4_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="1900"/>
+         <xs:maxInclusive value="2050"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- ======================================================================== -->
+   <!-- Validacao de string  -->
+
+
+   <!-- define textos com até 8000 caracteres  -->
+   <xs:simpleType name="StringAte8000_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="3"/>
+         <xs:maxLength value="8000"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 1000 caracteres  -->
+   <xs:simpleType name="StringAte1000_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="3"/>
+         <xs:maxLength value="1000"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 500 caracteres  -->
+   <xs:simpleType name="StringAte500_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="3"/>
+         <xs:maxLength value="500"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 250 caracteres  -->
+   <xs:simpleType name="StringAte250_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="250"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 200 caracteres  -->
+   <xs:simpleType name="StringAte200_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="200"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 100 caracteres  -->
+   <xs:simpleType name="StringAte100_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="100"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 50 caracteres  -->
+   <xs:simpleType name="StringAte50_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="50"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 20 caracteres  -->
+   <xs:simpleType name="StringAte20_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="20"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 10 caracteres  -->
+   <xs:simpleType name="StringAte10_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="10"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 12 caracteres  -->
+   <xs:simpleType name="StringAte12_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="12"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 08 caracteres  -->
+   <xs:simpleType name="StringAte08_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="08"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos com até 35 caracteres  -->
+   <xs:simpleType name="StringAte35_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="35"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- define textos numéricos com até 15 caracteres  -->
+   <xs:simpleType name="StringNumericaAte15_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:pattern value="\d{1,15}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- ======================================================================== -->
+   <xs:simpleType name="SimNao_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="S"/>
+         <!-- Sim -->
+         <xs:enumeration value="N"/>
+         <!-- Não -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="Nao_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="N"/>
+         <!-- Não -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="Sim_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="S"/>
+         <!-- Sim -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="NaoSeAplica_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="NA"/>
+         <!-- Não se aplica -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="NaoNaoseAplica_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="N"/>
+         <!-- Não -->
+         <xs:enumeration value="NA"/>
+         <!-- Não se aplica -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="SimNaoAplica_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="S"/>
+         <!-- Sim -->
+         <xs:enumeration value="N"/>
+         <!-- Não -->
+         <xs:enumeration value="NA"/>
+         <!-- Não se aplica -->
+      </xs:restriction>
+   </xs:simpleType>
+
+  
+   
+   <xs:complexType name="SimData_t">
+      <xs:sequence>
+         <xs:element name="ExisteData" fixed="S" type="xs:string" minOccurs="1"/>
+         <xs:element name="Data" type="tag:ValidaData_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="Fls_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="20"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="ItemEdital_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="50"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="ItemEdital20_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="20"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="NumEdital_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="1"/>
+         <xs:maxLength value="50"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+
+   <!-- ======================================================================== -->
+   <!-- VERSAO COM A UTILIZACAO DE ATRIBUTOS PARA DIFERENCIAR OS TIPOS -->
+
+   <xs:simpleType name="CNPJ4_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{14}"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CPF4_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{11}"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="OutroDoc4_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[A-Za-z0-9.-/]{5,20}"/> 
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="email_t">
+      <xs:restriction base="xs:string">
+         <xs:minLength value="3"/>
+         <xs:maxLength value="50"/>
+         <xs:pattern value="[_\-a-zA-Z0-9\.\+]+@[a-zA-Z0-9](\.?[\-a-zA-Z0-9]*[a-zA-Z0-9])*"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="NomeRazaoSocial_t">
+      <xs:restriction base="xs:normalizedString">
+         <xs:minLength value="3"/>
+         <xs:maxLength value="100"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- Tipos Genericos  -->
+   <xs:complexType name="DataFls_t">
+      <xs:sequence>
+         <xs:element name="Data" type="tag:ValidaData_t" minOccurs="1"/>
+         <xs:element name="Fls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+      
+   <!-- ======================================================================== -->
+   
+   <!-- AcordoCronogramaNao_t 	 -->
+   <xs:complexType name="AcordoCronogramaNao_t">
+      <xs:sequence>
+		 <xs:element name="AcordoCronogramaNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+		 <xs:element name="AcordoCronogramaNaoMotivo" type="tag:StringAte100_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="MotivoAceitoAdministracao" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   
+      <!-- ======================================================================== -->
+   <xs:complexType name="InexecucaoTotal_t">
+      <xs:sequence>
+         <xs:element name="InexecucaoSim" fixed="T" type="xs:string" minOccurs="1" maxOccurs="1"/>
+         <!-- T - Sim Total -->
+         <xs:element name="InexecucaoMotivo" type="tag:StringAte500_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="DataAberturaProcedimentoAdministrativo"  type="tag:ValidaData_t" minOccurs="0"/>
+         <xs:element name="ExisteAplicacaoSancoes" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence> 
+   </xs:complexType>
+	
+<!-- ======================================================================== -->
+	
+		
+   <xs:complexType name="InexecucaoParcial_t">
+      <xs:sequence>
+         <xs:element name="InexecucaoSim" fixed="P" type="xs:string" minOccurs="1" maxOccurs="1"/>
+         <!-- P - Sim Parcial -->
+         <xs:element name="InexecucaoMotivo" type="tag:StringAte500_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="DataAberturaProcedimentoAdministrativo"  type="tag:ValidaData_t" minOccurs="1"/>
+      </xs:sequence> 
+   </xs:complexType>
+   
+
+     <!-- ======================================================================== -->
+   
+   <xs:complexType name="Responsavel_t">
+      <xs:sequence>
+         <xs:element name="CPFResponsavel" type="tag:CPF4_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="Nome" type="tag:NomeRazaoSocial_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="Cargo" type="tag:StringAte100_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   <!-- ======================================================================== -->
+   
+   <xs:complexType name="ResponsavelTI_t">
+      <xs:sequence>
+         <xs:element name="CPFResponsavel" type="tag:CPF4_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="Nome" type="tag:NomeRazaoSocial_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="Cargo" type="tag:StringAte100_t" minOccurs="0" maxOccurs="1"/>
+		 <xs:element name="ResponsavelAreaTI" type="tag:SimNao_t" minOccurs="0" maxOccurs="1" />
+      </xs:sequence>
+   </xs:complexType>
+   
+
+   <!-- ======================================================================== -->
+   
+    
+   <xs:complexType name="ParalisadaSim_t">
+     <xs:sequence>
+	   <xs:element name="ObraParalisadaSim" type="tag:Sim_t" minOccurs="1" maxOccurs="1"/>
+		 <xs:element name="ObraPublicaMotivoParalisacao" type="tag:StringAte1000_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+ 
+   <!-- ======================================================================== -->
+     
+
+   <xs:simpleType name="NaoObra_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="NaoObra"/>
+         <!-- Não é obra -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+     
+   <!-- ======================================================================== -->
+   <xs:complexType name="Artigo16_t">
+      <xs:sequence>
+         <xs:element name="Artigo16" type="tag:Sim_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="EstimativaTrienal" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="AdequacaoPlano" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="Artigo17_t">
+      <xs:sequence>
+         <xs:element name="Artigo17" type="tag:Sim_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="MetasResultado" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="MedidasCompensacao" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="PrevisaoPpaLdo" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+
+      </xs:sequence>
+   </xs:complexType>
+
+   
+   <!-- ======================================================================== -->
+   <!-- Licitante -->
+   <!-- ======================================================================== -->
+
+   <xs:complexType name="LicitanteCNPJ_t">
+      <xs:sequence>
+         <xs:element name="CNPJ" type="tag:CNPJ4_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="RazaoSocial" type="tag:NomeRazaoSocial_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="LicitanteSocio" type="tag:LicitanteSocio_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LicitanteAdministrador" type="tag:CPF4_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LicitanteDeclaracaoMicroEmpresa-PequenoPorte" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+         <xs:element name="LicitanteLoteItens" type="tag:LicitanteLote_t" minOccurs="1"
+            maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+  <xs:complexType name="LicitanteConviteCNPJ_t">
+      <xs:complexContent>
+         <xs:extension base="tag:LicitanteCNPJ_t">
+            <xs:sequence>
+               <xs:element name="IdentificacaoLicitante" type="tag:IdentificacaoLicitante_t"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+
+   <xs:complexType name="LicitanteCPF_t">
+      <xs:sequence>
+         <xs:element name="CPF" type="tag:CPF4_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Nome" type="tag:NomeRazaoSocial_t" minOccurs="1"/>
+         <xs:element name="LicitanteDeclaracaoMicroEmpresa-PequenoPorte" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="LicitanteLoteItens" type="tag:LicitanteLote_t" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   <xs:complexType name="LicitanteConviteCPF_t">
+      <xs:complexContent>
+         <xs:extension base="tag:LicitanteCPF_t">
+            <xs:sequence>
+               <xs:element name="IdentificacaoLicitante" type="tag:IdentificacaoLicitante_t"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+   <xs:complexType name="LicitanteEstrangeiro_t">
+      <xs:sequence>
+         <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         <xs:element name="RazaoSocial" type="tag:NomeRazaoSocial_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="LicitanteSocio" type="tag:LicitanteSocio_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LicitanteAdministrador" type="tag:CPF4_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LicitanteDeclaracaoMicroEmpresa-PequenoPorte" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+         <xs:element name="LicitanteLoteItens" type="tag:LicitanteLote_t" minOccurs="1"
+            maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   <xs:complexType name="LicitanteConviteEstrangeiro_t">
+      <xs:complexContent>
+         <xs:extension base="tag:LicitanteEstrangeiro_t">
+            <xs:sequence>
+               <xs:element name="IdentificacaoLicitante" type="tag:IdentificacaoLicitante_t"/>
+            </xs:sequence>
+         </xs:extension>
+      </xs:complexContent>
+   </xs:complexType>
+
+
+   <xs:complexType name="LicitanteLote_t">
+      <xs:sequence>
+         <xs:element name="LicitanteNumLote" type="tag:InteiroMaiorZero_t" minOccurs="1"/>
+         <xs:element name="ResultadoHabilitacao" type="tag:ResultadoLicitacao_t" minOccurs="1"/>
+         <xs:element name="MotivoDesab_Desclass" type="tag:StringAte1000_t" minOccurs="0"
+            maxOccurs="1"/>
+	     <xs:choice>
+	         <xs:element name="ValorProposta" type="tag:Decimal17-2_t" minOccurs="1" maxOccurs="1"/>
+	         <xs:element name="ValorPropostaPercentual" type="tag:PercentualPositivo_t" minOccurs="1" maxOccurs="1"/>
+	      </xs:choice>
+         <xs:element name="CompativelMercadoValor" type="tag:SimNao_t" minOccurs="0"/>
+         <xs:element name="CompativelMercadoFonte" type="tag:StringAte250_t" minOccurs="0"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="LicitanteSocio_t">
+      <xs:sequence>
+         <xs:element name="CPF" type="tag:CPF4_t" minOccurs="0" maxOccurs="unbounded"/>
+         <xs:element name="CNPJ" type="tag:CNPJ4_t" minOccurs="0" maxOccurs="unbounded"/>
+         <xs:element name="OutroDoc" type="tag:OutroDoc4_t" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="LicitacaoProprioOrgaoNao_t">
+      <xs:sequence>
+         <xs:element name="Municipio" type="gen:CodigoMunicipio_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Entidade" type="gen:CodigoEntidade_t" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:simpleType name="UF4_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="AC"/>
+         <xs:enumeration value="AL"/>
+         <xs:enumeration value="AM"/>
+         <xs:enumeration value="AP"/>
+         <xs:enumeration value="BA"/>
+         <xs:enumeration value="CE"/>
+         <xs:enumeration value="DF"/>
+         <xs:enumeration value="ES"/>
+         <xs:enumeration value="GO"/>
+         <xs:enumeration value="MA"/>
+         <xs:enumeration value="MG"/>
+         <xs:enumeration value="MS"/>
+         <xs:enumeration value="MT"/>
+         <xs:enumeration value="PA"/>
+         <xs:enumeration value="PB"/>
+         <xs:enumeration value="PE"/>
+         <xs:enumeration value="PI"/>
+         <xs:enumeration value="PR"/>
+         <xs:enumeration value="RJ"/>
+         <xs:enumeration value="RN"/>
+         <xs:enumeration value="RO"/>
+         <xs:enumeration value="RR"/>
+         <xs:enumeration value="RS"/>
+         <xs:enumeration value="SC"/>
+         <xs:enumeration value="SE"/>
+         <xs:enumeration value="SP"/>
+         <xs:enumeration value="TO"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- ======================================================================== -->
+   <!-- ======================================================================== -->
+   <!-- Tributos -->
+   <xs:simpleType name="Tributos_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="F"/>
+         <!-- F - Federais -->
+         <xs:enumeration value="E"/>
+         <!-- E - Estaduais -->
+         <xs:enumeration value="M"/>
+         <!-- M - Municipais -->
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoClassificacaoEconomica_t">
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[0-9]{8}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- ======================================================================== -->
+   <xs:simpleType name="CodigoClassificacaoEconomicaOutros_t">
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="88888888"/>
+         <!-- 88888888 - OUTROS  -->
+      </xs:restriction>
+   </xs:simpleType>
+     
+   <!-- ======================================================================== -->
+   <xs:complexType name="ClassificacaoEconomicaOutros_t">
+      <xs:sequence>
+         <xs:element name="CodigoClassificacaoEconomicaOutros" type="tag:CodigoClassificacaoEconomicaOutros_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DescricaoClassificacaoEconomicaOutros" type="tag:StringAte250_t" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ======================================================================== -->
+   <xs:complexType name="ClassificacaoEconomica_t">
+      <xs:sequence>
+         <xs:element name="TipoClassificacaoEconomica" type="tag:TipoClassificacaoEconomica_t" minOccurs="1" maxOccurs="1"/>
+         <xs:choice>
+            <xs:element name="CodigoClassificacaoEconomica" type="tag:CodigoClassificacaoEconomica_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="ClassificacaoEconomicaOutros" type="tag:ClassificacaoEconomicaOutros_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+      </xs:sequence>
+   </xs:complexType>
+   
+   <!-- ======================================================================== -->
+   <!-- Publicacao Sim  -->
+   <xs:complexType name="Publicacao_t">
+      <xs:sequence>
+         <xs:element name="VeiculoPublicacao" type="tag:Veiculo_t" minOccurs="1"/>
+         <xs:element name="PublicacaoData" type="tag:ValidaData_t" minOccurs="1"/>
+         <xs:element name="PublicacaoDescr" type="tag:StringAte100_t" minOccurs="0"/>
+         <xs:element name="PublicacaoOficial" type="tag:SimNao_t" minOccurs="0"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Garantia -->
+   <xs:complexType name="Garantia_t">
+      <xs:sequence>
+         <xs:element name="GarantiaEditalItem" type="tag:StringAte50_t" minOccurs="1"/>
+         <xs:element name="GarantiaValor" type="tag:Decimal17-2_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Atestado de Desempenho -->
+   <xs:complexType name="AtestadoDesempenho_t">
+      <xs:sequence>
+         <xs:element name="NumeroLote" type="tag:InteiroMaiorZero_t" minOccurs="1"/>
+         <xs:element name="AtestadoEditalItem" type="tag:ItemEdital20_t" minOccurs="0"/>
+         <xs:element name="AtestadoDescricao" type="tag:StringAte100_t" minOccurs="0"/>
+         <xs:element name="AtestadoPercentual" type="tag:DecimalMaiorQueZero_t" minOccurs="1"/>
+         <xs:element name="AtestadoQuantidade" type="tag:DecimalMaiorQueZero_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Indices Economicos -->
+   <xs:complexType name="IndiceEconomico_t">
+      <xs:sequence>
+	     <xs:choice minOccurs="1" maxOccurs="1">
+             <xs:element name="IndiceEconomico-Tipo" type="tag:TipoIndiceEconomico_t" minOccurs="1"/>
+              <xs:element name="IndiceEconomicoOutro-Tipo" type="tag:TipoIndiceEconomicoOutro_t" minOccurs="1"/>
+	    </xs:choice>	 
+         <xs:element name="IndiceEconomico-ItemEdital" type="tag:StringAte20_t" minOccurs="0"/>
+         <xs:element name="IndiceEconomico-Valor" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1"/>
+	  </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:complexType name="Participante_t">
+      <xs:sequence>
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CPF" type="tag:CPF4_t"/>
+            <xs:element name="CNPJ" type="tag:CNPJ4_t"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         </xs:choice>
+         <xs:element name="NomeRazaoSocial" type="tag:NomeRazaoSocial_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+  <xs:complexType name="JulgamentoSemInversao_t">
+      <xs:sequence>
+         
+         <!-- Há no procedimento ata de abertura dos documentos da habilitação? -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="NaoExisteAtaAberturaDocumentosHabilitacao" type="tag:Nao_t"/>
+            <!-- Data da ata de abertura -->   
+            <xs:element name="ExisteAtaAberturaDocumentosHabilitacao" type="tag:SimData_t"/>
+         </xs:choice>
+         
+         <!-- Há no procedimento ata de julgamento dos documentos de habilitação? -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="NaoExisteAtaJulgamentoDocumentosHabilitacao" type="tag:Nao_t"/>
+            <!-- Data da ata de julgamento -->
+            <xs:element name="ExisteAtaJulgamentoDocumentosHabilitacao" type="tag:SimData_t"/>
+         </xs:choice>
+         
+         <!-- Há no procedimento ata de abertura e julgamento das propostas? -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="NaoExisteAtaAberturaJulgamentoPropostas" type="tag:Nao_t"/>
+            <!-- Data da ata de abertura -->
+            <xs:element name="ExisteAtaAberturaJulgamentoPropostas" type="tag:SimData_t"/>
+         </xs:choice>
+
+         <!--Há no procedimento ata de julgamento das propostas?  -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="NaoExisteAtaJulgamentoPropostas" type="tag:Nao_t"/>
+            <!-- Data da ata de julgamento -->
+            <xs:element name="ExisteAtaJulgamentoPropostas" type="tag:SimData_t"/>
+         </xs:choice>
+
+         <!-- Existe quadro comparativo de preços das propostas? -->
+         <xs:element name="QuadroComparativoAberturaProposta" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   
+    <!-- ======================================================================== -->
+   <xs:complexType name="JulgamentoComInversao_t">
+      <xs:sequence minOccurs="0">
+         
+         <!-- Há  no procedimento ata de abertura e julgamento das propostas? -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="NaoExisteAtaAberturaJulgamentoPropostas" type="tag:Nao_t"/>
+            <!-- Data da ata de abertura -->
+            <xs:element name="ExisteAtaAberturaJulgamentoPropostas" type="tag:SimData_t"/>
+         </xs:choice>
+
+         <!-- Há no procedimento ata de julgamento das propostas?  -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="NaoExisteAtaJulgamentoPropostas" type="tag:Nao_t"/>
+            <!-- Data da ata de julgamento: -->
+            <xs:element name="ExisteAtaJulgamentoPropostas" type="tag:SimData_t"/>
+         </xs:choice>
+         
+         <!-- Há no procedimento ata de abertura e julgamento dos documentos de habilitação? -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="NaoExisteAtaAberturaJulgamentoDocumentosHabilitacao" type="tag:Nao_t"/>
+            <!-- Data da abertura e julgamento -->
+            <xs:element name="ExisteAtaAberturaJulgamentoDocumentosHabilitacao" type="tag:SimData_t"/>
+         </xs:choice>
+         
+         <!-- Quadro comparativo de preços das propostas  -->
+         <!-- Existe quadro comparativo de preços das propostas? -->
+         <xs:element name="QuadroComparativoAberturaProposta" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:complexType name="Recurso_t">
+      <xs:sequence>
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CPF" type="tag:CPF4_t"/>
+            <xs:element name="CNPJ" type="tag:CNPJ4_t"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         </xs:choice>
+         <xs:element name="RecursoDtImpetracao" type="tag:ValidaData_t" minOccurs="1"/>
+         <xs:element name="RecursoPrazoLegal" type="tag:SimNao_t" minOccurs="0"/>
+         <xs:element name="RecursoResultado" type="tag:ResultadoRecurso_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Termo de Ciencia e Notificação -->
+   <xs:complexType name="TermoCiencia_t">
+      <xs:sequence>
+         <!-- Termo de Ciencia e Notificação -->
+         <xs:element name="CPF" type="tag:CPF4_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Nome" type="tag:NomeRazaoSocial_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="EmailProfissional" type="tag:email_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="EmailPessoal" type="tag:email_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="AssinouContrato" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <xs:complexType name="LicencaAmbiental_t">
+      <xs:sequence>
+         <xs:element name="TipoLicenciamento" type="tag:TipoLicenca_t" minOccurs="1"/>
+         <xs:element name="NumLicenca" type="tag:StringAte20_t" minOccurs="1"/>
+         <xs:element name="DataLicenca" type="tag:ValidaData_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Lote  -  LoteObra -->
+   <!-- ======================================================================== -->
+   <!-- 30-03-2016 -->
+   <xs:complexType name="LoteObra_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="NumeroLote" type="tag:InteiroMaiorZero_t" minOccurs="1"/>
+         <xs:element name="DescricaoLote" type="tag:StringAte1000_t" minOccurs="1"/>
+         <xs:element name="TipoExecucao" type="tag:TipoExecucaoObra_t" minOccurs="1"/>
+         <xs:element name="ClassificacaoEconomica" type="tag:ClassificacaoEconomica_t" minOccurs="1"/>
+         <xs:element name="TipoObraServicoEng" type="tag:TipoObraServicoEng_t" minOccurs="1"
+            maxOccurs="1"/>
+
+         <!-- Localização da Obra -->
+         <xs:element name="LocalizacaoObra" type="tag:LocalizacaoObra_t" minOccurs="1" maxOccurs="unbounded"/>
+         <!-- Orcamento -->
+         <!-- Orcamento Lote -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="OrcamentoLoteSim" type="tag:OrcamentoLoteSim_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <xs:element name="OrcamentoLoteNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="LocalizacaoObra_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="LocalObraServico" type="tag:StringAte100_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Latitude" type="tag:LatitudeLongitude_t" minOccurs="1"/>
+         <xs:element name="Longitude" type="tag:LatitudeLongitude_t" minOccurs="1"/>
+      </xs:sequence> 
+   </xs:complexType> 
+
+   <!-- ======================================================================== -->
+   <!-- Lote  -  Compras e Servicos  -->
+   <!-- ======================================================================== -->
+   <!-- ========================================================================= -->
+   <xs:complexType name="LoteNaoObra_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="NumeroLote" type="tag:InteiroMaiorZero_t" minOccurs="1"/>
+         <xs:element name="DescricaoLote" type="tag:StringAte1000_t" minOccurs="1"/>
+         <xs:element name="Quantidade" type="tag:Decimal15-5_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="UnidadeMedida" type="tag:StringAte20_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="TipoExecucao" type="tag:TipoExecucaoNaoObra_t" minOccurs="1"/>
+         <xs:element name="ClassificacaoEconomica" type="tag:ClassificacaoEconomica_t" minOccurs="1"/>
+         <!-- Orcamento Lote -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="OrcamentoLoteSim" type="tag:OrcamentoLoteSim_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <xs:element name="OrcamentoLoteNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+         <!-- Orcamento  Itens -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="LoteCompostoItensSim" type="tag:LoteCompostoItensSim_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <xs:element name="LoteCompostoItensNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <!--  Orcamento -->
+   <xs:complexType name="OrcamentoLoteSim_t">
+      <xs:sequence>
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CPF" type="tag:CPF4_t"/>
+            <xs:element name="CNPJ" type="tag:CNPJ4_t"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         </xs:choice>
+         <xs:element name="ValorUnitario" type="tag:Decimal20-5_t" minOccurs="1"/>
+         <xs:element name="Quantidade" type="tag:Decimal15-5_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="UnidadeMedida" type="tag:StringAte20_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DtOrcamento" type="tag:ValidaData_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="LoteCompostoItensSim_t">
+      <xs:sequence>
+         <xs:element name="Produto" type="tag:StringAte1000_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="Quantidade" type="tag:Decimal15-5_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="UnidadeMedida" type="tag:StringAte20_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="ClassificacaoEconomica" type="tag:ClassificacaoEconomica_t" minOccurs="1"/>
+         <!-- orcamento item -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="OrcamentoItemSim" type="tag:OrcamentoItemSim_t" minOccurs="1"
+               maxOccurs="unbounded"/>
+            <xs:element name="OrcamentoItemNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="OrcamentoItemSim_t">
+      <xs:sequence>
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="CPF" type="tag:CPF4_t"/>
+            <xs:element name="CNPJ" type="tag:CNPJ4_t"/>
+            <xs:element name="OutroDoc" type="tag:OutroDoc4_t"/>
+         </xs:choice>
+         <xs:element name="ValorUnitario" type="tag:Decimal20-5_t" minOccurs="1"/>
+         <xs:element name="Quantidade" type="tag:Decimal15-5_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="UnidadeMedida" type="tag:StringAte20_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DtOrcamento" type="tag:ValidaData_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <!-- Empenho -->
+   <xs:complexType name="Empenho_t">
+      <xs:sequence>
+         <xs:element name="NumNotaEmpenho" type="tag:StringAte35_t" minOccurs="1"/>
+         <xs:element name="NotaEmpenhoDt" type="tag:ValidaData_t" minOccurs="1"/>
+         <xs:element name="NotaEmpenhoValor" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1"/>
+         <xs:element name="FonteRecursos" type="tag:FonteRecursos_t" minOccurs="1" maxOccurs="1" />
+      </xs:sequence>
+   </xs:complexType>
+
+
+   <!-- ======================================================================== -->
+   <!-- Declaraçao Existencia de Recursos -->
+   <!-- ======================================================================== -->
+   <xs:complexType name="ExistenciaRecursosSim_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+		 <xs:element name="ExistenciaRecursosValor" type="tag:Decimal17-2_t" minOccurs="1"/>
+		 <xs:element name="ExistenciaRecursosDt" type="tag:ValidaData_t" minOccurs="1"/>
+		 <!-- Fonte de recursos  INFORMAR PELO MENOS UMA OU MAIS DAS FONTES ABAIXO -->
+		 <xs:element name="Tesouro" type="tag:Sim_t" minOccurs="0" maxOccurs="1"/>
+		 <xs:element name="TransferenciasConveniosEstaduais" type="tag:ConvenioEstadual_t"
+		           minOccurs="0" maxOccurs="unbounded"/>
+		 <xs:element name="RecursosPropriosFundosEspeciais" type="tag:Sim_t" minOccurs="0"
+		           maxOccurs="1"/>
+		 <xs:element name="RecursosPropriosAdministracaoIndireta" type="tag:Sim_t" minOccurs="0"
+		           maxOccurs="1"/>
+		 <xs:element name="ConvenioFederal" type="tag:ConvenioFederal_t" minOccurs="0"
+			maxOccurs="unbounded"/>
+		<xs:element name="OutrasFontesDescricao" type="tag:StringAte100_t" minOccurs="0"
+			maxOccurs="1"/>
+		 <xs:element name="OperacoesCredito" type="tag:Financiamento_t" minOccurs="0"
+		 maxOccurs="unbounded"/>
+                       <xs:element name="EmendasParlamentaresIndividuais" type="tag:Sim_t" minOccurs="0" maxOccurs="1"/>
+	 </xs:sequence> 
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- Fonte de Recursos -->
+   <xs:complexType name="ConvenioEstadual_t">
+      <xs:sequence>
+         <xs:element name="ConvenioEstadualNum" type="tag:NumeroConvenio4_t" minOccurs="1"/>
+         <xs:element name="RepasseConvenioEstadualValor" type="tag:Decimal17-2_t" minOccurs="1"/>
+         <xs:element name="ContrapartidaConvenioEstadualValor" type="tag:Decimal17-2_t"
+            minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="ConvenioFederal_t">
+      <xs:sequence>
+         <xs:element name="ConvenioFederalNum" type="tag:NumeroConvenio4_t" minOccurs="1"/>
+        <xs:element name="RepasseConvenioFederalValor" type="tag:Decimal17-2_t" minOccurs="1"/>
+         <xs:element name="ContrapartidaConvenioFederalValor" type="tag:Decimal17-2_t"
+            minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ******************************************************************************************************  -->
+   <xs:complexType name="NumeroConvenio4_t">
+      <xs:sequence>
+         <xs:element name="Numero">
+            <xs:simpleType>
+               <xs:restriction base="xs:string">
+                  <xs:pattern value="[a-zA-Z0-9\-]{1,12}"/>
+               </xs:restriction>
+            </xs:simpleType>
+         </xs:element>
+         <xs:element name="Ano" type="tag:Ano4_t"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   
+      <!-- ******************************************************************************************************  -->
+	  
+   <xs:simpleType name="NumeroFinanciamento4_t">
+      <xs:restriction base="xs:integer">
+         <xs:minInclusive value="0"/>
+         <xs:maxInclusive value="32767"/>
+      </xs:restriction>
+   </xs:simpleType>
+ 
+   
+   <!-- ======================================================================== -->
+   <xs:complexType name="Financiamento_t">
+      <xs:sequence>
+         <xs:element name="AgenteFinanceiro" type="tag:StringAte50_t" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="ContratoFinanciamentoNum" type="tag:StringAte20_t" minOccurs="1"/>
+         <xs:element name="ContratoFinanciamentoAno" type="tag:Ano4_t" minOccurs="1"/>
+         <xs:element name="RepasseContratoFinanciamentoValor" type="tag:Decimal17-2_t"
+            minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ======================================================================== -->
+   <!-- 	Comissão Licitacao   -->
+
+   <xs:complexType name="ComissaoLicitacao_t">
+      <xs:sequence>
+         <!--   Membros da Comissão de Licitação  -->
+         <xs:sequence minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="CPFIntegrante" type="tag:CPF4_t" minOccurs="1"/>
+            <xs:element name="NomeIntegrante" type="tag:StringAte100_t" minOccurs="1"/>
+            <xs:element name="AtribuicaoIntegrante" type="tag:AtribuicaoIntegrante_t" minOccurs="1"/>
+            <xs:element name="CargoOcupadoIntegrante" type="tag:StringAte100_t" minOccurs="1"/>
+            <xs:element name="NaturezaCargoOcupado" type="tag:NaturezaCargoOcupado_t" minOccurs="1"
+            />
+         </xs:sequence>
+         <!-- Tipo de Comissão -->
+         <xs:element name="TipoComissaoLicitacao" type="tag:TipoComissaoLicitacao_t" minOccurs="1"/>
+         <!-- Designação da Comissão   -->
+         <xs:sequence minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="NumAtoDesignacao" type="tag:StringAte08_t" minOccurs="1"/>
+            <xs:element name="AnoAtoDesignacao" type="tag:Ano4_t" minOccurs="1"/>
+         </xs:sequence>
+         <!-- Data de Publicação do Ato de Designação da Comissão de Licitação  -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="AtoDesignacaoComissaoDt" type="tag:ValidaData_t" minOccurs="1"/>
+         </xs:sequence>
+         <!-- Vigência do Ato de Designação da Comissão de Licitação -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="AtoDesignacaoComissaoInicio" type="tag:ValidaData_t" minOccurs="1"/>
+            <xs:element name="AtoDesignacaoComissaoFim" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+         </xs:sequence>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <!-- Pre Qualificacao -->
+   <xs:complexType name="PreQualificacaoSim_t">
+      <xs:sequence>
+         <!-- Edital -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="ItemEditalPre" type="tag:ItemEdital_t" minOccurs="1"/>
+            <xs:element name="NumeroEditalPre" type="tag:NumEdital_t" minOccurs="1"/>
+            <xs:element name="PublicacaoOficialPre" type="tag:Publicacao_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+         </xs:sequence>
+         <!-- Parecer jurídico/Garantia -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <!-- Box Parecer Jurídico -->
+            <xs:element name="ConstaParecerJuridico" type="tag:SimNao_t" minOccurs="1"/>
+            <xs:element name="GarantiaPre" type="tag:Garantia_t" minOccurs="0" maxOccurs="unbounded" />
+         </xs:sequence>
+         <!-- Indices Economicos -->
+         <xs:element name="IndiceEconomicoPre" type="tag:IndiceEconomico_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <!-- Box Critério de Julgamento -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="CriterioJulgamentoPre" type="tag:StringAte250_t" minOccurs="1" maxOccurs="1"/>
+          </xs:sequence>
+         <!-- Ata de recebimento da documentação -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="AtaRecebimentoNao" type="tag:Nao_t"  minOccurs="0" maxOccurs="1"/>
+             <xs:element name="AtaRecebimentoDt" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+         </xs:choice>
+         <!-- Relatório de qualificação técnica -->
+         <xs:sequence>
+            <xs:element name="ExisteRelatorioQualificacao" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ExisteAtestadoDesempenho" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         </xs:sequence>
+         <!-- Participantes  -->
+         <xs:element name="ParticipanteQualificado" type="tag:Participante_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <xs:element name="ParticipanteNaoQualificado" type="tag:Participante_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <!-- Ata de julgamento  -->
+         <xs:element name="ExisteAtaJulgamentoPre" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="PublicacaoJulgamentoPreNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="PublicacaoJulgamentoPre" type="tag:Publicacao_t" minOccurs="1" maxOccurs="unbounded"/>
+         </xs:choice>
+
+         <!-- Recursos  -->
+         <xs:element name="Recurso" type="tag:Recurso_t" minOccurs="0" maxOccurs="unbounded"/>
+         <!-- Homologacao -->
+         <!-- Homologação Data da Publicacao -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="ExisteComprovacaoPublicacaoHomologacaoPreQualificacaoNao"
+               type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="ExisteComprovacaoPublicacaoHomologacaoPreQualificacaoSim"
+               type="tag:ExisteComprovacaoPublicacaoHomologacaoPreQualificacaoSim_t" minOccurs="1"
+               maxOccurs="1"/>
+         </xs:choice>
+
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="ExisteComprovacaoPublicacaoHomologacaoPreQualificacaoSim_t">
+      <xs:sequence>
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="HouvePublicacaoHomologacaoPre-qualificacaoNao" type="tag:Nao_t"
+               minOccurs="1" maxOccurs="1"/>
+            <xs:element name="HouvePublicacaoHomologacaoPre-qualificacaoSim" type="tag:Publicacao_t"
+               minOccurs="1" maxOccurs="unbounded"/>
+         </xs:choice>
+         <!--Data da Homologação -->
+         <xs:element name="HomologacaoPreDt" type="tag:ValidaData_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <!-- Edital -->
+   <xs:complexType name="Edital_t">
+      <xs:sequence>
+         <xs:element name="EditalNumero" type="tag:NumEdital_t" minOccurs="1"/>
+         <xs:element name="EditalDt" type="tag:ValidaData_t" minOccurs="1"/>
+         <!--    <xs:element name="EditalItem" type="tag:ItemEdital_t" minOccurs="1"/>  -->
+         <!--Publicacao Edital -->
+         <xs:element name="EditalPublicacao" type="tag:Publicacao_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <!-- Box Garantia para participacao -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="GarantiaEditalItem" type="tag:ItemEdital_t" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="GarantiaEditalValor" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="GarantiaEditalPercente" type="tag:PercentualPositivo_t" minOccurs="1" maxOccurs="1"/>
+         </xs:sequence>
+      </xs:sequence>
+   </xs:complexType>
+
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="Amostra_t">
+      <xs:sequence>
+         <xs:element name="AmostrasItem" type="tag:StringAte20_t" minOccurs="0"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="VistaTecnica_t">
+      <xs:sequence>
+         <xs:element name="VTecQtidadeEmpresas" type="tag:InteiroMaiorIgualZero_t" minOccurs="0"/>
+         <xs:element name="VTecItemEdital" type="tag:StringAte12_t" minOccurs="0"/>
+         <!-- temporiamente item edital será apenas inteiro -->
+         <!--<xs:element name="VTecItemEdital" type="tag:ItemEdital_t" minOccurs="1"/>  -->
+         <xs:element name="VTecPrazoEmDias" type="tag:InteiroMaiorZero_t" minOccurs="0"/>
+         <xs:element name="VTecExigeCurriculoProfissional" type="tag:SimNao_t" minOccurs="1"/>
+         <xs:element name="VTecExigeCREA_SP" type="tag:SimNao_t" minOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="Autorizacao_t">
+      <xs:sequence>
+         <xs:element name="ExisteAutorizacao-SecretEstadual-DL41165-96" type="tag:SimNaoAplica_t"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="ExisteAutorizacao-Resolucao7_2014" type="tag:SimNao_t" minOccurs="0"
+            maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ========================================================================= -->
+
+   <!-- ========================================================================= -->
+   <!-- ========================================================================= -->
+
+      
+   <!-- 1. comissao atribuicao membro -->
+   <xs:simpleType name="AtribuicaoIntegrante_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Presidente -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Membro -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Pregoeiro -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Equipe de Apoio -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Servidor Designado -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Leiloeiro -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Secretário -->
+		 <xs:enumeration value="8"/>
+         <!-- 8 - Autoridade Pregão -->
+		 <xs:enumeration value="9"/>
+         <!-- 9 - Responsável -->
+		 <xs:enumeration value="10"/>
+         <!-- 10 - Autoridade Convite -->
+		 <xs:enumeration value="11"/>
+         <!-- 11 - Agente de Contratação (Lei 14.133/21) -->
+		 <xs:enumeration value="12"/>
+         <!-- 12 - Comissão de Contratação (Lei 14.133/21) -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  2. comissao natureza cargo -->
+   <xs:simpleType name="NaturezaCargoOcupado_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Efetivo -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Comissionado -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Agente Politico -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Empregado Temporário -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Empregado Público -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Outros -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  3. execucao situacao -->
+   <xs:simpleType name="SituacaoAjuste_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Em execução -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Suspenso (Paralisado) -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Encerrado - Cumprimento Integral  -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Encerrado - Rescisão com imposição de sanção  -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Encerrado - Rescisão sem imposição de sanção -->
+         <xs:enumeration value="6"/>
+         <!-- 6- Encerrado - Anulado -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 4. instrumento -->
+   <!--  não possui tags  --> 
+
+   <!-- 5.  licenca ambiental tipo  -->
+   <xs:simpleType name="TipoLicenca_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Licença Prévia -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Licença de Instalação -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Licença de Operação -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Autorização Ambiental -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  6.  licitacao beneficio -->
+   <xs:simpleType name="BeneficioLei1232006_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Não se aplica -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Licitação exclusiva -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Tratamento diferenciado/simplificado -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  7.  licitacao condicao participante -->
+   <xs:simpleType name="IdentificacaoLicitante_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Convidado e Não participante -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Convidado e Participante -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Não Convidado e Participante -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  8.  licitacao fundamento legal -->
+   <xs:simpleType name="FundamentoLei8666_Art24_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Art. 24, I, Lei 8666/93  -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Art. 24, II, Lei 8666/93 -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Art. 24, III, Lei 8666/93   -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Art. 24, IV, Lei 8666/93  -->
+         <xs:enumeration value="5"/>
+         <!-- 5- Art. 24, V, Lei 8666/93  -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Art. 24, VII, Lei 8666/93  -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Art. 24, VIII, Lei 8666/93  -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Art. 24, X, Lei 8666/93  -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Art. 24, XI, Lei 8666/93 -->
+         <xs:enumeration value="12"/>
+         <!-- 12 - Art. 24, XII, Lei 8666/93 -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Art. 24, XIII, Lei 8666/93  -->
+         <xs:enumeration value="14"/>
+         <!-- 14 - Art. 24, XIV, Lei 8666/93  -->
+         <xs:enumeration value="15"/>
+         <!-- 15 - Art. 24, XV, Lei 8666/93 -->
+         <xs:enumeration value="16"/>
+         <!-- 16 - Art. 24, XVI, Lei 8666/93  -->
+         <xs:enumeration value="17"/>
+         <!-- 17 - Art. 24, XVII, Lei 8666/93  -->
+         <xs:enumeration value="18"/>
+         <!-- 18 - Art. 24, XVIII, Lei 8666/93  -->
+         <xs:enumeration value="20"/>
+         <!-- 20 - Art. 24, XX, Lei 8666/93  -->
+         <xs:enumeration value="21"/>
+         <!-- 21 - Art. 24, XXI, Lei 8666/93  -->
+         <xs:enumeration value="22"/>
+         <!-- 22 - Art. 24, XXII, Lei 8666/93  -->
+         <xs:enumeration value="23"/>
+         <!-- 23 - Art. 24, XXIII, Lei 8666/93  -->
+         <xs:enumeration value="24"/>
+         <!-- 24 - Art. 24, XXIV, Lei 8666/93  -->
+         <xs:enumeration value="25"/>
+         <!-- 25 - Art. 24, XXV, Lei 8666/93  -->
+         <xs:enumeration value="26"/>
+         <!-- 26 - Art. 24, XXVI, Lei 8666/93  -->
+         <xs:enumeration value="27"/>
+         <!-- 27 - Art. 24, XXVII, Lei 8666/93  -->
+         <xs:enumeration value="31"/>
+         <!-- 31 - Art. 24, XXXI, Lei 8666/93  -->
+         <xs:enumeration value="32"/>
+         <!-- 32 - Art. 24, XXXII, Lei 8666/93  -->
+         <xs:enumeration value="33"/>
+         <!-- 33 - Art. 24, XXXIII, Lei 8666/93  -->
+		 <xs:enumeration value="38"/>
+         <!-- 38 - Chamada Publica - Lei Federal 11.947/2009  -->
+		 <xs:enumeration value="39"/>
+         <!-- 39 - Art. 24, XXX, Lei 8666/93    -->
+		 <xs:enumeration value="903"/>
+         <!-- 903 - Outro - fundamento legal  -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="FundamentoLei8666_Art25_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="34"/>
+         <!-- 34 - Art. 25.  Caput  -->
+         <xs:enumeration value="35"/>
+         <!-- 35 - Art. 25, I, Lei 8666/93 - aquisição de materiais, equipamentos, ou gêneros que só possam ser fornecidos por produtor, empresa ou representante comercial exclusivo, vedada a preferência de marca, devendo a comprovação de exclusividade ser feita através de atestado fornecido pelo órgão de registro do comércio do local em que se realizaria a licitação ou a obra ou o serviço, pelo Sindicato, Federação ou Confederação Patronal, ou, ainda, pelas entidades equivalentes  -->
+         <xs:enumeration value="36"/>
+         <!-- 36 - Art. 25, II, Lei 8666/93 - contratação de serviços técnicos enumerados no art. 13 desta Lei, de natureza singular, com profissionais ou empresas de notória especialização, vedada a inexigibilidade para serviços de publicidade e divulgação  -->
+         <xs:enumeration value="37"/>
+         <!-- 37 - Art. 25, III, Lei 8666/93 - contratação de profissional de qualquer setor artístico, diretamente ou através de empresário exclusivo, desde que consagrado pela crítica especializada ou pela opinião pública  -->
+		 <xs:enumeration value="904"/>
+         <!-- 904 - Outro-Informar o fundamento legal  -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+      <xs:simpleType name="FundamentoLei13303_Art29_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="40"/>
+         <!-- 40 - Art. 29, I, Lei 13.303/2016  -->
+          <xs:enumeration value="41"/>
+         <!-- 41 - Art. 29, II, Lei 13.303/2016  -->
+         <xs:enumeration value="42"/>
+         <!-- 42 - Art. 29, III, Lei 13.303/2016  -->
+         <xs:enumeration value="43"/>
+         <!-- 43 - Art. 29, IV, Lei 13.303/2016  -->
+         <xs:enumeration value="44"/>
+         <!-- 44 - Art. 29, V, Lei 13.303/2016  -->
+         <xs:enumeration value="45"/>
+         <!-- 45 - Art. 29, VI, Lei 13.303/2016  -->
+         <xs:enumeration value="46"/>
+         <!-- 46 - Art. 29, VII, Lei 13.303/2016  -->
+         <xs:enumeration value="47"/>
+         <!-- 47 - Art. 29, VIII, Lei 13.303/2016  -->
+         <xs:enumeration value="48"/>
+         <!-- 48 - Art. 29, IX, Lei 13.303/2016  -->
+		  <xs:enumeration value="49"/>
+         <!-- 49 - Art. 29, X, Lei 13.303/2016  -->
+		 <xs:enumeration value="50"/>
+         <!-- 50 - Art. 29, XI, Lei 13.303/2016  -->
+		 <xs:enumeration value="51"/>
+         <!-- 51 - Art. 29, XII, Lei 13.303/2016  -->
+		 <xs:enumeration value="52"/>
+         <!-- 52 - Art. 29, XIII, Lei 13.303/2016  -->
+		 <xs:enumeration value="53"/>
+         <!-- 53 - Art. 29, XIV, Lei 13.303/2016  -->
+		 <xs:enumeration value="54"/>
+         <!-- 54 - Art. 29, XV, Lei 13.303/2016  -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   
+   <xs:simpleType name="FundamentoLei13303_Art30_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="55"/>
+         <!-- 55 - Art. 30, I, Lei 13.303/2016  -->
+          <xs:enumeration value="56"/>
+         <!-- 56 - Art. 30, II, Lei 13.303/2016  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+
+   <xs:simpleType name="FundamentoLei14133_Art74_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="57"/>
+         <!-- 57 - Art. 74, caput, Lei 14.133/2021  -->
+         <xs:enumeration value="58"/>
+         <!-- 58 - Art. 74, I, Lei 14.133/2021  -->
+         <xs:enumeration value="59"/>
+         <!-- 59 -Art. 74, II, Lei 14.133/2021  -->
+         <xs:enumeration value="60"/>
+         <!-- 60 - Art. 74, III, Lei 14.133/2021  -->
+         <xs:enumeration value="61"/>
+         <!-- 61 - Art. 74, IV, Lei 14.133/2021  -->
+         <xs:enumeration value="62"/>
+         <!-- 62 - Art. 74, V, Lei 14.133/2021  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   
+   <xs:simpleType name="FundamentoLei14133_Art75_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="63"/>
+         <!-- 63 - Art. 75, I, Lei 14.133/2021  -->
+         <xs:enumeration value="64"/>
+         <!-- 64 - Art. 75, II, Lei 14.133/2021  -->
+         <xs:enumeration value="65"/>
+         <!-- 65 - Art. 75, III, Lei 14.133/2021  -->
+         <xs:enumeration value="66"/>
+         <!-- 66 - Art. 75, IV, Lei 14.133/2021  -->
+         <xs:enumeration value="67"/>
+         <!-- 67 - Art. 75, V, Lei 14.133/2021  -->
+         <xs:enumeration value="68"/>
+         <!-- 68 - Art. 75, VI, Lei 14.133/2021  -->
+         <xs:enumeration value="69"/>
+         <!-- 69 - Art. 75, VII, Lei 14.133/2021  -->
+         <xs:enumeration value="70"/>
+         <!-- 70 - Art. 75, VIII, Lei 14.133/2021  -->
+         <xs:enumeration value="71"/>
+         <!-- 71 - Art. 75, IX, Lei 14.133/2021  -->
+         <xs:enumeration value="72"/>
+         <!-- 72 - Art. 75, X, Lei 14.133/2021  -->
+         <xs:enumeration value="73"/>
+         <!-- 73 - Art. 75, XI, Lei 14.133/2021  -->
+         <xs:enumeration value="74"/>
+         <!-- 74 - Art. 75, XII, Lei 14.133/2021  -->
+         <xs:enumeration value="75"/>
+         <!-- 75 - Art. 75, XIII, Lei 14.133/2021  -->
+         <xs:enumeration value="76"/>
+         <!-- 76 - Art. 75, XIV, Lei 14.133/2021  -->
+         <xs:enumeration value="77"/>
+         <!-- 77 - Art. 75, XV, Lei 14.133/2021  -->
+         <xs:enumeration value="78"/>
+         <!-- 78 - Art. 75, XVI, Lei 14.133/2021  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   
+   <xs:simpleType name="FundamentoLei14133_Art76_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="79"/>
+         <!-- 79 - Art. 76, I, Lei 14.133/2021  -->
+         <xs:enumeration value="80"/>
+         <!-- 80 - Art. 76, II, Lei 14.133/2021  -->
+         <xs:enumeration value="81"/>
+         <!-- 81 - Art. 76, 3, Lei 14.133/2021  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="FundamentoLei8666_Art17_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="82"/>
+         <!-- 82 - Art. 17, I, Lei 8.663/93  -->
+         <xs:enumeration value="83"/>
+         <!-- 83 - Art. 17, II, Lei 8.663/93  -->
+         <xs:enumeration value="84"/>
+         <!-- 84 - Art. 17, 2, Lei 8.663/93 -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="FundamentoLei14124_Art2_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="85"/>
+         <!-- 85 - Art. 2 Lei 14.124/01  -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <!-- 9. licitacao modalidade -->
+   <!-- Modalidade da Licitacao -->
+   <xs:simpleType name="ModalidadeType_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Concorrencia -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Concorrencia Internacional -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Tomada de Preços -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Convite -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Pregão Eletrônico -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Pregão Presencial -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Regime Diferenciado de Contrratação RDC -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Contratação Direta - Dispensa de Licitação -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Contratação Direta - Inexigibilidade de Licitação -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Outra -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="ModalidadeNao1_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Concorrencia -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- ********************************************************************** -->
+   <xs:simpleType name="ModalidadeLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Concorrencia -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Concorrencia Internacional -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Tomada de Preços -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Convite -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Pregão Eletrônico -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Pregão Presencial -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Regime Diferenciado de Contrratação RDC -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Contratação Direta - Dispensa de Licitação -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Contratação Direta - Inexigibilidade de Licitação -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Outra -->
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- ********************************************************************** -->
+   <!-- 10. licitacao resultado habilitacao -->
+   <xs:simpleType name="ResultadoLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Desclassificado  -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Classificado - Vencedor -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Inabilitado -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Não compareceu -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Desistiu -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Classificado -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Habilitado -->		          
+         <xs:enumeration value="8"/>
+         <!-- 8 - Proposta não analisada -->		          
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--  11. licitacao situacao -->
+   <xs:simpleType name="SituacaoLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Fracassada -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Deserta -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Adjudicada -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Revogada -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Outra -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Anulada -->
+         <xs:enumeration value="7"/>
+         <!-- 7 -  Homologacao Parcial -->
+         <xs:enumeration value="10"/>
+         <!-- 10 -  Homologada - Registro de Preco -->
+		 <xs:enumeration value="11"/>
+         <!-- 11 -  Homologada-->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 12. licitacao tipo contratacao -->
+   <xs:simpleType name="ObjetoLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Equipamentos e material permanente -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Material de expediente -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Gêneros alimentícios  -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Combustíveis e lubrificantes  -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Material hospitalar, ambulatorial ou odontológico -->
+         <xs:enumeration value="6"/>
+         <!-- 6- Medicamentos -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Passagens aéreas e outras despesas de locomoção  -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Serviços de consultoria  -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Locação de imóveis  -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Locação de mão de obra -->
+         <xs:enumeration value="12"/>
+         <!-- 12 - Operações de Crédito (exceto ARO) -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Concessão de serviço público  -->
+         <xs:enumeration value="14"/>
+         <!-- 14 - Permissão  -->
+         <xs:enumeration value="16"/> 
+         <!-- 16 - Outros materias de consumo  -->
+         <xs:enumeration value="17"/>
+         <!-- 17 - Outras prestações de serviços -->	 
+         <xs:enumeration value="19"/>
+         <!-- 19 - "Coleta de lixo" -->
+		 <xs:enumeration value="23"/>
+         <!-- 23 - "Limpeza Urbana/Varrição" -->
+		 <xs:enumeration value="24"/>
+         <!-- 24 - "Material Escolar" -->
+		 <xs:enumeration value="25"/>
+         <!-- 25 - "Transporte Escolar" -->
+		 <xs:enumeration value="26"/>
+         <!-- 26 - "Uniforme Escolar" -->
+		 <xs:enumeration value="27"/>
+         <!-- 27 - "Publicidade/Propaganda" -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- licitacao tipo contratacao-->
+   <xs:simpleType name="ObjetoLicitacaoEN_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="9"/>
+         <!-- 9 - Obras e Serviços de Engenharia -->
+         <xs:enumeration value="20"/>
+         <!-- 20 - Implantação de aterro sanitário  -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="ObjetoLicitacaoTI_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="18"/>
+         <!-- 18 - "Serviços de TI" -->
+         <xs:enumeration value="22"/>
+         <!-- 22 - "Compras de TI" -->
+         <xs:enumeration value="32"/>
+         <!-- 32 - "SIAFIC" -->
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="ObjetoLicitacaoLGR_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="28"/>
+         <!-- 28 - "Concessão" -->
+         <xs:enumeration value="29"/>
+         <!-- 29 - "Permissão" -->
+         <xs:enumeration value="30"/>
+         <!-- 30 - "Locação" -->
+         <xs:enumeration value="31"/>
+         <!-- 31 - "Outro" -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 13. licitacao tipo execucao -->
+   <xs:simpleType name="TipoExecucaoNaoObra_t">
+      <xs:union memberTypes="tag:TipoExecucaoObra_t  tag:TipoExecucaoNaoObra8"/>
+   </xs:simpleType>
+   
+   <xs:simpleType name="TipoExecucaoObra_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Execução Direta -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Empreitada por Preço Global -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Empreitada por Preço Unitário -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Tarefa -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Empreitada Integral -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Contratação Integrada (RDC ou Lei nº 13.303/2016) -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Concessao Publica com Obra de Engenharia -->
+		 <xs:enumeration value="9"/>
+         <!-- 9 - Contratação semi-integrada -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="TipoExecucaoNaoObra8">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="8"/>
+         <!-- 8 - Não se aplica -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 14. licitacao tipo natureza -->
+   <xs:simpleType name="NaturezaLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/> <!-- 1 - Normal -->
+         <xs:enumeration value="2"/> <!-- 2 - Registro de Preços -->
+         <xs:enumeration value="3"/> <!-- 3 - Credenciamento  -->
+         <xs:enumeration value="4"/> <!-- 4 - PPP Administrativa -->
+         <xs:enumeration value="5"/>  <!-- 5 - PPP Patrocinada -->
+         <xs:enumeration value="6"/>  <!-- 6 - Concessão Pública -->
+         <xs:enumeration value="7"/>  <!-- 7 -Permissão Pública -->
+         <xs:enumeration value="8"/>  <!-- 8 -Concessão/Permissão de Uso -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 15. licitacao tipo objeto -->
+   <!--  não possui tags  --> 
+   
+   <!--  16. licitacao tipo licitacao -->
+   <!-- Tipo da Licitacao -->
+   <xs:simpleType name="TipoLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Menor preço -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Técnica e preço -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Melhor técnica ou conteúdo artistico -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Maior lançe e oferta -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Maior desconto -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Maior oferta de preço -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Maior retorno econômico -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Menor valor da tarifa do serviço público -->
+         <xs:enumeration value="9"/>
+         <!-- 9 - Menor valor da tarifa + melhor técnica -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Menor valor da contrapestação -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Menor valor da contrapestação + melhor técnica -->
+		 <xs:enumeration value="12"/>
+         <!-- 12 - Melhor destinação de bens alienados (Lei nº 13.303/2016) -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- 17.publicacao veiculo -->
+   <xs:simpleType name="Veiculo_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1. DOU -->
+         <xs:enumeration value="2"/>
+         <!-- 2 -Jornal de grande circulação nacional -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Outros sites-->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Jornal de grande circulação regional/municipal -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - DOE  -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Site da Administração Direta na Internet -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - DOM -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Quadro ou mural de acesso público -->
+		 <xs:enumeration value="9"/>
+         <!-- 9 - DJE (Diário da Justiça Eletrônico) -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--   18. resultado recurso -->
+   <xs:simpleType name="ResultadoRecurso_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Provido -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Desprovido -->
+         <xs:enumeration value="3"/> 
+         <!-- 3 -Provido Parcialmente -->
+         <xs:enumeration value="4"/> 
+         <!-- 4 -Não Julgado -->
+      </xs:restriction>
+
+   </xs:simpleType>
+   
+   <!-- 19. termo tipoaditivo -->
+   <xs:complexType name="TipoTermoAditivo_t">
+      <xs:choice>
+         <xs:element name="TipoTAditivo" type="tag:TipoTAditivo_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="TAditivoOutros" type="tag:TAditivoOutros_t" minOccurs="1" maxOccurs="1"/>
+      </xs:choice>
+   </xs:complexType>
+   
+   <xs:simpleType name="TipoTAditivo_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Modificação do projeto ou das especificações técnicas -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Acréscimo de valor por aumento de quantitativo -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Redução de valor por supressão de quantitativo -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Acréscimo de valor por inclusão de itens, lotes ou itens de lotes -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Redução de valor por supressão de itens, lotes ou itens de lotes -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Substituição de garantia de execução -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Modificação do regime de execução ou modo de fornecimento -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Modificação da forma de pagamento -->
+         <xs:enumeration value="9"/>
+         <!-- 9 - Reequilíbrio econômico-financeiro -->
+         <xs:enumeration value="10"/>
+         <!-- 10 - Reajustamento de preços -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Alteração de dotação orçamentária -->
+         <xs:enumeration value="12"/>
+         <!-- 12 -  Prorrogação do prazo contratual -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Alteração da natureza ou razão social do fornecedor -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+    <xs:complexType name="TAditivoOutros_t">
+      <xs:sequence>
+	        <!-- 14 - Outros  -->
+         <xs:element name="TipoTAditivoOutros" fixed="14" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="DescricaoTAditivoOutros" type="tag:StringAte100_t" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   
+   <!-- 20. tipo comissao -->
+   <xs:simpleType name="TipoComissaoLicitacao_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Permanente -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Especial -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Servidor Designado -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--    21. tipo documento identificacao -->
+   <!--  não possui tags  --> 
+   
+   <!--   22. tipo fonte recurso -->
+   <!--  não possui tags  --> 
+   
+   <!--    23. tipo indice economico -->
+   <xs:simpleType name="TipoIndiceEconomico_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Liquidez Imediata -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Liquidez Corrente -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Liquidez Seca -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Liquidez Geral -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Endividamento a Curto Prazo -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Endividamento Total -->
+         <xs:enumeration value="7"/>
+         <!-- 7 -Capital Social Minimo -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Outro -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--    23. tipo_indice economico Outro -->
+   <xs:complexType name="TipoIndiceEconomicoOutro_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="Outro" fixed="8"  type="xs:int" minOccurs="1" maxOccurs="1"/>
+	  <xs:element name="Descricao" type="tag:StringAte200_t" minOccurs="1" maxOccurs="1"/>
+       </xs:sequence>
+   </xs:complexType>
+   
+  <!--  24. tipo obra  -->
+  <!--  25. tipo obra relacionamento -->
+  <!--  26. tipo obra subitem  -->
+   <xs:complexType name="TipoObraServicoEng_t">
+      <xs:sequence minOccurs="1" maxOccurs="unbounded">
+         <xs:element name="AssessoriasConsultoriasTecnicas" fixed="7"  type="xs:int" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="AuditoriaObrasServicosEngenharia" fixed="8"  type="xs:int"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="ConsertoInstalacaoManutencaoEm" type="tag:TipoServicoEng1_t"
+            minOccurs="0" maxOccurs="unbounded"/>
+         <xs:element name="ConservacaoReparacaoManutencaoDe" type="tag:TipoServicoEng2_t"
+            minOccurs="0" maxOccurs="unbounded"/>
+         <xs:element name="ConstrucaoReformaAmpliacaoDe" type="tag:TipoServicoEng2_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <xs:element name="ElaboracaoProjetoBasicoProjetoExecutivo" fixed="5"  type="xs:int"  minOccurs="0"
+            maxOccurs="1"/>
+         <xs:element name="EnsaiosTecnologicos" fixed="10"   type="xs:int" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="EstudosImpactoAmbiental" fixed="9"   type="xs:int"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="EstudosViabilidadeTecnicaEconomica" fixed="4"   type="xs:int" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LevantamentoAerofotogrametrico" fixed="12"   type="xs:int"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="LevantamentosTopograficosBatimetricosGeodesicos" fixed="11"   type="xs:int"  minOccurs="0"
+            maxOccurs="1"/>
+         <xs:element name="Outros" fixed="14"  type="xs:int"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="PericiasAvaliacoes" fixed="6"   type="xs:int"  minOccurs="0" maxOccurs="1"/>
+         <xs:element name="SondagensOutrosProcedimentosInvestigacaoGeotecnica" fixed="13"  type="xs:int" 
+            minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+   </xs:complexType>
+   
+   <!-- ConsertoInstalacaoManutencao -->
+   <xs:simpleType name="TipoServicoEng1_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="10"/>
+         <!-- 10 - Elevadores e escadas rolantes -->
+         <xs:enumeration value="9"/>
+         <!-- 9 -  Instalações elétricas, de iluminação, hidrossanitárias, de águas pluviais, de sonorização ambiente, de comunicação e dados -->
+         <xs:enumeration value="13"/>
+         <!-- 13 - Paisagismos -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Sinalização horizontal e vertical de vias públicas ou rodovias-->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Sistemas de alarmes em edificações -->
+         <xs:enumeration value="11"/>
+         <!-- 11 - Sistemas de climatização e ar condicionado -->
+         <xs:enumeration value="21"/>
+         <!-- 21 - Sistemas de combate a incêndio -->
+         <xs:enumeration value="14"/>
+         <!-- 14 - Sistemas de controle de acesso ou circuito fechado de televisão -->
+         <xs:enumeration value="16"/>
+         <!-- 16 -Sistemas de proteção contra descargas atmosféricas -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Sistemas de supervisão e automação predial -->
+         <xs:enumeration value="6"/>
+         <!-- 6 -Sistemas de telefonia e comunicação de dados -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Sistemas de ventilação e exaustão  -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- ConservacaoReparacaoManutencao  -->
+   <xs:simpleType name="TipoServicoEng2_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="18"/>
+         <!-- 18 - Adutoras, estações de tratamento e redes de distribuição de água -->
+         <xs:enumeration value="17"/>
+         <!-- 17 - Barragens -->
+         <xs:enumeration value="20"/>
+         <!-- 20 - Edificações -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Obras de saneamento, drenagem e irrigação -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Pontes e viadutos -->
+         <xs:enumeration value="12"/>
+         <!-- 12 - Rodovias -->
+         <xs:enumeration value="19"/>
+         <!-- 19 - Sistemas de tratamento de resíduos sólidos, incluindo aterros sanitários e usinas de compostagem -->
+         <xs:enumeration value="1"/>
+         <!-- 1 - Trilhos e Veículos sobre Trilhos -->
+         <xs:enumeration value="22"/>
+         <!-- 22 - Túneis -->
+         <xs:enumeration value="15"/>
+         <!-- 15 - Vias públicas -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!--   27. tipo pessoa -->
+   <!--  não possui tags  --> 
+   
+   <xs:simpleType name="Fornecimento_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Entrega imediata  -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Entrega fracionada -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="FormaRecebimento_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Provisório -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Definitivo -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="TipoClassificacaoEconomica_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Receita -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Despesa -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <xs:simpleType name="FonteRecursos_t">
+      <xs:restriction base="xs:int">
+         <xs:enumeration value="1"/>
+         <!-- 1 - Tesouro -->
+         <xs:enumeration value="2"/>
+         <!-- 2 - Transferências e convênios estaduais-vinculados -->
+         <xs:enumeration value="3"/>
+         <!-- 3 - Recursos Próprios de Fundos Especiais de Despesa-Vinculados -->
+         <xs:enumeration value="4"/>
+         <!-- 4 - Recursos Próprios da Administração Indireta -->
+         <xs:enumeration value="5"/>
+         <!-- 5 - Transferências e Convênios Federais-Vinculados -->
+         <xs:enumeration value="6"/>
+         <!-- 6 - Outras Fontes de Recursos -->
+         <xs:enumeration value="7"/>
+         <!-- 7 - Operações de Crédito -->
+         <xs:enumeration value="8"/>
+         <!-- 8 - Emendas Parlamentares Individuais -->
+      </xs:restriction>
+   </xs:simpleType>
+   
+   <!-- ========================================================================= -->
+   <!-- ========================================================================= -->
+
+
+</xs:schema>
+
+

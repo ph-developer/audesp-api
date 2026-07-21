@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+   targetNamespace="http://www.tce.sp.gov.br/audesp/xml/licitacao2" version="1.0" xml:lang="pt-BR"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   xmlns="http://www.tce.sp.gov.br/audesp/xml/licitacao2"
+   xmlns:tag="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+   xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"> 
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico"
+      schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2026_A.XSD"/>
+
+   <xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/tagcomum"
+      schemaLocation="../tagcomum/AUDESP4_COMUM_2026_A.XSD"/>
+
+   <!-- ========================================================================= -->
+   <xs:annotation>
+      <xs:documentation>
+         <DataCriacao>2026-01-12</DataCriacao>
+         <DataModificacao>2026-01-12</DataModificacao>
+         <VersaoRevisaoAnterior>2025_A</VersaoRevisaoAnterior>
+         <VersaoRevisaoNova>2026_A</VersaoRevisaoNova>
+         <Descricao>Licitação - Concorrencia Internacional</Descricao>
+         <Justificativa>Licitação - Concorrencia Internacional</Justificativa>
+         <Autor>DSIS</Autor>
+      </xs:documentation>
+   </xs:annotation>
+   <!-- ========================================================================= -->
+   <!-- 
+      1. Ata de Registro de Preço:Sim - 
+      2 Compras e Servicos de TI            
+   
+             Compras e Serviços	Compras e Serviços de TI	Obras e Serviços de Engenharia
+   
+   -->
+
+   <!-- ========================================================================= -->
+   <!-- root -->
+   <xs:element name="Licitacao" >
+
+   <!-- ========================================================================= -->
+
+   <xs:complexType>
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <xs:element name="Descritor" type="gen:Descritor_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="RegistroPrecosNao2" type="RegistroPrecosNao2_t" minOccurs="1"
+            maxOccurs="50"/>
+      </xs:sequence>
+   </xs:complexType>
+   </xs:element>
+
+   <!-- ========================================================================= -->
+   <!-- ========================================================================= -->
+   <!-- Licitacao Tipo 2 = Concorrencia  Internacional -->
+   <!-- Registro de Preço = Nao -->
+   <xs:complexType name="RegistroPrecosNao2_t">
+      <xs:sequence>
+         <!-- Modalidade da Licitacao  -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="ConcorrenciaInternacional" type="ConcorrenciaInternacional_t"
+               minOccurs="1"/>
+         </xs:choice>
+         <!-- Dados da Licitacao -->
+         <!-- <xs:element name="ModalidadeLicitacaoFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+         <xs:element name="LicitacaoPossuiParticipantes" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <xs:element name="CodigoLicitacao" type="tag:CodigoLicitacao_t" minOccurs="1"/>
+         <xs:element name="NumeroProcessoAdm" type="tag:StringAte35_t" minOccurs="1"/>
+         <xs:element name="AnoProcessoAdm" type="tag:Ano4_t" minOccurs="1" maxOccurs="1"/>
+         <xs:element name="NumeroLicitacao" type="tag:StringAte35_t" minOccurs="1"/>
+         <xs:element name="AnoLicitacao" type="tag:Ano4_t" minOccurs="1" maxOccurs="1"/>
+         <!--Informacao do BID  -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+			<!-- 1 -->
+            <xs:element name="BIDObjecaoAvisoAberturaPreQualificacao" type="tag:SimNao_t" minOccurs="1"/>
+            <!-- 2 -->
+            <xs:element name="BIDEditalFasePreQualificacao" type="tag:SimNao_t" minOccurs="1"/>
+            <!-- <xs:element name="BIDEditalFasePreQualificacaoFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+            <!-- 3 -->
+            <xs:element name="BIDJulgamentoFasePreQualificacao" type="tag:SimNao_t" minOccurs="1"/>
+            <!-- <xs:element name="BIDJulgamentoFasePreQualificacaoFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+            <!-- 4 -->
+            <xs:element name="BIDEdital2aFase" type="tag:SimNao_t" minOccurs="1"/>
+            <!-- <xs:element name="BIDEdital2aFaseFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/> -->
+            <!-- 5 -->
+            <xs:element name="BIDJulgamentoPropostasTecnicasComerciais" type="tag:SimNao_t"
+               minOccurs="1"/>
+            <!-- <xs:element name="BIDJulgamentoPropostasTecnicasComerciaisFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+            <!-- 5 -->
+            <xs:element name="BIDJulgamentoNegociacaoFinal" type="tag:SimNao_t" minOccurs="1"/>
+            <!-- <xs:element name="BIDJulgamentoNegociacaoFinalFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/> -->
+         </xs:sequence>
+         <!--Informacao do BID Fim -->
+         <xs:element name="Lei13121" type="tag:SimNao_t" minOccurs="0"/>
+         <xs:element name="NaturezaLicitacao" type="tag:NaturezaLicitacao_t"/>
+         <xs:element name="DescricaoObj" type="tag:StringAte8000_t" minOccurs="1"/>
+         <xs:element name="JustificativaObj" type="tag:StringAte8000_t" minOccurs="0"/>
+         <xs:element name="VlTotalLicitacao" type="tag:DecimalMaiorQueZero17-2_t" minOccurs="1"/>
+
+         <!-- Dados Adicionais -->
+         <xs:element name="TipoLicitacao" type="tag:TipoLicitacao_t" minOccurs="1"/>
+         <xs:element name="Subcontratacao" type="tag:SimNao_t" minOccurs="1"/>
+         <xs:element name="BeneficioLei1232006" type="tag:BeneficioLei1232006_t" minOccurs="1"/>
+         <!-- Pre-Qualificacao  -->
+         <xs:choice>
+            <xs:element name="PreQualificacaoNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="PreQualificacaoSim" type="tag:PreQualificacaoSim_t" minOccurs="1"
+               maxOccurs="1"/>
+         </xs:choice>
+
+         <!-- Box Divisão do objeto -->
+         <xs:element name="NumeroLotes" type="tag:InteiroMaiorZero_t" minOccurs="1"/>
+         <!-- Tipo de Objetos -->
+         <xs:choice minOccurs="1" maxOccurs="1">
+            <xs:element name="ComprasServicosTI" type="ComprasServicosTI_t" minOccurs="1"
+               maxOccurs="1"/>
+            <xs:element name="ComprasServicos" type="ComprasServicos_t" minOccurs="1"
+               maxOccurs="1"/>
+            <xs:element name="ObrasServicosEngenharia" type="ObrasServicosEngenharia_t"
+               minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+         <!-- Declaracao de existencia de recursos  -->
+         <xs:choice>
+            <xs:element name="ExistenciaRecursosSim" type="tag:ExistenciaRecursosSim_t"
+               minOccurs="1" maxOccurs="1"/>
+            <xs:element name="ExistenciaRecursosNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>
+
+         <!-- LRF -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="Artigo16" type="tag:Artigo16_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Artigo17" type="tag:Artigo17_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="NaoSeEnquadra" type="tag:Sim_t"/>
+         </xs:choice>
+         <!-- Parecer Tecnico Jurídico  -->
+         <!-- <xs:element name="ParecerTecnicoJuridicoFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+         <xs:element name="ExisteParecerTecnicoJuridico" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <!-- Audiência pública -->
+         <!-- <xs:element name="AudienciaPublicaFls" type="tag:Fls_t" minOccurs="1" maxOccurs="1"/> -->
+		  <xs:choice>
+                <xs:element name="AudienciaPublicaNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="AudienciaPublica-Dt" type="tag:ValidaData_t" minOccurs="1" maxOccurs="1"/>
+            </xs:choice>
+        
+         <!-- Edital 2a Fase -->
+         <!--  <xs:element name="AutorizacaoAberturaEdital2aFaseFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+         <xs:element name="ExisteAutorizacaoAberturaEdital2aFase" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <xs:element name="AvisoEdital2aFasePublicacao" type="tag:Publicacao_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <xs:element name="Edital2aFaseNumero" type="tag:NumEdital_t" minOccurs="1"/>
+         <!-- <xs:element name="Edital2aFaseFls" type="tag:Fls_t" minOccurs="1" maxOccurs="1"/>  -->
+         <xs:element name="Edital2aFaseDt" type="tag:ValidaData_t" minOccurs="1"/>
+         <!--    <xs:element name="Edital2aFaseItem" type="tag:ItemEdital_t" minOccurs="1"/>  -->
+         <!--Publicacao Edital -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="Edital2aFasePublicacaoNao" type="tag:Nao_t" minOccurs="0"/>
+            <xs:element name="Edital2aFasePublicacao" type="tag:Publicacao_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+         </xs:choice>
+
+         <!-- Box Garantia para participação da licitação  -->
+         <xs:element name="ExisteExigenciaGarantiaParticipacaoLicitacao" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+
+         <!-- Datas -  Entrega Propostas-->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="EntregaPropostaNao" type="tag:Nao_t"/>
+            <xs:element name="EntregaPropostaDt" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+            <!-- <xs:element name="Datas-EntregaPropostaFls" type="tag:Fls_t" minOccurs="1"/>  -->
+         </xs:choice>
+
+         <!-- Datas -  abertura Licitação -->
+         <xs:element name="AberturaLicitacaoDt" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+         <!-- <xs:element name="AberturaLicitacaoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+
+         <!-- Data de Julgamento -->
+         <xs:element name="JulgamentoDt" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+         <!-- <xs:element name="JulgamentoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+
+         <!-- Comissão de Licitação -->
+         <xs:element name="ComissaoLicitacao" type="tag:ComissaoLicitacao_t" minOccurs="0"
+            maxOccurs="1"/>
+         <!-- Licitantes -->
+         <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="LicitanteCPF" type="tag:LicitanteCPF_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+            <xs:element name="LicitanteCNPJ" type="tag:LicitanteCNPJ_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+            <xs:element name="LicitanteEstrangeiro" type="tag:LicitanteEstrangeiro_t" minOccurs="0"
+               maxOccurs="unbounded"/>
+         </xs:sequence>
+         <!-- Atestados de desempenho -->
+         <xs:element name="AtestadoDesempenho" type="tag:AtestadoDesempenho_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <!-- Indices Econômicos  -->
+         <xs:element name="IndiceEconomico" type="tag:IndiceEconomico_t" minOccurs="0"
+            maxOccurs="unbounded"/>
+         <!-- Quitação de tributos  -->
+         <xs:sequence minOccurs="1" maxOccurs="1">
+            <xs:element name="TributosFederais" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="TributosEstaduais" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="TributosMunicipais" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+         </xs:sequence>
+
+         <!-- Ata de Recebimento e Julgamento -->
+         <!-- Bloco Ata de Recebimento e Julgamento das Propostas Técnicas e Comerciais -->
+         <xs:element name="ExisteAtaAberturaPropostasTecnicasComerciais" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+         <xs:element name="ExisteAtaRecebimentoPropostasTecnicasComerciais" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+         <xs:element name="ExisteAtaJulgamentoPropostasTecnicasComerciais" type="tag:SimNao_t"
+            minOccurs="1" maxOccurs="1"/>
+
+         <!-- Bloco Publicações da Ata de Julgamento -->
+         <xs:element name="AtaAberturaJulgamentoHabilitacaoPublicacao" type="tag:Publicacao_t"
+            minOccurs="0" maxOccurs="unbounded"/>
+
+         <!-- Negociação Final  -->
+         <xs:element name="ExisteProcedimentoPropostaComercial" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <!-- <xs:element name="ProcedimentoPropostaComercialFls" type="tag:Fls_t" minOccurs="0"  maxOccurs="1"/>  -->
+         <xs:element name="FoiRealizadoChamadoNegociacao" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <!-- <xs:element name="RealizadoChamadoNegociacaoFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+         <xs:element name="ForamRegistradasAtasReunioesNegociacao" type="tag:SimNao_t" minOccurs="1"
+            maxOccurs="1"/>
+         <!-- <xs:element name="RegistradaAtaReuniaoNegociacaoFls" type="tag:Fls_t" minOccurs="0"  maxOccurs="1"/>  -->
+         <xs:element name="ExistePropostaFinal" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+         <!-- <xs:element name="PropostaFinalFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+         <xs:element name="ExisteAtaJulgamentoFinal" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>
+         <!-- <xs:element name="AtaJulgamentoFinalFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>  -->
+
+         <!-- Quadro comparativo de preços das propostas  -->
+         <!-- <xs:element name="AberturaPropostasComercialDt" type="tag:ValidaData_t" minOccurs="0"
+            maxOccurs="1"/> -->
+         <!-- <xs:element name="AberturaPropostasComercialFls" type="tag:Fls_t" minOccurs="1"/>  -->
+
+         <!-- Interposição de recurso -->
+         <xs:element name="ExisteQuadroComparativo" type="tag:SimNao_t" minOccurs="0" maxOccurs="1"/>
+         <!-- <xs:element name="QuadroComparativoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+
+         <!-- Recursos -->
+         <xs:element name="Recurso" type="tag:Recurso_t" minOccurs="0" maxOccurs="unbounded"/>
+
+         <!-- Sessao Publica -->
+         <!-- <xs:element name="SessaoPublica" type="tag:SimNao_t" minOccurs="1" maxOccurs="1"/>  -->
+         <!-- <xs:element name="SessaoPublicaFls" type="tag:Fls_t" minOccurs="0" maxOccurs="1"/>   -->
+
+         <!-- Homologação  -->
+         <xs:choice minOccurs="0">
+            <xs:element name="PublicacaoHomologacaoNao" type="tag:Nao_t" minOccurs="0" maxOccurs="1" />
+            <xs:element name="PublicacaoHomologacaoDt" type="tag:ValidaData_t" minOccurs="0"
+               maxOccurs="1"/>
+         </xs:choice>                  
+         <!-- <xs:element name="PublicacaoHomologacaoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+
+         <!-- Adjudicação -->
+         <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="AdjudicacaoNao" type="tag:Nao_t" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="AdjudicacaoDt" type="tag:ValidaData_t" minOccurs="0" maxOccurs="1"/>
+         </xs:choice>
+         <!-- <xs:element name="AdjudicacaoFls" type="tag:StringAte20_t" minOccurs="1"/>  -->
+
+         <!-- Autorizacao -->
+         <xs:element name="Autorizacao" type="tag:Autorizacao_t" minOccurs="0" maxOccurs="1"/>
+
+         <!-- Box Situacao da Licitacao -->
+         <xs:element name="SituacaoLicitacao" type="tag:SituacaoLicitacao_t" minOccurs="1"/>
+         <xs:element name="DtSituacaoLicitacao" type="tag:ValidaData_t" minOccurs="1"/>
+         <xs:element name="DescricaoSituacaoLicitacao" type="tag:StringAte100_t" minOccurs="0"/>
+         <!-- Fim -->
+
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="AtaAberturaJulgamentoHabilitacao_t">
+      <xs:sequence>
+         <xs:element name="AtaAberturaHabilitacaoDt" type="tag:ValidaData_t" minOccurs="1"/>
+         <!-- <xs:element name="AtaAberturaHabilitacaoFls" type="tag:Fls_t" minOccurs="1"/>  -->
+         <xs:element name="AtaJulgamentoPropostaTecnicasDt" type="tag:ValidaData_t" minOccurs="1"/>
+         <!--<xs:element name="AtaJulgamentoPropostaTecnicasFls" type="tag:Fls_t" minOccurs="1"/> -->
+      </xs:sequence>
+   </xs:complexType>
+
+
+   <!-- ========================================================================= -->
+   <!-- Modalidade da Licitacao -->
+   <xs:complexType name="ConcorrenciaInternacional_t">
+      <xs:sequence>
+         <xs:element name="ModalidadeLicitacao" fixed="2" minOccurs="1" maxOccurs="1"/>
+
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+   <xs:complexType name="ObrasServicosEngenharia_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+
+         <!-- Objeto da licitação -->
+         <xs:element name="ObjetoLicitacaoEN" type="tag:ObjetoLicitacaoEN_t"/>
+         <!-- Lote -->
+         <xs:element name="Lote" type="tag:LoteObra_t" minOccurs="1" maxOccurs="unbounded"/>
+         <xs:element name="VistaTecnica" type="tag:VistaTecnica_t" minOccurs="0"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+
+   <xs:complexType name="ComprasServicos_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+         <!-- Objeto da licitação -->
+         <xs:element name="ObjetoLicitacao" type="tag:ObjetoLicitacao_t"/>
+         <!-- Lote -->
+         <xs:element name="Lote" type="tag:LoteNaoObra_t" minOccurs="1" maxOccurs="unbounded"/>
+         <!-- Amostra -->
+         <xs:choice minOccurs="1">
+                <xs:element name="AmostraNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1" />
+                <xs:element name="Amostra" type="tag:Amostra_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>   
+      </xs:sequence>
+   </xs:complexType>
+   <!-- ========================================================================= -->
+
+   <xs:complexType name="ComprasServicosTI_t">
+      <xs:sequence minOccurs="1" maxOccurs="1">
+
+         <!-- Objeto da licitação -->
+         <xs:element name="ObjetoLicitacaoTI" type="tag:ObjetoLicitacaoTI_t"/>
+         <!-- Compras e Serviços de TI -->
+         <xs:sequence>
+            <xs:element name="FinalidadeEquipamento"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="CompatibilidadeCompuitadoresSistemas"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="PedidoSubstituicaoEquipamentoAntigos"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="PedidoNomesMarcas"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="DescricaoTecnica"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="SoftwareProprietario"  type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="ManuaisEmPortugues" type="tag:SimNaoAplica_t" minOccurs="0"/>
+            <xs:element name="CertificadoANATEL" type="tag:SimNaoAplica_t" minOccurs="0"/>
+         </xs:sequence>
+         <!-- Compras e Serviços de TI -->
+         <!-- Lote -->
+         <xs:element name="Lote" type="tag:LoteNaoObra_t" minOccurs="1" maxOccurs="unbounded"/>
+         <!-- Amostra -->
+         <xs:choice minOccurs="1">
+                <xs:element name="AmostraNao" type="tag:Nao_t" minOccurs="1" maxOccurs="1" />
+                <xs:element name="Amostra" type="tag:Amostra_t" minOccurs="1" maxOccurs="1"/>
+         </xs:choice>   
+      </xs:sequence>
+   </xs:complexType>
+
+   <!-- ========================================================================= -->
+
+
+</xs:schema>
+
