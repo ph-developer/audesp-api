@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'audesp_input_metrics.dart';
+
 /// Dropdown padronizado para os formulários AUDESP.
 ///
 /// Wraps [DropdownButtonFormField] e converte um [Map<T, String>] em
@@ -91,16 +93,16 @@ class AudespDropdown<T> extends StatelessWidget {
       initialValue: value,
       isExpanded: true,
       isDense: true,
-      style: isDisabled
-          ? Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.38),
-            )
-          : Theme.of(context).textTheme.titleMedium,
+      style: AudespInputMetrics.textStyle(
+        context,
+        color: isDisabled
+            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+            : null,
+      ),
       decoration: InputDecoration(
         labelText: label,
         enabled: !isDisabled,
+        contentPadding: AudespInputMetrics.dropdownContentPadding,
         disabledBorder: OutlineInputBorder(
           borderSide: BorderSide(
             color: Theme.of(

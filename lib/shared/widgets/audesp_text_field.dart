@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'audesp_input_metrics.dart';
+
 class AudespTextField extends StatefulWidget {
   final String label;
   final TextEditingController? controller;
@@ -200,8 +202,13 @@ class _AudespTextFieldState extends State<AudespTextField> {
       textCapitalization: widget.textCapitalization,
       onFieldSubmitted: widget.onFieldSubmitted,
       textInputAction: widget.textInputAction,
-      decoration: const InputDecoration(counterText: '', isDense: true)
-          .copyWith(
+      style: AudespInputMetrics.textStyle(context),
+      decoration:
+          const InputDecoration(
+            counterText: '',
+            isDense: true,
+            contentPadding: AudespInputMetrics.contentPadding,
+          ).copyWith(
             labelText: widget.label,
             hintText: widget.hintText,
             prefixText: widget.prefixText,

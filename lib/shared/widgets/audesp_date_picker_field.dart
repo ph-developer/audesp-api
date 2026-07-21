@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'audesp_input_metrics.dart';
+
 /// Campo de data padronizado para os formulários AUDESP.
 ///
 /// - Formato de exibição: `dd/MM/yyyy`.
@@ -81,10 +83,7 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
           child: InputDecorator(
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
+              contentPadding: AudespInputMetrics.contentPadding,
               labelText: widget.label,
               border: const OutlineInputBorder(),
               errorText: hasError ? state.errorText : null,
@@ -99,15 +98,16 @@ class _AudespDatePickerFieldState extends State<AudespDatePickerField> {
             ),
             child: Text(
               widget.value != null ? _fmt.format(widget.value!) : '—',
-              style: widget.readOnly
-                  ? TextStyle(
-                      color: Theme.of(
+              style: AudespInputMetrics.textStyle(
+                context,
+                color: widget.readOnly
+                    ? Theme.of(
                         context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.38),
-                    )
-                  : widget.value == null
-                  ? TextStyle(color: Theme.of(context).colorScheme.outline)
-                  : null,
+                      ).colorScheme.onSurface.withValues(alpha: 0.38)
+                    : widget.value == null
+                    ? Theme.of(context).colorScheme.outline
+                    : null,
+              ),
             ),
           ),
         );
