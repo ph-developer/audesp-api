@@ -107,11 +107,6 @@ final kLicitacaoGeminiFields = <GeminiField>[
         'Ex.: [{"tipoIndice": 1, "valorIndice": 150000.0}, {"tipoIndice": 4, "valorIndice": 1.5}]',
   ),
   GeminiField(key: 'recursoBID', label: 'Recurso BID', hint: '1=Sim, 2=Não'),
-  GeminiField(
-    key: 'audienciaPublica',
-    label: 'Audiência Pública',
-    hint: '1=Sim (haverá sessão de lances), 2=Não',
-  ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,7 +162,6 @@ String _displayValue(String key, String raw) {
       }
     case 'exigenciaGarantiaLicitantes':
     case 'exigenciaIndicesEconomicos':
-    case 'audienciaPublica':
       {
         final id = int.tryParse(raw);
         return id != null ? (_stripIdPrefix(kTriState[id] ?? raw)) : raw;

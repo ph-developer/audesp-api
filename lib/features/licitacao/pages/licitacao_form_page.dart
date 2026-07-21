@@ -807,7 +807,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ? jsonEncode(_indicesEconomicos)
             : '',
         'recursoBID': _recursoBID?.toString() ?? '',
-        'audienciaPublica': _audienciaPublica?.toString() ?? '',
       };
 
       Map<String, String>? accepted;
@@ -925,9 +924,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         }
         if (finalAccepted.containsKey('recursoBID')) {
           _recursoBID = int.tryParse(finalAccepted['recursoBID']!);
-        }
-        if (finalAccepted.containsKey('audienciaPublica')) {
-          _audienciaPublica = int.tryParse(finalAccepted['audienciaPublica']!);
         }
       });
 
