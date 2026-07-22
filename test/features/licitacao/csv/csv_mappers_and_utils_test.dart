@@ -30,17 +30,11 @@ void main() {
 
     group('tipoPessoaFromCleanNi', () {
       test('14 dígitos → PJ', () {
-        expect(
-          CsvMappers.tipoPessoaFromCleanNi('14733837000154'),
-          'PJ',
-        );
+        expect(CsvMappers.tipoPessoaFromCleanNi('14733837000154'), 'PJ');
       });
 
       test('11 dígitos → PF', () {
-        expect(
-          CsvMappers.tipoPessoaFromCleanNi('33020679389'),
-          'PF',
-        );
+        expect(CsvMappers.tipoPessoaFromCleanNi('33020679389'), 'PF');
       });
 
       test('outro comprimento → PE', () {
@@ -50,8 +44,10 @@ void main() {
 
     group('declaracaoMEouEPP', () {
       test('"SIM" → 1', () => expect(CsvMappers.declaracaoMEouEPP('SIM'), 1));
-      test('"sim" (case-insensitive) → 1',
-          () => expect(CsvMappers.declaracaoMEouEPP('sim'), 1));
+      test(
+        '"sim" (case-insensitive) → 1',
+        () => expect(CsvMappers.declaracaoMEouEPP('sim'), 1),
+      );
       test('"NÃO" → 3', () => expect(CsvMappers.declaracaoMEouEPP('NÃO'), 3));
       test('"NAO" → 3', () => expect(CsvMappers.declaracaoMEouEPP('NAO'), 3));
       test('vazio → 3', () => expect(CsvMappers.declaracaoMEouEPP(''), 3));
@@ -59,10 +55,16 @@ void main() {
 
     group('parseBrCurrency', () {
       test('formatos com milhar e decimal', () {
-        expect(CsvMappers.parseBrCurrency('19.600,00'), closeTo(19600.0, 0.001));
+        expect(
+          CsvMappers.parseBrCurrency('19.600,00'),
+          closeTo(19600.0, 0.001),
+        );
         expect(CsvMappers.parseBrCurrency('2.200,00'), closeTo(2200.0, 0.001));
         expect(CsvMappers.parseBrCurrency('27,50'), closeTo(27.5, 0.001));
-        expect(CsvMappers.parseBrCurrency('19600,0000'), closeTo(19600.0, 0.001));
+        expect(
+          CsvMappers.parseBrCurrency('19600,0000'),
+          closeTo(19600.0, 0.001),
+        );
       });
 
       test('lança FormatException para entrada inválida', () {
@@ -81,29 +83,56 @@ void main() {
     group('resultadoHabilitacao', () {
       test('posicao 1 → 1 (Vencedor)', () {
         expect(
-          BllMapper.resultadoHabilitacao(posicao: 1, classificado: 'SIM'),
+          BllMapper.resultadoHabilitacao(
+            posicao: 1,
+            classificado: 'SIM',
+            habilitado: 'SIM',
+          ),
           1,
         );
       });
 
       test('posicao 2 + classificado SIM → 2 (Classificado)', () {
         expect(
-          BllMapper.resultadoHabilitacao(posicao: 2, classificado: 'SIM'),
+          BllMapper.resultadoHabilitacao(
+            posicao: 2,
+            classificado: 'SIM',
+            habilitado: 'SIM',
+          ),
           2,
         );
       });
 
       test('posicao 3 + classificado NÃO → 4 (Desclassificado)', () {
         expect(
-          BllMapper.resultadoHabilitacao(posicao: 3, classificado: 'NÃO'),
+          BllMapper.resultadoHabilitacao(
+            posicao: 3,
+            classificado: 'NÃO',
+            habilitado: 'SIM',
+          ),
           4,
         );
       });
 
       test('posicao 2 + classificado NÃO → 4 (Desclassificado)', () {
         expect(
-          BllMapper.resultadoHabilitacao(posicao: 2, classificado: 'NÃO'),
+          BllMapper.resultadoHabilitacao(
+            posicao: 2,
+            classificado: 'NÃO',
+            habilitado: 'NÃO',
+          ),
           4,
+        );
+      });
+
+      test('classificado SIM + habilitado NÃO → 7 (Inabilitado)', () {
+        expect(
+          BllMapper.resultadoHabilitacao(
+            posicao: 2,
+            classificado: 'SIM',
+            habilitado: 'NÃO',
+          ),
+          7,
         );
       });
     });
@@ -114,30 +143,52 @@ void main() {
   // ---------------------------------------------------------------------------
   group('BrConectadoMapper', () {
     group('resultadoHabilitacao', () {
-      test('"ADJUDICADO" → 1',
-          () => expect(BrConectadoMapper.resultadoHabilitacao('ADJUDICADO'), 1));
+      test(
+        '"ADJUDICADO" → 1',
+        () => expect(BrConectadoMapper.resultadoHabilitacao('ADJUDICADO'), 1),
+      );
       test('"Classificada/Habilitada" → 2', () {
         expect(
           BrConectadoMapper.resultadoHabilitacao('Classificada/Habilitada'),
           2,
         );
       });
-      test('"DESCLASSIFICADO" → 4',
-          () => expect(BrConectadoMapper.resultadoHabilitacao('DESCLASSIFICADO'), 4));
-      test('"DESCLASSIFICADA" → 4',
-          () => expect(BrConectadoMapper.resultadoHabilitacao('DESCLASSIFICADA'), 4));
-      test('desconhecido → 6',
-          () => expect(BrConectadoMapper.resultadoHabilitacao('PENDENTE'), 6));
+      test(
+        '"DESCLASSIFICADO" → 4',
+        () => expect(
+          BrConectadoMapper.resultadoHabilitacao('DESCLASSIFICADO'),
+          4,
+        ),
+      );
+      test(
+        '"DESCLASSIFICADA" → 4',
+        () => expect(
+          BrConectadoMapper.resultadoHabilitacao('DESCLASSIFICADA'),
+          4,
+        ),
+      );
+      test(
+        'desconhecido → 6',
+        () => expect(BrConectadoMapper.resultadoHabilitacao('PENDENTE'), 6),
+      );
     });
 
     group('parseNumeroItem', () {
-      test('"001" → 1',
-          () => expect(BrConectadoMapper.parseNumeroItem('001'), 1));
-      test('"010" → 10',
-          () => expect(BrConectadoMapper.parseNumeroItem('010'), 10));
-      test('lança FormatException em texto',
-          () => expect(() => BrConectadoMapper.parseNumeroItem('abc'),
-              throwsA(isA<FormatException>())));
+      test(
+        '"001" → 1',
+        () => expect(BrConectadoMapper.parseNumeroItem('001'), 1),
+      );
+      test(
+        '"010" → 10',
+        () => expect(BrConectadoMapper.parseNumeroItem('010'), 10),
+      );
+      test(
+        'lança FormatException em texto',
+        () => expect(
+          () => BrConectadoMapper.parseNumeroItem('abc'),
+          throwsA(isA<FormatException>()),
+        ),
+      );
     });
   });
 

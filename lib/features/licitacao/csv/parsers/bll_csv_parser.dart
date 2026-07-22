@@ -61,6 +61,7 @@ class BllCsvParser implements PortalCsvParser {
         final lanceStr = CsvUtils.getField(row, header, 'lance');
         final meStr = CsvUtils.getField(row, header, 'me');
         final classificadoStr = CsvUtils.getField(row, header, 'classificado');
+        final habilitadoStr = CsvUtils.getField(row, header, 'habilitado');
 
         final loteNum = int.parse(loteStr);
         final posicao = int.parse(posicaoStr);
@@ -75,6 +76,7 @@ class BllCsvParser implements PortalCsvParser {
           resultadoHabilitacao: BllMapper.resultadoHabilitacao(
             posicao: posicao,
             classificado: classificadoStr,
+            habilitado: habilitadoStr,
           ),
         );
 

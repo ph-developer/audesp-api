@@ -63,8 +63,9 @@ class SheetUtils {
 
     for (final row in sheet.rows) {
       final rowValues = row.map((cell) {
-        if (cell?.value == null) return '';
-        return cell!.value.toString();
+        final value = cell?.value;
+        if (value == null) return '';
+        return _xlsxCellToString(value);
       }).toList();
 
       if (rowValues.every((v) => v.isEmpty)) continue;
@@ -72,5 +73,16 @@ class SheetUtils {
     }
 
     return rows;
+  }
+
+  /// Converte números nativos do XLSX para a notação esperada pelos
+  /// parsers brasileiros. O Excel armazena decimais com ponto mesmo quando a
+  /// interface os exibe com vírgula.
+  static String _xlsxCellToString(CellValue value) {
+    return switch (value) {
+      DoubleCellValue() => value.value.toString().replaceFirst('.', ','),
+      IntCellValue() => value.value.toString(),
+      _ => value.toString(),
+    };
   }
 }

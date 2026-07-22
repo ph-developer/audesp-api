@@ -59,7 +59,7 @@ class DatabaseService {
           retificacao TINYINT NOT NULL DEFAULT 0,
           status TEXT NOT NULL,
           pdf_path TEXT NULL,
-          documento_json TEXT NOT NULL,
+          documento_json LONGTEXT NOT NULL,
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
         )
@@ -74,7 +74,7 @@ class DatabaseService {
           codigo_edital TEXT NOT NULL,
           retificacao TINYINT NOT NULL DEFAULT 0,
           status TEXT NOT NULL,
-          documento_json TEXT NOT NULL,
+          documento_json LONGTEXT NOT NULL,
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           FOREIGN KEY (edital_id) REFERENCES editais(id)
@@ -91,7 +91,7 @@ class DatabaseService {
           codigo_ata TEXT NOT NULL,
           retificacao TINYINT NOT NULL DEFAULT 0,
           status TEXT NOT NULL,
-          documento_json TEXT NOT NULL,
+          documento_json LONGTEXT NOT NULL,
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           FOREIGN KEY (edital_id) REFERENCES editais(id)
@@ -110,7 +110,7 @@ class DatabaseService {
           codigo_contrato TEXT NOT NULL,
           retificacao TINYINT NOT NULL DEFAULT 0,
           status TEXT NOT NULL,
-          documento_json TEXT NOT NULL,
+          documento_json LONGTEXT NOT NULL,
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
           FOREIGN KEY (edital_id) REFERENCES editais(id),

@@ -15,6 +15,7 @@ const _classificacaoCsv = '''
 "1","1","2","ZANON CONSTRUÇÕES LTDA","28801237000190","19750,0000","bird","control","SIM","SIM","SIM"
 "1","1","3","TAFF SERVIÇOS EIRELI","29558192000138","41908,3500","test","LH-120","SIM","SIM","SIM"
 "1","1","4","MICHEL BURANI","39478217000147","17517,4400","N/A","N/A","SIM","NÃO","SIM"
+"1","1","5","EMPRESA INABILITADA","12345678000199","18000,0000","N/A","N/A","NÃO","SIM","NÃO"
 ''';
 
 List<int> _toBytes(String s) => utf8.encode(s);
@@ -55,6 +56,16 @@ void main() {
       expect(desclass.resultadoHabilitacao, 4);
     });
 
+    test('classificado SIM e habilitado NÃO → resultadoHabilitacao = 7', () {
+      final result = parser.parse({
+        CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
+      });
+
+      final inabilitado = result.first.licitantes[4];
+      expect(inabilitado.resultadoHabilitacao, 7);
+      expect(inabilitado.nomeRazaoSocial, 'EMPRESA INABILITADA');
+    });
+
     test('ME "SIM" → declaracaoMEouEPP = 1', () {
       final result = parser.parse({
         CsvFileKeys.bllClassificacao: _toBytes(_classificacaoCsv),
@@ -88,10 +99,8 @@ void main() {
       expect(result[1].numeroItem, 2);
     });
 
-    test(
-      'mantém um lance por fornecedor sem repetir componentes do lote',
-      () {
-        const loteCsv = '''
+    test('mantém um lance por fornecedor sem repetir componentes do lote', () {
+      const loteCsv = '''
 "Lote","Item","Posição","Razão Social","Documento","Lance","Marca","Modelo","ME","Classificado","Habilitado"
 "1","1","1","EMP A","14733837000154","100,00","a","a","SIM","SIM","SIM"
 "1","1","2","EMP B","28801237000190","150,00","b","b","NÃO","SIM","SIM"
@@ -100,21 +109,20 @@ void main() {
 "2","1","1","EMP A","14733837000154","50,00","a","a","SIM","SIM","SIM"
 ''';
 
-        final result = const BllCsvParser().parse({
-          CsvFileKeys.bllClassificacao: _toBytes(loteCsv),
-        });
+      final result = const BllCsvParser().parse({
+        CsvFileKeys.bllClassificacao: _toBytes(loteCsv),
+      });
 
-        expect(result, hasLength(2));
-        expect(result[0].numeroItem, 1);
-        expect(result[0].licitantes, hasLength(2));
-        expect(result[0].licitantes[0].niPessoa, '14733837000154');
-        expect(result[0].licitantes[0].valorProposta, closeTo(100, 0.001));
-        expect(result[0].licitantes[1].niPessoa, '28801237000190');
-        expect(result[0].licitantes[1].valorProposta, closeTo(150, 0.001));
-        expect(result[1].numeroItem, 2);
-        expect(result[1].licitantes, hasLength(1));
-        expect(result[1].licitantes.single.valorProposta, closeTo(50, 0.001));
-      },
-    );
+      expect(result, hasLength(2));
+      expect(result[0].numeroItem, 1);
+      expect(result[0].licitantes, hasLength(2));
+      expect(result[0].licitantes[0].niPessoa, '14733837000154');
+      expect(result[0].licitantes[0].valorProposta, closeTo(100, 0.001));
+      expect(result[0].licitantes[1].niPessoa, '28801237000190');
+      expect(result[0].licitantes[1].valorProposta, closeTo(150, 0.001));
+      expect(result[1].numeroItem, 2);
+      expect(result[1].licitantes, hasLength(1));
+      expect(result[1].licitantes.single.valorProposta, closeTo(50, 0.001));
+    });
   });
 }
