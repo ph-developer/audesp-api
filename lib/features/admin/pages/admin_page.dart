@@ -356,7 +356,6 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                       AudespTextField(
                         label: 'Código do Município',
                         controller: _municipioCtrl,
-                        hintText: 'Ex.: 3550308',
                         helperText:
                             'Código numérico do município conforme cadastro AUDESP.',
                         keyboardType: TextInputType.number,
@@ -365,7 +364,6 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                       AudespTextField(
                         label: 'Código da Entidade',
                         controller: _entidadeCtrl,
-                        hintText: 'Ex.: 1',
                         helperText:
                             'Código numérico da entidade conforme cadastro AUDESP.',
                         keyboardType: TextInputType.number,

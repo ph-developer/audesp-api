@@ -81,7 +81,6 @@ class AudespCpfCnpjField extends StatelessWidget {
       initialValue: initialValue,
       readOnly: readOnly,
       enabled: enabled,
-      hintText: hintText ?? '000.000.000-00 ou 00.000.000/0000-00',
       maxLength: 18,
       keyboardType: TextInputType.number,
       inputFormatters: [

@@ -1548,7 +1548,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           const SizedBox(height: 12),
           AudespChipInput<String>(
             label: 'CPF do Condutor (11 dígitos)',
-            hintText: '00000000000',
             chips: _cpfsCondutores,
             onAdd: (cpf) => setState(() => _cpfsCondutores.add(cpf)),
             onRemove: (cpf) => setState(() => _cpfsCondutores.remove(cpf)),

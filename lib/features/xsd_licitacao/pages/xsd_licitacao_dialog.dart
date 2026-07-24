@@ -85,6 +85,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
   bool _addingMember = false;
   final Set<int> _deletingMemberIds = {};
   final List<XsdComissaoMembro> _commission = [];
+  final ValueNotifier<int> _commissionRevision = ValueNotifier(0);
 
   @override
   void initState() {
@@ -100,6 +101,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     _memberName.dispose();
     _memberCpf.dispose();
     _memberRole.dispose();
+    _commissionRevision.dispose();
     super.dispose();
   }
 
@@ -191,7 +193,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
       Navigator.of(context).pop(true);
     } catch (error) {
       if (mounted)
-        AudespSnackBar.error(context, 'Exportação bloqueada: $error');
+        AudespSnackBar.error(context, 'Exportação bloqueada!\n$error');
     } finally {
       if (mounted) setState(() => _generating = false);
     }
@@ -209,6 +211,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
       return;
     }
     setState(() => _addingMember = true);
+    _touchCommission();
     try {
       final currentCatalog = await ref.read(xsdComissaoProvider.future);
       final existing = currentCatalog
@@ -221,6 +224,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
             _commission.add(existing.copyWith(atribuicao: 2));
           }
         });
+        _touchCommission();
         AudespSnackBar.success(
           context,
           'Esse CPF já estava cadastrado e foi selecionado.',
@@ -246,6 +250,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
         _memberCpf.clear();
         _memberRole.clear();
       });
+      _touchCommission();
       AudespSnackBar.success(
         context,
         'Integrante cadastrado e selecionado para esta licitação.',
@@ -255,7 +260,10 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
         AudespSnackBar.error(context, 'Erro ao cadastrar integrante: $error');
       }
     } finally {
-      if (mounted) setState(() => _addingMember = false);
+      if (mounted) {
+        setState(() => _addingMember = false);
+        _touchCommission();
+      }
     }
   }
 
@@ -271,6 +279,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     if (!confirmed || !mounted) return;
 
     setState(() => _deletingMemberIds.add(id));
+    _touchCommission();
     try {
       await ref.read(xsdComissaoProvider.notifier).removeMembro(id);
       if (!mounted) return;
@@ -279,13 +288,17 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
           (item) => _digits(item.cpf) == _digits(member.cpf),
         );
       });
+      _touchCommission();
       AudespSnackBar.success(context, 'Integrante excluído do catálogo.');
     } catch (error) {
       if (mounted) {
         AudespSnackBar.error(context, 'Erro ao excluir integrante: $error');
       }
     } finally {
-      if (mounted) setState(() => _deletingMemberIds.remove(id));
+      if (mounted) {
+        setState(() => _deletingMemberIds.remove(id));
+        _touchCommission();
+      }
     }
   }
 
@@ -314,12 +327,25 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                 Text(
                   'Última exportação validada: ${_lastGeneration!.toLocal()}',
                 ),
-              _readOnly('Edital', '${source.numeroCompra}/${source.anoCompra}'),
-              _readOnly('Processo', source.numeroProcesso),
-              _readOnly(
-                'Modalidade PNCP',
-                kModalidades[source.modalidadeId] ??
-                    '${source.modalidadeId} - Modalidade não identificada',
+              AudespFieldRow(
+                children: [
+                  AudespFieldRowItem(
+                    child: _readOnly(
+                      'Edital',
+                      '${source.numeroCompra}/${source.anoCompra}',
+                    ),
+                  ),
+                  AudespFieldRowItem(
+                    child: _readOnly('Processo', source.numeroProcesso),
+                  ),
+                  AudespFieldRowItem(
+                    child: _readOnly(
+                      'Modalidade PNCP',
+                      kModalidades[source.modalidadeId] ??
+                          '${source.modalidadeId} - Modalidade não identificada',
+                    ),
+                  ),
+                ],
               ),
               _readOnly('Objeto', source.objeto),
               _readOnly('Itens importados', source.itens.length.toString()),
@@ -364,17 +390,29 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                 ],
               ),
               if (!direct) ...[
-                _readOnly(
-                  'Data da Adjudicação/Homologação',
-                  _formatDate(_profile.situacaoData),
-                ),
-                const SizedBox(height: 12),
-                AudespDatePickerField(
-                  label: 'Publicação da Adjudicação/Homologação',
-                  value: _profile.homologacaoData,
-                  onChanged: (value) => setState(
-                    () => _profile = _profile.copyWith(homologacaoData: value),
-                  ),
+                AudespFieldRow(
+                  children: [
+                    AudespFieldRowItem(
+                      child: _readOnly(
+                        'Data da Adjudicação/Homologação',
+                        _formatDate(_profile.situacaoData),
+                      ),
+                    ),
+                    AudespFieldRowItem(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: AudespDatePickerField(
+                          label: 'Publicação da Adjudicação/Homologação',
+                          value: _profile.homologacaoData,
+                          onChanged: (value) => setState(
+                            () => _profile = _profile.copyWith(
+                              homologacaoData: value,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               if (direct) ...[
@@ -397,16 +435,23 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                 ),
               ],
               const SizedBox(height: 6),
-              _readOnly(
-                'Existe parecer técnico-jurídico',
-                _yesNo(_profile.parecerTecnicoJuridico),
+              AudespFieldRow(
+                children: [
+                  AudespFieldRowItem(
+                    child: _readOnly(
+                      'Existe parecer técnico-jurídico',
+                      _yesNo(_profile.parecerTecnicoJuridico),
+                    ),
+                  ),
+                  if (!direct)
+                    AudespFieldRowItem(
+                      child: _readOnly(
+                        'Exige quitação de tributos',
+                        _tributosQuitacaoLabel(),
+                      ),
+                    ),
+                ],
               ),
-              if (!direct) ...[
-                _readOnly(
-                  'Exige quitação de tributos',
-                  _tributosQuitacaoLabel(),
-                ),
-              ],
               if (direct)
                 AudespCheckbox(
                   label:
@@ -416,238 +461,67 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                     () => _profile = _profile.copyWith(resolucao072014: value),
                   ),
                 ),
-              _readOnly(
-                'Existe declaração de existência de recursos (reserva orçamentária)',
-                _yesNo(_profile.recursos.declarados),
+              AudespFieldRow(
+                children: [
+                  AudespFieldRowItem(
+                    child: _readOnly(
+                      'Existe reserva orçamentária',
+                      _yesNo(_profile.recursos.declarados),
+                    ),
+                  ),
+                  AudespFieldRowItem(
+                    child: _readOnly(
+                      'Fontes de recursos',
+                      !_profile.recursos.declarados
+                          ? 'Não se aplica'
+                          : _profile.recursos.fontes.isEmpty
+                          ? 'Não informadas'
+                          : _profile.recursos.fontes
+                                .map(_resourceSourceLabel)
+                                .join(', '),
+                    ),
+                  ),
+                ],
               ),
               if (_profile.recursos.declarados) ...[
-                _readOnly(
-                  'Fontes de recursos',
-                  _profile.recursos.fontes.isEmpty
-                      ? 'Não informadas'
-                      : _profile.recursos.fontes
-                            .map(_resourceSourceLabel)
-                            .join(', '),
-                ),
                 AudespFieldRow(
                   children: [
                     AudespFieldRowItem(
-                      child: AudespCurrencyField(
-                        label: 'Valor reservado',
-                        controller: _recursosValor,
-                        onChanged: (_) => _updateResources(),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: AudespCurrencyField(
+                          label: 'Valor reservado',
+                          controller: _recursosValor,
+                          onChanged: (_) => _updateResources(),
+                        ),
                       ),
                     ),
                     AudespFieldRowItem(
-                      child: AudespDatePickerField(
-                        label: 'Data da reserva',
-                        value: _profile.recursos.data,
-                        onChanged: (value) => _updateResources(data: value),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: AudespDatePickerField(
+                          label: 'Data da reserva',
+                          value: _profile.recursos.data,
+                          onChanged: (value) => _updateResources(data: value),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                AudespSpacing.verticalMd,
                 if (_profile.recursos.fontes.contains(6))
                   AudespTextField(
                     label: 'Descrição das outras fontes',
                     controller: _outrasFontes,
                     onChanged: (_) => _updateResources(),
                   ),
+                if (_profile.recursos.fontes.contains(2))
+                  _buildConveniosSection(federal: false),
+                if (_profile.recursos.fontes.contains(5))
+                  _buildConveniosSection(federal: true),
+                if (_profile.recursos.fontes.contains(7))
+                  _buildOperacoesCreditoSection(),
               ],
-              _section('Comissão de licitação'),
-              AudespFieldRow(
-                children: [
-                  AudespFieldRowItem(
-                    child: AudespDropdown<int>(
-                      label: 'Tipo da comissão',
-                      value: _profile.tipoComissao,
-                      items: const {
-                        1: 'Permanente',
-                        2: 'Especial',
-                        3: 'Servidor designado',
-                      },
-                      onChanged: (value) => setState(
-                        () => _profile = _profile.copyWith(tipoComissao: value),
-                      ),
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    child: AudespTextField(
-                      label: 'Número da Portaria',
-                      controller: _atoNumero,
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    child: AudespDatePickerField(
-                      label: 'Data da Portaria',
-                      value: _profile.atoDesignacaoData,
-                      onChanged: (value) => setState(() {
-                        _profile = _profile.copyWith(
-                          atoDesignacaoData: value,
-                          anoAtoDesignacao: value?.year,
-                        );
-                      }),
-                    ),
-                  ),
-                ],
-              ),
-              AudespSpacing.verticalLg,
-              AudespFieldRow(
-                children: [
-                  AudespFieldRowItem(
-                    child: AudespTextField(
-                      label: 'Nome',
-                      controller: _memberName,
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    child: AudespCpfCnpjField(
-                      label: 'CPF',
-                      controller: _memberCpf,
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    child: AudespTextField(
-                      label: 'Cargo',
-                      controller: _memberRole,
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    child: AudespDropdown<int>(
-                      label: 'Natureza do cargo',
-                      value: _memberRoleNature,
-                      items: _roleNatureLabels,
-                      onChanged: (value) =>
-                          setState(() => _memberRoleNature = value ?? 1),
-                    ),
-                  ),
-                  AudespFieldRowItem(
-                    width: 32,
-                    child: Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: AudespIconButton(
-                          icon: Icons.add,
-                          tooltip: 'Cadastrar e selecionar integrante',
-                          onPressed: _addingMember
-                              ? null
-                              : _addCommissionMember,
-                          outlined: true,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              AudespSpacing.verticalSm,
-              ref
-                  .watch(xsdComissaoProvider)
-                  .when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (error, _) => Text('Catálogo indisponível: $error'),
-                    data: (members) => members.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: Text(
-                              'Nenhum integrante cadastrado. Use o formulário acima.',
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${_commission.length} integrante(s) selecionado(s)',
-                              ),
-                              ...members.map((member) {
-                                final selected = _selectedMember(member.cpf);
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: AudespSpacing.sm,
-                                  ),
-                                  child: AudespFieldRow(
-                                    children: [
-                                      AudespFieldRowItem(
-                                        flex: 2,
-                                        child: AudespCheckbox(
-                                          label:
-                                              '${member.nome} · ${AudespCpfCnpjField.formatDocument(member.cpf)} · '
-                                              '${member.cargo} (${_roleNatureLabels[member.naturezaCargo] ?? 'Natureza ${member.naturezaCargo}'})',
-                                          value: selected != null,
-                                          onChanged: (checked) => setState(() {
-                                            _commission.removeWhere(
-                                              (item) =>
-                                                  _digits(item.cpf) ==
-                                                  _digits(member.cpf),
-                                            );
-                                            if (checked) {
-                                              _commission.add(
-                                                member.copyWith(atribuicao: 2),
-                                              );
-                                            }
-                                          }),
-                                        ),
-                                      ),
-                                      AudespFieldRowItem(
-                                        child: AudespDropdown<int>(
-                                          label: 'Atribuição nesta licitação',
-                                          value: selected?.atribuicao ?? 2,
-                                          items: _assignmentLabels,
-                                          enabled: selected != null,
-                                          onChanged: (value) {
-                                            if (value == null) return;
-                                            setState(() {
-                                              final index = _commission
-                                                  .indexWhere(
-                                                    (item) =>
-                                                        _digits(item.cpf) ==
-                                                        _digits(member.cpf),
-                                                  );
-                                              if (index >= 0) {
-                                                _commission[index] =
-                                                    _commission[index].copyWith(
-                                                      atribuicao: value,
-                                                    );
-                                              }
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      AudespFieldRowItem(
-                                        width: 32,
-                                        child: Align(
-                                          alignment: Alignment.topRight,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 2,
-                                            ),
-                                            child: AudespIconButton(
-                                              icon: Icons.delete_outline,
-                                              tooltip: 'Excluir integrante',
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.error,
-                                              onPressed:
-                                                  member.id == null ||
-                                                      _deletingMemberIds
-                                                          .contains(member.id)
-                                                  ? null
-                                                  : () =>
-                                                        _deleteCommissionMember(
-                                                          member,
-                                                        ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                  ),
+              _buildCommissionSummary(),
             ],
           ),
         ),
@@ -666,10 +540,267 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     );
   }
 
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.only(top: 8, bottom: 8),
-    child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-  );
+  Widget _buildCommissionSummary() {
+    const types = {1: 'Permanente', 2: 'Especial', 3: 'Servidor designado'};
+    final portaria = _atoNumero.text.trim();
+    return Padding(
+      padding: const EdgeInsets.only(top: AudespSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Comissão de licitação',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              '${types[_profile.tipoComissao] ?? 'Tipo não informado'} · '
+              '${_commission.length} integrante(s) selecionado(s)',
+            ),
+            subtitle: Text(_portariaSummary(portaria)),
+            trailing: OutlinedButton.icon(
+              onPressed: _openCommissionDialog,
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Configurar'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openCommissionDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Comissão de licitação'),
+        content: SizedBox(
+          width: 920,
+          height: 620,
+          child: Consumer(
+            builder: (context, dialogRef, _) => ValueListenableBuilder<int>(
+              valueListenable: _commissionRevision,
+              builder: (context, _, _) => SingleChildScrollView(
+                child: _buildCommissionDialogContent(dialogContext, dialogRef),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Concluir'),
+          ),
+        ],
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _buildCommissionDialogContent(
+    BuildContext dialogContext,
+    WidgetRef dialogRef,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AudespFieldRow(
+          children: [
+            AudespFieldRowItem(
+              child: AudespDropdown<int>(
+                label: 'Tipo da comissão',
+                value: _profile.tipoComissao,
+                items: const {
+                  1: 'Permanente',
+                  2: 'Especial',
+                  3: 'Servidor designado',
+                },
+                onChanged: (value) {
+                  setState(
+                    () => _profile = _profile.copyWith(tipoComissao: value),
+                  );
+                  _touchCommission();
+                },
+              ),
+            ),
+            AudespFieldRowItem(
+              child: AudespTextField(
+                label: 'Número da Portaria',
+                controller: _atoNumero,
+                onChanged: (_) => _touchCommission(),
+              ),
+            ),
+            AudespFieldRowItem(
+              child: AudespDatePickerField(
+                label: 'Data da Portaria',
+                value: _profile.atoDesignacaoData,
+                onChanged: (value) {
+                  setState(() {
+                    _profile = _profile.copyWith(
+                      atoDesignacaoData: value,
+                      anoAtoDesignacao: value?.year,
+                    );
+                  });
+                  _touchCommission();
+                },
+              ),
+            ),
+          ],
+        ),
+        AudespSpacing.verticalLg,
+        Text(
+          'Cadastrar integrante no catálogo',
+          style: Theme.of(dialogContext).textTheme.titleSmall,
+        ),
+        AudespSpacing.verticalSm,
+        AudespFieldRow(
+          children: [
+            AudespFieldRowItem(
+              child: AudespTextField(label: 'Nome', controller: _memberName),
+            ),
+            AudespFieldRowItem(
+              child: AudespCpfCnpjField(label: 'CPF', controller: _memberCpf),
+            ),
+            AudespFieldRowItem(
+              child: AudespTextField(label: 'Cargo', controller: _memberRole),
+            ),
+            AudespFieldRowItem(
+              child: AudespDropdown<int>(
+                label: 'Natureza do cargo',
+                value: _memberRoleNature,
+                items: _roleNatureLabels,
+                onChanged: (value) {
+                  setState(() => _memberRoleNature = value ?? 1);
+                  _touchCommission();
+                },
+              ),
+            ),
+            AudespFieldRowItem(
+              width: 32,
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: AudespIconButton(
+                    icon: Icons.add,
+                    tooltip: 'Cadastrar e selecionar integrante',
+                    onPressed: _addingMember ? null : _addCommissionMember,
+                    outlined: true,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        AudespSpacing.verticalMd,
+        Text(
+          'Integrantes do catálogo',
+          style: Theme.of(dialogContext).textTheme.titleSmall,
+        ),
+        dialogRef
+            .watch(xsdComissaoProvider)
+            .when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AudespSpacing.md),
+                child: LinearProgressIndicator(),
+              ),
+              error: (error, _) => Text('Catálogo indisponível: $error'),
+              data: (members) => members.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Nenhum integrante cadastrado. Use o formulário acima.',
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_commission.length} integrante(s) selecionado(s)',
+                        ),
+                        ...members.map(_buildCommissionMemberRow),
+                      ],
+                    ),
+            ),
+      ],
+    );
+  }
+
+  Widget _buildCommissionMemberRow(XsdComissaoMembro member) {
+    final selected = _selectedMember(member.cpf);
+    return Padding(
+      padding: const EdgeInsets.only(top: AudespSpacing.sm),
+      child: AudespFieldRow(
+        children: [
+          AudespFieldRowItem(
+            flex: 2,
+            child: AudespCheckbox(
+              label:
+                  '${member.nome} · ${AudespCpfCnpjField.formatDocument(member.cpf)} · '
+                  '${member.cargo} (${_roleNatureLabels[member.naturezaCargo] ?? 'Natureza ${member.naturezaCargo}'})',
+              value: selected != null,
+              onChanged: (checked) {
+                setState(() {
+                  _commission.removeWhere(
+                    (item) => _digits(item.cpf) == _digits(member.cpf),
+                  );
+                  if (checked) {
+                    _commission.add(member.copyWith(atribuicao: 2));
+                  }
+                });
+                _touchCommission();
+              },
+            ),
+          ),
+          AudespFieldRowItem(
+            child: AudespDropdown<int>(
+              label: 'Atribuição nesta licitação',
+              value: selected?.atribuicao ?? 2,
+              items: _assignmentLabels,
+              enabled: selected != null,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  final index = _commission.indexWhere(
+                    (item) => _digits(item.cpf) == _digits(member.cpf),
+                  );
+                  if (index >= 0) {
+                    _commission[index] = _commission[index].copyWith(
+                      atribuicao: value,
+                    );
+                  }
+                });
+                _touchCommission();
+              },
+            ),
+          ),
+          AudespFieldRowItem(
+            width: 32,
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: AudespIconButton(
+                  icon: Icons.delete_outline,
+                  tooltip: 'Excluir integrante',
+                  color: Theme.of(context).colorScheme.error,
+                  onPressed:
+                      member.id == null ||
+                          _deletingMemberIds.contains(member.id)
+                      ? null
+                      : () => _deleteCommissionMember(member),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _touchCommission() => _commissionRevision.value++;
 
   Widget _readOnly(String label, String value) => ListTile(
     dense: true,
@@ -682,6 +813,116 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     ),
   );
 
+  Widget _buildConveniosSection({required bool federal}) {
+    final values = federal
+        ? _profile.recursos.conveniosFederais
+        : _profile.recursos.conveniosEstaduais;
+    final label = federal ? 'Convênios federais' : 'Convênios estaduais';
+    return Padding(
+      padding: const EdgeInsets.only(top: AudespSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _editConvenio(federal: federal),
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar'),
+              ),
+            ],
+          ),
+          if (values.isEmpty)
+            Text(
+              'Nenhum convênio ${federal ? 'federal' : 'estadual'} informado.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ...values.indexed.map(
+            (entry) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('${entry.$2.numero}/${entry.$2.ano}'),
+              subtitle: Text(
+                'Repasse: ${formatBRL(entry.$2.valorRepasse)} · '
+                'Contrapartida: ${formatBRL(entry.$2.valorContrapartida)}',
+              ),
+              trailing: Wrap(
+                children: [
+                  IconButton(
+                    tooltip: 'Editar',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () =>
+                        _editConvenio(federal: federal, index: entry.$1),
+                  ),
+                  IconButton(
+                    tooltip: 'Excluir',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () =>
+                        _removeConvenio(federal: federal, index: entry.$1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOperacoesCreditoSection() {
+    final values = _profile.recursos.operacoesCredito;
+    return Padding(
+      padding: const EdgeInsets.only(top: AudespSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Operações de crédito',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          ...values.indexed.map(
+            (entry) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Contrato ${entry.$2.contratoNumero}/${entry.$2.contratoAno}',
+              ),
+              subtitle: Text(
+                '${entry.$2.agenteFinanceiro.isEmpty ? 'Agente não informado' : entry.$2.agenteFinanceiro} · '
+                'Repasse: ${formatBRL(entry.$2.valorRepasse)}',
+              ),
+              trailing: Wrap(
+                children: [
+                  IconButton(
+                    tooltip: 'Editar',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _editOperacaoCredito(index: entry.$1),
+                  ),
+                  IconButton(
+                    tooltip: 'Excluir',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _removeOperacaoCredito(entry.$1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: _editOperacaoCredito,
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar operação de crédito'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _updateResources({DateTime? data}) {
     setState(() {
       final current = _profile.recursos;
@@ -692,9 +933,270 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
           data: data ?? current.data,
           fontes: current.fontes,
           outrasFontesDescricao: _outrasFontes.text.trim(),
+          conveniosEstaduais: current.conveniosEstaduais,
+          conveniosFederais: current.conveniosFederais,
+          operacoesCredito: current.operacoesCredito,
         ),
       );
     });
+  }
+
+  Future<void> _editConvenio({required bool federal, int? index}) async {
+    final currentValues = federal
+        ? _profile.recursos.conveniosFederais
+        : _profile.recursos.conveniosEstaduais;
+    final current = index == null ? null : currentValues[index];
+    final formKey = GlobalKey<FormState>();
+    final numero = TextEditingController(text: current?.numero ?? '');
+    final ano = TextEditingController(
+      text: (current?.ano ?? DateTime.now().year).toString(),
+    );
+    final repasse = TextEditingController(
+      text: doubleToBrString(current?.valorRepasse),
+    );
+    final contrapartida = TextEditingController(
+      text: doubleToBrString(current?.valorContrapartida),
+    );
+    final result = await showDialog<XsdConvenio>(
+      context: context,
+      builder: (dialogContext) => _ControllerOwner(
+        controllers: [numero, ano, repasse, contrapartida],
+        child: AlertDialog(
+          title: Text(
+            '${index == null ? 'Adicionar' : 'Editar'} convênio ${federal ? 'federal' : 'estadual'}',
+          ),
+          content: SizedBox(
+            width: 620,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AudespFieldRow(
+                    children: [
+                      AudespFieldRowItem(
+                        flex: 2,
+                        child: AudespTextField(
+                          label: 'Número do convênio',
+                          controller: numero,
+                          maxLength: 12,
+                          validator: (value) =>
+                              RegExp(
+                                r'^[a-zA-Z0-9-]{1,12}$',
+                              ).hasMatch(value?.trim() ?? '')
+                              ? null
+                              : 'Use até 12 letras, números ou hífen',
+                        ),
+                      ),
+                      AudespFieldRowItem(
+                        child: AudespTextField(
+                          label: 'Ano',
+                          controller: ano,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          validator: _validateYear,
+                        ),
+                      ),
+                    ],
+                  ),
+                  AudespSpacing.verticalMd,
+                  AudespFieldRow(
+                    children: [
+                      AudespFieldRowItem(
+                        child: AudespCurrencyField(
+                          label: 'Valor do repasse',
+                          controller: repasse,
+                        ),
+                      ),
+                      AudespFieldRowItem(
+                        child: AudespCurrencyField(
+                          label: 'Valor da contrapartida',
+                          controller: contrapartida,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                Navigator.pop(
+                  dialogContext,
+                  XsdConvenio(
+                    numero: numero.text.trim(),
+                    ano: int.parse(ano.text.trim()),
+                    valorRepasse: parseBrCurrencyOrNull(repasse.text.trim())!,
+                    valorContrapartida: parseBrCurrencyOrNull(
+                      contrapartida.text.trim(),
+                    )!,
+                  ),
+                );
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final updated = List<XsdConvenio>.from(currentValues);
+    index == null ? updated.add(result) : updated[index] = result;
+    _setResourceDetails(
+      conveniosEstaduais: federal ? null : updated,
+      conveniosFederais: federal ? updated : null,
+    );
+  }
+
+  void _removeConvenio({required bool federal, required int index}) {
+    final updated = List<XsdConvenio>.from(
+      federal
+          ? _profile.recursos.conveniosFederais
+          : _profile.recursos.conveniosEstaduais,
+    )..removeAt(index);
+    _setResourceDetails(
+      conveniosEstaduais: federal ? null : updated,
+      conveniosFederais: federal ? updated : null,
+    );
+  }
+
+  Future<void> _editOperacaoCredito({int? index}) async {
+    final values = _profile.recursos.operacoesCredito;
+    final current = index == null ? null : values[index];
+    final formKey = GlobalKey<FormState>();
+    final agente = TextEditingController(text: current?.agenteFinanceiro ?? '');
+    final contrato = TextEditingController(text: current?.contratoNumero ?? '');
+    final ano = TextEditingController(
+      text: (current?.contratoAno ?? DateTime.now().year).toString(),
+    );
+    final repasse = TextEditingController(
+      text: doubleToBrString(current?.valorRepasse),
+    );
+    final result = await showDialog<XsdOperacaoCredito>(
+      context: context,
+      builder: (dialogContext) => _ControllerOwner(
+        controllers: [agente, contrato, ano, repasse],
+        child: AlertDialog(
+          title: Text(
+            '${index == null ? 'Adicionar' : 'Editar'} operação de crédito',
+          ),
+          content: SizedBox(
+            width: 620,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AudespTextField(
+                    label: 'Agente financeiro (opcional)',
+                    controller: agente,
+                    maxLength: 50,
+                  ),
+                  AudespSpacing.verticalMd,
+                  AudespFieldRow(
+                    children: [
+                      AudespFieldRowItem(
+                        flex: 2,
+                        child: AudespTextField(
+                          label: 'Número do contrato',
+                          controller: contrato,
+                          maxLength: 20,
+                          validator: (value) => value?.trim().isNotEmpty == true
+                              ? null
+                              : 'Obrigatório',
+                        ),
+                      ),
+                      AudespFieldRowItem(
+                        child: AudespTextField(
+                          label: 'Ano',
+                          controller: ano,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          validator: _validateYear,
+                        ),
+                      ),
+                    ],
+                  ),
+                  AudespSpacing.verticalMd,
+                  AudespCurrencyField(
+                    label: 'Valor do repasse',
+                    controller: repasse,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                Navigator.pop(
+                  dialogContext,
+                  XsdOperacaoCredito(
+                    agenteFinanceiro: agente.text.trim(),
+                    contratoNumero: contrato.text.trim(),
+                    contratoAno: int.parse(ano.text.trim()),
+                    valorRepasse: parseBrCurrencyOrNull(repasse.text.trim())!,
+                  ),
+                );
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final updated = List<XsdOperacaoCredito>.from(values);
+    index == null ? updated.add(result) : updated[index] = result;
+    _setResourceDetails(operacoesCredito: updated);
+  }
+
+  void _removeOperacaoCredito(int index) {
+    final updated = List<XsdOperacaoCredito>.from(
+      _profile.recursos.operacoesCredito,
+    )..removeAt(index);
+    _setResourceDetails(operacoesCredito: updated);
+  }
+
+  void _setResourceDetails({
+    List<XsdConvenio>? conveniosEstaduais,
+    List<XsdConvenio>? conveniosFederais,
+    List<XsdOperacaoCredito>? operacoesCredito,
+  }) {
+    setState(() {
+      final current = _profile.recursos;
+      _profile = _profile.copyWith(
+        recursos: XsdRecursosProfile(
+          declarados: current.declarados,
+          valor: current.valor,
+          data: current.data,
+          fontes: current.fontes,
+          outrasFontesDescricao: current.outrasFontesDescricao,
+          conveniosEstaduais: conveniosEstaduais ?? current.conveniosEstaduais,
+          conveniosFederais: conveniosFederais ?? current.conveniosFederais,
+          operacoesCredito: operacoesCredito ?? current.operacoesCredito,
+        ),
+      );
+    });
+  }
+
+  String? _validateYear(String? value) {
+    final year = int.tryParse(value?.trim() ?? '');
+    return year != null && year >= 1000 && year <= 9999
+        ? null
+        : 'Informe quatro dígitos';
   }
 
   XsdComissaoMembro? _selectedMember(String cpf) => _commission
@@ -721,6 +1223,15 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
       : '${value.day.toString().padLeft(2, '0')}/'
             '${value.month.toString().padLeft(2, '0')}/${value.year}';
 
+  String _portariaSummary(String numero) {
+    final data = _profile.atoDesignacaoData;
+    if (numero.isEmpty && data == null) return 'Portaria não informada';
+    final prefix = numero.isEmpty ? 'Portaria sem número' : 'Portaria $numero';
+    if (data == null) return prefix;
+    return '$prefix de ${data.day.toString().padLeft(2, '0')}/'
+        '${data.month.toString().padLeft(2, '0')}/${data.year}';
+  }
+
   String _resourceSourceLabel(int value) =>
       const {
         1: 'Tesouro',
@@ -733,4 +1244,29 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
         8: 'Emendas parlamentares',
       }[value] ??
       'Fonte $value';
+}
+
+/// Mantém os controladores vivos durante toda a animação de fechamento da rota
+/// e os descarta somente quando o conteúdo do diálogo é realmente desmontado.
+class _ControllerOwner extends StatefulWidget {
+  final List<TextEditingController> controllers;
+  final Widget child;
+
+  const _ControllerOwner({required this.controllers, required this.child});
+
+  @override
+  State<_ControllerOwner> createState() => _ControllerOwnerState();
+}
+
+class _ControllerOwnerState extends State<_ControllerOwner> {
+  @override
+  Widget build(BuildContext context) => widget.child;
+
+  @override
+  void dispose() {
+    for (final controller in widget.controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 }

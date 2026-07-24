@@ -138,6 +138,41 @@ void main() {
     expect(profile.recursos.declarados, isTrue);
     expect(profile.recursos.fontes, [1]);
   });
+
+  test(
+    'normalizador completa os lotes com quantidade e descrição do edital',
+    () {
+      const normalizer = XsdSourceNormalizer();
+      final source = normalizer.normalize(
+        edital: {
+          'modalidadeId': 6,
+          'itensCompra': [
+            {
+              'numeroItem': 2,
+              'descricao': 'Serviço do lote',
+              'quantidade': 3.5,
+              'unidadeMedida': 'UN',
+            },
+          ],
+        },
+        licitacao: {
+          'itens': [
+            {
+              'numeroItem': 2,
+              'licitantes': [
+                {'niPessoa': '123'},
+              ],
+            },
+          ],
+        },
+      );
+
+      expect(source.itens.single['descricao'], 'Serviço do lote');
+      expect(source.itens.single['quantidade'], 3.5);
+      expect(source.itens.single['unidadeMedida'], 'UN');
+      expect(source.itens.single['licitantes'], hasLength(1));
+    },
+  );
 }
 
 Map<String, dynamic> _item({

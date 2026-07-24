@@ -1050,7 +1050,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 label: 'Número da Compra *',
                 controller: _numeroCompraCtrl,
                 enabled: !readOnly,
-                hintText: 'Ex.: 14',
                 maxLength: 50,
                 decimals: false,
                 validator: (v) =>
@@ -1063,7 +1062,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 label: 'Ano da Compra *',
                 controller: _anoCompraCtrl,
                 enabled: !readOnly,
-                hintText: 'Ex.: 2024',
                 maxLength: 4,
                 decimals: false,
                 validator: (v) {
@@ -1148,19 +1146,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         // Amparo Legal
         _AmparoLegalField(controller: _amparoLegalCtrl, enabled: !readOnly),
         const SizedBox(height: 12),
-        /*
-        TextFormField(
-          controller: _linkSistemaCtrl,
-          enabled: !readOnly,
-          decoration: const InputDecoration(
-            labelText: 'Link do Sistema de Origem',
-            hintText: 'https://',
-            counterText: '',
-          ),
-          maxLength: 500,
-        ),
-        const SizedBox(height: 12),
-        */
         AudespTextField(
           label: 'Justificativa para Modalidade Presencial',
           controller: _justificativaCtrl,

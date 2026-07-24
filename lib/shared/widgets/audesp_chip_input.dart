@@ -15,7 +15,6 @@ import 'audesp_icon_button.dart';
 /// ```dart
 /// AudespChipInput<String>(
 ///   label: 'CPF do Condutor',
-///   hintText: '00000000000',
 ///   chips: _cpfs,
 ///   onAdd: (cpf) => setState(() => _cpfs.add(cpf)),
 ///   onRemove: (cpf) => setState(() => _cpfs.remove(cpf)),

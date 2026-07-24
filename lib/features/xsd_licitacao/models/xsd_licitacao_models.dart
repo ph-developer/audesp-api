@@ -184,12 +184,72 @@ class XsdLoteProfile {
   );
 }
 
+class XsdConvenio {
+  final String numero;
+  final int ano;
+  final double valorRepasse;
+  final double valorContrapartida;
+
+  const XsdConvenio({
+    required this.numero,
+    required this.ano,
+    required this.valorRepasse,
+    required this.valorContrapartida,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'numero': numero,
+    'ano': ano,
+    'valorRepasse': valorRepasse,
+    'valorContrapartida': valorContrapartida,
+  };
+
+  factory XsdConvenio.fromJson(Map<String, dynamic> json) => XsdConvenio(
+    numero: json['numero']?.toString() ?? '',
+    ano: _asInt(json['ano'], 0),
+    valorRepasse: _asDouble(json['valorRepasse']),
+    valorContrapartida: _asDouble(json['valorContrapartida']),
+  );
+}
+
+class XsdOperacaoCredito {
+  final String agenteFinanceiro;
+  final String contratoNumero;
+  final int contratoAno;
+  final double valorRepasse;
+
+  const XsdOperacaoCredito({
+    this.agenteFinanceiro = '',
+    required this.contratoNumero,
+    required this.contratoAno,
+    required this.valorRepasse,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'agenteFinanceiro': agenteFinanceiro,
+    'contratoNumero': contratoNumero,
+    'contratoAno': contratoAno,
+    'valorRepasse': valorRepasse,
+  };
+
+  factory XsdOperacaoCredito.fromJson(Map<String, dynamic> json) =>
+      XsdOperacaoCredito(
+        agenteFinanceiro: json['agenteFinanceiro']?.toString() ?? '',
+        contratoNumero: json['contratoNumero']?.toString() ?? '',
+        contratoAno: _asInt(json['contratoAno'], 0),
+        valorRepasse: _asDouble(json['valorRepasse']),
+      );
+}
+
 class XsdRecursosProfile {
   final bool declarados;
   final double? valor;
   final DateTime? data;
   final List<int> fontes;
   final String? outrasFontesDescricao;
+  final List<XsdConvenio> conveniosEstaduais;
+  final List<XsdConvenio> conveniosFederais;
+  final List<XsdOperacaoCredito> operacoesCredito;
 
   const XsdRecursosProfile({
     this.declarados = false,
@@ -197,6 +257,9 @@ class XsdRecursosProfile {
     this.data,
     this.fontes = const [],
     this.outrasFontesDescricao,
+    this.conveniosEstaduais = const [],
+    this.conveniosFederais = const [],
+    this.operacoesCredito = const [],
   });
 
   Map<String, dynamic> toJson() => {
@@ -205,6 +268,9 @@ class XsdRecursosProfile {
     'data': data == null ? null : _date(data!),
     'fontes': fontes,
     'outrasFontesDescricao': outrasFontesDescricao,
+    'conveniosEstaduais': conveniosEstaduais.map((e) => e.toJson()).toList(),
+    'conveniosFederais': conveniosFederais.map((e) => e.toJson()).toList(),
+    'operacoesCredito': operacoesCredito.map((e) => e.toJson()).toList(),
   };
 
   factory XsdRecursosProfile.fromJson(Map<String, dynamic> json) =>
@@ -217,6 +283,18 @@ class XsdRecursosProfile {
             .where((e) => e > 0)
             .toList(),
         outrasFontesDescricao: json['outrasFontesDescricao']?.toString(),
+        conveniosEstaduais: _mapList(
+          json['conveniosEstaduais'],
+          XsdConvenio.fromJson,
+        ),
+        conveniosFederais: _mapList(
+          json['conveniosFederais'],
+          XsdConvenio.fromJson,
+        ),
+        operacoesCredito: _mapList(
+          json['operacoesCredito'],
+          XsdOperacaoCredito.fromJson,
+        ),
       );
 }
 

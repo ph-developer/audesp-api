@@ -13,10 +13,26 @@ class XsdSourceNormalizer {
     final descritorEdital = edital['descritor'] is Map
         ? Map<String, dynamic>.from(edital['descritor'] as Map)
         : <String, dynamic>{};
-    final itens = (licitacao['itens'] as List? ?? const [])
+    final itensLicitacao = (licitacao['itens'] as List? ?? const [])
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
+    final itensEdital = (edital['itensCompra'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    final itensEditalPorNumero = <int, Map<String, dynamic>>{
+      for (final item in itensEdital)
+        if (_int(item['numeroItem']) > 0) _int(item['numeroItem']): item,
+    };
+    final itens = itensLicitacao.map((item) {
+      final itemEdital = itensEditalPorNumero[_int(item['numeroItem'])];
+      // Quantidade, descrição, unidade e valor estimado pertencem ao edital;
+      // resultado, licitantes e valores adjudicados pertencem à licitação.
+      // Em uma eventual sobreposição, o dado da licitação é o mais
+      // específico e deve prevalecer.
+      return <String, dynamic>{...?itemEdital, ...item};
+    }).toList();
     final modalidade = _int(edital['modalidadeId']);
 
     final publicidade = edital['publicidade'] is Map
@@ -119,6 +135,18 @@ class XsdSourceNormalizer {
         outrasFontesDescricao: source.declaracaoRecursos
             ? current.recursos.outrasFontesDescricao
             : null,
+        conveniosEstaduais:
+            source.declaracaoRecursos && importedSources.contains(2)
+            ? current.recursos.conveniosEstaduais
+            : const [],
+        conveniosFederais:
+            source.declaracaoRecursos && importedSources.contains(5)
+            ? current.recursos.conveniosFederais
+            : const [],
+        operacoesCredito:
+            source.declaracaoRecursos && importedSources.contains(7)
+            ? current.recursos.operacoesCredito
+            : const [],
       ),
       opcionais: {
         ...current.opcionais,

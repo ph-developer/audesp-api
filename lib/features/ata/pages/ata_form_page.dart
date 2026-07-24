@@ -680,7 +680,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           label: 'Ano da Ata *',
                           controller: _anoAtaCtrl,
                           readOnly: readOnly,
-                          hintText: 'ex: 2026',
                           decimals: false,
                           maxLength: 4,
                           validator: (v) {
@@ -740,7 +739,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   if (!readOnly)
                     AudespTextField(
                       label: 'Número do item',
-                      hintText: 'ex: 3',
                       controller: _itemCtrl,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],

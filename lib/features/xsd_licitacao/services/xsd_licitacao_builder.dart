@@ -407,15 +407,72 @@ class XsdLicitacaoBuilder {
         b.element('ExistenciaRecursosValor', nest: r.valor!.toStringAsFixed(2));
         b.element('ExistenciaRecursosDt', nest: _date(r.data!));
         if (r.fontes.contains(1)) b.element('Tesouro', nest: 'S');
+        for (final convenio in r.conveniosEstaduais) {
+          b.element(
+            'TransferenciasConveniosEstaduais',
+            nest: () => _convenio(b, convenio, federal: false),
+          );
+        }
         if (r.fontes.contains(3))
           b.element('RecursosPropriosFundosEspeciais', nest: 'S');
         if (r.fontes.contains(4))
           b.element('RecursosPropriosAdministracaoIndireta', nest: 'S');
+        for (final convenio in r.conveniosFederais) {
+          b.element(
+            'ConvenioFederal',
+            nest: () => _convenio(b, convenio, federal: true),
+          );
+        }
         if (r.fontes.contains(6))
           b.element('OutrasFontesDescricao', nest: r.outrasFontesDescricao);
+        for (final operacao in r.operacoesCredito) {
+          b.element(
+            'OperacoesCredito',
+            nest: () {
+              if (operacao.agenteFinanceiro.trim().isNotEmpty) {
+                b.element(
+                  'AgenteFinanceiro',
+                  nest: operacao.agenteFinanceiro.trim(),
+                );
+              }
+              b.element(
+                'ContratoFinanciamentoNum',
+                nest: operacao.contratoNumero,
+              );
+              b.element('ContratoFinanciamentoAno', nest: operacao.contratoAno);
+              b.element(
+                'RepasseContratoFinanciamentoValor',
+                nest: operacao.valorRepasse.toStringAsFixed(2),
+              );
+            },
+          );
+        }
         if (r.fontes.contains(8))
           b.element('EmendasParlamentaresIndividuais', nest: 'S');
       },
+    );
+  }
+
+  static void _convenio(
+    XmlBuilder b,
+    XsdConvenio convenio, {
+    required bool federal,
+  }) {
+    final prefix = federal ? 'ConvenioFederal' : 'ConvenioEstadual';
+    b.element(
+      '${prefix}Num',
+      nest: () {
+        b.element('Numero', nest: convenio.numero);
+        b.element('Ano', nest: convenio.ano);
+      },
+    );
+    b.element(
+      'Repasse${prefix}Valor',
+      nest: convenio.valorRepasse.toStringAsFixed(2),
+    );
+    b.element(
+      'Contrapartida${prefix}Valor',
+      nest: convenio.valorContrapartida.toStringAsFixed(2),
     );
   }
 

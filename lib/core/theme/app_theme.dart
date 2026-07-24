@@ -19,6 +19,7 @@ class AppTheme {
     inputDecorationTheme: const InputDecorationTheme(
       isDense: true,
       border: OutlineInputBorder(),
+      floatingLabelBehavior: FloatingLabelBehavior.always,
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       helperStyle: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
     ),

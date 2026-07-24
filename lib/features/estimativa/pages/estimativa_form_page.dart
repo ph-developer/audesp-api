@@ -487,7 +487,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: AudespTextField(
                 label: 'Prazo de Vigência',
                 controller: _prazoVigenciaCtrl,
-                hintText: 'Ex: 12 meses',
+                hintText: 'Ex.: 12 meses',
               ),
             ),
             const SizedBox(width: 16),
@@ -495,7 +495,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: AudespTextField(
                 label: 'Forma de Pagamento *',
                 controller: _formaPagamentoCtrl,
-                hintText: 'Ex: 30 dias após emissão da NF',
+                hintText: 'Ex.: 30 dias após emissão da NF',
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
               ),

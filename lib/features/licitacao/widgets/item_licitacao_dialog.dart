@@ -180,7 +180,6 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                       child: AudespNumberField(
                         label: 'Valor Médio dos Orçamentos (R\$)',
                         controller: _valorCtrl,
-                        hintText: 'Ex.: 12345.00',
                         validator: (v) {
                           if (_tipoOrcamento != null &&
                               _tipoOrcamento != 0 &&

@@ -242,10 +242,37 @@ class XsdDomainRules {
           (profile.recursos.outrasFontesDescricao?.trim().isEmpty ?? true)) {
         errors.add('Recursos: descreva as outras fontes.');
       }
-      if (profile.recursos.fontes.any({2, 5, 7}.contains)) {
-        errors.add(
-          'Convênios e operações de crédito exigem informações complementares.',
-        );
+      _validateConvenios(
+        errors,
+        label: 'Convênios estaduais',
+        selected: profile.recursos.fontes.contains(2),
+        values: profile.recursos.conveniosEstaduais,
+      );
+      _validateConvenios(
+        errors,
+        label: 'Convênios federais',
+        selected: profile.recursos.fontes.contains(5),
+        values: profile.recursos.conveniosFederais,
+      );
+      if (profile.recursos.fontes.contains(7) &&
+          profile.recursos.operacoesCredito.isEmpty) {
+        errors.add('Operações de crédito: informe ao menos um contrato.');
+      }
+      for (var i = 0; i < profile.recursos.operacoesCredito.length; i++) {
+        final value = profile.recursos.operacoesCredito[i];
+        final prefix = 'Operação de crédito ${i + 1}';
+        if (value.contratoNumero.trim().isEmpty ||
+            value.contratoNumero.length > 20) {
+          errors.add(
+            '$prefix: informe o número do contrato (até 20 caracteres).',
+          );
+        }
+        if (value.contratoAno < 1000 || value.contratoAno > 9999)
+          errors.add('$prefix: informe um ano com quatro dígitos.');
+        if (value.valorRepasse < 0)
+          errors.add('$prefix: o valor do repasse não pode ser negativo.');
+        if (value.agenteFinanceiro.length > 50)
+          errors.add('$prefix: agente financeiro limitado a 50 caracteres.');
       }
     }
     if (profile.comissao.isNotEmpty) {
@@ -257,6 +284,29 @@ class XsdDomainRules {
       }
     }
     if (errors.isNotEmpty) throw XsdDomainException(errors);
+  }
+
+  static void _validateConvenios(
+    List<String> errors, {
+    required String label,
+    required bool selected,
+    required List<XsdConvenio> values,
+  }) {
+    if (selected && values.isEmpty) {
+      errors.add('$label: informe ao menos um convênio.');
+    }
+    for (var i = 0; i < values.length; i++) {
+      final value = values[i];
+      final prefix = '$label ${i + 1}';
+      if (!RegExp(r'^[a-zA-Z0-9-]{1,12}$').hasMatch(value.numero)) {
+        errors.add('$prefix: número deve ter até 12 letras, números ou hífen.');
+      }
+      if (value.ano < 1000 || value.ano > 9999)
+        errors.add('$prefix: informe um ano com quatro dígitos.');
+      if (value.valorRepasse < 0 || value.valorContrapartida < 0) {
+        errors.add('$prefix: os valores não podem ser negativos.');
+      }
+    }
   }
 
   static double calculateTotal(List<Map<String, dynamic>> itens) {

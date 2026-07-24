@@ -8,6 +8,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('input labels remain floating when empty and unfocused', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: SizedBox(
+            width: 300,
+            child: AudespTextField(label: 'Campo vazio'),
+          ),
+        ),
+      ),
+    );
+
+    final decorator = tester.widget<InputDecorator>(
+      find.byType(InputDecorator),
+    );
+    expect(
+      decorator.decoration.floatingLabelBehavior,
+      FloatingLabelBehavior.always,
+    );
+  });
+
   testWidgets('single-line inputs use the standard height', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 600));
     addTearDown(() => tester.binding.setSurfaceSize(null));

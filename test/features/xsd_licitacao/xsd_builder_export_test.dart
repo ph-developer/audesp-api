@@ -61,6 +61,61 @@ void main() {
     );
   });
 
+  test('gera dados complementares de convênios e operação de crédito', () {
+    final xml = XsdLicitacaoBuilder.build(
+      source: _source(recursos: true),
+      profile: XsdLicitacaoProfile(
+        situacaoData: DateTime(2026, 5, 2),
+        recursos: XsdRecursosProfile(
+          declarados: true,
+          valor: 1000,
+          data: DateTime(2026, 3, 1),
+          fontes: const [2, 5, 7],
+          conveniosEstaduais: const [
+            XsdConvenio(
+              numero: 'EST-1',
+              ano: 2026,
+              valorRepasse: 400,
+              valorContrapartida: 40,
+            ),
+          ],
+          conveniosFederais: const [
+            XsdConvenio(
+              numero: 'FED-1',
+              ano: 2025,
+              valorRepasse: 300,
+              valorContrapartida: 30,
+            ),
+          ],
+          operacoesCredito: const [
+            XsdOperacaoCredito(
+              agenteFinanceiro: 'Banco',
+              contratoNumero: 'FIN-10',
+              contratoAno: 2026,
+              valorRepasse: 230,
+            ),
+          ],
+        ),
+      ),
+    );
+    final doc = XmlDocument.parse(xml);
+
+    final estadual = doc.findAllElements('ConvenioEstadualNum').single;
+    expect(estadual.findElements('Numero').single.innerText, 'EST-1');
+    expect(estadual.findElements('Ano').single.innerText, '2026');
+    final federal = doc.findAllElements('ConvenioFederalNum').single;
+    expect(federal.findElements('Numero').single.innerText, 'FED-1');
+    expect(federal.findElements('Ano').single.innerText, '2025');
+    expect(
+      doc.findAllElements('ContratoFinanciamentoNum').single.innerText,
+      'FIN-10',
+    );
+    expect(
+      doc.findAllElements('RepasseContratoFinanciamentoValor').single.innerText,
+      '230.00',
+    );
+  });
+
   test('exportador grava XML e Markdown sempre como par', () async {
     final temp = await Directory.systemTemp.createTemp('audesp_export_test_');
     addTearDown(() => temp.delete(recursive: true));
@@ -103,51 +158,54 @@ Iterable<XmlElement> _elementsByLocalName(XmlDocument document, String name) =>
       (element) => element.name.local == name,
     );
 
-XsdLicitacaoSource _source({int modalidade = 6, int? amparo}) =>
-    XsdLicitacaoSource(
-      modalidadeId: modalidade,
-      srp: false,
-      carona: false,
-      municipio: '0000',
-      entidade: '000000',
-      codigoEdital: '1234567890123410001232026',
-      numeroCompra: '1',
-      anoCompra: 2026,
-      numeroProcesso: '1',
-      objeto: 'Aquisição de material',
-      criterioJulgamentoId: 1,
-      amparoLegalId: amparo,
-      editalData: DateTime(2026, 4),
-      situacaoData: DateTime(2026, 5, 2),
-      quitacaoTributosFederais: false,
-      quitacaoTributosEstaduais: false,
-      quitacaoTributosMunicipais: false,
-      declaracaoRecursos: false,
-      fontesRecursos: const [],
-      parecerTecnicoJuridico: false,
-      entregaPropostaData: DateTime(2026, 4, 20),
-      aberturaData: DateTime(2026, 4, 21),
-      itens: [
+XsdLicitacaoSource _source({
+  int modalidade = 6,
+  int? amparo,
+  bool recursos = false,
+}) => XsdLicitacaoSource(
+  modalidadeId: modalidade,
+  srp: false,
+  carona: false,
+  municipio: '0000',
+  entidade: '000000',
+  codigoEdital: '1234567890123410001232026',
+  numeroCompra: '1',
+  anoCompra: 2026,
+  numeroProcesso: '1',
+  objeto: 'Aquisição de material',
+  criterioJulgamentoId: 1,
+  amparoLegalId: amparo,
+  editalData: DateTime(2026, 4),
+  situacaoData: DateTime(2026, 5, 2),
+  quitacaoTributosFederais: false,
+  quitacaoTributosEstaduais: false,
+  quitacaoTributosMunicipais: false,
+  declaracaoRecursos: recursos,
+  fontesRecursos: recursos ? const [2, 5, 7] : const [],
+  parecerTecnicoJuridico: false,
+  entregaPropostaData: DateTime(2026, 4, 20),
+  aberturaData: DateTime(2026, 4, 21),
+  itens: [
+    {
+      'numeroItem': 1,
+      'descricao': 'Material',
+      'quantidade': 2,
+      'unidade': 'UN',
+      'valorUnitarioEstimado': 100,
+      'situacaoCompraItemId': 2,
+      'licitantes': [
         {
-          'numeroItem': 1,
-          'descricao': 'Material',
-          'quantidade': 2,
-          'unidade': 'UN',
-          'valorUnitarioEstimado': 100,
-          'situacaoCompraItemId': 2,
-          'licitantes': [
-            {
-              'niPessoa': '12345678901',
-              'nomeRazaoSocial': 'Fornecedor',
-              'resultadoHabilitacao': 1,
-              'valor': 150,
-              'tipoProposta': 1,
-              'tipoValor': 'M',
-              'declaracaoMEouEPP': 3,
-            },
-          ],
+          'niPessoa': '12345678901',
+          'nomeRazaoSocial': 'Fornecedor',
+          'resultadoHabilitacao': 1,
+          'valor': 150,
+          'tipoProposta': 1,
+          'tipoValor': 'M',
+          'declaracaoMEouEPP': 3,
         },
       ],
-      editalJson: const {'itensCompra': []},
-      licitacaoJson: const {},
-    );
+    },
+  ],
+  editalJson: const {'itensCompra': []},
+  licitacaoJson: const {},
+);

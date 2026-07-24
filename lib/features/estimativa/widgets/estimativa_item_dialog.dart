@@ -212,7 +212,6 @@ class _ItemDialogState extends State<_ItemDialog> {
                             child: AudespTextField(
                               label: 'Unidade *',
                               controller: _unidadeCtrl,
-                              hintText: 'UN, M2...',
                               validator: (v) => (v == null || v.isEmpty)
                                   ? 'Obrigatório'
                                   : null,

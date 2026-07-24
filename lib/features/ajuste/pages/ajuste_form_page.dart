@@ -1289,7 +1289,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   if (!readOnly)
                     AudespTextField(
                       label: 'Número do item',
-                      hintText: 'Ex: 1',
                       controller: _itemCtrl,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -1367,7 +1366,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Ano do Contrato *',
                           controller: _anoContratoCtrl,
                           readOnly: readOnly,
-                          hintText: 'Ex: 2024',
                           decimals: false,
                           maxLength: 4,
                           validator: (v) {

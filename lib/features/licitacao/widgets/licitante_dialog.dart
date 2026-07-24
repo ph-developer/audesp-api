@@ -111,7 +111,6 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                       ? 'CPF *'
                       : 'Identificação Estrangeira *',
                   controller: _niCtrl,
-                  hintText: '3 a 30 caracteres',
                   inputFormatters: [
                     FilteringTextInputFormatter.deny(RegExp(r'\s')),
                   ],
@@ -129,7 +128,6 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                       ? 'Nome/Razão Social *'
                       : 'Nome/Razão Social',
                   controller: _nomeCtrl,
-                  hintText: '3 a 50 caracteres',
                   maxLength: 50,
                   validator: (v) {
                     if (_tipoPessoa == 'PE' &&
@@ -161,7 +159,6 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                       ? 'Valor Proposto (R\$) *'
                       : 'Valor Proposto (R\$)',
                   controller: _valorCtrl,
-                  hintText: 'Ex.: 12345.55',
                   validator: (v) {
                     if ((_resultadoHabilitacao == 1 ||
                             _resultadoHabilitacao == 2) &&
