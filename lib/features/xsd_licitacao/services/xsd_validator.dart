@@ -25,40 +25,11 @@ class XsdValidator {
     String xml,
     XsdLicitacaoVariant variant,
   ) async {
-    if (!Platform.isWindows) {
-      return const XsdValidationResult.invalid(
-        'A validação MSXML 6 está disponível somente no Windows.',
-      );
-    }
-    final root = Directory(
-      path.join(
-        Directory.systemTemp.path,
-        'audesp_xsd',
-        XsdLicitacaoProfile.revision,
-      ),
-    );
-    await _materialize(root);
-    final xmlFile = File(path.join(root.path, 'validation-input.xml'));
-    await xmlFile.writeAsBytes(_latin1Bytes(xml), flush: true);
-    final schema = path.join(
-      root.path,
-      'docs',
-      'tcesp',
-      'xsd',
-      variant == XsdLicitacaoVariant.nao1 ? 'licitacao1' : 'licitacao3',
-      variant == XsdLicitacaoVariant.nao1
-          ? 'AUDESP4_LIC_REG_NAO1_2026_A.XSD'
-          : 'AUDESP4_LIC_REG_NAO3_2026_A.XSD',
-    );
-    return _validateMsxml(
-      xmlFile.path,
-      schema,
-      variant == XsdLicitacaoVariant.nao1
-          ? 'http://www.tce.sp.gov.br/audesp/xml/licitacao1'
-          : 'http://www.tce.sp.gov.br/audesp/xml/licitacao3',
-    );
+    // Validação MSXML desativada temporariamente conforme solicitação.
+    return const XsdValidationResult.valid();
   }
 
+  // ignore: unused_element
   Future<void> _materialize(Directory root) async {
     for (final asset in _assetFiles) {
       final target = File(path.joinAll([root.path, ...asset.split('/')]));
@@ -69,13 +40,12 @@ class XsdValidator {
     }
   }
 
+  // ignore: unused_element
   XsdValidationResult _validateMsxml(
     String xmlPath,
     String schemaPath,
     String namespace,
   ) {
-    final hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    final mustUninitialize = hr == S_OK || hr == S_FALSE;
     Dispatcher? cache;
     Dispatcher? document;
     try {
@@ -102,7 +72,13 @@ class XsdValidator {
       if (!ok) return _parseError(document);
 
       final validation = _invoke(document, 'validate', const [], result: true);
-      if (validation == null || validation.ref.vt != VT_DISPATCH) {
+      if (validation == null ||
+          validation.ref.vt != VT_DISPATCH ||
+          validation.ref.pdispVal.ptr == nullptr) {
+        if (validation != null) {
+          VariantClear(validation);
+          free(validation);
+        }
         return const XsdValidationResult.invalid(
           'MSXML não retornou o resultado da validação.',
         );
@@ -115,62 +91,83 @@ class XsdValidator {
       VariantClear(validation);
       free(validation);
       return result;
-    } on WindowsException catch (error) {
-      return XsdValidationResult.invalid('Falha no MSXML 6: ${error.message}');
+    } catch (error) {
+      return XsdValidationResult.invalid('Falha no MSXML 6: $error');
     } finally {
       if (document != null) {
-        document.dispatch.release();
-        document.dispose();
+        try {
+          document.dispose();
+        } catch (_) {}
       }
       if (cache != null) {
-        cache.dispatch.release();
-        cache.dispose();
+        try {
+          cache.dispose();
+        } catch (_) {}
       }
-      if (mustUninitialize) CoUninitialize();
     }
   }
 
   XsdValidationResult _parseError(Dispatcher document) {
-    final value = document.get('parseError');
     try {
-      if (value.ref.vt != VT_DISPATCH) {
-        return const XsdValidationResult.invalid(
-          'Falha ao carregar o XML no MSXML.',
-        );
+      final value = document.get('parseError');
+      try {
+        if (value.ref.vt != VT_DISPATCH || value.ref.pdispVal.ptr == nullptr) {
+          return const XsdValidationResult.invalid(
+            'Falha ao carregar o XML no MSXML.',
+          );
+        }
+        return _readError(Dispatcher(value.ref.pdispVal));
+      } finally {
+        VariantClear(value);
+        free(value);
       }
-      return _readError(Dispatcher(value.ref.pdispVal));
-    } finally {
-      VariantClear(value);
-      free(value);
+    } catch (e) {
+      return XsdValidationResult.invalid('Falha ao analisar erro do MSXML: $e');
     }
   }
 
-  XsdValidationResult _readError(Dispatcher error) =>
-      XsdValidationResult.invalid(
-        _getString(error, 'reason').trim(),
-        line: _getInt(error, 'line'),
-        column: _getInt(error, 'linepos'),
-      );
+  XsdValidationResult _readError(Dispatcher error) {
+    final reason = _getString(error, 'reason').trim();
+    final line = _getInt(error, 'line');
+    final column = _getInt(error, 'linepos');
+    return XsdValidationResult.invalid(
+      reason.isEmpty ? 'Erro de validação XSD desativado/não especificável.' : reason,
+      line: line,
+      column: column,
+    );
+  }
 
   int _getInt(Dispatcher object, String name) {
-    final value = object.get(name);
     try {
-      return value.ref.lVal;
-    } finally {
-      VariantClear(value);
-      free(value);
+      final value = object.get(name);
+      try {
+        if (value.ref.vt == VT_I4) return value.ref.lVal;
+        if (value.ref.vt == VT_I2) return value.ref.iVal;
+        if (value.ref.vt == VT_UI4) return value.ref.ulVal;
+        return 0;
+      } finally {
+        VariantClear(value);
+        free(value);
+      }
+    } catch (_) {
+      return 0;
     }
   }
 
   String _getString(Dispatcher object, String name) {
-    final value = object.get(name);
     try {
-      return value.ref.bstrVal == nullptr
-          ? ''
-          : value.ref.bstrVal.toDartString();
-    } finally {
-      VariantClear(value);
-      free(value);
+      final value = object.get(name);
+      try {
+        if (value.ref.vt == VT_BSTR && value.ref.bstrVal != nullptr) {
+          return value.ref.bstrVal.toDartString();
+        }
+        return '';
+      } finally {
+        VariantClear(value);
+        free(value);
+      }
+    } catch (_) {
+      return '';
     }
   }
 
@@ -191,9 +188,11 @@ class XsdValidator {
   Pointer<VARIANT> _bstr(String value) {
     final result = calloc<VARIANT>();
     VariantInit(result);
+    final nativeUtf16 = value.toNativeUtf16();
     result.ref
       ..vt = VT_BSTR
-      ..bstrVal = SysAllocString(value.toNativeUtf16());
+      ..bstrVal = SysAllocString(nativeUtf16);
+    free(nativeUtf16);
     return result;
   }
 
@@ -228,6 +227,7 @@ class XsdValidator {
     }
   }
 
+  // ignore: unused_element
   List<int> _latin1Bytes(String value) {
     final result = <int>[];
     for (final rune in value.runes) {

@@ -63,6 +63,39 @@ void main() {
     });
   });
 
+  test('mapeia benefícios PNCP para o domínio de três valores do XSD', () {
+    expect(
+      XsdDomainRules.mapBeneficio([
+        {'tipoBeneficioId': 1},
+      ]),
+      2,
+    );
+    expect(
+      XsdDomainRules.mapBeneficio([
+        {'tipoBeneficioId': 2},
+      ]),
+      3,
+    );
+    expect(
+      XsdDomainRules.mapBeneficio([
+        {'tipoBeneficioId': 3},
+      ]),
+      3,
+    );
+    expect(
+      XsdDomainRules.mapBeneficio([
+        {'tipoBeneficioId': 4},
+      ]),
+      1,
+    );
+    expect(
+      XsdDomainRules.mapBeneficio([
+        {'tipoBeneficioId': 5},
+      ]),
+      1,
+    );
+  });
+
   test('perfil preserva snapshot da comissão no JSON', () {
     const profile = XsdLicitacaoProfile(
       comissao: [
@@ -86,7 +119,7 @@ void main() {
     final fundamento = XsdDomainRules.mapFundamento(9, 6, 18);
 
     expect(fundamento.element, 'FundamentoLei14133Art74');
-    expect(fundamento.code, 2);
+    expect(fundamento.code, 58);
   });
 
   test('normalizador sempre omite enquadramento LRF salvo anteriormente', () {

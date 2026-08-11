@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audesp_api/features/xsd_licitacao/models/xsd_licitacao_models.dart';
 import 'package:audesp_api/features/xsd_licitacao/services/xsd_export_service.dart';
 import 'package:audesp_api/features/xsd_licitacao/services/xsd_licitacao_builder.dart';
+import 'package:audesp_api/features/xsd_licitacao/services/xsd_validator.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xml/xml.dart';
 
@@ -47,7 +48,10 @@ void main() {
     final doc = XmlDocument.parse(xml);
     final dados = doc.findAllElements('DadosLicitacao').single;
     expect(dados.findElements('Subcontratacao').single.innerText, 'N');
-    expect(doc.findAllElements('FundamentoLegal'), hasLength(1));
+    expect(
+      doc.findAllElements('FundamentoLei14133Art75').single.innerText,
+      '63',
+    );
     expect(
       doc.findAllElements('DataFinalizacaoProcesso').single.innerText,
       '2026-05-02',
@@ -61,60 +65,97 @@ void main() {
     );
   });
 
-  test('gera dados complementares de convênios e operação de crédito', () {
+  test('normaliza travessão Unicode para ISO-8859-1', () {
     final xml = XsdLicitacaoBuilder.build(
-      source: _source(recursos: true),
+      source: _source(descricao: 'Material —'),
       profile: XsdLicitacaoProfile(
         situacaoData: DateTime(2026, 5, 2),
-        recursos: XsdRecursosProfile(
-          declarados: true,
-          valor: 1000,
-          data: DateTime(2026, 3, 1),
-          fontes: const [2, 5, 7],
-          conveniosEstaduais: const [
-            XsdConvenio(
-              numero: 'EST-1',
-              ano: 2026,
-              valorRepasse: 400,
-              valorContrapartida: 40,
-            ),
-          ],
-          conveniosFederais: const [
-            XsdConvenio(
-              numero: 'FED-1',
-              ano: 2025,
-              valorRepasse: 300,
-              valorContrapartida: 30,
-            ),
-          ],
-          operacoesCredito: const [
-            XsdOperacaoCredito(
-              agenteFinanceiro: 'Banco',
-              contratoNumero: 'FIN-10',
-              contratoAno: 2026,
-              valorRepasse: 230,
-            ),
-          ],
-        ),
+        julgamentoData: DateTime(2026, 5),
       ),
     );
-    final doc = XmlDocument.parse(xml);
 
-    final estadual = doc.findAllElements('ConvenioEstadualNum').single;
-    expect(estadual.findElements('Numero').single.innerText, 'EST-1');
-    expect(estadual.findElements('Ano').single.innerText, '2026');
-    final federal = doc.findAllElements('ConvenioFederalNum').single;
-    expect(federal.findElements('Numero').single.innerText, 'FED-1');
-    expect(federal.findElements('Ano').single.innerText, '2025');
-    expect(
-      doc.findAllElements('ContratoFinanciamentoNum').single.innerText,
-      'FIN-10',
-    );
-    expect(
-      doc.findAllElements('RepasseContratoFinanciamentoValor').single.innerText,
-      '230.00',
-    );
+    expect(xml, contains('Material -'));
+    expect(xml, isNot(contains('—')));
   });
+
+  test(
+    'gera dados complementares de convênios e operação de crédito',
+    () async {
+      final xml = XsdLicitacaoBuilder.build(
+        source: _source(recursos: true),
+        profile: XsdLicitacaoProfile(
+          situacaoData: DateTime(2026, 5, 2),
+          recursos: XsdRecursosProfile(
+            declarados: true,
+            valor: 1000,
+            data: DateTime(2026, 3, 1),
+            fontes: const [2, 5, 7],
+            conveniosEstaduais: const [
+              XsdConvenio(
+                numero: 'EST-1',
+                ano: 2026,
+                valorRepasse: 400,
+                valorContrapartida: 40,
+              ),
+            ],
+            conveniosFederais: const [
+              XsdConvenio(
+                numero: 'FED-1',
+                ano: 2025,
+                valorRepasse: 300,
+                valorContrapartida: 30,
+              ),
+            ],
+            operacoesCredito: const [
+              XsdOperacaoCredito(
+                agenteFinanceiro: 'Banco',
+                contratoNumero: 'FIN-10',
+                contratoAno: 2026,
+                valorRepasse: 230,
+              ),
+            ],
+          ),
+        ),
+      );
+      final doc = XmlDocument.parse(xml);
+
+      const tagNamespace = 'http://www.tce.sp.gov.br/audesp/xml/tagcomum';
+      final recursosValor = _elementsByLocalName(
+        doc,
+        'ExistenciaRecursosValor',
+      ).single;
+      expect(recursosValor.namespaceUri, tagNamespace);
+      final estadual = _elementsByLocalName(doc, 'ConvenioEstadualNum').single;
+      expect(
+        _elementsByLocalName(estadual, 'Numero').single.innerText,
+        'EST-1',
+      );
+      expect(_elementsByLocalName(estadual, 'Ano').single.innerText, '2026');
+      expect(estadual.namespaceUri, tagNamespace);
+      final federal = _elementsByLocalName(doc, 'ConvenioFederalNum').single;
+      expect(_elementsByLocalName(federal, 'Numero').single.innerText, 'FED-1');
+      expect(_elementsByLocalName(federal, 'Ano').single.innerText, '2025');
+      expect(federal.namespaceUri, tagNamespace);
+      expect(
+        _elementsByLocalName(doc, 'ContratoFinanciamentoNum').single.innerText,
+        'FIN-10',
+      );
+      expect(
+        _elementsByLocalName(
+          doc,
+          'RepasseContratoFinanciamentoValor',
+        ).single.innerText,
+        '230.00',
+      );
+      if (Platform.isWindows) {
+        final validation = await const XsdValidator().validate(
+          xml,
+          XsdLicitacaoVariant.nao1,
+        );
+        expect(validation.isValid, isTrue, reason: validation.displayMessage);
+      }
+    },
+  );
 
   test('exportador grava XML e Markdown sempre como par', () async {
     final temp = await Directory.systemTemp.createTemp('audesp_export_test_');
@@ -153,7 +194,7 @@ void main() {
   });
 }
 
-Iterable<XmlElement> _elementsByLocalName(XmlDocument document, String name) =>
+Iterable<XmlElement> _elementsByLocalName(XmlNode document, String name) =>
     document.descendants.whereType<XmlElement>().where(
       (element) => element.name.local == name,
     );
@@ -162,12 +203,13 @@ XsdLicitacaoSource _source({
   int modalidade = 6,
   int? amparo,
   bool recursos = false,
+  String descricao = 'Material',
 }) => XsdLicitacaoSource(
   modalidadeId: modalidade,
   srp: false,
   carona: false,
-  municipio: '0000',
-  entidade: '000000',
+  municipio: '0001',
+  entidade: '1',
   codigoEdital: '1234567890123410001232026',
   numeroCompra: '1',
   anoCompra: 2026,
@@ -188,7 +230,7 @@ XsdLicitacaoSource _source({
   itens: [
     {
       'numeroItem': 1,
-      'descricao': 'Material',
+      'descricao': descricao,
       'quantidade': 2,
       'unidade': 'UN',
       'valorUnitarioEstimado': 100,

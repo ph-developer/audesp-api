@@ -77,14 +77,8 @@ class XsdGenerationService {
     return result;
   }
 
-  String _baseName(XsdLicitacaoSource source, XsdLicitacaoVariant variant) {
-    final number = source.numeroCompra.replaceAll(
-      RegExp(r'[^a-zA-Z0-9_-]'),
-      '_',
-    );
-    return 'licitacao_${variant.name}_${number}_${source.anoCompra}'
-        .toLowerCase();
-  }
+  String _baseName(XsdLicitacaoSource source, XsdLicitacaoVariant variant) =>
+      XsdDomainRules.defaultFileName(source, variant);
 
   String _hashJson(Map<String, dynamic> value) =>
       sha256.convert(utf8.encode(jsonEncode(value))).toString();

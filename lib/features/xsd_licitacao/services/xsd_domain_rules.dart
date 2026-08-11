@@ -42,6 +42,55 @@ class XsdDomainRules {
     return XsdLicitacaoVariant.nao1;
   }
 
+  static String defaultFileName(
+    XsdLicitacaoSource source,
+    XsdLicitacaoVariant variant,
+  ) {
+    final number = source.numeroCompra.replaceAll(
+      RegExp(r'[^a-zA-Z0-9_-]'),
+      '_',
+    );
+    final String prefix;
+    switch (source.modalidadeId) {
+      case 9:
+        prefix = 'inexigibilidade';
+        break;
+      case 8:
+        prefix = 'dispensa';
+        break;
+      case 4:
+      case 5:
+      case 16:
+      case 17:
+        prefix = 'concorrencia';
+        break;
+      case 6:
+      case 18:
+        prefix = 'pregao_eletronico';
+        break;
+      case 7:
+      case 19:
+        prefix = 'pregao_presencial';
+        break;
+      case 998:
+        prefix = 'convite';
+        break;
+      case 999:
+        prefix = 'tomada_precos';
+        break;
+      case 997:
+        prefix = 'rdc';
+        break;
+      case 1:
+      case 13:
+        prefix = 'leilao';
+        break;
+      default:
+        prefix = 'licitacao_${variant.name}';
+    }
+    return '${prefix}_${number}_${source.anoCompra}'.toLowerCase();
+  }
+
   /// PNCP modalidade -> elemento do bloco e código fixo no XSD.
   static const modalidadeNao1 = <int, (String, int)>{
     4: ('Concorrencia', 1),
@@ -82,10 +131,10 @@ class XsdDomainRules {
 
   static int mapBeneficio(Iterable<Map<String, dynamic>> itens) {
     final ids = itens.map((e) => _int(e['tipoBeneficioId'])).toSet();
-    if (ids.contains(1)) return 1;
-    if (ids.contains(2)) return 2;
-    if (ids.contains(3)) return 3;
-    return 4;
+    if (ids.contains(1)) return 2; // Licitação exclusiva.
+    if (ids.contains(2) || ids.contains(3))
+      return 3; // Tratamento diferenciado.
+    return 1; // Sem benefício ou não se aplica.
   }
 
   static const resultadoLicitante = <int, int>{
@@ -141,9 +190,9 @@ class XsdDomainRules {
       ]);
     }
     if (modalidade == 9) {
-      if (id == 50) return const XsdFundamento('FundamentoLei14133Art74', 1);
+      if (id == 50) return const XsdFundamento('FundamentoLei14133Art74', 57);
       if (id >= 6 && id <= 17) {
-        return XsdFundamento('FundamentoLei14133Art74', id - 4);
+        return XsdFundamento('FundamentoLei14133Art74', id + 52);
       }
       if (id == 102 || id == 103) {
         return const XsdFundamento('FundamentoLei13303Art30', 1);
@@ -152,14 +201,45 @@ class XsdDomainRules {
         return XsdFundamento('FundamentoLei13303Art30', id - 102);
       }
     } else if (modalidade == 8) {
-      if (id >= 18 && id <= 46) {
-        return XsdFundamento('FundamentoLei14133Art75', id - 17);
+      // Tabela explícita PNCP → XSD FundamentoLei14133_Art75_t (63-78).
+      // O PNCP expande subitens (ex.: Art. 75, III a/b, Art. 75, IV a-m)
+      // enquanto o XSD agrupa por inciso: I=63, II=64, ..., XVI=78.
+      const pncpToArt75 = <int, int>{
+        18: 63, // I
+        19: 64, // II
+        20: 65, 21: 65, // III (a, b)
+        22: 66, 23: 66, 24: 66, 25: 66, 26: 66, 27: 66, // IV (a-f)
+        28: 66, 29: 66, 30: 66, 31: 66, 32: 66, 33: 66, 34: 66, // IV (g-m)
+        35: 67, // V
+        36: 68, // VI
+        37: 69, // VII
+        38: 70, // VIII
+        39: 71, // IX
+        40: 72, // X
+        41: 73, // XI
+        42: 74, // XII
+        43: 75, // XIII
+        44: 76, // XIV
+        45: 77, // XV
+        46: 78, // XVI
+      };
+      if (pncpToArt75.containsKey(id)) {
+        return XsdFundamento('FundamentoLei14133Art75', pncpToArt75[id]!);
       }
-      if (id == 60 || id == 77) {
-        return XsdFundamento('FundamentoLei14133Art75', id == 60 ? 30 : 31);
+      // XVII e XVIII foram adicionados por leis posteriores e não possuem
+      // enumerações dedicadas no XSD 2026_A; mapeiam para XV/XVI como
+      // aproximação aceita pelo AUDESP em piloto.
+      if (id == 60) {
+        return const XsdFundamento('FundamentoLei14133Art75', 77);
+      }
+      if (id == 77) {
+        return const XsdFundamento('FundamentoLei14133Art75', 78);
+      }
+      if (id == 78) {
+        return const XsdFundamento('FundamentoLei14133Art75', 78);
       }
       if (id >= 61 && id <= 76) {
-        return XsdFundamento('FundamentoLei14133Art76', id - 60);
+        return XsdFundamento('FundamentoLei14133Art76', id + 18);
       }
       if (id >= 84 && id <= 101) {
         return XsdFundamento('FundamentoLei13303Art29', id - 83);

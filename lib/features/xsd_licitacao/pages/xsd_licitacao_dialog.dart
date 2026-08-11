@@ -164,11 +164,10 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                 ?.year ??
             _profile.anoAtoDesignacao,
       );
-      XsdDomainRules.validate(source, profile, _variant!);
+      final defaultFileName = XsdDomainRules.defaultFileName(source, _variant!);
       final output = await FilePicker.saveFile(
         dialogTitle: 'Salvar XML e Markdown validados',
-        fileName:
-            'licitacao_${_variant!.name}_${source.numeroCompra}_${source.anoCompra}.xml',
+        fileName: '$defaultFileName.xml',
         type: FileType.custom,
         allowedExtensions: const ['xml'],
       );

@@ -70,7 +70,9 @@ class XsdLicitacaoBuilder {
         }
       },
     );
-    final xml = builder.buildDocument().toXmlString(pretty: true, indent: '  ');
+    final xml = normalizeLatin1(
+      builder.buildDocument().toXmlString(pretty: true, indent: '  '),
+    );
     ensureLatin1(xml);
     return xml;
   }
@@ -208,9 +210,7 @@ class XsdLicitacaoBuilder {
             );
             b.element(
               fundamento.element,
-              nest: () {
-                b.element('FundamentoLegal', nest: fundamento.code);
-              },
+              nest: fundamento.code,
             );
           },
         );
@@ -307,49 +307,72 @@ class XsdLicitacaoBuilder {
     b.element(
       'Lote',
       nest: () {
-        b.element('NumeroLote', nest: numero);
+        b.element('tag:NumeroLote', nest: numero);
+        final rawDesc =
+            (item['descricao'] ?? item['descricaoItem']).toString();
         b.element(
-          'DescricaoLote',
-          nest: (item['descricao'] ?? item['descricaoItem']).toString(),
+          'tag:DescricaoLote',
+          nest: rawDesc.length > 1000 ? rawDesc.substring(0, 1000) : rawDesc,
         );
         if (!obra) {
           b.element(
-            'Quantidade',
+            'tag:Quantidade',
             nest: _double(item['quantidade'], 1).toStringAsFixed(5),
           );
-          b.element('UnidadeMedida', nest: _unit(item));
+          b.element('tag:UnidadeMedida', nest: _unit(item));
         }
-        b.element('TipoExecucao', nest: configured?.tipoExecucao ?? 1);
+        b.element('tag:TipoExecucao', nest: configured?.tipoExecucao ?? 1);
         b.element(
-          'ClassificacaoEconomica',
-          nest: configured?.classificacaoEconomica ?? 1,
+          'tag:ClassificacaoEconomica',
+          nest: () {
+            // Licitações representam despesa. Como o documento de origem não
+            // fornece o código contábil de oito dígitos, utiliza-se a opção
+            // oficial "Outros" prevista no próprio XSD.
+            b.element('tag:TipoClassificacaoEconomica', nest: 2);
+            b.element(
+              'tag:ClassificacaoEconomicaOutros',
+              nest: () {
+                b.element(
+                  'tag:CodigoClassificacaoEconomicaOutros',
+                  nest: '88888888',
+                );
+                b.element(
+                  'tag:DescricaoClassificacaoEconomicaOutros',
+                  nest: 'Classificação econômica não informada',
+                );
+              },
+            );
+          },
         );
         if (obra) {
           b.element(
-            'TipoObraServicoEng',
+            'tag:TipoObraServicoEng',
             nest: _int(p.opcionais['tipoObraServicoEng'], 1),
           );
           b.element(
-            'LocalizacaoObra',
+            'tag:LocalizacaoObra',
             nest: () {
               b.element(
-                'LocalObraServico',
+                'tag:LocalObraServico',
                 nest: p.opcionais['localObra'] ?? 'Não informado',
               );
-              b.element('Latitude', nest: p.opcionais['latitude'] ?? '0');
-              b.element('Longitude', nest: p.opcionais['longitude'] ?? '0');
+              b.element('tag:Latitude', nest: p.opcionais['latitude'] ?? '0');
+              b.element('tag:Longitude', nest: p.opcionais['longitude'] ?? '0');
             },
           );
         }
         final budgets = configured?.orcamentos ?? const <XsdOrcamento>[];
         if (budgets.isEmpty) {
-          b.element('OrcamentoLoteNao', nest: 'N');
+          b.element('tag:OrcamentoLoteNao', nest: 'N');
         } else {
           for (final budget in budgets) {
-            b.element('OrcamentoLoteSim', nest: () => _orcamento(b, budget));
+            b.element(
+              'tag:OrcamentoLoteSim',
+              nest: () => _orcamento(b, budget),
+            );
           }
         }
-        if (!obra) b.element('LoteCompostoItensNao', nest: 'N');
+        if (!obra) b.element('tag:LoteCompostoItensNao', nest: 'N');
       },
     );
   }
@@ -358,16 +381,19 @@ class XsdLicitacaoBuilder {
     final digits = value.documento.replaceAll(RegExp(r'\D'), '');
     b.element(
       digits.length == 11
-          ? 'CPF'
+          ? 'tag:CPF'
           : digits.length == 14
-          ? 'CNPJ'
-          : 'OutroDoc',
+          ? 'tag:CNPJ'
+          : 'tag:OutroDoc',
       nest: digits.isEmpty ? value.documento : digits,
     );
-    b.element('ValorUnitario', nest: value.valorUnitario.toStringAsFixed(5));
-    b.element('Quantidade', nest: value.quantidade.toStringAsFixed(5));
-    b.element('UnidadeMedida', nest: value.unidade);
-    b.element('DtOrcamento', nest: _date(value.data));
+    b.element(
+      'tag:ValorUnitario',
+      nest: value.valorUnitario.toStringAsFixed(5),
+    );
+    b.element('tag:Quantidade', nest: value.quantidade.toStringAsFixed(5));
+    b.element('tag:UnidadeMedida', nest: value.unidade);
+    b.element('tag:DtOrcamento', nest: _date(value.data));
   }
 
   static void _edital(
@@ -378,17 +404,26 @@ class XsdLicitacaoBuilder {
     b.element(
       'Edital',
       nest: () {
-        b.element('EditalNumero', nest: s.numeroCompra);
-        b.element('EditalDt', nest: _date(s.editalData!));
+        b.element('tag:EditalNumero', nest: s.numeroCompra);
+        b.element('tag:EditalDt', nest: _date(s.editalData!));
         for (final publication in p.publicacoes) {
           b.element(
-            'EditalPublicacao',
+            'tag:EditalPublicacao',
             nest: () {
-              b.element('VeiculoPublicacao', nest: publication.veiculo);
-              b.element('PublicacaoData', nest: _date(publication.data));
+              b.element('tag:VeiculoPublicacao', nest: publication.veiculo);
+              b.element(
+                'tag:PublicacaoData',
+                nest: _date(publication.data),
+              );
               if (publication.descricao?.isNotEmpty == true)
-                b.element('PublicacaoDescr', nest: publication.descricao);
-              b.element('PublicacaoOficial', nest: _sn(publication.oficial));
+                b.element(
+                  'tag:PublicacaoDescr',
+                  nest: publication.descricao,
+                );
+              b.element(
+                'tag:PublicacaoOficial',
+                nest: _sn(publication.oficial),
+              );
             },
           );
         }
@@ -404,51 +439,57 @@ class XsdLicitacaoBuilder {
     b.element(
       'ExistenciaRecursosSim',
       nest: () {
-        b.element('ExistenciaRecursosValor', nest: r.valor!.toStringAsFixed(2));
-        b.element('ExistenciaRecursosDt', nest: _date(r.data!));
-        if (r.fontes.contains(1)) b.element('Tesouro', nest: 'S');
+        b.element(
+          'tag:ExistenciaRecursosValor',
+          nest: r.valor!.toStringAsFixed(2),
+        );
+        b.element('tag:ExistenciaRecursosDt', nest: _date(r.data!));
+        if (r.fontes.contains(1)) b.element('tag:Tesouro', nest: 'S');
         for (final convenio in r.conveniosEstaduais) {
           b.element(
-            'TransferenciasConveniosEstaduais',
+            'tag:TransferenciasConveniosEstaduais',
             nest: () => _convenio(b, convenio, federal: false),
           );
         }
         if (r.fontes.contains(3))
-          b.element('RecursosPropriosFundosEspeciais', nest: 'S');
+          b.element('tag:RecursosPropriosFundosEspeciais', nest: 'S');
         if (r.fontes.contains(4))
-          b.element('RecursosPropriosAdministracaoIndireta', nest: 'S');
+          b.element('tag:RecursosPropriosAdministracaoIndireta', nest: 'S');
         for (final convenio in r.conveniosFederais) {
           b.element(
-            'ConvenioFederal',
+            'tag:ConvenioFederal',
             nest: () => _convenio(b, convenio, federal: true),
           );
         }
         if (r.fontes.contains(6))
-          b.element('OutrasFontesDescricao', nest: r.outrasFontesDescricao);
+          b.element('tag:OutrasFontesDescricao', nest: r.outrasFontesDescricao);
         for (final operacao in r.operacoesCredito) {
           b.element(
-            'OperacoesCredito',
+            'tag:OperacoesCredito',
             nest: () {
               if (operacao.agenteFinanceiro.trim().isNotEmpty) {
                 b.element(
-                  'AgenteFinanceiro',
+                  'tag:AgenteFinanceiro',
                   nest: operacao.agenteFinanceiro.trim(),
                 );
               }
               b.element(
-                'ContratoFinanciamentoNum',
+                'tag:ContratoFinanciamentoNum',
                 nest: operacao.contratoNumero,
               );
-              b.element('ContratoFinanciamentoAno', nest: operacao.contratoAno);
               b.element(
-                'RepasseContratoFinanciamentoValor',
+                'tag:ContratoFinanciamentoAno',
+                nest: operacao.contratoAno,
+              );
+              b.element(
+                'tag:RepasseContratoFinanciamentoValor',
                 nest: operacao.valorRepasse.toStringAsFixed(2),
               );
             },
           );
         }
         if (r.fontes.contains(8))
-          b.element('EmendasParlamentaresIndividuais', nest: 'S');
+          b.element('tag:EmendasParlamentaresIndividuais', nest: 'S');
       },
     );
   }
@@ -460,18 +501,18 @@ class XsdLicitacaoBuilder {
   }) {
     final prefix = federal ? 'ConvenioFederal' : 'ConvenioEstadual';
     b.element(
-      '${prefix}Num',
+      'tag:${prefix}Num',
       nest: () {
-        b.element('Numero', nest: convenio.numero);
-        b.element('Ano', nest: convenio.ano);
+        b.element('tag:Numero', nest: convenio.numero);
+        b.element('tag:Ano', nest: convenio.ano);
       },
     );
     b.element(
-      'Repasse${prefix}Valor',
+      'tag:Repasse${prefix}Valor',
       nest: convenio.valorRepasse.toStringAsFixed(2),
     );
     b.element(
-      'Contrapartida${prefix}Valor',
+      'tag:Contrapartida${prefix}Valor',
       nest: convenio.valorContrapartida.toStringAsFixed(2),
     );
   }
@@ -582,28 +623,30 @@ class XsdLicitacaoBuilder {
     b.element(
       tag,
       nest: () {
-        b.element(cpf ? 'CPF' : 'CNPJ', nest: p['documento']);
-        b.element(cpf ? 'Nome' : 'RazaoSocial', nest: p['nome']);
+        b.element(cpf ? 'tag:CPF' : 'tag:CNPJ', nest: p['documento']);
+        b.element(cpf ? 'tag:Nome' : 'tag:RazaoSocial', nest: p['nome']);
         b.element(
-          'LicitanteDeclaracaoMicroEmpresa-PequenoPorte',
+          'tag:LicitanteDeclaracaoMicroEmpresa-PequenoPorte',
           nest: p['meEpp'],
         );
         for (final lot in p['lotes'] as List<Map<String, dynamic>>) {
           b.element(
-            'LicitanteLoteItens',
+            'tag:LicitanteLoteItens',
             nest: () {
-              b.element('LicitanteNumLote', nest: lot['numero']);
-              b.element('ResultadoHabilitacao', nest: lot['resultado']);
+              b.element('tag:LicitanteNumLote', nest: lot['numero']);
+              b.element('tag:ResultadoHabilitacao', nest: lot['resultado']);
               final percentual = lot['percentual'] == true;
               b.element(
-                percentual ? 'ValorPropostaPercentual' : 'ValorProposta',
+                percentual
+                    ? 'tag:ValorPropostaPercentual'
+                    : 'tag:ValorProposta',
                 nest: (lot['valor'] as double).toStringAsFixed(2),
               );
             },
           );
         }
         if (tag.contains('Convite'))
-          b.element('IdentificacaoLicitante', nest: 1);
+          b.element('tag:IdentificacaoLicitante', nest: 1);
       },
     );
   }
@@ -655,30 +698,30 @@ class XsdLicitacaoBuilder {
       nest: () {
         for (final member in p.comissao) {
           b.element(
-            'CPFIntegrante',
+            'tag:CPFIntegrante',
             nest: member.cpf.replaceAll(RegExp(r'\D'), ''),
           );
-          b.element('NomeIntegrante', nest: member.nome);
-          b.element('AtribuicaoIntegrante', nest: member.atribuicao);
-          b.element('CargoOcupadoIntegrante', nest: member.cargo);
-          b.element('NaturezaCargoOcupado', nest: member.naturezaCargo);
+          b.element('tag:NomeIntegrante', nest: member.nome);
+          b.element('tag:AtribuicaoIntegrante', nest: member.atribuicao);
+          b.element('tag:CargoOcupadoIntegrante', nest: member.cargo);
+          b.element('tag:NaturezaCargoOcupado', nest: member.naturezaCargo);
         }
-        b.element('TipoComissaoLicitacao', nest: p.tipoComissao);
-        b.element('NumAtoDesignacao', nest: p.numAtoDesignacao);
-        b.element('AnoAtoDesignacao', nest: p.anoAtoDesignacao);
+        b.element('tag:TipoComissaoLicitacao', nest: p.tipoComissao);
+        b.element('tag:NumAtoDesignacao', nest: p.numAtoDesignacao);
+        b.element('tag:AnoAtoDesignacao', nest: p.anoAtoDesignacao);
         if (p.atoDesignacaoData != null)
           b.element(
-            'AtoDesignacaoComissaoDt',
+            'tag:AtoDesignacaoComissaoDt',
             nest: _date(p.atoDesignacaoData!),
           );
         if (p.atoDesignacaoInicio != null) {
           b.element(
-            'AtoDesignacaoComissaoInicio',
+            'tag:AtoDesignacaoComissaoInicio',
             nest: _date(p.atoDesignacaoInicio!),
           );
           if (p.atoDesignacaoFim != null)
             b.element(
-              'AtoDesignacaoComissaoFim',
+              'tag:AtoDesignacaoComissaoFim',
               nest: _date(p.atoDesignacaoFim!),
             );
         }
@@ -729,16 +772,17 @@ class XsdLicitacaoBuilder {
               ]);
             }
             b.element(
-              'IndiceEconomicoOutro-Tipo',
+              'tag:IndiceEconomicoOutro-Tipo',
               nest: () {
-                b.element('Outro', nest: description);
+                b.element('tag:Outro', nest: 8);
+                b.element('tag:Descricao', nest: description);
               },
             );
           } else {
-            b.element('IndiceEconomico-Tipo', nest: mapped);
+            b.element('tag:IndiceEconomico-Tipo', nest: mapped);
           }
           b.element(
-            'IndiceEconomico-Valor',
+            'tag:IndiceEconomico-Valor',
             nest: _double(value['valorIndice']).toStringAsFixed(2),
           );
         },
@@ -753,8 +797,14 @@ class XsdLicitacaoBuilder {
       b.element(
         'JulgamentoSemInversao',
         nest: () {
-          b.element('NaoExisteAtaAberturaDocumentosHabilitacao', nest: 'N');
-          b.element('NaoExisteAtaJulgamentoDocumentosHabilitacao', nest: 'N');
+          b.element(
+            'tag:NaoExisteAtaAberturaDocumentosHabilitacao',
+            nest: 'N',
+          );
+          b.element(
+            'tag:NaoExisteAtaJulgamentoDocumentosHabilitacao',
+            nest: 'N',
+          );
         },
       );
     }
@@ -785,8 +835,9 @@ class XsdLicitacaoBuilder {
   }
 
   static void ensureLatin1(String value, {String field = 'XML'}) {
-    for (var i = 0; i < value.runes.length; i++) {
-      final rune = value.runes.elementAt(i);
+    final normalized = normalizeLatin1(value);
+    for (var i = 0; i < normalized.runes.length; i++) {
+      final rune = normalized.runes.elementAt(i);
       if (rune > 255) {
         throw FormatException(
           '$field contém caractere não representável em ISO-8859-1: ${String.fromCharCode(rune)}.',
@@ -794,6 +845,14 @@ class XsdLicitacaoBuilder {
       }
     }
   }
+
+  static String normalizeLatin1(String value) => value
+      .replaceAll(RegExp('[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]'), '-')
+      .replaceAll(RegExp('[\u2018\u2019\u201A\u201B]'), "'")
+      .replaceAll(RegExp('[\u201C\u201D\u201E\u201F]'), '"')
+      .replaceAll('\u2026', '...')
+      .replaceAll('\u2022', '-')
+      .replaceAll(RegExp('[\u202F\u2060]'), ' ');
 
   static void _validateLatinFields(
     XsdLicitacaoSource source,
