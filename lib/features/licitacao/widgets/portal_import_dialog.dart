@@ -309,7 +309,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     ),
               ),
               dataOrcamento: dataOrcamento,
-              situacaoCompraItemId: 1, // Em andamento / Classificado Padrão
+              situacaoCompraItemId: 2, // Homologado
               dataSituacao: DateTime.now().toIso8601String().substring(0, 10),
               tipoValor: tipoValorBase,
               tipoProposta: tipoPropostaBase,
@@ -417,7 +417,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                     _estimativaSelecionada!.fornecedoresDesclassificadosIds,
               ),
               dataOrcamento: dataOrcamento,
-              situacaoCompraItemId: 1, // Em andamento / Classificado Padrão
+              situacaoCompraItemId: 2, // Homologado
               dataSituacao: DateTime.now().toIso8601String().substring(0, 10),
               tipoValor: tipoValorBase,
               tipoProposta: tipoPropostaBase,

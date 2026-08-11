@@ -108,12 +108,6 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    if (_licitantes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos um licitante.')),
-      );
-      return;
-    }
     final map = <String, dynamic>{
       'numeroItem': int.parse(_numeroItemCtrl.text.trim()),
       'tipoOrcamento': _tipoOrcamento!,
