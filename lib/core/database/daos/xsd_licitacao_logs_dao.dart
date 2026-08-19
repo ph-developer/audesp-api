@@ -33,7 +33,7 @@ class XsdLicitacaoLogsDao {
         (licitacao_id, variant, revision, base_name, xml_sha256,
          edital_source_sha256, licitacao_source_sha256,
          profile_snapshot, validation_success)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     ''');
     await stmt.execute([
       entry.licitacaoId,

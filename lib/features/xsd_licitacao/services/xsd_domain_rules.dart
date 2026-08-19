@@ -17,6 +17,89 @@ class XsdFundamento {
 }
 
 class XsdDomainRules {
+  static const obraTipoLabels = <String, String>{
+    'AssessoriasConsultoriasTecnicas': 'Assessorias e consultorias técnicas',
+    'AuditoriaObrasServicosEngenharia':
+        'Auditoria de obras e serviços de engenharia',
+    'ConsertoInstalacaoManutencaoEm': 'Conserto, instalação ou manutenção em',
+    'ConservacaoReparacaoManutencaoDe':
+        'Conservação, reparação ou manutenção de',
+    'ConstrucaoReformaAmpliacaoDe': 'Construção, reforma ou ampliação de',
+    'ElaboracaoProjetoBasicoProjetoExecutivo':
+        'Elaboração de projeto básico ou executivo',
+    'EnsaiosTecnologicos': 'Ensaios tecnológicos',
+    'EstudosImpactoAmbiental': 'Estudos de impacto ambiental',
+    'EstudosViabilidadeTecnicaEconomica':
+        'Estudos de viabilidade técnica e econômica',
+    'LevantamentoAerofotogrametrico': 'Levantamento aerofotogramétrico',
+    'LevantamentosTopograficosBatimetricosGeodesicos':
+        'Levantamentos topográficos, batimétricos ou geodésicos',
+    'Outros': 'Outros',
+    'PericiasAvaliacoes': 'Perícias e avaliações',
+    'SondagensOutrosProcedimentosInvestigacaoGeotecnica':
+        'Sondagens e investigação geotécnica',
+  };
+
+  static const obraTipoFixedCodes = <String, int>{
+    'AssessoriasConsultoriasTecnicas': 7,
+    'AuditoriaObrasServicosEngenharia': 8,
+    'ElaboracaoProjetoBasicoProjetoExecutivo': 5,
+    'EnsaiosTecnologicos': 10,
+    'EstudosImpactoAmbiental': 9,
+    'EstudosViabilidadeTecnicaEconomica': 4,
+    'LevantamentoAerofotogrametrico': 12,
+    'LevantamentosTopograficosBatimetricosGeodesicos': 11,
+    'Outros': 14,
+    'PericiasAvaliacoes': 6,
+    'SondagensOutrosProcedimentosInvestigacaoGeotecnica': 13,
+  };
+
+  static const obraSubtiposInstalacao = <int, String>{
+    10: 'Elevadores e escadas rolantes',
+    9: 'Instalações prediais elétricas, hidráulicas ou de dados',
+    13: 'Paisagismo',
+    3: 'Sinalização de vias públicas ou rodovias',
+    5: 'Sistemas de alarmes em edificações',
+    11: 'Climatização e ar-condicionado',
+    21: 'Sistemas de combate a incêndio',
+    14: 'Controle de acesso ou circuito fechado de televisão',
+    16: 'Proteção contra descargas atmosféricas',
+    2: 'Supervisão e automação predial',
+    6: 'Telefonia e comunicação de dados',
+    7: 'Ventilação e exaustão',
+  };
+
+  static const obraSubtiposConstrucao = <int, String>{
+    18: 'Adutoras, tratamento e distribuição de água',
+    17: 'Barragens',
+    20: 'Edificações',
+    8: 'Saneamento, drenagem e irrigação',
+    4: 'Pontes e viadutos',
+    12: 'Rodovias',
+    19: 'Tratamento de resíduos sólidos',
+    1: 'Trilhos e veículos sobre trilhos',
+    22: 'Túneis',
+    15: 'Vias públicas',
+  };
+
+  static const obraTiposExecucao = <int, String>{
+    1: 'Execução direta',
+    2: 'Empreitada por preço global',
+    3: 'Empreitada por preço unitário',
+    4: 'Tarefa',
+    5: 'Empreitada integral',
+    6: 'Contratação integrada',
+    7: 'Concessão pública com obra de engenharia',
+    9: 'Contratação semi-integrada',
+  };
+
+  static Map<int, String> obraSubtipos(String? elemento) => switch (elemento) {
+    'ConsertoInstalacaoManutencaoEm' => obraSubtiposInstalacao,
+    'ConservacaoReparacaoManutencaoDe' ||
+    'ConstrucaoReformaAmpliacaoDe' => obraSubtiposConstrucao,
+    _ => const {},
+  };
+
   static XsdLicitacaoVariant selectVariant(XsdLicitacaoSource source) {
     if (source.srp) {
       throw const XsdDomainException([
@@ -284,6 +367,11 @@ class XsdDomainRules {
     if (source.codigoEdital.replaceAll(RegExp(r'\D'), '').length != 25) {
       errors.add('O código PNCP do edital deve conter exatamente 25 dígitos.');
     }
+    if (source.anoProcesso < 1000 || source.anoProcesso > 9999) {
+      errors.add(
+        'O ano do processo administrativo deve conter quatro dígitos.',
+      );
+    }
     for (var i = 0; i < source.itens.length; i++) {
       final item = source.itens[i];
       final quantidade = _double(item['quantidade']);
@@ -295,6 +383,42 @@ class XsdDomainRules {
           .isEmpty) {
         errors.add('Lote ${i + 1}: descrição obrigatória.');
       }
+    }
+    if (profile.objetoClassificacao == XsdObjetoClassificacao.obrasEngenharia) {
+      final elemento = profile.opcionais['tipoObraServicoEngElemento']
+          ?.toString();
+      final codigo = _int(profile.opcionais['tipoObraServicoEngCodigo']);
+      final fixedCode = obraTipoFixedCodes[elemento];
+      final subtipos = obraSubtipos(elemento);
+      if (!obraTipoLabels.containsKey(elemento)) {
+        errors.add('Obras: selecione o tipo de obra ou serviço de engenharia.');
+      } else if (fixedCode != null && codigo != fixedCode ||
+          fixedCode == null && !subtipos.containsKey(codigo)) {
+        errors.add('Obras: selecione um subtipo válido.');
+      }
+      if (!obraTiposExecucao.containsKey(
+        _int(profile.opcionais['tipoExecucaoObra']),
+      )) {
+        errors.add('Obras: selecione o tipo de execução.');
+      }
+      final local = profile.opcionais['localObra']?.toString().trim() ?? '';
+      if (local.isEmpty || local.length > 100) {
+        errors.add('Obras: informe o local da obra (até 100 caracteres).');
+      }
+      _validateCoordinate(
+        errors,
+        label: 'latitude',
+        value: profile.opcionais['latitude'],
+        min: -90,
+        max: 90,
+      );
+      _validateCoordinate(
+        errors,
+        label: 'longitude',
+        value: profile.opcionais['longitude'],
+        min: -99.9999999,
+        max: 99.9999999,
+      );
     }
     if (variant == XsdLicitacaoVariant.nao1) {
       if (source.editalData == null) {
@@ -420,6 +544,25 @@ class XsdDomainRules {
       if (value.valorRepasse < 0 || value.valorContrapartida < 0) {
         errors.add('$prefix: os valores não podem ser negativos.');
       }
+    }
+  }
+
+  static void _validateCoordinate(
+    List<String> errors, {
+    required String label,
+    required Object? value,
+    required double min,
+    required double max,
+  }) {
+    final text = value?.toString().trim() ?? '';
+    final number = double.tryParse(text);
+    if (!RegExp(r'^-?\d{2}\.\d{7}$').hasMatch(text) ||
+        number == null ||
+        number < min ||
+        number > max) {
+      errors.add(
+        'Obras: informe a $label no formato -00.0000000, entre $min e $max.',
+      );
     }
   }
 

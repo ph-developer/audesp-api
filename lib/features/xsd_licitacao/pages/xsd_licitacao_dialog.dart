@@ -81,6 +81,9 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
   final _memberName = TextEditingController();
   final _memberCpf = TextEditingController();
   final _memberRole = TextEditingController();
+  final _obraLocal = TextEditingController();
+  final _obraLatitude = TextEditingController();
+  final _obraLongitude = TextEditingController();
   int _memberRoleNature = 1;
   bool _addingMember = false;
   final Set<int> _deletingMemberIds = {};
@@ -101,6 +104,9 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     _memberName.dispose();
     _memberCpf.dispose();
     _memberRole.dispose();
+    _obraLocal.dispose();
+    _obraLatitude.dispose();
+    _obraLongitude.dispose();
     _commissionRevision.dispose();
     super.dispose();
   }
@@ -142,6 +148,9 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
         _atoNumero.text = _profile.numAtoDesignacao;
         _recursosValor.text = _profile.recursos.valor?.toString() ?? '';
         _outrasFontes.text = _profile.recursos.outrasFontesDescricao ?? '';
+        _obraLocal.text = _profile.opcionais['localObra']?.toString() ?? '';
+        _obraLatitude.text = _profile.opcionais['latitude']?.toString() ?? '';
+        _obraLongitude.text = _profile.opcionais['longitude']?.toString() ?? '';
         _lastGeneration = last;
         _loading = false;
       });
@@ -313,6 +322,8 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
     }
     final source = _source!;
     final direct = _variant == XsdLicitacaoVariant.nao3;
+    final isObra =
+        _profile.objetoClassificacao == XsdObjetoClassificacao.obrasEngenharia;
     return AlertDialog(
       title: Text('Gerar XML'),
       content: SizedBox(
@@ -333,7 +344,10 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                     ),
                   ),
                   AudespFieldRowItem(
-                    child: _readOnly('Processo', source.numeroProcesso),
+                    child: _readOnly(
+                      'Processo',
+                      '${source.numeroProcesso} · ano ${source.anoProcesso}',
+                    ),
                   ),
                   AudespFieldRowItem(
                     child: _readOnly(
@@ -361,6 +375,86 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
                       _profile = _profile.copyWith(objetoClassificacao: value),
                 ),
               ),
+              if (isObra) ...[
+                AudespSpacing.verticalMd,
+                AudespFieldRow(
+                  children: [
+                    AudespFieldRowItem(
+                      child: AudespDropdown<String>(
+                        label: 'Tipo de obra/serviço de engenharia *',
+                        value: _profile.opcionais['tipoObraServicoEngElemento']
+                            ?.toString(),
+                        items: XsdDomainRules.obraTipoLabels,
+                        onChanged: _updateObraTipo,
+                      ),
+                    ),
+                    AudespFieldRowItem(
+                      child: AudespDropdown<int>(
+                        label: 'Tipo de execução *',
+                        value: _profile.opcionais['tipoExecucaoObra'] as int?,
+                        items: XsdDomainRules.obraTiposExecucao,
+                        onChanged: (value) =>
+                            _updateObraOptional('tipoExecucaoObra', value),
+                      ),
+                    ),
+                  ],
+                ),
+                if (XsdDomainRules.obraSubtipos(
+                  _profile.opcionais['tipoObraServicoEngElemento']?.toString(),
+                ).isNotEmpty) ...[
+                  AudespSpacing.verticalMd,
+                  AudespDropdown<int>(
+                    label: 'Subtipo da obra/serviço *',
+                    value:
+                        _profile.opcionais['tipoObraServicoEngCodigo'] as int?,
+                    items: XsdDomainRules.obraSubtipos(
+                      _profile.opcionais['tipoObraServicoEngElemento']
+                          ?.toString(),
+                    ),
+                    onChanged: (value) =>
+                        _updateObraOptional('tipoObraServicoEngCodigo', value),
+                  ),
+                ],
+                AudespSpacing.verticalMd,
+                AudespTextField(
+                  label: 'Local da obra/serviço *',
+                  controller: _obraLocal,
+                  maxLength: 100,
+                  onChanged: (value) =>
+                      _updateObraOptional('localObra', value.trim()),
+                ),
+                AudespSpacing.verticalMd,
+                AudespFieldRow(
+                  children: [
+                    AudespFieldRowItem(
+                      child: AudespTextField(
+                        label: 'Latitude *',
+                        controller: _obraLatitude,
+                        hintText: '-23.5505200',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
+                        ),
+                        onChanged: (value) =>
+                            _updateObraOptional('latitude', value.trim()),
+                      ),
+                    ),
+                    AudespFieldRowItem(
+                      child: AudespTextField(
+                        label: 'Longitude *',
+                        controller: _obraLongitude,
+                        hintText: '-46.6333080',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
+                        ),
+                        onChanged: (value) =>
+                            _updateObraOptional('longitude', value.trim()),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               AudespSpacing.verticalSm,
               AudespFieldRow(
                 children: [
@@ -1187,6 +1281,35 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
         ),
       );
     });
+  }
+
+  void _updateObraTipo(String? elemento) {
+    final updated = Map<String, dynamic>.from(_profile.opcionais);
+    if (elemento == null) {
+      updated.remove('tipoObraServicoEngElemento');
+      updated.remove('tipoObraServicoEngCodigo');
+    } else {
+      updated['tipoObraServicoEngElemento'] = elemento;
+      final fixedCode = XsdDomainRules.obraTipoFixedCodes[elemento];
+      if (fixedCode != null) {
+        updated['tipoObraServicoEngCodigo'] = fixedCode;
+      } else if (!XsdDomainRules.obraSubtipos(
+        elemento,
+      ).containsKey(updated['tipoObraServicoEngCodigo'])) {
+        updated.remove('tipoObraServicoEngCodigo');
+      }
+    }
+    setState(() => _profile = _profile.copyWith(opcionais: updated));
+  }
+
+  void _updateObraOptional(String key, Object? value) {
+    final updated = Map<String, dynamic>.from(_profile.opcionais);
+    if (value == null || value is String && value.isEmpty) {
+      updated.remove(key);
+    } else {
+      updated[key] = value;
+    }
+    setState(() => _profile = _profile.copyWith(opcionais: updated));
   }
 
   String? _validateYear(String? value) {

@@ -528,6 +528,7 @@ class XsdLicitacaoSource {
   final String numeroCompra;
   final int anoCompra;
   final String numeroProcesso;
+  final int anoProcesso;
   final String objeto;
   final int criterioJulgamentoId;
   final int? amparoLegalId;
@@ -555,6 +556,7 @@ class XsdLicitacaoSource {
     required this.numeroCompra,
     required this.anoCompra,
     required this.numeroProcesso,
+    required this.anoProcesso,
     required this.objeto,
     required this.criterioJulgamentoId,
     required this.amparoLegalId,

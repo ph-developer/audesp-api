@@ -35,6 +35,8 @@ class XsdSourceNormalizer {
       return <String, dynamic>{...?itemEdital, ...item};
     }).toList();
     final modalidade = _int(edital['modalidadeId']);
+    final numeroProcesso = (edital['numeroProcesso'] ?? '').toString();
+    final anoCompra = _int(edital['anoCompra']);
 
     final publicidade = edital['publicidade'] is Map
         ? Map<String, dynamic>.from(edital['publicidade'] as Map)
@@ -80,8 +82,9 @@ class XsdSourceNormalizer {
       codigoEdital: (descritor['codigoEdital'] ?? edital['codigoEdital'] ?? '')
           .toString(),
       numeroCompra: (edital['numeroCompra'] ?? '').toString(),
-      anoCompra: _int(edital['anoCompra']),
-      numeroProcesso: (edital['numeroProcesso'] ?? '').toString(),
+      anoCompra: anoCompra,
+      numeroProcesso: numeroProcesso,
+      anoProcesso: _processYear(numeroProcesso) ?? anoCompra,
       objeto: (edital['objetoCompra'] ?? '').toString(),
       criterioJulgamentoId: _int(edital['criterioJulgamentoId']),
       amparoLegalId: edital['amparoLegalId'] == null
@@ -174,4 +177,11 @@ DateTime? _firstDate(List<Object?> values) {
 DateTime? _date(Object? value) {
   final text = value?.toString();
   return text == null || text.isEmpty ? null : DateTime.tryParse(text);
+}
+
+int? _processYear(String numeroProcesso) {
+  final match = RegExp(
+    r'(?<!\d)((?:19|20)\d{2})(?!\d)',
+  ).firstMatch(numeroProcesso);
+  return match == null ? null : int.parse(match.group(1)!);
 }

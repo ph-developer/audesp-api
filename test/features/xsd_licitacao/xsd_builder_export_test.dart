@@ -47,6 +47,55 @@ void main() {
     expect(_elementsByLocalName(doc, 'AnoExercicio').single.innerText, '2025');
   });
 
+  test('AnoProcessoAdm usa o ano extraído do número do processo', () {
+    final xml = XsdLicitacaoBuilder.build(
+      source: _source(anoProcesso: 2023),
+      profile: XsdLicitacaoProfile(situacaoData: DateTime(2025, 5, 2)),
+    );
+    final doc = XmlDocument.parse(xml);
+
+    expect(
+      _elementsByLocalName(doc, 'AnoProcessoAdm').single.innerText,
+      '2023',
+    );
+  });
+
+  test('obra gera tipo complexo, execução e coordenadas válidas', () {
+    final xml = XsdLicitacaoBuilder.build(
+      source: _source(),
+      profile: XsdLicitacaoProfile(
+        objetoClassificacao: XsdObjetoClassificacao.obrasEngenharia,
+        situacaoData: DateTime(2026, 5, 2),
+        opcionais: const {
+          'tipoObraServicoEngElemento': 'ConstrucaoReformaAmpliacaoDe',
+          'tipoObraServicoEngCodigo': 20,
+          'tipoExecucaoObra': 2,
+          'localObra': 'Paço Municipal',
+          'latitude': '-23.5505200',
+          'longitude': '-46.6333080',
+        },
+      ),
+    );
+    final doc = XmlDocument.parse(xml);
+
+    expect(
+      _elementsByLocalName(
+        doc,
+        'ConstrucaoReformaAmpliacaoDe',
+      ).single.innerText,
+      '20',
+    );
+    expect(_elementsByLocalName(doc, 'TipoExecucao').single.innerText, '2');
+    expect(
+      _elementsByLocalName(doc, 'Latitude').single.innerText,
+      '-23.5505200',
+    );
+    expect(
+      _elementsByLocalName(doc, 'Longitude').single.innerText,
+      '-46.6333080',
+    );
+  });
+
   test('NÃO3 inclui subcontratação em DadosLicitacao e fundamento único', () {
     final xml = XsdLicitacaoBuilder.build(
       source: _source(modalidade: 8, amparo: 18),
@@ -210,6 +259,7 @@ XsdLicitacaoSource _source({
   bool recursos = false,
   String descricao = 'Material',
   int anoCompra = 2026,
+  int anoProcesso = 2026,
 }) => XsdLicitacaoSource(
   modalidadeId: modalidade,
   srp: false,
@@ -220,6 +270,7 @@ XsdLicitacaoSource _source({
   numeroCompra: '1',
   anoCompra: anoCompra,
   numeroProcesso: '1',
+  anoProcesso: anoProcesso,
   objeto: 'Aquisição de material',
   criterioJulgamentoId: 1,
   amparoLegalId: amparo,

@@ -244,6 +244,52 @@ void main() {
     expect(profile.opcionais['naturezaLicitacao'], 8);
   });
 
+  test('normalizador extrai o ano do número do processo', () {
+    const normalizer = XsdSourceNormalizer();
+    final source = normalizer.normalize(
+      edital: {
+        'modalidadeId': 6,
+        'numeroProcesso': 'SEI 10/2023 - revisão 2024',
+        'anoCompra': 2026,
+      },
+      licitacao: const {},
+    );
+
+    expect(source.anoProcesso, 2023);
+  });
+
+  test('normalizador usa o ano da compra quando o processo não contém ano', () {
+    const normalizer = XsdSourceNormalizer();
+    final source = normalizer.normalize(
+      edital: {'modalidadeId': 6, 'numeroProcesso': '12345', 'anoCompra': 2026},
+      licitacao: const {},
+    );
+
+    expect(source.anoProcesso, 2026);
+  });
+
+  test('obras exigem tipo, execução, local e coordenadas', () {
+    expect(
+      () => XsdDomainRules.validate(
+        _source(),
+        const XsdLicitacaoProfile(
+          objetoClassificacao: XsdObjetoClassificacao.obrasEngenharia,
+          situacaoData: null,
+        ),
+        XsdLicitacaoVariant.nao1,
+      ),
+      throwsA(
+        isA<XsdDomainException>().having(
+          (error) => error.errors
+              .where((message) => message.startsWith('Obras:'))
+              .length,
+          'erros de obras',
+          5,
+        ),
+      ),
+    );
+  });
+
   test(
     'normalizador completa os lotes com quantidade e descrição do edital',
     () {
@@ -315,6 +361,7 @@ XsdLicitacaoSource _source({
   numeroCompra: '1',
   anoCompra: 2026,
   numeroProcesso: '1',
+  anoProcesso: 2026,
   objeto: 'Objeto',
   criterioJulgamentoId: 1,
   amparoLegalId: modalidade == 8

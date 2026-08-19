@@ -88,7 +88,7 @@ class XsdLicitacaoBuilder {
         );
         b.element('CodigoLicitacao', nest: _codigoLicitacao(s));
         b.element('NumeroProcessoAdm', nest: s.numeroProcesso);
-        b.element('AnoProcessoAdm', nest: s.anoCompra);
+        b.element('AnoProcessoAdm', nest: s.anoProcesso);
         b.element('NumeroLicitacao', nest: s.numeroCompra);
         b.element('AnoLicitacao', nest: s.anoCompra);
         if (p.lei13121) b.element('Lei13121', nest: 'S');
@@ -258,7 +258,7 @@ class XsdLicitacaoBuilder {
             nest: () {
               b.element('CodigoLicitacao', nest: _codigoLicitacao(s));
               b.element('NumeroProcessoAdm', nest: s.numeroProcesso);
-              b.element('AnoProcessoAdm', nest: s.anoCompra);
+              b.element('AnoProcessoAdm', nest: s.anoProcesso);
               b.element('QuantidadeLotes', nest: s.itens.length);
               b.element('DescricaoObj', nest: s.objeto);
               b.element(
@@ -317,7 +317,12 @@ class XsdLicitacaoBuilder {
           );
           b.element('tag:UnidadeMedida', nest: _unit(item));
         }
-        b.element('tag:TipoExecucao', nest: configured?.tipoExecucao ?? 1);
+        b.element(
+          'tag:TipoExecucao',
+          nest:
+              configured?.tipoExecucao ??
+              (obra ? _int(p.opcionais['tipoExecucaoObra']) : 1),
+        );
         b.element(
           'tag:ClassificacaoEconomica',
           nest: () {
@@ -343,17 +348,17 @@ class XsdLicitacaoBuilder {
         if (obra) {
           b.element(
             'tag:TipoObraServicoEng',
-            nest: _int(p.opcionais['tipoObraServicoEng'], 1),
+            nest: () => b.element(
+              'tag:${p.opcionais['tipoObraServicoEngElemento']}',
+              nest: _int(p.opcionais['tipoObraServicoEngCodigo']),
+            ),
           );
           b.element(
             'tag:LocalizacaoObra',
             nest: () {
-              b.element(
-                'tag:LocalObraServico',
-                nest: p.opcionais['localObra'] ?? 'Não informado',
-              );
-              b.element('tag:Latitude', nest: p.opcionais['latitude'] ?? '0');
-              b.element('tag:Longitude', nest: p.opcionais['longitude'] ?? '0');
+              b.element('tag:LocalObraServico', nest: p.opcionais['localObra']);
+              b.element('tag:Latitude', nest: p.opcionais['latitude']);
+              b.element('tag:Longitude', nest: p.opcionais['longitude']);
             },
           );
         }
