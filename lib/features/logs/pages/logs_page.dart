@@ -573,6 +573,10 @@ bool isProtocoloUpdatable(String? status) {
   return true;
 }
 
+bool isReceivedStatus(String? status) {
+  return status?.toLowerCase().contains('recebido') ?? false;
+}
+
 class _DocLabel extends StatelessWidget {
   final ApiLog log;
   final Map<String, Edital> editaisMap;
@@ -722,13 +726,22 @@ class _LogCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              if (isProtocoloUpdatable(log.statusProtocolo))
+              if (isProtocoloUpdatable(log.statusProtocolo)) ...[
                 AudespIconButton(
                   icon: Icons.refresh,
                   tooltip: 'Atualizar Status',
                   onPressed: onUpdateStatus,
-                )
-              else
+                ),
+                if (isReceivedStatus(log.statusProtocolo)) ...[
+                  AudespIconButton(
+                    icon: Icons.picture_as_pdf_outlined,
+                    tooltip: 'Gerar Comprovante (PDF)',
+                    color: Theme.of(context).colorScheme.primary,
+                    onPressed: () =>
+                        PdfComprovanteService.gerarComprovante(context, ref, log),
+                  ),
+                ],
+              ] else
                 AudespIconButton(
                   icon: Icons.picture_as_pdf_outlined,
                   tooltip: 'Gerar Comprovante (PDF)',

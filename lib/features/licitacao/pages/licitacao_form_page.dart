@@ -61,6 +61,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   bool _importingGemini = false;
   DateTime? _lastXsdGenerationDate;
   bool _isSent = false;
+  final bool _xsdModuleDisabled = true;
   bool _updatingStatus = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
@@ -1121,7 +1122,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               const SizedBox(width: 8),
             ],
           ],
-          if (_isSent && _editalId != null) ...[
+          if (_isSent && _editalId != null && !_xsdModuleDisabled) ...[
             Tooltip(
               message: _lastXsdGenerationDate != null
                   ? 'Última geração: ${_lastXsdGenerationDate!.day.toString().padLeft(2, '0')}/${_lastXsdGenerationDate!.month.toString().padLeft(2, '0')}/${_lastXsdGenerationDate!.year}'
