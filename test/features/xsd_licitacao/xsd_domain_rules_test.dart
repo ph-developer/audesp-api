@@ -48,6 +48,20 @@ void main() {
       expect(XsdDomainRules.calculateTotal(items), 278);
     });
 
+    test('desconto percentual considera o valor total estimado do lote', () {
+      final items = [
+        _item(
+          quantidade: 3,
+          valorEstimado: 100,
+          valor: 10,
+          tipo: 3,
+          tipoValor: 'P',
+        ),
+      ];
+
+      expect(XsdDomainRules.calculateTotal(items), 270);
+    });
+
     test('mapeia todos os resultados existentes', () {
       expect(
         [for (var id = 1; id <= 7; id++) XsdDomainRules.mapResultado(id)],
@@ -60,6 +74,62 @@ void main() {
         [for (var id = 1; id <= 8; id++) XsdDomainRules.mapIndiceEconomico(id)],
         [7, 5, 6, 2, 4, 1, 3, 8],
       );
+    });
+  });
+
+  test('converte critérios de julgamento para os códigos do XSD', () {
+    expect(
+      [
+        for (final id in [1, 2, 4, 5, 6, 8, 9, 1000, 1001])
+          XsdDomainRules.mapTipoLicitacao(id),
+      ],
+      [1, 5, 2, 4, 7, 3, 3, 12, 6],
+    );
+  });
+
+  test('converte natureza da licitação para os códigos do XSD', () {
+    expect(
+      [for (var id = 1; id <= 8; id++) XsdDomainRules.mapNaturezaLicitacao(id)],
+      [1, 8, 6, 5, 4, 7, 3, 2],
+    );
+  });
+
+  group('fundamento legal', () {
+    test('agrupa os subitens da Lei 14.133 nos incisos do XSD', () {
+      for (var id = 8; id <= 15; id++) {
+        expect(XsdDomainRules.mapFundamento(9, id, null).code, 60);
+      }
+      for (var id = 61; id <= 70; id++) {
+        expect(XsdDomainRules.mapFundamento(8, id, null).code, 79);
+      }
+      for (var id = 71; id <= 76; id++) {
+        expect(XsdDomainRules.mapFundamento(8, id, null).code, 80);
+      }
+    });
+
+    test('converte os fundamentos da Lei 13.303 aceitos pelo XSD', () {
+      expect(XsdDomainRules.mapFundamento(9, 104, null).code, 55);
+      for (var id = 105; id <= 111; id++) {
+        expect(XsdDomainRules.mapFundamento(9, id, null).code, 56);
+      }
+      for (var id = 84; id <= 98; id++) {
+        expect(XsdDomainRules.mapFundamento(8, id, null).code, id - 44);
+      }
+    });
+
+    test('bloqueia fundamentos sem representação no XSD 2026_A', () {
+      for (final id in [60, 77, 78, 99, 100, 101]) {
+        expect(
+          () => XsdDomainRules.mapFundamento(8, id, null),
+          throwsA(isA<XsdDomainException>()),
+        );
+      }
+      for (final id in [102, 103]) {
+        expect(
+          () => XsdDomainRules.mapFundamento(9, id, null),
+          throwsA(isA<XsdDomainException>()),
+        );
+      }
     });
   });
 
@@ -153,6 +223,7 @@ void main() {
         'quitacaoTributosEstaduais': false,
         'quitacaoTributosMunicipais': true,
         'declaracaoRecursosContratacao': true,
+        'tipoNatureza': 2,
         'fonteRecursosContratacao': [1, 91],
         'itens': [
           {'dataSituacaoItem': '2026-02-01'},
@@ -170,6 +241,7 @@ void main() {
     expect(profile.tributosMunicipais, isTrue);
     expect(profile.recursos.declarados, isTrue);
     expect(profile.recursos.fontes, [1]);
+    expect(profile.opcionais['naturezaLicitacao'], 8);
   });
 
   test(

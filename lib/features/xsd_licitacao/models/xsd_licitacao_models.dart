@@ -35,21 +35,17 @@ class XsdValidationResult {
 
 class XsdBuildResult {
   final String xml;
-  final String markdown;
   final XsdLicitacaoVariant variant;
   final String baseName;
   final String xmlFileName;
-  final String markdownFileName;
   final XsdValidationResult validation;
 
   const XsdBuildResult({
     required this.xml,
-    required this.markdown,
     required this.variant,
     required this.baseName,
     required this.validation,
-  }) : xmlFileName = '$baseName.xml',
-       markdownFileName = '$baseName.md';
+  }) : xmlFileName = '$baseName.xml';
 }
 
 class XsdComissaoMembro {

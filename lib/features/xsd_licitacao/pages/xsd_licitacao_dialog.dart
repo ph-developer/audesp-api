@@ -166,7 +166,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
       );
       final defaultFileName = XsdDomainRules.defaultFileName(source, _variant!);
       final output = await FilePicker.saveFile(
-        dialogTitle: 'Salvar XML e Markdown validados',
+        dialogTitle: 'Salvar XML para o Coletor AUDESP',
         fileName: '$defaultFileName.xml',
         type: FileType.custom,
         allowedExtensions: const ['xml'],
@@ -187,7 +187,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
       if (!mounted) return;
       AudespSnackBar.success(
         context,
-        'XML validado no XSD ${_variant!.name.toUpperCase()} e par XML/Markdown salvo.',
+        'XML ${_variant!.name.toUpperCase()} salvo para envio pelo Coletor AUDESP.',
       );
       Navigator.of(context).pop(true);
     } catch (error) {
@@ -323,9 +323,7 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_lastGeneration != null)
-                Text(
-                  'Última exportação validada: ${_lastGeneration!.toLocal()}',
-                ),
+                Text('Último XML gerado: ${_lastGeneration!.toLocal()}'),
               AudespFieldRow(
                 children: [
                   AudespFieldRowItem(
@@ -531,8 +529,8 @@ class _XsdLicitacaoDialogState extends ConsumerState<XsdLicitacaoDialog> {
           child: const Text('Cancelar'),
         ),
         AudespAsyncButton.icon(
-          label: 'Validar e Salvar',
-          icon: Icons.verified_outlined,
+          label: 'Gerar XML',
+          icon: Icons.save_outlined,
           onPressed: _generating ? null : _export,
         ),
       ],

@@ -36,6 +36,17 @@ void main() {
     );
   });
 
+  test('AnoExercicio usa o ano da licitação', () {
+    final xml = XsdLicitacaoBuilder.build(
+      source: _source(anoCompra: 2025),
+      profile: XsdLicitacaoProfile(situacaoData: DateTime(2025, 5, 2)),
+      createdAt: DateTime(2025, 7, 21),
+    );
+    final doc = XmlDocument.parse(xml);
+
+    expect(_elementsByLocalName(doc, 'AnoExercicio').single.innerText, '2025');
+  });
+
   test('NÃO3 inclui subcontratação em DadosLicitacao e fundamento único', () {
     final xml = XsdLicitacaoBuilder.build(
       source: _source(modalidade: 8, amparo: 18),
@@ -157,40 +168,34 @@ void main() {
     },
   );
 
-  test('exportador grava XML e Markdown sempre como par', () async {
+  test('exportador grava somente o XML', () async {
     final temp = await Directory.systemTemp.createTemp('audesp_export_test_');
     addTearDown(() => temp.delete(recursive: true));
     final output = '${temp.path}${Platform.pathSeparator}teste.xml';
-    final hashes = await const XsdExportService().writePair(
+    final hash = await const XsdExportService().writeXml(
       selectedXmlPath: output,
       xml: '<?xml version="1.0" encoding="ISO-8859-1"?><x>ação</x>',
-      markdown: '# ação',
     );
     expect(await File(output).exists(), isTrue);
-    expect(await File(output.replaceFirst('.xml', '.md')).exists(), isTrue);
-    expect(hashes.xml, hasLength(64));
-    expect(hashes.markdown, hasLength(64));
+    expect(await File(output.replaceFirst('.xml', '.md')).exists(), isFalse);
+    expect(hash, hasLength(64));
   });
 
-  test('exportador restaura o par anterior quando a auditoria falha', () async {
+  test('exportador restaura o XML anterior quando a auditoria falha', () async {
     final temp = await Directory.systemTemp.createTemp('audesp_rollback_test_');
     addTearDown(() => temp.delete(recursive: true));
     final xmlPath = '${temp.path}${Platform.pathSeparator}teste.xml';
-    final mdPath = '${temp.path}${Platform.pathSeparator}teste.md';
     await File(xmlPath).writeAsString('xml anterior');
-    await File(mdPath).writeAsString('md anterior');
 
     await expectLater(
-      const XsdExportService().writePair(
+      const XsdExportService().writeXml(
         selectedXmlPath: xmlPath,
         xml: '<novo/>',
-        markdown: '# novo',
         beforeFinalize: (_) async => throw StateError('auditoria indisponível'),
       ),
       throwsStateError,
     );
     expect(await File(xmlPath).readAsString(), 'xml anterior');
-    expect(await File(mdPath).readAsString(), 'md anterior');
   });
 }
 
@@ -204,15 +209,16 @@ XsdLicitacaoSource _source({
   int? amparo,
   bool recursos = false,
   String descricao = 'Material',
+  int anoCompra = 2026,
 }) => XsdLicitacaoSource(
   modalidadeId: modalidade,
   srp: false,
   carona: false,
   municipio: '0001',
   entidade: '1',
-  codigoEdital: '1234567890123410001232026',
+  codigoEdital: '123456789012341000123$anoCompra',
   numeroCompra: '1',
-  anoCompra: 2026,
+  anoCompra: anoCompra,
   numeroProcesso: '1',
   objeto: 'Aquisição de material',
   criterioJulgamentoId: 1,

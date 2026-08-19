@@ -1,4 +1,5 @@
 import '../models/xsd_licitacao_models.dart';
+import 'xsd_domain_rules.dart';
 
 class XsdSourceNormalizer {
   const XsdSourceNormalizer();
@@ -79,7 +80,7 @@ class XsdSourceNormalizer {
       codigoEdital: (descritor['codigoEdital'] ?? edital['codigoEdital'] ?? '')
           .toString(),
       numeroCompra: (edital['numeroCompra'] ?? '').toString(),
-      anoCompra: _int(edital['anoCompra'], 2026),
+      anoCompra: _int(edital['anoCompra']),
       numeroProcesso: (edital['numeroProcesso'] ?? '').toString(),
       objeto: (edital['objetoCompra'] ?? '').toString(),
       criterioJulgamentoId: _int(edital['criterioJulgamentoId']),
@@ -151,7 +152,9 @@ class XsdSourceNormalizer {
       opcionais: {
         ...current.opcionais,
         if (source.licitacaoJson['tipoNatureza'] != null)
-          'naturezaLicitacao': source.licitacaoJson['tipoNatureza'],
+          'naturezaLicitacao': XsdDomainRules.mapNaturezaLicitacao(
+            _int(source.licitacaoJson['tipoNatureza']),
+          ),
       },
     );
   }

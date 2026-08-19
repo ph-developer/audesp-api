@@ -278,7 +278,6 @@ class DatabaseService {
         'revision': "VARCHAR(20) NOT NULL DEFAULT '2026_A'",
         'base_name': 'VARCHAR(255) NULL',
         'xml_sha256': 'CHAR(64) NULL',
-        'markdown_sha256': 'CHAR(64) NULL',
         'edital_source_sha256': 'CHAR(64) NULL',
         'licitacao_source_sha256': 'CHAR(64) NULL',
         'profile_snapshot': 'LONGTEXT NULL',

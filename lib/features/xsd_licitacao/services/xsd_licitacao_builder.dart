@@ -51,7 +51,7 @@ class XsdLicitacaoBuilder {
         builder.element(
           'Descritor',
           nest: () {
-            builder.element('gen:AnoExercicio', nest: 2026);
+            builder.element('gen:AnoExercicio', nest: source.anoCompra);
             builder.element(
               'gen:TipoDocumento',
               nest: variant == XsdLicitacaoVariant.nao1
@@ -208,10 +208,7 @@ class XsdLicitacaoBuilder {
               'ModalidadeLicitacao',
               nest: s.modalidadeId == 8 ? 10 : 11,
             );
-            b.element(
-              fundamento.element,
-              nest: fundamento.code,
-            );
+            b.element(fundamento.element, nest: fundamento.code);
           },
         );
         if (p.opcionais.containsKey('justificativaContratacaoDireta')) {
@@ -308,8 +305,7 @@ class XsdLicitacaoBuilder {
       'Lote',
       nest: () {
         b.element('tag:NumeroLote', nest: numero);
-        final rawDesc =
-            (item['descricao'] ?? item['descricaoItem']).toString();
+        final rawDesc = (item['descricao'] ?? item['descricaoItem']).toString();
         b.element(
           'tag:DescricaoLote',
           nest: rawDesc.length > 1000 ? rawDesc.substring(0, 1000) : rawDesc,
@@ -411,15 +407,9 @@ class XsdLicitacaoBuilder {
             'tag:EditalPublicacao',
             nest: () {
               b.element('tag:VeiculoPublicacao', nest: publication.veiculo);
-              b.element(
-                'tag:PublicacaoData',
-                nest: _date(publication.data),
-              );
+              b.element('tag:PublicacaoData', nest: _date(publication.data));
               if (publication.descricao?.isNotEmpty == true)
-                b.element(
-                  'tag:PublicacaoDescr',
-                  nest: publication.descricao,
-                );
+                b.element('tag:PublicacaoDescr', nest: publication.descricao);
               b.element(
                 'tag:PublicacaoOficial',
                 nest: _sn(publication.oficial),
@@ -797,10 +787,7 @@ class XsdLicitacaoBuilder {
       b.element(
         'JulgamentoSemInversao',
         nest: () {
-          b.element(
-            'tag:NaoExisteAtaAberturaDocumentosHabilitacao',
-            nest: 'N',
-          );
+          b.element('tag:NaoExisteAtaAberturaDocumentosHabilitacao', nest: 'N');
           b.element(
             'tag:NaoExisteAtaJulgamentoDocumentosHabilitacao',
             nest: 'N',
@@ -818,9 +805,6 @@ class XsdLicitacaoBuilder {
     if (states.contains(3)) return 4;
     return 5;
   }
-
-  static String buildMarkdownSummary(String xmlString, String modalidadeNome) =>
-      XsdMarkdownBuilder.build(xmlString, title: modalidadeNome);
 
   static String _codigoLicitacao(XsdLicitacaoSource source) {
     final digits = source.codigoEdital.replaceAll(RegExp(r'\D'), '');
@@ -882,54 +866,6 @@ class XsdLicitacaoBuilder {
     for (final entry in fields.entries) {
       walk(entry.key, entry.value);
     }
-  }
-}
-
-class XsdMarkdownBuilder {
-  static const translations = <String, Map<String, String>>{
-    'ResultadoHabilitacao': {
-      '1': 'Desclassificado',
-      '2': 'Vencedor',
-      '3': 'Inabilitado',
-      '5': 'Desistiu/não compareceu',
-      '6': 'Classificado',
-      '7': 'Habilitado',
-      '8': 'Proposta não analisada',
-    },
-    'SituacaoLicitacao': {
-      '1': 'Fracassada',
-      '2': 'Deserta',
-      '3': 'Adjudicada',
-      '4': 'Revogada',
-      '5': 'Outra',
-      '6': 'Anulada',
-      '7': 'Homologação parcial',
-      '11': 'Homologada',
-    },
-    'Subcontratacao': {'S': 'Sim', 'N': 'Não'},
-  };
-
-  static String build(String xml, {String title = 'Licitação'}) {
-    final doc = XmlDocument.parse(xml);
-    final out = StringBuffer('# $title\n\n');
-    void walk(XmlElement element, int depth) {
-      final children = element.childElements.toList();
-      if (children.isEmpty) {
-        final value = element.innerText;
-        final translated = translations[element.name.local]?[value];
-        out.writeln(
-          '${'  ' * depth}- **${element.name.local}:** ${translated == null ? value : '$translated (`$value`)'}',
-        );
-        return;
-      }
-      out.writeln('${'#' * (depth.clamp(1, 5))} ${element.name.local}');
-      out.writeln();
-      for (final child in children) walk(child, depth + 1);
-      out.writeln();
-    }
-
-    for (final child in doc.rootElement.childElements) walk(child, 2);
-    return out.toString();
   }
 }
 

@@ -39,25 +39,19 @@ class XsdGenerationService {
       source: source,
       profile: effectiveProfile,
     );
-    final markdown = XsdMarkdownBuilder.build(
-      xml,
-      title: 'Licitação ${source.numeroCompra}/${source.anoCompra}',
-    );
     final validation = await validator.validate(xml, variant);
     final baseName = _baseName(source, variant);
     final result = XsdBuildResult(
       xml: xml,
-      markdown: markdown,
       variant: variant,
       baseName: baseName,
       validation: validation,
     );
     if (!validation.isValid) throw FormatException(validation.displayMessage);
-    await exporter.writePair(
+    await exporter.writeXml(
       selectedXmlPath: outputPath,
       xml: xml,
-      markdown: markdown,
-      beforeFinalize: (hashes) async {
+      beforeFinalize: (xmlSha256) async {
         await profiles.upsert(licitacaoId, effectiveProfile);
         await logs.insertLog(
           XsdLicitacaoLogEntry(
@@ -65,8 +59,7 @@ class XsdGenerationService {
             variant: variant.name,
             revision: XsdLicitacaoProfile.revision,
             baseName: baseName,
-            xmlSha256: hashes.xml,
-            markdownSha256: hashes.markdown,
+            xmlSha256: xmlSha256,
             editalSourceSha256: _hashJson(source.editalJson),
             licitacaoSourceSha256: _hashJson(source.licitacaoJson),
             profileSnapshot: effectiveProfile.encode(),

@@ -112,12 +112,37 @@ class XsdDomainRules {
   /// PNCP julgamento -> TipoLicitacao_t. Values without an XSD equivalent fail.
   static const tipoLicitacao = <int, int>{
     1: 1, // menor preço
-    2: 6, // maior desconto
-    4: 3, // técnica e preço
-    5: 5, // maior lance
+    2: 5, // maior desconto
+    4: 2, // técnica e preço
+    5: 4, // maior lance
     6: 7, // maior retorno econômico
-    8: 2, // melhor técnica
+    8: 3, // melhor técnica
+    9: 3, // conteúdo artístico
+    1000: 12, // melhor destinação de bens alienados
+    1001: 6, // maior oferta de preço
   };
+
+  /// Domínio da Licitação JSON -> NaturezaLicitacao_t do XSD.
+  static const naturezaLicitacao = <int, int>{
+    1: 1, // normal
+    2: 8, // concessão/permissão de uso
+    3: 6, // concessão de serviço público
+    4: 5, // PPP patrocinada
+    5: 4, // PPP administrativa
+    6: 7, // permissão de serviço público
+    7: 3, // credenciamento
+    8: 2, // registro de preços
+  };
+
+  static int mapNaturezaLicitacao(int id) {
+    final value = naturezaLicitacao[id];
+    if (value == null) {
+      throw XsdDomainException([
+        'Natureza da licitação $id sem correspondência no XSD.',
+      ]);
+    }
+    return value;
+  }
 
   static int mapTipoLicitacao(int id) {
     final value = tipoLicitacao[id];
@@ -191,15 +216,15 @@ class XsdDomainRules {
     }
     if (modalidade == 9) {
       if (id == 50) return const XsdFundamento('FundamentoLei14133Art74', 57);
-      if (id >= 6 && id <= 17) {
-        return XsdFundamento('FundamentoLei14133Art74', id + 52);
-      }
-      if (id == 102 || id == 103) {
-        return const XsdFundamento('FundamentoLei13303Art30', 1);
-      }
-      if (id >= 104 && id <= 111) {
-        return XsdFundamento('FundamentoLei13303Art30', id - 102);
-      }
+      if (id == 6) return const XsdFundamento('FundamentoLei14133Art74', 58);
+      if (id == 7) return const XsdFundamento('FundamentoLei14133Art74', 59);
+      if (id >= 8 && id <= 15)
+        return const XsdFundamento('FundamentoLei14133Art74', 60);
+      if (id == 16) return const XsdFundamento('FundamentoLei14133Art74', 61);
+      if (id == 17) return const XsdFundamento('FundamentoLei14133Art74', 62);
+      if (id == 104) return const XsdFundamento('FundamentoLei13303Art30', 55);
+      if (id >= 105 && id <= 111)
+        return const XsdFundamento('FundamentoLei13303Art30', 56);
     } else if (modalidade == 8) {
       // Tabela explícita PNCP → XSD FundamentoLei14133_Art75_t (63-78).
       // O PNCP expande subitens (ex.: Art. 75, III a/b, Art. 75, IV a-m)
@@ -226,24 +251,12 @@ class XsdDomainRules {
       if (pncpToArt75.containsKey(id)) {
         return XsdFundamento('FundamentoLei14133Art75', pncpToArt75[id]!);
       }
-      // XVII e XVIII foram adicionados por leis posteriores e não possuem
-      // enumerações dedicadas no XSD 2026_A; mapeiam para XV/XVI como
-      // aproximação aceita pelo AUDESP em piloto.
-      if (id == 60) {
-        return const XsdFundamento('FundamentoLei14133Art75', 77);
-      }
-      if (id == 77) {
-        return const XsdFundamento('FundamentoLei14133Art75', 78);
-      }
-      if (id == 78) {
-        return const XsdFundamento('FundamentoLei14133Art75', 78);
-      }
-      if (id >= 61 && id <= 76) {
-        return XsdFundamento('FundamentoLei14133Art76', id + 18);
-      }
-      if (id >= 84 && id <= 101) {
-        return XsdFundamento('FundamentoLei13303Art29', id - 83);
-      }
+      if (id >= 61 && id <= 70)
+        return const XsdFundamento('FundamentoLei14133Art76', 79);
+      if (id >= 71 && id <= 76)
+        return const XsdFundamento('FundamentoLei14133Art76', 80);
+      if (id >= 84 && id <= 98)
+        return XsdFundamento('FundamentoLei13303Art29', id - 44);
     }
     throw XsdDomainException([
       'Amparo legal $id do edital incompatível com a modalidade $modalidade.',
@@ -262,6 +275,12 @@ class XsdDomainRules {
       errors.add('O objeto da licitação é obrigatório.');
     if (source.numeroProcesso.trim().isEmpty)
       errors.add('O número do processo é obrigatório.');
+    if (source.numeroProcesso.length > 35)
+      errors.add('O número do processo deve ter até 35 caracteres.');
+    if (source.numeroCompra.trim().isEmpty || source.numeroCompra.length > 35)
+      errors.add('O número da licitação deve ter entre 1 e 35 caracteres.');
+    if (source.anoCompra < 1000 || source.anoCompra > 9999)
+      errors.add('O ano da licitação deve conter quatro dígitos.');
     if (source.codigoEdital.replaceAll(RegExp(r'\D'), '').length != 25) {
       errors.add('O código PNCP do edital deve conter exatamente 25 dígitos.');
     }
@@ -288,6 +307,9 @@ class XsdDomainRules {
       } on XsdDomainException catch (e) {
         errors.addAll(e.errors);
       }
+      final natureza = _int(profile.opcionais['naturezaLicitacao'], 1);
+      if (!naturezaLicitacao.values.contains(natureza))
+        errors.add('Natureza da licitação $natureza inválida para o XSD.');
       if (calculateTotal(source.itens) <= 0) {
         errors.add('O valor total adjudicado do NÃO1 deve ser maior que zero.');
       }
@@ -358,9 +380,21 @@ class XsdDomainRules {
     if (profile.comissao.isNotEmpty) {
       if (profile.numAtoDesignacao.trim().isEmpty)
         errors.add('Comissão: número do ato é obrigatório.');
+      if (profile.numAtoDesignacao.length > 8)
+        errors.add('Comissão: número do ato limitado a 8 caracteres.');
       if (profile.atoDesignacaoData == null &&
           profile.atoDesignacaoInicio == null) {
         errors.add('Comissão: informe a data ou o início da vigência do ato.');
+      }
+      for (var i = 0; i < profile.comissao.length; i++) {
+        final member = profile.comissao[i];
+        final prefix = 'Comissão, integrante ${i + 1}';
+        if (member.cpf.replaceAll(RegExp(r'\D'), '').length != 11)
+          errors.add('$prefix: CPF deve conter 11 dígitos.');
+        if (member.nome.trim().isEmpty || member.nome.length > 100)
+          errors.add('$prefix: nome deve ter entre 1 e 100 caracteres.');
+        if (member.cargo.trim().isEmpty || member.cargo.length > 100)
+          errors.add('$prefix: cargo deve ter entre 1 e 100 caracteres.');
       }
     }
     if (errors.isNotEmpty) throw XsdDomainException(errors);
@@ -393,9 +427,10 @@ class XsdDomainRules {
     var total = 0.0;
     for (final item in itens) {
       final quantidade = _double(item['quantidade']);
-      final estimado = _double(
-        item['valorUnitarioEstimado'] ?? item['valorTotal'],
-      );
+      final valorTotalEstimado = _double(item['valorTotal']);
+      final estimado = valorTotalEstimado > 0
+          ? valorTotalEstimado
+          : _double(item['valorUnitarioEstimado']) * quantidade;
       final licitantes = (item['licitantes'] as List? ?? const [])
           .whereType<Map>();
       for (final raw in licitantes) {
