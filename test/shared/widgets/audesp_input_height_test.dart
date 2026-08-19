@@ -8,6 +8,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('initialValue inicializa o controller interno sem conflito', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: AudespTextField(
+            label: 'E-mail',
+            initialValue: 'usuario@exemplo.com',
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('usuario@exemplo.com'), findsOneWidget);
+  });
+
   testWidgets('input labels remain floating when empty and unfocused', (
     tester,
   ) async {

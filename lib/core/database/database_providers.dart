@@ -108,6 +108,11 @@ class CodigoEntidadeNotifier extends StringSettingNotifier {
   String get settingsKey => SettingsKeys.codigoEntidade;
 }
 
+class CodigoTipoOrgaoNotifier extends StringSettingNotifier {
+  @override
+  String get settingsKey => SettingsKeys.codigoTipoOrgao;
+}
+
 final codigoMunicipioProvider =
     NotifierProvider<CodigoMunicipioNotifier, String>(
       CodigoMunicipioNotifier.new,
@@ -116,3 +121,8 @@ final codigoMunicipioProvider =
 final codigoEntidadeProvider = NotifierProvider<CodigoEntidadeNotifier, String>(
   CodigoEntidadeNotifier.new,
 );
+
+final codigoTipoOrgaoProvider =
+    NotifierProvider<CodigoTipoOrgaoNotifier, String>(
+      CodigoTipoOrgaoNotifier.new,
+    );

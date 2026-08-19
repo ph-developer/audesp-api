@@ -5,6 +5,7 @@ abstract class SettingsKeys {
   static const geminiModel = 'gemini_model';
   static const codigoMunicipio = 'codigo_municipio';
   static const codigoEntidade = 'codigo_entidade';
+  static const codigoTipoOrgao = 'codigo_tipo_orgao';
   static const environment = 'environment';
 }
 

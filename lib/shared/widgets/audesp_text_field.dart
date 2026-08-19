@@ -57,7 +57,10 @@ class AudespTextField extends StatefulWidget {
     this.textCapitalization = TextCapitalization.none,
     this.onFieldSubmitted,
     this.textInputAction,
-  });
+  }) : assert(
+         controller == null || initialValue == null,
+         'controller e initialValue não podem ser informados ao mesmo tempo.',
+       );
 
   @override
   State<AudespTextField> createState() => _AudespTextFieldState();
@@ -74,7 +77,9 @@ class _AudespTextFieldState extends State<AudespTextField> {
   @override
   void initState() {
     super.initState();
-    _effectiveController = widget.controller ?? TextEditingController();
+    _effectiveController =
+        widget.controller ?? TextEditingController(text: widget.initialValue);
+    _lastText = _effectiveController.text;
     if (widget.focusNode == null) _internalFocusNode = FocusNode();
     _effectiveController.addListener(_onTextChanged);
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
@@ -92,8 +97,10 @@ class _AudespTextFieldState extends State<AudespTextField> {
   void didUpdateWidget(AudespTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      oldWidget.controller?.removeListener(_onTextChanged);
-      _effectiveController = widget.controller ?? TextEditingController();
+      _effectiveController.removeListener(_onTextChanged);
+      if (oldWidget.controller == null) _effectiveController.dispose();
+      _effectiveController =
+          widget.controller ?? TextEditingController(text: widget.initialValue);
       _effectiveController.addListener(_onTextChanged);
       _lastText = _effectiveController.text;
     }
@@ -186,7 +193,6 @@ class _AudespTextFieldState extends State<AudespTextField> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: _effectiveController,
-      initialValue: widget.initialValue,
       focusNode: _effectiveFocusNode,
       readOnly: widget.readOnly,
       enabled: widget.enabled,

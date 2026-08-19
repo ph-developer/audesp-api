@@ -27,6 +27,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../domain/ajuste_domain.dart';
+import '../domain/ajuste_rules.dart';
 import '../ajuste_providers.dart';
 import '../services/ajuste_service.dart';
 import '../widgets/gemini_ajuste_import_dialog.dart';
@@ -108,6 +109,19 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   DateTime? _dataVigenciaInicio;
   DateTime? _dataVigenciaFim;
   final _vigenciaMesesCtrl = TextEditingController();
+
+  int? get _codigoTipoOrgao => int.tryParse(ref.read(codigoTipoOrgaoProvider));
+
+  bool get _exigeFonteRecursos => AjusteRules.exigeFonteRecursos(
+    codigoTipoOrgao: _codigoTipoOrgao,
+    receita: _receita,
+  );
+
+  bool get _exigeDespesas => AjusteRules.exigeDespesas(
+    codigoTipoOrgao: _codigoTipoOrgao,
+    tipoContratoId: _tipoContratoId,
+    receita: _receita,
+  );
   int? _prazoVigenciaDias;
 
   // ── Objeto do Contrato ────────────────────────────────────────────────
@@ -338,7 +352,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     final map = <String, dynamic>{
       'descritor': descritor,
-      'fonteRecursosContratacao': _fontesRecurso.toList()..sort(),
       'itens': _itens,
       'tipoContratoId': _tipoContratoId,
       'numeroContratoEmpenho': _numeroContratoEmpenhoCtrl.text.trim(),
@@ -364,11 +377,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'tipoObjetoContrato': _tipoObjetoContrato,
     };
 
+    if (_fontesRecurso.isNotEmpty) {
+      map['fonteRecursosContratacao'] = _fontesRecurso.toList()..sort();
+    }
     if (_processoCtrl.text.trim().isNotEmpty) {
       map['processo'] = _processoCtrl.text.trim();
     }
-    final exigeClassificacaoDespesa = _tipoContratoId == 7 || !_receita;
-    if (_despesas.isNotEmpty && exigeClassificacaoDespesa) {
+    if (_despesas.isNotEmpty) {
       map['despesas'] = _despesas;
     }
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
@@ -501,9 +516,17 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Selecione o Edital vinculado.');
       return;
     }
+    if (_codigoTipoOrgao == null) {
+      _showError(
+        'Configure o Código do Tipo de Órgão na Administração antes de enviar.',
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
-    if (_fontesRecurso.isEmpty) {
-      _showError('Selecione ao menos uma fonte de recurso.');
+    if (_exigeFonteRecursos && _fontesRecurso.isEmpty) {
+      _showError(
+        'Selecione ao menos uma fonte de recurso para este tipo de órgão e processo de despesa.',
+      );
       return;
     }
     if (_itens.isEmpty) {
@@ -512,13 +535,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     final isEmpenho = _tipoContratoId == 7;
 
-    if (isEmpenho || !_receita) {
-      if (_despesas.isEmpty) {
-        _showError(
-          'A classificação de despesa é obrigatória (exigida para despesas ou empenhos).',
-        );
-        return;
-      }
+    if (_exigeDespesas && _despesas.isEmpty) {
+      _showError(
+        'A classificação de despesa é obrigatória para este tipo de órgão e ajuste.',
+      );
+      return;
     }
     if (isEmpenho && _despesas.length > 1) {
       _showError(
@@ -1016,7 +1037,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    ref.watch(codigoTipoOrgaoProvider);
     final readOnly = _isSent;
+    final exigeFonteRecursos = _exigeFonteRecursos;
+    final exigeDespesas = _exigeDespesas;
 
     return Scaffold(
       appBar: AppBar(
@@ -1251,8 +1275,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
               // ── Fontes de Recurso ─────────────────────────────────────
               SectionCard(
-                title: 'Fontes de Recurso',
+                title: 'Fontes de Recurso${exigeFonteRecursos ? ' *' : ''}',
                 children: [
+                  Text(
+                    exigeFonteRecursos
+                        ? 'Obrigatório para este tipo de órgão e processo de despesa.'
+                        : 'Preenchimento opcional para este tipo de órgão e ajuste.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
@@ -1430,58 +1461,64 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               const SizedBox(height: 16),
 
               // ── Classificações de Despesa ─────────────────────────────
-              if (!_receita || _tipoContratoId == 7)
-                SectionCard(
-                  title: 'Classificações de Despesa',
-                  children: [
-                    if (!readOnly)
-                      AudespTextField(
-                        label: '8 dígitos (ex: 33903900)',
-                        controller: _despesaCtrl,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(8),
-                        ],
-                        suffixIcon: AudespIconButton(
-                          icon: Icons.add,
-                          tooltip: 'Adicionar',
-                          onPressed: _addDespesa,
-                        ),
-                        onFieldSubmitted: (_) => _addDespesa(),
+              SectionCard(
+                title: 'Classificações de Despesa${exigeDespesas ? ' *' : ''}',
+                children: [
+                  Text(
+                    exigeDespesas
+                        ? 'Obrigatório para este tipo de órgão e ajuste.'
+                        : 'Preenchimento opcional para este tipo de órgão e ajuste.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  if (!readOnly)
+                    AudespTextField(
+                      label: '8 dígitos (ex: 33903900)',
+                      controller: _despesaCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(8),
+                      ],
+                      suffixIcon: AudespIconButton(
+                        icon: Icons.add,
+                        tooltip: 'Adicionar',
+                        onPressed: _addDespesa,
                       ),
-                    if (_despesas.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'Nenhuma despesa adicionada.',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+                      onFieldSubmitted: (_) => _addDespesa(),
+                    ),
+                  if (_despesas.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Nenhuma despesa adicionada.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
                         ),
-                      )
-                    else ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: _despesas
-                            .map(
-                              (d) => Chip(
-                                label: Text(d),
-                                deleteIcon: readOnly
-                                    ? null
-                                    : const Icon(Icons.close, size: 16),
-                                onDeleted: readOnly
-                                    ? null
-                                    : () => setState(() => _despesas.remove(d)),
-                              ),
-                            )
-                            .toList(),
                       ),
-                    ],
+                    )
+                  else ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: _despesas
+                          .map(
+                            (d) => Chip(
+                              label: Text(d),
+                              deleteIcon: readOnly
+                                  ? null
+                                  : const Icon(Icons.close, size: 16),
+                              onDeleted: readOnly
+                                  ? null
+                                  : () => setState(() => _despesas.remove(d)),
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ],
-                ),
+                ],
+              ),
               const SizedBox(height: 16),
 
               // ── Fornecedor ────────────────────────────────────────────

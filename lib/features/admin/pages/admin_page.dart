@@ -11,6 +11,7 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
@@ -192,6 +193,7 @@ class _EnvironmentTab extends ConsumerStatefulWidget {
 class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
   final _municipioCtrl = TextEditingController();
   final _entidadeCtrl = TextEditingController();
+  final _tipoOrgaoCtrl = TextEditingController();
   bool _loading = true, _saving = false;
 
   @override
@@ -204,6 +206,7 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
   void dispose() {
     _municipioCtrl.dispose();
     _entidadeCtrl.dispose();
+    _tipoOrgaoCtrl.dispose();
     super.dispose();
   }
 
@@ -211,10 +214,12 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
     final dao = ref.read(appSettingsDaoProvider);
     final m = await dao.get(SettingsKeys.codigoMunicipio);
     final e = await dao.get(SettingsKeys.codigoEntidade);
+    final t = await dao.get(SettingsKeys.codigoTipoOrgao);
     if (!mounted) return;
     setState(() {
       _municipioCtrl.text = m ?? '';
       _entidadeCtrl.text = e ?? '';
+      _tipoOrgaoCtrl.text = t ?? '';
       _loading = false;
     });
   }
@@ -228,6 +233,9 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
       await ref
           .read(codigoEntidadeProvider.notifier)
           .setValue(_entidadeCtrl.text.trim());
+      await ref
+          .read(codigoTipoOrgaoProvider.notifier)
+          .setValue(_tipoOrgaoCtrl.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Configurações salvas com sucesso.')),
@@ -367,6 +375,14 @@ class _EnvironmentTabState extends ConsumerState<_EnvironmentTab> {
                         helperText:
                             'Código numérico da entidade conforme cadastro AUDESP.',
                         keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+                      AudespNumberField(
+                        label: 'Código do Tipo de Órgão',
+                        controller: _tipoOrgaoCtrl,
+                        hintText: 'CódigoTipoOrgao conforme o cadastro AUDESP.',
+                        decimals: false,
+                        maxLength: 3,
                       ),
                       const SizedBox(height: 24),
                       FilledButton.icon(
