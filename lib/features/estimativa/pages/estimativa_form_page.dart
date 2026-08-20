@@ -171,6 +171,33 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   List<String> get _desclassificadosIds =>
       _fornecedores.where((f) => f.desclassificado).map((f) => f.id).toList();
 
+  double get _valorTotalGlobal {
+    final desclassificados = _desclassificadosIds;
+    if (_tipoEstimativa == 'lote') {
+      return _lotes.fold(
+        0.0,
+        (sum, lote) =>
+            sum +
+            lote.getValorTotal(
+              _calculoGlobal,
+              casasDecimais: _casasDecimais,
+              desclassificadosIds: desclassificados,
+            ),
+      );
+    } else {
+      return _itens.fold(
+        0.0,
+        (sum, item) =>
+            sum +
+            item.getValorTotal(
+              _calculoGlobal,
+              casasDecimais: _casasDecimais,
+              desclassificadosIds: desclassificados,
+            ),
+      );
+    }
+  }
+
   Future<EstimativaModel?> _saveEstimativa() async {
     if (!_formKey.currentState!.validate()) return null;
 
@@ -605,6 +632,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
   Widget _buildItensOuLotesSection() {
     final isLote = _tipoEstimativa == 'lote';
+    final hasContent =
+        (isLote && _lotes.isNotEmpty) || (!isLote && _itens.isNotEmpty);
+    final total = _valorTotalGlobal;
     final fmt = NumberFormat.currency(
       locale: 'pt_BR',
       symbol: 'R\$',
@@ -613,6 +643,29 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     return SectionCard(
       title: isLote ? 'Lotes da Estimativa' : 'Itens da Estimativa',
+      titleSuffix: hasContent
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                'Total: ${fmt.format(total)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            )
+          : null,
       titleActions: [
         if (isLote) ...[
           TextButton.icon(
@@ -694,21 +747,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     }
 
     final isLote = _tipoEstimativa == 'lote';
-
-    double totalGlobal;
+    final totalGlobal = _valorTotalGlobal;
     double totalMeEpp;
 
     if (isLote) {
-      totalGlobal = _lotes.fold(
-        0.0,
-        (sum, l) =>
-            sum +
-            l.getValorTotal(
-              _calculoGlobal,
-              casasDecimais: _casasDecimais,
-              desclassificadosIds: _desclassificadosIds,
-            ),
-      );
       totalMeEpp = _lotes
           .where((l) => l.exclusivoMeEpp)
           .fold(
@@ -722,16 +764,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 ),
           );
     } else {
-      totalGlobal = _itens.fold(
-        0.0,
-        (sum, i) =>
-            sum +
-            i.getValorTotal(
-              _calculoGlobal,
-              casasDecimais: _casasDecimais,
-              desclassificadosIds: _desclassificadosIds,
-            ),
-      );
       totalMeEpp = _itens
           .where((i) => i.exclusivoMeEpp)
           .fold(

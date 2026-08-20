@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 /// Exibe um [Card] com título destacado, divisor e lista de widgets filhos.
 class SectionCard extends StatelessWidget {
   final String title;
+  final Widget? titleWidget;
+  final Widget? titleSuffix;
   final List<Widget> titleActions;
   final List<Widget> children;
 
   const SectionCard({
     super.key,
     required this.title,
+    this.titleWidget,
+    this.titleSuffix,
     this.titleActions = const [],
     required this.children,
   });
@@ -26,13 +30,26 @@ class SectionCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: titleWidget ??
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          if (titleSuffix != null) ...[
+                            const SizedBox(width: 12),
+                            Flexible(child: titleSuffix!),
+                          ],
+                        ],
+                      ),
                 ),
                 Row(children: titleActions),
               ],
