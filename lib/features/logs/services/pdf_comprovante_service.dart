@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../core/database/models/api_log.dart';
+import '../../../core/utils/pdf_text_sanitizer.dart';
 
 class PdfComprovanteService {
   static final _timeFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
@@ -20,9 +21,9 @@ class PdfComprovanteService {
     try {
       final obj = jsonDecode(raw);
       final pretty = const JsonEncoder.withIndent('  ').convert(obj);
-      return pretty.replaceAll('—', '-').replaceAll('–', '-');
+      return pretty.toPdfSafe();
     } catch (_) {
-      return raw.replaceAll('—', '-').replaceAll('–', '-');
+      return raw.toPdfSafe();
     }
   }
 
@@ -166,23 +167,20 @@ class PdfComprovanteService {
     );
 
     // Save File
-    String? outputFile = await FilePicker.saveFile(
+    final pdfBytes = await pdf.save();
+    final savedUri = await FilePicker.saveFile(
       dialogTitle: 'Salvar Comprovante PDF',
       fileName: 'comprovante_${log.protocolo ?? "log"}.pdf',
+      bytes: pdfBytes,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
 
-    if (outputFile == null) return; // User canceled
+    if (savedUri == null) return; // User canceled
 
-    if (!outputFile.toLowerCase().endsWith('.pdf')) {
-      outputFile = '$outputFile.pdf';
-    }
+    final outputFile = savedUri.toFilePath();
 
     try {
-      final file = File(outputFile);
-      await file.writeAsBytes(await pdf.save());
-
       // Open file natively
       if (Platform.isWindows) {
         Process.run('cmd', ['/c', 'start', '""', outputFile]);
@@ -195,7 +193,7 @@ class PdfComprovanteService {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao salvar ou abrir o PDF: $e'),
+            content: Text('Erro ao abrir o PDF: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -212,11 +210,11 @@ class PdfComprovanteService {
           pw.SizedBox(
             width: 120,
             child: pw.Text(
-              label,
+              label.toPdfSafe(),
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
           ),
-          pw.Expanded(child: pw.Text(value)),
+          pw.Expanded(child: pw.Text(value.toPdfSafe())),
         ],
       ),
     );

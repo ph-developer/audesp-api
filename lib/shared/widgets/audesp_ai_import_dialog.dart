@@ -80,14 +80,14 @@ class _AudespAiImportDialogState<T> extends State<_AudespAiImportDialog<T>> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'docx'],
     );
-    if (result != null && result.files.isNotEmpty) {
+    if (file != null) {
       setState(() {
-        _filePath = result.files.single.path;
-        _fileName = result.files.single.name;
+        _filePath = file.path;
+        _fileName = file.name;
       });
     }
   }

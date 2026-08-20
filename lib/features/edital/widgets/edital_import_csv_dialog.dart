@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -50,14 +51,13 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   List<EditalItemCsvModel>? _preview;
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (file == null) return;
     setState(() {
-      _csvFile = result.files.first;
+      _csvFile = file;
       _errorMessage = null;
       _preview = null;
     });
@@ -65,14 +65,15 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   }
 
   Future<void> _parse() async {
-    if (_csvFile?.bytes == null) return;
+    if (_csvFile == null) return;
     setState(() {
       _loading = true;
       _errorMessage = null;
     });
     try {
+      final bytes = await _csvFile!.readAsBytes();
       await Future.delayed(const Duration(milliseconds: 100));
-      final items = const EditalComplementoCsvParser().parse(_csvFile!.bytes!);
+      final items = const EditalComplementoCsvParser().parse(bytes);
       setState(() => _preview = items);
     } on EditalCsvParseException catch (e) {
       setState(() => _errorMessage = e.message);
@@ -86,17 +87,17 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
   }
 
   Future<void> _downloadTemplate() async {
-    final path = await FilePicker.saveFile(
+    final bytes = TemplateGenerator.generate(templateItens);
+    final savedUri = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
       fileName: 'template_itens.xlsx',
+      bytes: Uint8List.fromList(bytes),
       allowedExtensions: ['xlsx'],
       type: FileType.custom,
     );
-    if (path == null) return;
+    if (savedUri == null) return;
     try {
-      final bytes = TemplateGenerator.generate(templateItens);
-      await File(path).writeAsBytes(bytes);
-
+      final path = savedUri.toFilePath();
       if (Platform.isWindows) {
         Process.run('cmd', ['/c', 'start', '""', path]);
       } else if (Platform.isMacOS) {

@@ -13,16 +13,16 @@ dependencies:
     sdk: flutter
 
   # HTTP client com interceptors
-  dio: ^5.7.0
+  dio: ^5.11.0
 
   # Seleção de PDF
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0
 
   # Gerenciamento de estado
-  flutter_riverpod: ^3.3.1
+  flutter_riverpod: ^3.4.2
 
   # Roteamento declarativo
-  go_router: ^17.2.0
+  go_router: ^17.5.0
   
   # Formatação de datas
   intl: ^0.20.2
@@ -30,10 +30,10 @@ dependencies:
 
 
   # Hash de senhas
-  crypto: ^3.0.5
+  crypto: ^3.0.7
 
   # Integração com Google Gemini (importação de PDF via IA)
-  google_generative_ai: ^0.4.6
+  google_generative_ai: ^0.4.7
 
   # Extração de texto de DOC/DOCX para envio ao Gemini
   docx_to_text: ^1.0.1
@@ -48,16 +48,17 @@ dependencies:
   path: ^1.9.1
   ini: ^2.1.0
   pdf: ^3.12.0
-  uuid: ^4.5.3
-  win32: ^5.15.0
+  uuid: ^4.6.0
+  win32: ^6.4.0
   ffi: ^2.2.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
   # Code generation
-  build_runner: ^2.4.13
+  build_runner: ^2.13.1
   flutter_launcher_icons: ^0.14.4
 
 flutter:

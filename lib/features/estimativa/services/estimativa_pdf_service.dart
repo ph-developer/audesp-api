@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../core/utils/pdf_text_sanitizer.dart';
 import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
@@ -139,23 +140,20 @@ class EstimativaPdfService {
     );
 
     // Save File
-    String? outputFile = await FilePicker.saveFile(
+    final pdfBytes = await pdf.save();
+    final savedUri = await FilePicker.saveFile(
       dialogTitle: 'Salvar PDF Estimativa',
       fileName: 'estimativa_${estimativa.numero}_${estimativa.ano}.pdf',
+      bytes: pdfBytes,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
 
-    if (outputFile == null) return; // User canceled
+    if (savedUri == null) return; // User canceled
 
-    if (!outputFile.toLowerCase().endsWith('.pdf')) {
-      outputFile = '$outputFile.pdf';
-    }
+    final outputFile = savedUri.toFilePath();
 
     try {
-      final file = File(outputFile);
-      await file.writeAsBytes(await pdf.save());
-
       // Open file natively
       if (Platform.isWindows) {
         Process.run('cmd', ['/c', 'start', '""', outputFile]);
@@ -168,7 +166,7 @@ class EstimativaPdfService {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao salvar ou abrir o PDF: $e'),
+            content: Text('Erro ao abrir o PDF: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -222,13 +220,13 @@ class EstimativaPdfService {
           pw.SizedBox(
             width: 170,
             child: pw.Text(
-              label,
+              label.toPdfSafe(),
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
             ),
           ),
           pw.Expanded(
             child: pw.Text(
-              value,
+              value.toPdfSafe(),
               style: const pw.TextStyle(fontSize: 10),
               textAlign: pw.TextAlign.justify,
             ),
@@ -256,7 +254,7 @@ class EstimativaPdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'Lote ${lote.numero} - ${lote.descricao}',
+                'Lote ${lote.numero} - ${lote.descricao}'.toPdfSafe(),
                 textAlign: pw.TextAlign.justify,
                 style: pw.TextStyle(
                   fontSize: 14,
@@ -341,7 +339,7 @@ class EstimativaPdfService {
                 children: [
                   pw.Expanded(
                     child: pw.Text(
-                      'Item ${item.numero} - ${item.descricao}',
+                      'Item ${item.numero} - ${item.descricao}'.toPdfSafe(),
                       textAlign: pw.TextAlign.justify,
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
@@ -365,7 +363,7 @@ class EstimativaPdfService {
               pw.Text(
                 'Quantidade: ${item.quantidade} ${item.unidade} | '
                 '${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | '
-                'Regra Ref.: ${_getCalculoLabel(calculoUsado)}',
+                'Regra Ref.: ${_getCalculoLabel(calculoUsado)}'.toPdfSafe(),
                 style: const pw.TextStyle(
                   fontSize: 10,
                   color: PdfColors.grey700,
@@ -400,11 +398,12 @@ class EstimativaPdfService {
                       .where((f) => f.id == o.fornecedorId)
                       .firstOrNull;
 
+                  final razaoSocial = (fornecedor?.razaoSocial ?? '-').toPdfSafe();
                   pw.Widget razaoSocialWidget;
                   if (fornecedor?.desclassificado == true) {
                     razaoSocialWidget = pw.RichText(
                       text: pw.TextSpan(
-                        text: fornecedor?.razaoSocial ?? '-',
+                        text: razaoSocial,
                         style: const pw.TextStyle(fontSize: 9),
                         children: [
                           pw.TextSpan(
@@ -419,7 +418,7 @@ class EstimativaPdfService {
                     );
                   } else {
                     razaoSocialWidget = pw.Text(
-                      fornecedor?.razaoSocial ?? '-',
+                      razaoSocial,
                       style: const pw.TextStyle(fontSize: 9),
                     );
                   }
@@ -427,7 +426,7 @@ class EstimativaPdfService {
                   return [
                     razaoSocialWidget,
                     AudespCpfCnpjField.formatDocument(fornecedor?.cnpj ?? ''),
-                    fornecedor?.data ?? '-',
+                    (fornecedor?.data ?? '-').toPdfSafe(),
                     fmt.format(o.valorUnitario),
                   ];
                 }).toList(),

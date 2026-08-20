@@ -9,21 +9,25 @@ class HtmlClipboard {
     // Generate the CF_HTML format string
     final String cfHtml = _buildCfHtml(htmlContent);
 
-    // Register the HTML Format with Windows
-    final formatName = 'HTML Format'.toNativeUtf16();
-    final int cfHtmlId = RegisterClipboardFormat(formatName);
-    free(formatName);
+    using((arena) {
+      // Register the HTML Format with Windows
+      final formatName = arena.pcwstr('HTML Format');
+      final cfHtmlResult = RegisterClipboardFormat(formatName);
+      final int cfHtmlId = cfHtmlResult.value;
 
-    if (cfHtmlId == 0) return;
+      if (cfHtmlId == 0) return;
 
-    if (OpenClipboard(NULL) != 0) {
-      EmptyClipboard();
+      final openResult = OpenClipboard(null);
+      if (openResult.value) {
+        EmptyClipboard();
 
-      // Allocate global memory
-      final dataBytes = utf8.encode(cfHtml);
-      final hMem = GlobalAlloc(GMEM_MOVEABLE, dataBytes.length + 1);
-      if (hMem != nullptr) {
-        final pMem = GlobalLock(hMem);
+        // Allocate global memory
+        final dataBytes = utf8.encode(cfHtml);
+        final allocResult = GlobalAlloc(GMEM_MOVEABLE, dataBytes.length + 1);
+        final hMem = allocResult.value;
+
+        final lockResult = GlobalLock(hMem);
+        final pMem = lockResult.value;
         if (pMem != nullptr) {
           // Copy data to global memory
           final ptr = pMem.cast<Uint8>();
@@ -33,11 +37,11 @@ class HtmlClipboard {
           ptr[dataBytes.length] = 0; // null terminator
 
           GlobalUnlock(hMem);
-          SetClipboardData(cfHtmlId, hMem.address);
+          SetClipboardData(cfHtmlId, HANDLE(Pointer.fromAddress(hMem.address)));
         }
+        CloseClipboard();
       }
-      CloseClipboard();
-    }
+    });
   }
 
   static String _buildCfHtml(String html) {

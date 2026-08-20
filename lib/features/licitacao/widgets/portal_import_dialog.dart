@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -59,13 +60,11 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   }
 
   Future<void> _pickFile(String fileKey) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
+    if (file == null) return;
     setState(() {
       _errorMessage = null;
       switch (fileKey) {
@@ -82,17 +81,17 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
   static const _complementoKey = 'complemento';
 
   Future<void> _downloadTemplate() async {
-    final path = await FilePicker.saveFile(
+    final bytes = TemplateGenerator.generate(templateItens);
+    final savedUri = await FilePicker.saveFile(
       dialogTitle: 'Salvar Template de Itens',
       fileName: 'template_itens.xlsx',
+      bytes: Uint8List.fromList(bytes),
       allowedExtensions: ['xlsx'],
       type: FileType.custom,
     );
-    if (path == null) return;
+    if (savedUri == null) return;
     try {
-      final bytes = TemplateGenerator.generate(templateItens);
-      await File(path).writeAsBytes(bytes);
-
+      final path = savedUri.toFilePath();
       if (Platform.isWindows) {
         Process.run('cmd', ['/c', 'start', '""', path]);
       } else if (Platform.isMacOS) {
@@ -112,7 +111,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
     // Validação antes de iniciar o trabalho pesado
     if (_portal == PortalType.bll) {
-      if (_bllClassificacao?.bytes == null) {
+      if (_bllClassificacao == null) {
         setState(
           () => _errorMessage =
               'Selecione o arquivo do portal BLL para importar.',
@@ -120,7 +119,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         return;
       }
     } else if (_portal == PortalType.brConectado) {
-      if (_brRelatClassificacao?.bytes == null) {
+      if (_brRelatClassificacao == null) {
         setState(
           () => _errorMessage =
               'Selecione o relatório de classificação do portal BRConectado.',
@@ -136,7 +135,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
     if (_portal != PortalType.estimativa) {
       if (_complementoType == ComplementoType.planilha) {
-        if (_complemento?.bytes == null) {
+        if (_complemento == null) {
           setState(
             () => _errorMessage =
                 'Selecione a planilha complementar para importar.',
@@ -162,11 +161,13 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
         final PortalCsvParser parser;
 
         if (_portal == PortalType.bll) {
-          csvFiles = {CsvFileKeys.bllClassificacao: _bllClassificacao!.bytes!};
+          final bytes = await _bllClassificacao!.readAsBytes();
+          csvFiles = {CsvFileKeys.bllClassificacao: bytes};
           parser = const BllCsvParser();
         } else {
+          final bytes = await _brRelatClassificacao!.readAsBytes();
           csvFiles = {
-            CsvFileKeys.brRelatClassificacao: _brRelatClassificacao!.bytes!,
+            CsvFileKeys.brRelatClassificacao: bytes,
           };
           parser = const BrConectadoCsvParser();
         }
@@ -179,9 +180,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
       if (_portal != PortalType.estimativa &&
           _complementoType == ComplementoType.planilha) {
-        complementoMap = const ComplementoCsvParser().parse(
-          _complemento!.bytes!,
-        );
+        final bytes = await _complemento!.readAsBytes();
+        complementoMap = const ComplementoCsvParser().parse(bytes);
       } else {
         complementoMap = {};
 

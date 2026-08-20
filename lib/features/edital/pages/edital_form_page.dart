@@ -367,12 +367,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── PDF picker ────────────────────────────────────────────────────────────
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
-    if (result != null && result.files.single.path != null) {
-      setState(() => _pdfPath = result.files.single.path);
+    if (file != null && file.path != null) {
+      setState(() => _pdfPath = file.path);
     }
   }
 
