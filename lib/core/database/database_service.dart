@@ -298,6 +298,13 @@ class DatabaseService {
       }
       await setSchemaVersion(9);
     }
+
+    if (version < 10) {
+      await pool.execute('DROP TABLE IF EXISTS xsd_licitacao_profiles');
+      await pool.execute('DROP TABLE IF EXISTS xsd_licitacao_logs');
+      await pool.execute('DROP TABLE IF EXISTS xsd_comissao');
+      await setSchemaVersion(10);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {
