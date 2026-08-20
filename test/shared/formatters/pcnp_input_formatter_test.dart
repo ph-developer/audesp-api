@@ -26,6 +26,18 @@ void main() {
       expect(stripped, '1234567800019510000012026');
     });
 
+    test('applyMask aplica máscara para 31 dígitos numéricos de Ata', () {
+      const raw = '1234567800019510000012026000005';
+      final masked = PcnpInputFormatter.applyMask(raw);
+      expect(masked, '12345678000195-1-000001/2026-000005');
+    });
+
+    test('stripMask remove máscara quando possui 31 dígitos de Ata', () {
+      const masked = '12345678000195-1-000001/2026-000005';
+      final stripped = PcnpInputFormatter.stripMask(masked);
+      expect(stripped, '1234567800019510000012026000005');
+    });
+
     test('stripMask preserva código alfanumérico sem PNCP intacto', () {
       const code = 'DISP-0012/2026';
       final stripped = PcnpInputFormatter.stripMask(code);

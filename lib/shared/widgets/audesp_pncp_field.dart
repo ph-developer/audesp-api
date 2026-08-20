@@ -23,6 +23,7 @@ class AudespPncpField extends StatelessWidget {
   final String? initialValue;
   final bool readOnly;
   final bool enabled;
+  final bool isAta;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
 
@@ -33,6 +34,7 @@ class AudespPncpField extends StatelessWidget {
     this.initialValue,
     this.readOnly = false,
     this.enabled = true,
+    this.isAta = false,
     this.validator,
     this.onChanged,
   });
@@ -43,25 +45,35 @@ class AudespPncpField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxDigits = isAta ? 31 : 25;
+    final maxChars = isAta ? 35 : 28;
+    final hint = isAta
+        ? '00000000000000-0-000000/0000-000000'
+        : '00000000000000-0-000000/0000';
+
     return AudespTextField(
       label: label,
       controller: controller,
       initialValue: initialValue,
       readOnly: readOnly,
       enabled: enabled,
-      hintText: '00000000000000-0-000000/0000',
-      maxLength: 28,
+      hintText: hint,
+      maxLength: maxChars,
       keyboardType: TextInputType.number,
       inputFormatters: [
-        PcnpInputFormatter(),
-        LengthLimitingTextInputFormatter(28),
+        PcnpInputFormatter(maxDigits: maxDigits),
+        LengthLimitingTextInputFormatter(maxChars),
       ],
       validator:
           validator ??
           (v) {
             if (v == null || v.isEmpty) return 'Obrigatório';
             final raw = PcnpInputFormatter.stripMask(v);
-            if (raw.length < 25) return 'ID de Contratação PNCP incompleto';
+            if (raw.length < maxDigits) {
+              return isAta
+                  ? 'ID da Ata PNCP incompleto (31 dígitos)'
+                  : 'ID de Contratação PNCP incompleto (25 dígitos)';
+            }
             return null;
           },
       onChanged: onChanged,

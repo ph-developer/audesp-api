@@ -105,10 +105,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   void _fillEditalDescriptor() {
     if (_editalId == null) return;
     final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
-    if (edital != null && _codigoEditalCtrl.text.isEmpty) {
-      _codigoEditalCtrl.text = edital.codigoEdital;
-    }
     if (edital != null) {
+      _codigoEditalCtrl.text = edital.codigoEdital;
       try {
         final doc = jsonDecode(edital.documentoJson) as Map<String, dynamic>;
         _anoCompra = doc['anoCompra'] as int?;
@@ -245,6 +243,20 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     if (_codigoAtaCtrl.text.trim().isEmpty) {
       _showError('Informe o ID da Ata PNCP para salvar o rascunho.');
       return false;
+    }
+    final rawAta = PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+    if (rawAta.length == 31 && _editalId != null) {
+      final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
+      if (edital != null) {
+        final editalBase =
+            edital.idContratacaoPNCP.replaceAll(RegExp(r'\D'), '');
+        if (editalBase.length == 25 && rawAta.substring(0, 25) != editalBase) {
+          _showError(
+            'Os 25 primeiros dígitos da Ata (${PcnpInputFormatter.applyMask(rawAta.substring(0, 25))}) devem corresponder ao Edital (${PcnpInputFormatter.applyMask(editalBase)}).',
+          );
+          return false;
+        }
+      }
     }
     return true;
   }
@@ -655,6 +667,30 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           label: 'ID da Ata PNCP *',
                           controller: _codigoAtaCtrl,
                           readOnly: readOnly,
+                          isAta: true,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Informe o ID da Ata PNCP';
+                            }
+                            final raw = PcnpInputFormatter.stripMask(v);
+                            if (raw.length < 31) {
+                              return 'ID da Ata PNCP incompleto (31 dígitos)';
+                            }
+                            if (_editalId != null) {
+                              final edital = _editais
+                                  .where((e) => e.id == _editalId)
+                                  .firstOrNull;
+                              if (edital != null) {
+                                final editalBase = edital.idContratacaoPNCP
+                                    .replaceAll(RegExp(r'\D'), '');
+                                if (editalBase.length == 25 &&
+                                    raw.substring(0, 25) != editalBase) {
+                                  return 'Os 25 primeiros dígitos devem corresponder ao Edital (${PcnpInputFormatter.applyMask(editalBase)})';
+                                }
+                              }
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ],
