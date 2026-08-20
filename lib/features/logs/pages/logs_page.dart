@@ -275,7 +275,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
               children: [
                 const CircularProgressIndicator(),
                 const SizedBox(width: 24),
-                Text('Atualizando ${updatables.length} registros...'),
+                Text('Atualizando registros...'),
               ],
             ),
           ),
@@ -303,7 +303,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  '$successCount de ${updatables.length} registros atualizados com sucesso.',
+                  '$successCount registros atualizados com sucesso.',
                 ),
               ),
             );
@@ -737,8 +737,11 @@ class _LogCard extends ConsumerWidget {
                     icon: Icons.picture_as_pdf_outlined,
                     tooltip: 'Gerar Comprovante (PDF)',
                     color: Theme.of(context).colorScheme.primary,
-                    onPressed: () =>
-                        PdfComprovanteService.gerarComprovante(context, ref, log),
+                    onPressed: () => PdfComprovanteService.gerarComprovante(
+                      context,
+                      ref,
+                      log,
+                    ),
                   ),
                 ],
               ] else
