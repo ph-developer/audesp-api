@@ -7,31 +7,56 @@ import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/status_chip.dart';
 import 'pcnp_input_formatter.dart';
 
 enum UnlinkedEditaisTarget { licitacao, ata, ajuste }
 
+class UnlinkedEditaisData {
+  final List<Edital> editais;
+  final Map<int, int> linkedCounts;
+
+  const UnlinkedEditaisData({
+    required this.editais,
+    required this.linkedCounts,
+  });
+}
+
 final unlinkedEditaisProvider = FutureProvider.autoDispose
-    .family<List<Edital>, UnlinkedEditaisTarget>((ref, target) async {
-      final editais = await ref.watch(editaisDaoProvider).watchAll();
+    .family<UnlinkedEditaisData, UnlinkedEditaisTarget>((ref, target) async {
+      final editaisEnviados =
+          await ref.watch(editaisDaoProvider).watchByStatus('sent');
+
+      final linkedCounts = <int, int>{};
 
       switch (target) {
         case UnlinkedEditaisTarget.licitacao:
           final licitacoes = await ref.watch(licitacoesDaoProvider).watchAll();
-          final linkedIds = licitacoes.map((l) => l.editalId).toSet();
-          return editais.where((e) => !linkedIds.contains(e.id)).toList();
+          for (final l in licitacoes) {
+            linkedCounts[l.editalId] = (linkedCounts[l.editalId] ?? 0) + 1;
+          }
+          return UnlinkedEditaisData(
+            editais: editaisEnviados,
+            linkedCounts: linkedCounts,
+          );
         case UnlinkedEditaisTarget.ata:
           final atas = await ref.watch(atasDaoProvider).watchAll();
-          final linkedIds = atas.map((a) => a.editalId).toSet();
-          return editais
-              .where((e) => e.isSrp && !linkedIds.contains(e.id))
-              .toList();
+          for (final a in atas) {
+            linkedCounts[a.editalId] = (linkedCounts[a.editalId] ?? 0) + 1;
+          }
+          return UnlinkedEditaisData(
+            editais: editaisEnviados.where((e) => e.isSrp).toList(),
+            linkedCounts: linkedCounts,
+          );
         case UnlinkedEditaisTarget.ajuste:
           final ajustes = await ref.watch(ajustesDaoProvider).watchAll();
-          final linkedIds = ajustes.map((a) => a.editalId).toSet();
-          return editais
-              .where((e) => !e.isSrp && !linkedIds.contains(e.id))
-              .toList();
+          for (final a in ajustes) {
+            linkedCounts[a.editalId] = (linkedCounts[a.editalId] ?? 0) + 1;
+          }
+          return UnlinkedEditaisData(
+            editais: editaisEnviados.where((e) => !e.isSrp).toList(),
+            linkedCounts: linkedCounts,
+          );
       }
     });
 
@@ -71,6 +96,7 @@ class _UnlinkedEditaisDialog extends ConsumerStatefulWidget {
 class _UnlinkedEditaisDialogState
     extends ConsumerState<_UnlinkedEditaisDialog> {
   final _searchCtrl = TextEditingController();
+  bool _exibirJaEnviados = false;
 
   @override
   void dispose() {
@@ -80,22 +106,28 @@ class _UnlinkedEditaisDialogState
 
   @override
   Widget build(BuildContext context) {
-    final editaisAsync = ref.watch(unlinkedEditaisProvider(widget.target));
+    final dataAsync = ref.watch(unlinkedEditaisProvider(widget.target));
 
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(
         width: double.maxFinite,
         height: 480,
-        child: editaisAsync.when(
+        child: dataAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Erro: $e')),
-          data: (editais) {
-            if (editais.isEmpty) {
-              return Center(child: Text(widget.emptyMessage));
-            }
+          data: (data) {
+            final showExibirJaEnviados =
+                widget.target != UnlinkedEditaisTarget.licitacao;
+            final canShowAll = showExibirJaEnviados && _exibirJaEnviados;
 
-            final filtered = editais.where((edital) {
+            final candidates = canShowAll
+                ? data.editais
+                : data.editais
+                    .where((e) => (data.linkedCounts[e.id] ?? 0) == 0)
+                    .toList();
+
+            final filtered = candidates.where((edital) {
               return matchesLikeSearch(
                 _searchableEditalText(edital),
                 _searchCtrl.text,
@@ -103,26 +135,70 @@ class _UnlinkedEditaisDialogState
             }).toList();
 
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AudespTextField(
-                  label: 'Filtrar',
-                  controller: _searchCtrl,
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchCtrl.text.isEmpty
-                      ? null
-                      : AudespIconButton(
-                          icon: Icons.close,
-                          tooltip: 'Limpar filtro',
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            setState(() {});
-                          },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: AudespTextField(
+                        label: 'Filtrar',
+                        controller: _searchCtrl,
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchCtrl.text.isEmpty
+                            ? null
+                            : AudespIconButton(
+                                icon: Icons.close,
+                                tooltip: 'Limpar filtro',
+                                onPressed: () {
+                                  _searchCtrl.clear();
+                                  setState(() {});
+                                },
+                              ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (showExibirJaEnviados) ...[
+                      const SizedBox(width: 16),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: () => setState(
+                          () => _exibirJaEnviados = !_exibirJaEnviados,
                         ),
-                  onChanged: (_) => setState(() {}),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _exibirJaEnviados,
+                                onChanged: (v) => setState(
+                                  () => _exibirJaEnviados = v ?? false,
+                                ),
+                              ),
+                              const Text('Exibir já enviados'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: filtered.isEmpty
+                  child: candidates.isEmpty
+                      ? Center(
+                          child: Text(
+                            canShowAll
+                                ? 'Nenhum edital disponível.'
+                                : widget.emptyMessage,
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : filtered.isEmpty
                       ? const Center(
                           child: Text('Nenhum edital para este filtro.'),
                         )
@@ -138,6 +214,8 @@ class _UnlinkedEditaisDialogState
                                   edital.anoCompra != 0)
                                 '${edital.numeroCompra}/${edital.anoCompra}',
                             ].join(' ');
+                            final linkedCount =
+                                data.linkedCounts[edital.id] ?? 0;
 
                             return ListTile(
                               leading: const Icon(Icons.article_outlined),
@@ -157,6 +235,17 @@ class _UnlinkedEditaisDialogState
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              trailing: linkedCount > 0
+                                  ? StatusChip(
+                                      label: widget.target ==
+                                              UnlinkedEditaisTarget.ata
+                                          ? '$linkedCount ${linkedCount == 1 ? 'ata' : 'atas'}'
+                                          : widget.target ==
+                                                  UnlinkedEditaisTarget.ajuste
+                                              ? '$linkedCount ${linkedCount == 1 ? 'ajuste' : 'ajustes'}'
+                                              : '$linkedCount ${linkedCount == 1 ? 'licitação' : 'licitações'}',
+                                    )
+                                  : null,
                               onTap: () => Navigator.of(context).pop(edital),
                             );
                           },
@@ -188,3 +277,4 @@ String _searchableEditalText(Edital edital) {
     edital.objetoCompra,
   ].join(' ');
 }
+
