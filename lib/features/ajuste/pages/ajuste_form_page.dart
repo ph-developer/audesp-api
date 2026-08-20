@@ -77,6 +77,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Set<int> _fontesRecurso = {};
   List<int> _itens = [];
   final _itemCtrl = TextEditingController();
+  final _itemFocusNode = FocusNode();
   int? _tipoContratoId;
   final _numeroContratoEmpenhoCtrl = TextEditingController();
   final _anoContratoCtrl = TextEditingController();
@@ -85,6 +86,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   bool _receita = false;
   List<String> _despesas = [];
   final _despesaCtrl = TextEditingController();
+  final _despesaFocusNode = FocusNode();
   final _codigoUnidadeCtrl = TextEditingController();
 
   // ── Fornecedor ────────────────────────────────────────────────────────
@@ -142,10 +144,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _municipioGerenciadorCtrl.dispose();
     _entidadeGerenciadoraCtrl.dispose();
     _itemCtrl.dispose();
+    _itemFocusNode.dispose();
     _numeroContratoEmpenhoCtrl.dispose();
     _anoContratoCtrl.dispose();
     _processoCtrl.dispose();
     _despesaCtrl.dispose();
+    _despesaFocusNode.dispose();
     _codigoUnidadeCtrl.dispose();
     _niFornecedorCtrl.dispose();
     _nomeRazaoSocialFornecedorCtrl.dispose();
@@ -746,10 +750,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     final val = int.tryParse(_itemCtrl.text.trim());
     if (val == null || val < 1) {
       _showError('Informe um número de item válido.');
+      _itemFocusNode.requestFocus();
       return;
     }
     if (_itens.contains(val)) {
-      _showError('Item $val já adicionado.');
+      _showError('Item/Lote $val já adicionado.');
+      _itemFocusNode.requestFocus();
       return;
     }
     setState(() {
@@ -757,22 +763,26 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _itens.sort();
       _itemCtrl.clear();
     });
+    _itemFocusNode.requestFocus();
   }
 
   void _addDespesa() {
     final val = _despesaCtrl.text.trim();
     if (val.length != 8) {
       _showError('A classificação de despesa deve ter exatamente 8 dígitos.');
+      _despesaFocusNode.requestFocus();
       return;
     }
     if (_despesas.contains(val)) {
       _showError('Despesa $val já adicionada.');
+      _despesaFocusNode.requestFocus();
       return;
     }
     setState(() {
       _despesas.add(val);
       _despesaCtrl.clear();
     });
+    _despesaFocusNode.requestFocus();
   }
 
   // ── Importação via Gemini ─────────────────────────────────────────────
@@ -1315,12 +1325,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
               // ── Itens contratados ─────────────────────────────────────
               SectionCard(
-                title: 'Itens Contratados',
+                title: 'Itens/Lotes Contratados',
                 children: [
                   if (!readOnly)
                     AudespTextField(
-                      label: 'Número do item',
+                      label: 'Número do item/Lote',
                       controller: _itemCtrl,
+                      focusNode: _itemFocusNode,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       suffixIcon: AudespIconButton(
@@ -1334,7 +1345,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        'Nenhum item adicionado.',
+                        'Nenhum item/lote adicionado.',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.outline,
                         ),
@@ -1348,7 +1359,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       children: _itens
                           .map(
                             (n) => Chip(
-                              label: Text('Item $n'),
+                              label: Text('Item/Lote $n'),
                               deleteIcon: readOnly
                                   ? null
                                   : const Icon(Icons.close, size: 16),
@@ -1475,6 +1486,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     AudespTextField(
                       label: '8 dígitos (ex: 33903900)',
                       controller: _despesaCtrl,
+                      focusNode: _despesaFocusNode,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,

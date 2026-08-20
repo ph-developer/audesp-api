@@ -69,6 +69,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Itens (números dos itens da licitação) ────────────────────────────
   List<int> _numerosItem = [];
   final _itemCtrl = TextEditingController();
+  final _itemFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -83,6 +84,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _numeroAtaCtrl.dispose();
     _anoAtaCtrl.dispose();
     _itemCtrl.dispose();
+    _itemFocusNode.dispose();
     super.dispose();
   }
 
@@ -513,10 +515,12 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final num = int.tryParse(raw);
     if (num == null || num < 1) {
       _showError('Informe um número de item válido (inteiro positivo).');
+      _itemFocusNode.requestFocus();
       return;
     }
     if (_numerosItem.contains(num)) {
       _showError('Item $num já adicionado.');
+      _itemFocusNode.requestFocus();
       return;
     }
     setState(() {
@@ -524,6 +528,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       _numerosItem.sort();
       _itemCtrl.clear();
     });
+    _itemFocusNode.requestFocus();
   }
 
   void _removeItem(int num) {
@@ -740,6 +745,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                     AudespTextField(
                       label: 'Número do item',
                       controller: _itemCtrl,
+                      focusNode: _itemFocusNode,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       suffixIcon: AudespIconButton(

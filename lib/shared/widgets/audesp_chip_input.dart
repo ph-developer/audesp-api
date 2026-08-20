@@ -60,6 +60,7 @@ class AudespChipInput<T> extends StatefulWidget {
 
 class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
   late final TextEditingController _ctrl;
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -70,6 +71,7 @@ class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
   @override
   void dispose() {
     _ctrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -84,11 +86,13 @@ class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
         message: error,
         duration: const Duration(seconds: 2),
       );
+      _focusNode.requestFocus();
       return;
     }
 
     widget.onAdd(value as T);
     _ctrl.clear();
+    _focusNode.requestFocus();
   }
 
   @override
@@ -102,11 +106,13 @@ class _AudespChipInputState<T> extends State<AudespChipInput<T>> {
               child: AudespTextField(
                 label: widget.label,
                 controller: _ctrl,
+                focusNode: _focusNode,
                 hintText: widget.hintText,
                 readOnly: widget.readOnly,
                 maxLength: widget.maxLength,
                 keyboardType: widget.keyboardType,
                 inputFormatters: widget.inputFormatters,
+                onFieldSubmitted: (_) => _add(),
               ),
             ),
             if (!widget.readOnly) ...[
