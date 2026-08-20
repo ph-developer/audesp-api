@@ -44,6 +44,7 @@ class EditaisDao {
     required String municipio,
     required String entidade,
     required String codigoEdital,
+    bool semPncp = false,
     required bool retificacao,
     required String status,
     String? pdfPath,
@@ -52,12 +53,13 @@ class EditaisDao {
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'INSERT INTO editais (municipio, entidade, codigo_edital, retificacao, status, pdf_path, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO editais (municipio, entidade, codigo_edital, sem_pncp, retificacao, status, pdf_path, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     final result = await stmt.execute([
       municipio,
       entidade,
       codigoEdital,
+      semPncp ? 1 : 0,
       retificacao ? 1 : 0,
       status,
       pdfPath,
@@ -72,6 +74,7 @@ class EditaisDao {
     required String municipio,
     required String entidade,
     required String codigoEdital,
+    bool semPncp = false,
     required bool retificacao,
     required String status,
     String? pdfPath,
@@ -80,12 +83,13 @@ class EditaisDao {
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'UPDATE editais SET municipio = ?, entidade = ?, codigo_edital = ?, retificacao = ?, status = ?, pdf_path = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      'UPDATE editais SET municipio = ?, entidade = ?, codigo_edital = ?, sem_pncp = ?, retificacao = ?, status = ?, pdf_path = ?, documento_json = ?, updated_at = ? WHERE id = ?',
     );
     final result = await stmt.execute([
       municipio,
       entidade,
       codigoEdital,
+      semPncp ? 1 : 0,
       retificacao ? 1 : 0,
       status,
       pdfPath,

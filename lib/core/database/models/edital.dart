@@ -7,6 +7,7 @@ class Edital {
   final String municipio;
   final String entidade;
   final String codigoEdital;
+  final bool semPncp;
   final bool retificacao;
   final String status;
   final String? pdfPath;
@@ -19,6 +20,7 @@ class Edital {
     required this.municipio,
     required this.entidade,
     required this.codigoEdital,
+    this.semPncp = false,
     required this.retificacao,
     required this.status,
     this.pdfPath,
@@ -32,6 +34,7 @@ class Edital {
     municipio: row['municipio'] as String,
     entidade: row['entidade'] as String,
     codigoEdital: row['codigo_edital'] as String,
+    semPncp: ((row['sem_pncp'] as num?)?.toInt() ?? 0) == 1,
     retificacao: (row['retificacao'] as int) == 1,
     status: row['status'] as String,
     pdfPath: row['pdf_path'] as String?,
@@ -100,6 +103,7 @@ class Edital {
     'municipio': municipio,
     'entidade': entidade,
     'codigo_edital': codigoEdital,
+    'sem_pncp': semPncp ? 1 : 0,
     'retificacao': retificacao ? 1 : 0,
     'status': status,
     'pdf_path': pdfPath,

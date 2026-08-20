@@ -56,6 +56,7 @@ class DatabaseService {
           municipio TEXT NOT NULL,
           entidade TEXT NOT NULL,
           codigo_edital TEXT NOT NULL,
+          sem_pncp TINYINT NOT NULL DEFAULT 0,
           retificacao TINYINT NOT NULL DEFAULT 0,
           status TEXT NOT NULL,
           pdf_path TEXT NULL,
@@ -304,6 +305,20 @@ class DatabaseService {
       await pool.execute('DROP TABLE IF EXISTS xsd_licitacao_logs');
       await pool.execute('DROP TABLE IF EXISTS xsd_comissao');
       await setSchemaVersion(10);
+    }
+
+    if (version < 11) {
+      final found = await pool.execute(
+        "SELECT COUNT(*) AS c FROM information_schema.columns "
+        "WHERE table_schema = (SELECT DATABASE()) "
+        "AND table_name = 'editais' AND column_name = 'sem_pncp'",
+      );
+      if (found.rows.first.typedAssoc()['c'] == 0) {
+        await pool.execute(
+          'ALTER TABLE editais ADD COLUMN sem_pncp TINYINT NOT NULL DEFAULT 0',
+        );
+      }
+      await setSchemaVersion(11);
     }
   }
 

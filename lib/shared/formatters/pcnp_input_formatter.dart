@@ -21,8 +21,11 @@ class PcnpInputFormatter extends TextInputFormatter {
   }
 
   /// Aplica a máscara PNCP a um valor de string já com apenas dígitos.
+  /// Se o valor não contiver exatamente 25 dígitos numéricos (ex.: código interno alfanumérico),
+  /// retorna o valor original sem modificação.
   static String applyMask(String value) {
     final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 25) return value;
     return _applyMask(digits);
   }
 
@@ -36,7 +39,11 @@ class PcnpInputFormatter extends TextInputFormatter {
     return buffer.toString();
   }
 
-  /// Remove a máscara, retornando apenas dígitos.
-  static String stripMask(String masked) =>
-      masked.replaceAll(RegExp(r'\D'), '');
+  /// Remove a máscara, retornando apenas dígitos para PNCPs válidos (25 dígitos).
+  /// Se não for um PNCP com máscara (ex: código alfanumérico sem PNCP), retorna o texto aparado.
+  static String stripMask(String masked) {
+    final digits = masked.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 25) return digits;
+    return masked.trim();
+  }
 }

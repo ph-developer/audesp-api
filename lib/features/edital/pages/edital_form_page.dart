@@ -35,6 +35,7 @@ import '../widgets/gemini_import_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
+import '../widgets/sem_pncp_dialog.dart';
 
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
@@ -61,6 +62,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Descritor ────────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
+  bool _semPncp = false;
   DateTime? _dataDoc;
   bool _retificacao = false;
 
@@ -139,9 +141,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     final publicidade = doc['publicidade'] as Map<String, dynamic>? ?? {};
 
-    _codigoEditalCtrl.text = PcnpInputFormatter.applyMask(
-      descritor['codigoEdital'] as String? ?? edital.codigoEdital,
-    );
+    _semPncp = edital.semPncp;
+    final codigoCarregado =
+        descritor['codigoEdital'] as String? ?? edital.codigoEdital;
+    _codigoEditalCtrl.text = _semPncp
+        ? codigoCarregado
+        : PcnpInputFormatter.applyMask(codigoCarregado);
     _dataDoc = DateTime.tryParse(descritor['dataDocumento'] as String? ?? '');
     _retificacao = descritor['retificacao'] as bool? ?? edital.retificacao;
 
@@ -202,7 +207,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'descritor': {
         'municipio': municipio,
         'entidade': entidade,
-        'codigoEdital': AudespPncpField.stripMask(_codigoEditalCtrl.text),
+        'codigoEdital': _semPncp
+            ? _codigoEditalCtrl.text.trim()
+            : AudespPncpField.stripMask(_codigoEditalCtrl.text),
         'dataDocumento': _dataDoc != null
             ? DateFormat('yyyy-MM-dd').format(_dataDoc!)
             : '',
@@ -256,7 +263,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   bool _validateDraft() {
     if (_codigoEditalCtrl.text.trim().isEmpty) {
-      _showError('Informe o ID de Contratação PNCP para salvar o rascunho.');
+      _showError(
+        _semPncp
+            ? 'Informe o Código do Edital para salvar o rascunho.'
+            : 'Informe o ID de Contratação PNCP para salvar o rascunho.',
+      );
       return false;
     }
     if (_dataDoc == null) {
@@ -276,11 +287,16 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
 
+      final codigoSalvar = _semPncp
+          ? _codigoEditalCtrl.text.trim()
+          : AudespPncpField.stripMask(_codigoEditalCtrl.text);
+
       if (_loadedId == null) {
         final id = await dao.insertEdital(
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: AudespPncpField.stripMask(_codigoEditalCtrl.text),
+          codigoEdital: codigoSalvar,
+          semPncp: _semPncp,
           retificacao: _retificacao,
           status: 'draft',
           pdfPath: _pdfPath,
@@ -293,7 +309,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           id: _loadedId!,
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: AudespPncpField.stripMask(_codigoEditalCtrl.text),
+          codigoEdital: codigoSalvar,
+          semPncp: _semPncp,
           retificacao: _retificacao,
           status: 'draft',
           pdfPath: _pdfPath,
@@ -321,6 +338,19 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (_itens.isEmpty) {
       _showError('Adicione pelo menos um item de compra.');
       return;
+    }
+
+    if (_semPncp) {
+      final temPncpPublicacao = _publicacoes.any(
+        (p) => p['veiculoPublicacao'] == 5,
+      );
+      if (temPncpPublicacao) {
+        _showError(
+          'O edital está configurado como "Sem PNCP", mas há um veículo de '
+          'publicação PNCP selecionado nas publicações. Remova-o antes de enviar.',
+        );
+        return;
+      }
     }
 
     // Garante que o rascunho mais recente está salvo
@@ -826,6 +856,32 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     );
   }
 
+  Future<void> _abrirSemPncpDialog() async {
+    final result = await showSemPncpDialog(
+      context,
+      initialModalidadeId: _modalidade,
+      initialNumero: _numeroCompraCtrl.text.trim(),
+      initialAno: _anoCompraCtrl.text.trim(),
+      currentCodigo: _semPncp ? _codigoEditalCtrl.text.trim() : null,
+    );
+
+    if (result != null) {
+      setState(() {
+        _semPncp = true;
+        _codigoEditalCtrl.text = result.codigoEdital;
+        if (result.modalidadeId != null) {
+          _modalidade = result.modalidadeId;
+        }
+        if (_numeroCompraCtrl.text.trim().isEmpty && result.numero.isNotEmpty) {
+          _numeroCompraCtrl.text = result.numero;
+        }
+        if (_anoCompraCtrl.text.trim().isEmpty && result.ano.isNotEmpty) {
+          _anoCompraCtrl.text = result.ano;
+        }
+      });
+    }
+  }
+
   // ── Seção: Descritor ──────────────────────────────────────────────────────
 
   Widget _buildDescritorSection(bool readOnly) {
@@ -843,18 +899,65 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
           ),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 2,
-              child: AudespPncpField(
-                label: 'ID de Contratação PNCP *',
-                controller: _codigoEditalCtrl,
-                enabled: !readOnly && !_retificacao,
-              ),
+              flex: 3,
+              child: _semPncp
+                  ? AudespTextField(
+                      label: 'Código do Edital (Sem PNCP) *',
+                      controller: _codigoEditalCtrl,
+                      readOnly: true,
+                      enabled: !readOnly && !_retificacao,
+                      maxLength: 25,
+                      hintText: 'Ex: PE-000001/2026',
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Obrigatório';
+                        if (v.trim().length > 25) return 'Máximo 25 caracteres';
+                        return null;
+                      },
+                    )
+                  : AudespPncpField(
+                      label: 'ID de Contratação PNCP *',
+                      controller: _codigoEditalCtrl,
+                      enabled: !readOnly && !_retificacao,
+                    ),
             ),
+            if (!readOnly && !_retificacao) ...[
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: _semPncp
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AudespIconButton(
+                            icon: Icons.auto_awesome,
+                            tooltip: 'Gerador de Código (Sem PNCP)',
+                            onPressed: _abrirSemPncpDialog,
+                          ),
+                          AudespIconButton(
+                            icon: Icons.link,
+                            tooltip: 'Usar PNCP',
+                            onPressed: () {
+                              setState(() {
+                                _semPncp = false;
+                                _codigoEditalCtrl.clear();
+                              });
+                            },
+                          ),
+                        ],
+                      )
+                    : AudespIconButton(
+                        icon: Icons.link_off,
+                        tooltip: 'Sem PNCP (Gerador de Código)',
+                        onPressed: _abrirSemPncpDialog,
+                      ),
+              ),
+            ],
             const SizedBox(width: 12),
             SizedBox(
-              width: 200,
+              width: 180,
               child: AudespDatePickerField(
                 label: 'Data do Edital *',
                 value: _dataDoc,
@@ -865,7 +968,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 200,
+              width: 160,
               child: AudespCheckbox(
                 label: 'Retificação',
                 value: _retificacao,

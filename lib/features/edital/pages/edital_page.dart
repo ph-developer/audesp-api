@@ -188,7 +188,10 @@ class _EditalList extends ConsumerWidget {
                   ),
                 ],
               ),
-              chips: [if (edital.retificacao) StatusChip.retificacao()],
+              chips: [
+                if (edital.semPncp) StatusChip.semPncp(),
+                if (edital.retificacao) StatusChip.retificacao(),
+              ],
               onDelete: isSent
                   ? null
                   : () => _confirmDelete(context, ref, edital),

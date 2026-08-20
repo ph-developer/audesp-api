@@ -22,6 +22,10 @@ class StatusChip extends StatelessWidget {
     return const StatusChip(label: 'Retificação');
   }
 
+  factory StatusChip.semPncp() {
+    return const StatusChip(label: 'Sem PNCP');
+  }
+
   factory StatusChip.httpCode(int? code) {
     Color color;
     if (code == null) {

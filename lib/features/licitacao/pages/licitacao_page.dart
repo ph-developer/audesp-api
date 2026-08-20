@@ -216,7 +216,10 @@ class _LicitacaoList extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  chips: [if (licitacao.retificacao) StatusChip.retificacao()],
+                  chips: [
+                    if (edital?.semPncp == true) StatusChip.semPncp(),
+                    if (licitacao.retificacao) StatusChip.retificacao(),
+                  ],
                   onDelete: isSent
                       ? null
                       : () => _confirmDelete(context, ref, licitacao),
