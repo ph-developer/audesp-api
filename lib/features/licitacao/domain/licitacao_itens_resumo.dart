@@ -1,5 +1,23 @@
 import 'licitacao_domain.dart';
 
+class LicitacaoFornecedorResumo {
+  final String niPessoa;
+  final String tipoPessoaId;
+  final String nomeRazaoSocial;
+  final int quantidadeItens;
+  final List<int> numerosItens;
+  final double valorTotal;
+
+  const LicitacaoFornecedorResumo({
+    required this.niPessoa,
+    required this.tipoPessoaId,
+    required this.nomeRazaoSocial,
+    required this.quantidadeItens,
+    required this.numerosItens,
+    required this.valorTotal,
+  });
+}
+
 class LicitacaoItensResumo {
   final int quantidadeItens;
   final int quantidadeLicitantesDistintos;
@@ -7,6 +25,7 @@ class LicitacaoItensResumo {
   final double valorMedioTodosItens;
   final double valorMedioItensComVencedor;
   final double valorVencedores;
+  final List<LicitacaoFornecedorResumo> fornecedoresVencedores;
 
   const LicitacaoItensResumo({
     required this.quantidadeItens,
@@ -15,6 +34,7 @@ class LicitacaoItensResumo {
     required this.valorMedioTodosItens,
     required this.valorMedioItensComVencedor,
     required this.valorVencedores,
+    this.fornecedoresVencedores = const [],
   });
 
   factory LicitacaoItensResumo.calcular(
@@ -26,6 +46,7 @@ class LicitacaoItensResumo {
     final porSituacao = <int?, int>{
       for (final situacaoId in kSituacaoCompraItem.keys) situacaoId: 0,
     };
+    final fornecedoresMap = <String, _FornecedorAcumulador>{};
     var valorMedioTotal = 0.0;
     var valorMedioComVencedor = 0.0;
     var valorVencedoresTotal = 0.0;
@@ -39,15 +60,42 @@ class LicitacaoItensResumo {
       final valorMedio = valorMedioDoItem(item) ?? 0.0;
       valorMedioTotal += valorMedio * quantidade;
 
+      final isLote = isItemLote(item);
       final licitantes = _licitantesDoItem(item);
       for (final licitante in licitantes) {
         final ni = (licitante['niPessoa'] as String? ?? '')
             .trim()
             .toUpperCase()
             .replaceAll(RegExp(r'[.\-/\s]'), '');
+        final tipo = licitante['tipoPessoaId'] as String? ?? '';
         if (ni.isNotEmpty) {
-          final tipo = licitante['tipoPessoaId'] as String? ?? '';
           licitantesDistintos.add('$tipo|$ni');
+        }
+
+        if (_isVencedor(licitante)) {
+          final key = ni.isNotEmpty
+              ? '$tipo|$ni'
+              : (licitante['nomeRazaoSocial'] as String? ?? 'Desconhecido');
+          final nome = (licitante['nomeRazaoSocial'] as String? ?? '').trim();
+          final val = _toDouble(licitante['valor']) ?? 0.0;
+          final totalItem = isLote ? val : (val * quantidade);
+
+          final acum = fornecedoresMap.putIfAbsent(
+            key,
+            () => _FornecedorAcumulador(
+              niPessoa: licitante['niPessoa'] as String? ?? ni,
+              tipoPessoaId: tipo,
+              nomeRazaoSocial: nome,
+            ),
+          );
+
+          if (acum.nomeRazaoSocial.isEmpty && nome.isNotEmpty) {
+            acum.nomeRazaoSocial = nome;
+          }
+          if (!acum.numerosItens.contains(numeroItem)) {
+            acum.numerosItens.add(numeroItem);
+          }
+          acum.valorTotal += totalItem;
         }
       }
 
@@ -57,6 +105,10 @@ class LicitacaoItensResumo {
       }
     }
 
+    final listaFornecedores =
+        fornecedoresMap.values.map((f) => f.toResumo()).toList()
+          ..sort((a, b) => b.valorTotal.compareTo(a.valorTotal));
+
     return LicitacaoItensResumo(
       quantidadeItens: lista.length,
       quantidadeLicitantesDistintos: licitantesDistintos.length,
@@ -64,8 +116,41 @@ class LicitacaoItensResumo {
       valorMedioTodosItens: valorMedioTotal,
       valorMedioItensComVencedor: valorMedioComVencedor,
       valorVencedores: valorVencedoresTotal,
+      fornecedoresVencedores: listaFornecedores,
     );
   }
+}
+
+class _FornecedorAcumulador {
+  final String niPessoa;
+  final String tipoPessoaId;
+  String nomeRazaoSocial;
+  final List<int> numerosItens = [];
+  double valorTotal = 0.0;
+
+  _FornecedorAcumulador({
+    required this.niPessoa,
+    required this.tipoPessoaId,
+    required this.nomeRazaoSocial,
+  });
+
+  LicitacaoFornecedorResumo toResumo() {
+    return LicitacaoFornecedorResumo(
+      niPessoa: niPessoa,
+      tipoPessoaId: tipoPessoaId,
+      nomeRazaoSocial: nomeRazaoSocial,
+      quantidadeItens: numerosItens.length,
+      numerosItens: List.unmodifiable(numerosItens..sort()),
+      valorTotal: valorTotal,
+    );
+  }
+}
+bool isItemLote(Map<String, dynamic> item) {
+  final tipoOrcamento = (item['tipoOrcamento'] as num?)?.toInt();
+  final tipoProposta = (item['tipoProposta'] as num?)?.toInt();
+  if (tipoOrcamento == 1 || tipoProposta == 1) return true;
+  if (item['tipoEstimativa'] == 'lote') return true;
+  return false;
 }
 
 double? valorMedioDoItem(Map<String, dynamic> item) => _toDouble(item['valor']);

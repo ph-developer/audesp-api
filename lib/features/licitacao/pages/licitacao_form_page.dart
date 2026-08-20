@@ -14,6 +14,7 @@ import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_chip_input.dart';
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
@@ -242,6 +243,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         .whereType<Map<String, dynamic>>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
+    _ordenarItens();
 
     if (_isSent) {
       _lastSendLog = await ref
@@ -257,9 +259,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     if (mounted) setState(() => _loading = false);
   }
 
+  void _ordenarItens() {
+    _itens.sort((a, b) {
+      final numA = (a['numeroItem'] as num?)?.toInt() ?? 0;
+      final numB = (b['numeroItem'] as num?)?.toInt() ?? 0;
+      return numA.compareTo(numB);
+    });
+  }
+
   // ── JSON builder ──────────────────────────────────────────────────────
 
   Map<String, dynamic> _buildJson() {
+    _ordenarItens();
     final municipio = int.tryParse(ref.read(codigoMunicipioProvider)) ?? 0;
     final entidade = int.tryParse(ref.read(codigoEntidadeProvider)) ?? 0;
 
@@ -747,6 +758,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     setState(() {
       _itens = novosItens;
+      _ordenarItens();
     });
 
     if (mounted) {
@@ -1027,6 +1039,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     if (novosItens != null && mounted) {
       setState(() {
         _itens = novosItens;
+        _ordenarItens();
       });
     }
   }
@@ -1599,7 +1612,33 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
+  Map<int, double> _getQuantidadesEdital() {
+    final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
+    if (edital == null) return const {};
+    try {
+      final documento =
+          jsonDecode(edital.documentoJson) as Map<String, dynamic>;
+      final itensEdital =
+          (documento['itensCompra'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>();
+      final quantidades = <int, double>{};
+      for (final item in itensEdital) {
+        final numero = (item['numeroItem'] as num?)?.toInt();
+        final quantidade = (item['quantidade'] as num?)?.toDouble();
+        if (numero != null &&
+            quantidade != null &&
+            !quantidades.containsKey(numero)) {
+          quantidades[numero] = quantidade;
+        }
+      }
+      return quantidades;
+    } catch (_) {
+      return const {};
+    }
+  }
+
   Widget _buildItensSection(bool readOnly) {
+    final quantidades = _getQuantidadesEdital();
     return SectionCard(
       title: 'Itens de Licitação',
       titleActions: [
@@ -1627,7 +1666,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           TextButton.icon(
             onPressed: () async {
               final result = await showItemLicitacaoDialog(context);
-              if (result != null) setState(() => _itens.add(result));
+              if (result != null) {
+                setState(() {
+                  _itens.add(result);
+                  _ordenarItens();
+                });
+              }
             },
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Adicionar Item'),
@@ -1646,7 +1690,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         else ...[
           ...List.generate(_itens.length, (i) {
             final item = _itens[i];
-            final numItem = item['numeroItem'];
+            final numItem = (item['numeroItem'] as num?)?.toInt();
             final situacao = item['situacaoCompraItemId'] != null
                 ? kSituacaoCompraItem[(item['situacaoCompraItemId'] as num)
                           .toInt()] ??
@@ -1657,13 +1701,39 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             final valorMedio = valorMedioDoItem(item);
             final valorVencedor = valorVencedorDoItem(item);
             final nomesVencedores = nomesVencedoresDoItem(item);
+            final isLote = isItemLote(item);
+            final isMonetario = item['tipoValor'] != 'P';
+            final quantidade = numItem != null ? quantidades[numItem] : null;
+
+            final String valorMedioTexto;
+            if (valorMedio == null) {
+              valorMedioTexto = '—';
+            } else if (!isLote && isMonetario && quantidade != null) {
+              final total = valorMedio * quantidade;
+              valorMedioTexto =
+                  '${formatBRL(valorMedio, casasDecimais: 2)} (Total: ${formatBRL(total, casasDecimais: 2)})';
+            } else {
+              valorMedioTexto = formatBRL(valorMedio, casasDecimais: 2);
+            }
+
+            final String valorHomologadoTexto;
+            if (valorVencedor == null) {
+              valorHomologadoTexto = '—';
+            } else if (!isLote && isMonetario && quantidade != null) {
+              final total = valorVencedor * quantidade;
+              valorHomologadoTexto =
+                  '${formatBRL(valorVencedor, casasDecimais: 2)} (Total: ${formatBRL(total, casasDecimais: 2)})';
+            } else {
+              valorHomologadoTexto = formatBRL(valorVencedor, casasDecimais: 2);
+            }
+
             final resumoItem = [
               if (situacao.isNotEmpty) situacao,
               '$numLicitantes licitante(s)',
             ].join(' | ');
             final detalhesItem = [
-              'Valor Médio dos Orçamentos: ${valorMedio == null ? '—' : formatBRL(valorMedio, casasDecimais: 2)}',
-              'Valor Homologado: ${valorVencedor == null ? '—' : formatBRL(valorVencedor, casasDecimais: 2)}',
+              'Valor Médio dos Orçamentos: $valorMedioTexto',
+              'Valor Homologado: $valorHomologadoTexto',
               if (nomesVencedores.isNotEmpty)
                 '${nomesVencedores.length == 1 ? 'Vencedor' : 'Vencedores'}: ${nomesVencedores.join(', ')}',
             ].join(' | ');
@@ -1674,8 +1744,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                leading: CircleAvatar(child: Text('$numItem')),
-                title: Text('Item $numItem'),
+                leading: CircleAvatar(child: Text('${numItem ?? (i + 1)}')),
+                title: Text('Item ${numItem ?? (i + 1)}'),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1698,7 +1768,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                                 initial: item,
                               );
                               if (result != null) {
-                                setState(() => _itens[i] = result);
+                                setState(() {
+                                  _itens[i] = result;
+                                  _ordenarItens();
+                                });
                               }
                             },
                           ),
@@ -1800,6 +1873,139 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
             ],
           ),
+          if (resumo.fornecedoresVencedores.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Divider(color: Colors.green.shade200, height: 1),
+            Theme(
+              data: theme.copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(top: 8),
+                collapsedIconColor: Colors.green.shade800,
+                iconColor: Colors.green.shade800,
+                leading: const Icon(
+                  Icons.people_outline,
+                  color: Colors.green,
+                  size: 20,
+                ),
+                title: Text(
+                  'Totalização por fornecedor (${resumo.fornecedoresVencedores.length} vencedor${resumo.fornecedoresVencedores.length > 1 ? 'es' : ''})',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                children: [
+                  ...resumo.fornecedoresVencedores.map((fornecedor) {
+                    final niFormatado = fornecedor.niPessoa.isNotEmpty
+                        ? AudespCpfCnpjField.formatDocument(fornecedor.niPessoa)
+                        : '';
+                    final nomeExibicao = fornecedor.nomeRazaoSocial.isNotEmpty
+                        ? fornecedor.nomeRazaoSocial
+                        : (niFormatado.isNotEmpty
+                            ? niFormatado
+                            : 'Sem identificação');
+                    final percentual = resumo.valorVencedores > 0
+                        ? (fornecedor.valorTotal / resumo.valorVencedores) * 100
+                        : 0.0;
+                    final itensStr = fornecedor.numerosItens.join(', ');
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Colors.green.shade100,
+                            foregroundColor: Colors.green.shade900,
+                            child: Text(
+                              fornecedor.tipoPessoaId.isNotEmpty
+                                  ? fornecedor.tipoPessoaId
+                                  : 'F',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  nomeExibicao,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (niFormatado.isNotEmpty &&
+                                    fornecedor.nomeRazaoSocial.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    niFormatado,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              '${fornecedor.quantidadeItens} item(ns): [$itensStr]',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatBRL(
+                                  fornecedor.valorTotal,
+                                  casasDecimais: 2,
+                                ),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (resumo.valorVencedores > 0)
+                                Text(
+                                  '${percentual.toStringAsFixed(1)}% do total',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
