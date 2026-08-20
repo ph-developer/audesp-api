@@ -119,6 +119,15 @@ String? _licitacaoDocLabel(
 
 enum _StatusFilter { todos, sucesso, erro }
 
+enum _SituacaoFilter {
+  todos,
+  pendente,
+  recebido,
+  armazenado,
+  rejeitado,
+  emValidacao,
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,6 +148,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   // ── Filtros ───────────────────────────────────────────────────────────
   String? _endpointFilter; // null → todos
   _StatusFilter _statusFilter = _StatusFilter.todos;
+  _SituacaoFilter _situacaoFilter = _SituacaoFilter.todos;
   final _textSearchCtrl = TextEditingController();
 
   final _timeFmt = DateFormat('dd/MM/yy HH:mm:ss');
@@ -182,6 +192,28 @@ class _LogsPageState extends ConsumerState<LogsPage> {
       }
       if (_statusFilter == _StatusFilter.erro && (code == null || code < 300)) {
         return false;
+      }
+      if (_situacaoFilter != _SituacaoFilter.todos) {
+        final status = (log.statusProtocolo ?? '').toLowerCase().trim();
+        switch (_situacaoFilter) {
+          case _SituacaoFilter.pendente:
+            if (!status.contains('pendente')) return false;
+            break;
+          case _SituacaoFilter.recebido:
+            if (!status.contains('recebido')) return false;
+            break;
+          case _SituacaoFilter.armazenado:
+            if (!status.contains('armazenado')) return false;
+            break;
+          case _SituacaoFilter.rejeitado:
+            if (!status.contains('rejeitado')) return false;
+            break;
+          case _SituacaoFilter.emValidacao:
+            if (!status.contains('valida')) return false;
+            break;
+          case _SituacaoFilter.todos:
+            break;
+        }
       }
       if (_textSearchCtrl.text.isNotEmpty &&
           !matchesLikeSearch(_searchableLogText(log), _textSearchCtrl.text)) {
@@ -449,6 +481,25 @@ class _LogsPageState extends ConsumerState<LogsPage> {
                       },
                       onChanged: (v) {
                         if (v != null) setState(() => _statusFilter = v);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 145,
+                    child: AudespDropdown<_SituacaoFilter>(
+                      label: 'Situação',
+                      value: _situacaoFilter,
+                      items: const {
+                        _SituacaoFilter.todos: 'Todos',
+                        _SituacaoFilter.pendente: 'Pendente',
+                        _SituacaoFilter.recebido: 'Recebido',
+                        _SituacaoFilter.armazenado: 'Armazenado',
+                        _SituacaoFilter.rejeitado: 'Rejeitado',
+                        _SituacaoFilter.emValidacao: 'Em Validação',
+                      },
+                      onChanged: (v) {
+                        if (v != null) setState(() => _situacaoFilter = v);
                       },
                     ),
                   ),
