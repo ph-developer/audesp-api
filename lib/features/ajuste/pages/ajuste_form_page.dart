@@ -442,8 +442,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Informe o Código do Edital para salvar o rascunho.');
       return false;
     }
-    if (_codigoContratoCtrl.text.trim().isEmpty) {
-      _showError('Informe o ID do Contrato PNCP para salvar o rascunho.');
+    final contratoError =
+        AjusteRules.validarCodigoContrato(_codigoContratoCtrl.text);
+    if (contratoError != null) {
+      _showError(contratoError);
       return false;
     }
     return true;
@@ -1196,6 +1198,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'ID do Contrato PNCP *',
                           controller: _codigoContratoCtrl,
                           readOnly: readOnly,
+                          validator: AjusteRules.validarCodigoContrato,
                         ),
                       ),
                       const SizedBox(width: 12),

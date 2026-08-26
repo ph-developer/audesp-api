@@ -37,4 +37,35 @@ abstract final class AjusteRules {
         !receita && _orgaosClassificacaoDespesa.contains(codigoTipoOrgao);
     return empenhoMunicipal || processoDeDespesa;
   }
+
+  /// Valida o formato do `codigoContrato` do PNCP (25 dígitos numéricos).
+  ///
+  /// Estrutura conforme PNCP / Fase IV AUDESP:
+  /// - 14 dígitos: CNPJ do Órgão/Entidade do contrato (posições 1-14)
+  /// - 1 dígito: Dígito "2" marcador de contrato (15ª posição)
+  /// - 6 dígitos: Número sequencial da contratação/contrato no PNCP (posições 16-21)
+  /// - 4 dígitos: Ano do contrato (posições 22-25)
+  ///
+  /// Retorna `null` se válido ou a mensagem de erro correspondente.
+  static String? validarCodigoContrato(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Informe o ID do Contrato PNCP';
+    }
+    final raw = value.replaceAll(RegExp(r'\D'), '');
+    if (raw.length < 25) {
+      return 'ID do Contrato PNCP incompleto (25 dígitos)';
+    }
+    if (raw.length > 25) {
+      return 'ID do Contrato PNCP deve ter no máximo 25 dígitos';
+    }
+    if (raw[14] != '2') {
+      return 'O 15º dígito do ID do Contrato PNCP deve ser 2 (marcador de contrato)';
+    }
+    return null;
+  }
+
+  /// Indica se o `codigoContrato` é válido conforme a regra PNCP (25 dígitos e 15º dígito '2').
+  static bool isCodigoContratoValido(String? value) =>
+      validarCodigoContrato(value) == null;
 }
+

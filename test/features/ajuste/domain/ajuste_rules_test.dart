@@ -99,4 +99,68 @@ void main() {
       );
     });
   });
+
+  group('AjusteRules.validarCodigoContrato e isCodigoContratoValido', () {
+    test('aceita contrato PNCP válido de 25 dígitos com dígito 2 na 15ª posição (sem máscara)', () {
+      // 14 dígitos de CNPJ (12345678000195) + '2' + 6 dígitos sequencial (000001) + 4 dígitos ano (2026) = 25 dígitos
+      const validRaw = '1234567800019520000012026';
+      expect(AjusteRules.validarCodigoContrato(validRaw), isNull);
+      expect(AjusteRules.isCodigoContratoValido(validRaw), isTrue);
+    });
+
+    test('aceita contrato PNCP válido formatado com máscara', () {
+      const validMasked = '12345678000195-2-000001/2026';
+      expect(AjusteRules.validarCodigoContrato(validMasked), isNull);
+      expect(AjusteRules.isCodigoContratoValido(validMasked), isTrue);
+    });
+
+    test('rejeita contrato cujo 15º dígito não é 2 (ex.: marcador 1 de compra/edital)', () {
+      // 15º dígito é '1' (Edital/Licitação ao invés de Contrato)
+      const editalRaw = '1234567800019510000012026';
+      final errorRaw = AjusteRules.validarCodigoContrato(editalRaw);
+      expect(errorRaw, 'O 15º dígito do ID do Contrato PNCP deve ser 2 (marcador de contrato)');
+      expect(AjusteRules.isCodigoContratoValido(editalRaw), isFalse);
+
+      const editalMasked = '12345678000195-1-000001/2026';
+      final errorMasked = AjusteRules.validarCodigoContrato(editalMasked);
+      expect(errorMasked, 'O 15º dígito do ID do Contrato PNCP deve ser 2 (marcador de contrato)');
+      expect(AjusteRules.isCodigoContratoValido(editalMasked), isFalse);
+    });
+
+    test('rejeita contrato com outros dígitos na 15ª posição', () {
+      const outroRaw = '1234567800019530000012026';
+      expect(
+        AjusteRules.validarCodigoContrato(outroRaw),
+        'O 15º dígito do ID do Contrato PNCP deve ser 2 (marcador de contrato)',
+      );
+      expect(AjusteRules.isCodigoContratoValido(outroRaw), isFalse);
+    });
+
+    test('rejeita nulo ou vazio', () {
+      expect(AjusteRules.validarCodigoContrato(null), 'Informe o ID do Contrato PNCP');
+      expect(AjusteRules.validarCodigoContrato(''), 'Informe o ID do Contrato PNCP');
+      expect(AjusteRules.validarCodigoContrato('   '), 'Informe o ID do Contrato PNCP');
+      expect(AjusteRules.isCodigoContratoValido(null), isFalse);
+      expect(AjusteRules.isCodigoContratoValido(''), isFalse);
+    });
+
+    test('rejeita contrato com menos de 25 dígitos', () {
+      const incompleto = '12345678000195200000120';
+      expect(
+        AjusteRules.validarCodigoContrato(incompleto),
+        'ID do Contrato PNCP incompleto (25 dígitos)',
+      );
+      expect(AjusteRules.isCodigoContratoValido(incompleto), isFalse);
+    });
+
+    test('rejeita contrato com mais de 25 dígitos', () {
+      const longo = '123456780001952000001202699';
+      expect(
+        AjusteRules.validarCodigoContrato(longo),
+        'ID do Contrato PNCP deve ter no máximo 25 dígitos',
+      );
+      expect(AjusteRules.isCodigoContratoValido(longo), isFalse);
+    });
+  });
 }
+
