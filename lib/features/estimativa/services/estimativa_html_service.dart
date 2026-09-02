@@ -115,6 +115,11 @@ class EstimativaHtmlService {
                 desclassificadosIds: desclassificados,
               )
             : null;
+        final fVencedor = fVencedorId != null
+            ? estimativa.fornecedores
+                .where((f) => f.id == fVencedorId)
+                .firstOrNull
+            : null;
 
         sb.write(
           _buildItensHtml(
@@ -128,6 +133,14 @@ class EstimativaHtmlService {
             casasDecimais: estimativa.casasDecimais,
           ),
         );
+        if (estimativa.calculoGlobal == 'min_global' && fVencedor != null) {
+          final cnpjFormatado = fVencedor.cnpj.isNotEmpty
+              ? ' (${AudespCpfCnpjField.formatDocument(fVencedor.cnpj)})'
+              : '';
+          sb.writeln(
+            '<p style="text-align:right; margin-bottom:2px; font-size:12pt;"><strong>Vencedor do Lote:</strong> ${fVencedor.razaoSocial}$cnpjFormatado</p>',
+          );
+        }
         sb.writeln(
           '<p style="text-align:right; font-weight:bold;">Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais, desclassificadosIds: desclassificados))}</p>',
         );

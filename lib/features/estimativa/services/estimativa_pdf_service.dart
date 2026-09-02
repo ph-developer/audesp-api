@@ -290,6 +290,37 @@ class EstimativaPdfService {
                 casasDecimais: estimativa.casasDecimais,
               ),
               pw.SizedBox(height: 10),
+              if (estimativa.calculoGlobal == 'min_global') ...[
+                () {
+                  final fId = lote.getFornecedorMenorPrecoGlobalId(
+                    desclassificadosIds:
+                        estimativa.fornecedoresDesclassificadosIds,
+                  );
+                  final fVencedor = fId != null
+                      ? estimativa.fornecedores
+                          .where((f) => f.id == fId)
+                          .firstOrNull
+                      : null;
+                  if (fVencedor == null) return pw.SizedBox.shrink();
+
+                  final cnpjFormatado = fVencedor.cnpj.isNotEmpty
+                      ? ' (${AudespCpfCnpjField.formatDocument(fVencedor.cnpj)})'
+                      : '';
+                  return pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 4),
+                    child: pw.Align(
+                      alignment: pw.Alignment.centerRight,
+                      child: pw.Text(
+                        'Vencedor do Lote: ${fVencedor.razaoSocial}$cnpjFormatado'.toPdfSafe(),
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }(),
+              ],
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
