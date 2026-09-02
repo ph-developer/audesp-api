@@ -131,11 +131,6 @@ class EstimativaHtmlService {
                 desclassificadosIds: desclassificados,
               )
             : null;
-        final fVencedor = fVencedorId != null
-            ? estimativa.fornecedores
-                .where((f) => f.id == fVencedorId)
-                .firstOrNull
-            : null;
 
         sb.write(
           _buildItensHtml(
@@ -149,14 +144,6 @@ class EstimativaHtmlService {
             casasDecimais: estimativa.casasDecimais,
           ),
         );
-        if (estimativa.calculoGlobal == 'min_global' && fVencedor != null) {
-          final cnpjFormatado = fVencedor.cnpj.isNotEmpty
-              ? ' (${AudespCpfCnpjField.formatDocument(fVencedor.cnpj)})'
-              : '';
-          sb.writeln(
-            '<p style="text-align:right; margin-bottom:2px; font-size:12pt;"><strong>Vencedor do Lote:</strong> ${fVencedor.razaoSocial}$cnpjFormatado</p>',
-          );
-        }
         sb.writeln(
           '<p style="text-align:right; font-weight:bold;">Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais, desclassificadosIds: desclassificados))}</p>',
         );
@@ -235,6 +222,40 @@ class EstimativaHtmlService {
         '<p style="font-size:12pt; color:#555;">Quantidade: ${item.quantidade} ${item.unidade} | ${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | Regra Ref.: ${_getCalculoLabel(globalCalculo, isLote: isInsideLote)}</p>',
       );
 
+      String? vencedorFornecedorId;
+      double? minVal;
+      double? maxVal;
+
+      if (isInsideLote && globalCalculo == 'min_global') {
+        vencedorFornecedorId = fornecedorVencedorId;
+      } else if (globalCalculo == 'min') {
+        final validOrcamentos = item.orcamentos
+            .where(
+              (e) =>
+                  !desclassificadosIds.contains(e.fornecedorId) &&
+                  e.valorUnitario > 0,
+            )
+            .toList();
+        if (validOrcamentos.isNotEmpty) {
+          minVal = validOrcamentos
+              .map((e) => e.valorUnitario)
+              .reduce((a, b) => a < b ? a : b);
+        }
+      } else if (globalCalculo == 'desc') {
+        final validOrcamentos = item.orcamentos
+            .where(
+              (e) =>
+                  !desclassificadosIds.contains(e.fornecedorId) &&
+                  e.valorUnitario > 0,
+            )
+            .toList();
+        if (validOrcamentos.isNotEmpty) {
+          maxVal = validOrcamentos
+              .map((e) => e.valorUnitario)
+              .reduce((a, b) => a > b ? a : b);
+        }
+      }
+
       sb.writeln(
         '<table border="1" bordercolor="#ccc" cellpadding="4" cellspacing="0" style="width:100%; border-collapse:collapse; font-size:12pt; border: 1px solid #ccc;">',
       );
@@ -245,11 +266,29 @@ class EstimativaHtmlService {
         ..sort((a, b) => a.valorUnitario.compareTo(b.valorUnitario));
       for (final o in orcamentosOrdenados) {
         final f = fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
+        final isDesclassificado =
+            f?.desclassificado == true ||
+            desclassificadosIds.contains(o.fornecedorId);
+
+        final bool isVencedor;
+        if (isDesclassificado) {
+          isVencedor = false;
+        } else if (vencedorFornecedorId != null) {
+          isVencedor = o.fornecedorId == vencedorFornecedorId;
+        } else if (minVal != null) {
+          isVencedor = o.valorUnitario == minVal;
+        } else if (maxVal != null) {
+          isVencedor = o.valorUnitario == maxVal;
+        } else {
+          isVencedor = false;
+        }
+
         final razaoSocial = f?.razaoSocial ?? '-';
-        final nomeComSufixo = f?.desclassificado == true
+        final nomeComSufixo = isDesclassificado
             ? '$razaoSocial <span style="color: darkred;">(DESCLASSIFICADO)</span>'
             : razaoSocial;
-        sb.writeln('<tr>');
+        final trStyle = isVencedor ? ' style="background-color: #e8f5e9;"' : '';
+        sb.writeln('<tr$trStyle>');
         sb.writeln('<td style="border: 1px solid #ccc;">$nomeComSufixo</td>');
         sb.writeln(
           '<td align="center" style="white-space: nowrap; border: 1px solid #ccc;">${AudespCpfCnpjField.formatDocument(f?.cnpj ?? '')}</td>',

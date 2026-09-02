@@ -339,37 +339,6 @@ class EstimativaPdfService {
                 casasDecimais: estimativa.casasDecimais,
               ),
               pw.SizedBox(height: 10),
-              if (estimativa.calculoGlobal == 'min_global') ...[
-                () {
-                  final fId = lote.getFornecedorMenorPrecoGlobalId(
-                    desclassificadosIds:
-                        estimativa.fornecedoresDesclassificadosIds,
-                  );
-                  final fVencedor = fId != null
-                      ? estimativa.fornecedores
-                          .where((f) => f.id == fId)
-                          .firstOrNull
-                      : null;
-                  if (fVencedor == null) return pw.SizedBox.shrink();
-
-                  final cnpjFormatado = fVencedor.cnpj.isNotEmpty
-                      ? ' (${AudespCpfCnpjField.formatDocument(fVencedor.cnpj)})'
-                      : '';
-                  return pw.Padding(
-                    padding: const pw.EdgeInsets.only(bottom: 4),
-                    child: pw.Align(
-                      alignment: pw.Alignment.centerRight,
-                      child: pw.Text(
-                        'Vencedor do Lote: ${fVencedor.razaoSocial}$cnpjFormatado'.toPdfSafe(),
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                }(),
-              ],
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
@@ -460,69 +429,201 @@ class EstimativaPdfService {
               pw.SizedBox(height: 8),
 
               // Tabela de Orçamentos
-              pw.TableHelper.fromTextArray(
-                cellStyle: const pw.TextStyle(fontSize: 9),
-                headerStyle: pw.TextStyle(
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.white,
-                ),
-                headerDecoration: const pw.BoxDecoration(
-                  color: PdfColors.blueGrey800,
-                ),
-                headers: ['Razão Social', 'CPF/CNPJ', 'Data', 'Valor Unitário'],
-                columnWidths: {
-                  0: pw.FixedColumnWidth(150.0),
-                  1: pw.FixedColumnWidth(60.0),
-                  2: pw.FixedColumnWidth(40.0),
-                  3: pw.FixedColumnWidth(50.0),
-                },
-                cellAlignments: {
-                  2: pw.Alignment.center,
-                  3: pw.Alignment.centerRight,
-                },
-                data: (List<EstimativaOrcamento>.from(item.orcamentos)
+              () {
+                String? vencedorFornecedorId;
+                double? minVal;
+                double? maxVal;
+
+                if (isInsideLote && globalCalculo == 'min_global') {
+                  vencedorFornecedorId = fornecedorVencedorId;
+                } else if (globalCalculo == 'min') {
+                  final validOrcamentos = item.orcamentos
+                      .where(
+                        (e) =>
+                            !desclassificadosIds.contains(e.fornecedorId) &&
+                            e.valorUnitario > 0,
+                      )
+                      .toList();
+                  if (validOrcamentos.isNotEmpty) {
+                    minVal = validOrcamentos
+                        .map((e) => e.valorUnitario)
+                        .reduce((a, b) => a < b ? a : b);
+                  }
+                } else if (globalCalculo == 'desc') {
+                  final validOrcamentos = item.orcamentos
+                      .where(
+                        (e) =>
+                            !desclassificadosIds.contains(e.fornecedorId) &&
+                            e.valorUnitario > 0,
+                      )
+                      .toList();
+                  if (validOrcamentos.isNotEmpty) {
+                    maxVal = validOrcamentos
+                        .map((e) => e.valorUnitario)
+                        .reduce((a, b) => a > b ? a : b);
+                  }
+                }
+
+                final orcamentosOrdenados =
+                    List<EstimativaOrcamento>.from(item.orcamentos)
                       ..sort(
                         (a, b) => a.valorUnitario.compareTo(b.valorUnitario),
-                      ))
-                    .map((o) {
-                  final fornecedor = fornecedores
-                      .where((f) => f.id == o.fornecedorId)
-                      .firstOrNull;
+                      );
 
-                  final razaoSocial = (fornecedor?.razaoSocial ?? '-').toPdfSafe();
-                  pw.Widget razaoSocialWidget;
-                  if (fornecedor?.desclassificado == true) {
-                    razaoSocialWidget = pw.RichText(
-                      text: pw.TextSpan(
-                        text: razaoSocial,
-                        style: const pw.TextStyle(fontSize: 9),
-                        children: [
-                          pw.TextSpan(
-                            text: ' (DESCLASSIFICADO)',
+                return pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  columnWidths: const {
+                    0: pw.FlexColumnWidth(3),
+                    1: pw.FixedColumnWidth(95.0),
+                    2: pw.FixedColumnWidth(60.0),
+                    3: pw.FixedColumnWidth(75.0),
+                  },
+                  children: [
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.blueGrey800,
+                      ),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(
+                            'Razão Social',
                             style: pw.TextStyle(
                               fontSize: 9,
-                              color: PdfColors.red800,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(
+                            'CPF/CNPJ',
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(
+                            'Data',
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(
+                            'Valor Unitário',
+                            textAlign: pw.TextAlign.right,
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    ...orcamentosOrdenados.map((o) {
+                      final fornecedor = fornecedores
+                          .where((f) => f.id == o.fornecedorId)
+                          .firstOrNull;
+
+                      final isDesclassificado =
+                          fornecedor?.desclassificado == true ||
+                          desclassificadosIds.contains(o.fornecedorId);
+
+                      final bool isVencedor;
+                      if (isDesclassificado) {
+                        isVencedor = false;
+                      } else if (vencedorFornecedorId != null) {
+                        isVencedor = o.fornecedorId == vencedorFornecedorId;
+                      } else if (minVal != null) {
+                        isVencedor = o.valorUnitario == minVal;
+                      } else if (maxVal != null) {
+                        isVencedor = o.valorUnitario == maxVal;
+                      } else {
+                        isVencedor = false;
+                      }
+
+                      final razaoSocial =
+                          (fornecedor?.razaoSocial ?? '-').toPdfSafe();
+                      pw.Widget razaoSocialWidget;
+                      if (isDesclassificado) {
+                        razaoSocialWidget = pw.RichText(
+                          text: pw.TextSpan(
+                            text: razaoSocial,
+                            style: const pw.TextStyle(fontSize: 9),
+                            children: [
+                              pw.TextSpan(
+                                text: ' (DESCLASSIFICADO)',
+                                style: pw.TextStyle(
+                                  fontSize: 9,
+                                  color: PdfColors.red800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        razaoSocialWidget = pw.Text(
+                          razaoSocial,
+                          style: const pw.TextStyle(fontSize: 9),
+                        );
+                      }
+
+                      return pw.TableRow(
+                        decoration: isVencedor
+                            ? const pw.BoxDecoration(
+                                color: PdfColor.fromInt(0xFFE8F5E9),
+                              )
+                            : null,
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: razaoSocialWidget,
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(
+                              AudespCpfCnpjField.formatDocument(
+                                fornecedor?.cnpj ?? '',
+                              ),
+                              textAlign: pw.TextAlign.center,
+                              style: const pw.TextStyle(fontSize: 9),
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(
+                              (fornecedor?.data ?? '-').toPdfSafe(),
+                              textAlign: pw.TextAlign.center,
+                              style: const pw.TextStyle(fontSize: 9),
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(
+                              fmt.format(o.valorUnitario),
+                              textAlign: pw.TextAlign.right,
+                              style: const pw.TextStyle(fontSize: 9),
                             ),
                           ),
                         ],
-                      ),
-                    );
-                  } else {
-                    razaoSocialWidget = pw.Text(
-                      razaoSocial,
-                      style: const pw.TextStyle(fontSize: 9),
-                    );
-                  }
-
-                  return [
-                    razaoSocialWidget,
-                    AudespCpfCnpjField.formatDocument(fornecedor?.cnpj ?? ''),
-                    (fornecedor?.data ?? '-').toPdfSafe(),
-                    fmt.format(o.valorUnitario),
-                  ];
-                }).toList(),
-              ),
+                      );
+                    }),
+                  ],
+                );
+              }(),
 
               pw.SizedBox(height: 8),
 
