@@ -4,6 +4,7 @@ import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_fornecedor_model.dart';
+import '../models/estimativa_orcamento_model.dart';
 import '../models/assinatura_model.dart';
 
 class EstimativaHtmlService {
@@ -203,7 +204,9 @@ class EstimativaHtmlService {
       sb.writeln(
         '<tr><th style="border: 1px solid #ccc;">Razão Social</th><th style="border: 1px solid #ccc; width: 1%; white-space: nowrap;">CPF/CNPJ</th><th style="border: 1px solid #ccc; width: 1%; white-space: nowrap;">Data</th><th style="border: 1px solid #ccc; width: 1%; white-space: nowrap;">Valor Unitário</th></tr>',
       );
-      for (final o in item.orcamentos) {
+      final orcamentosOrdenados = List<EstimativaOrcamento>.from(item.orcamentos)
+        ..sort((a, b) => a.valorUnitario.compareTo(b.valorUnitario));
+      for (final o in orcamentosOrdenados) {
         final f = fornecedores.where((f) => f.id == o.fornecedorId).firstOrNull;
         final razaoSocial = f?.razaoSocial ?? '-';
         final nomeComSufixo = f?.desclassificado == true

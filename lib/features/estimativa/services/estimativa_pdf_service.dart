@@ -11,6 +11,7 @@ import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../models/estimativa_model.dart';
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_fornecedor_model.dart';
+import '../models/estimativa_orcamento_model.dart';
 
 class EstimativaPdfService {
   static Future<void> gerarPdfEstimativa(
@@ -393,7 +394,11 @@ class EstimativaPdfService {
                   2: pw.Alignment.center,
                   3: pw.Alignment.centerRight,
                 },
-                data: item.orcamentos.map((o) {
+                data: (List<EstimativaOrcamento>.from(item.orcamentos)
+                      ..sort(
+                        (a, b) => a.valorUnitario.compareTo(b.valorUnitario),
+                      ))
+                    .map((o) {
                   final fornecedor = fornecedores
                       .where((f) => f.id == o.fornecedorId)
                       .firstOrNull;
