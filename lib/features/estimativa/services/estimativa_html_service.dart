@@ -29,11 +29,12 @@ class EstimativaHtmlService {
     );
 
     // Info Rows
-    void addInfo(String label, String value) {
-      sb.writeln('<p><strong>$label</strong> $value</p>');
+    void addInfo(String label, String value, {bool justify = false}) {
+      final style = justify ? ' style="text-align: justify;"' : '';
+      sb.writeln('<p$style><strong>$label</strong> $value</p>');
     }
 
-    addInfo('Objeto:', estimativa.objeto);
+    addInfo('Objeto:', estimativa.objeto, justify: true);
     addInfo(
       'Tipo de Estimativa:',
       estimativa.tipoEstimativa == 'lote' ? 'Por Lote' : 'Por Item',
@@ -57,15 +58,20 @@ class EstimativaHtmlService {
             : estimativa.temGarantia
             ? '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração, sendo que seus efeitos prorrogar-se-ão até o término do prazo de garantia.'
             : '${estimativa.prazoVigencia}, a partir de sua assinatura, podendo ser prorrogado pelo prazo legal a critério da Administração.',
+        justify: true,
       );
     }
 
     if (estimativa.formaPagamento.isNotEmpty) {
-      addInfo('Forma de Pagamento:', estimativa.formaPagamento);
+      addInfo('Forma de Pagamento:', estimativa.formaPagamento, justify: true);
     }
 
     if (estimativa.exclusividadeMeEpp != 'nao_aplica') {
-      addInfo('Exclusividade ME/EPP:', _getExclusividadeLabel(estimativa));
+      addInfo(
+        'Exclusividade ME/EPP:',
+        _getExclusividadeLabel(estimativa),
+        justify: true,
+      );
     }
 
     if (estimativa.fontesRecurso.isEmpty) {
@@ -88,6 +94,7 @@ class EstimativaHtmlService {
               return text;
             })
             .join('; '),
+        justify: true,
       );
     }
 
