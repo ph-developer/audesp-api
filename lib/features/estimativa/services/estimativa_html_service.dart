@@ -91,6 +91,15 @@ class EstimativaHtmlService {
       );
     }
 
+    final obsBancoPrecos = _getObservacaoBancoPrecos(estimativa);
+    if (obsBancoPrecos != null) {
+      sb.writeln(
+        '<p style="text-align: justify; margin-top:8px;">'
+        '<strong>OBSERVAÇÃO:</strong> $obsBancoPrecos'
+        '</p>',
+      );
+    }
+
     sb.writeln('<hr/>');
 
     if (estimativa.tipoEstimativa == 'lote') {
@@ -298,5 +307,30 @@ class EstimativaHtmlService {
       return base;
     }
     return 'Não exclusiva para ME/EPP';
+  }
+
+  static String? _getObservacaoBancoPrecos(EstimativaModel estimativa) {
+    final bancosDePrecos = estimativa.fornecedores
+        .where((f) => f.bancoDePrecos && f.razaoSocial.trim().isNotEmpty)
+        .toList();
+
+    if (bancosDePrecos.isEmpty) return null;
+
+    final nomes = bancosDePrecos.map((f) => f.razaoSocial.trim()).toList();
+    final String nomesStr;
+    if (nomes.length == 1) {
+      nomesStr = nomes.first;
+    } else if (nomes.length == 2) {
+      nomesStr = '${nomes[0]} e ${nomes[1]}';
+    } else {
+      nomesStr =
+          '${nomes.sublist(0, nomes.length - 1).join(', ')} e ${nomes.last}';
+    }
+
+    if (nomes.length == 1) {
+      return 'A razão social $nomesStr, corresponde a plataforma de Banco de Preços, utilizada como ferramenta de pesquisa de preços praticados em contratações públicas. O valor indicado não representa cotação comercial apresentada pela referida empresa, mas valor resultante da pesquisa realizada na plataforma, apurado a partir de múltiplos registros de contratações públicas de órgãos e entidades da Administração Pública.';
+    } else {
+      return 'As razões sociais $nomesStr, correspondem a plataformas de Banco de Preços, utilizadas como ferramentas de pesquisa de preços praticados em contratações públicas. Os valores indicados não representam cotações comerciais apresentadas pelas referidas empresas, mas valores resultantes da pesquisa realizada nas plataformas, apurados a partir de múltiplos registros de contratações públicas de órgãos e entidades da Administração Pública.';
+    }
   }
 }

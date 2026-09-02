@@ -148,6 +148,55 @@ void main() {
       expect(html.contains('Vencedor do Lote:</strong> Empresa B (22.222.222/0001-22)'), isTrue);
       expect(html.contains('Subtotal do Lote: R\$&nbsp;190,00') || html.contains('190,00'), isTrue);
     });
+
+    test('EstimativaHtmlService exibe observacao de Banco de Precos (singular)', () {
+      final fBP = EstimativaFornecedor(
+        id: 'fBP',
+        razaoSocial: 'Banco de Precos SA',
+        cnpj: '33333333000133',
+        data: '01/01/2026',
+        bancoDePrecos: true,
+      );
+      final est = EstimativaModel(
+        id: 1,
+        numero: 1,
+        ano: 2026,
+        objeto: 'Teste',
+        fornecedores: [fA, fBP],
+        itens: [item1],
+      );
+
+      final html = EstimativaHtmlService.gerarHtmlEstimativa(est);
+      expect(html.contains('OBSERVAÇÃO:</strong> A razão social Banco de Precos SA, corresponde a plataforma de Banco de Preços'), isTrue);
+    });
+
+    test('EstimativaHtmlService exibe observacao de Banco de Precos (plural)', () {
+      final fBP1 = EstimativaFornecedor(
+        id: 'fBP1',
+        razaoSocial: 'Plataforma Alfa',
+        cnpj: '33333333000133',
+        data: '01/01/2026',
+        bancoDePrecos: true,
+      );
+      final fBP2 = EstimativaFornecedor(
+        id: 'fBP2',
+        razaoSocial: 'Plataforma Beta',
+        cnpj: '44444444000144',
+        data: '01/01/2026',
+        bancoDePrecos: true,
+      );
+      final est = EstimativaModel(
+        id: 1,
+        numero: 1,
+        ano: 2026,
+        objeto: 'Teste',
+        fornecedores: [fBP1, fBP2],
+        itens: [item1],
+      );
+
+      final html = EstimativaHtmlService.gerarHtmlEstimativa(est);
+      expect(html.contains('OBSERVAÇÃO:</strong> As razões sociais Plataforma Alfa e Plataforma Beta, correspondem a plataformas de Banco de Preços'), isTrue);
+    });
   });
 }
 
