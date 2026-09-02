@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../core/services/gemini_service.dart';
+import '../constants/fornecedores_predefinidos.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Função pública de entrada — Orçamento Único
@@ -333,6 +334,7 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
   final _razaoSocialCtrl = TextEditingController();
   final _cnpjCtrl = TextEditingController();
   DateTime? _data;
+  bool _bancoDePrecos = false;
 
   late final Map<String, bool> _acceptedItems;
 
@@ -340,14 +342,16 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
   void initState() {
     super.initState();
     _razaoSocialCtrl.text = widget.suggestedValues.razaoSocial ?? '';
-    _cnpjCtrl.text =
-        widget.suggestedValues.cnpj?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+    _cnpjCtrl.text = widget.suggestedValues.cnpj != null
+        ? AudespCpfCnpjField.formatDocument(widget.suggestedValues.cnpj!)
+        : '';
     if (widget.suggestedValues.data != null &&
         widget.suggestedValues.data!.isNotEmpty) {
       try {
         _data = DateFormat('dd/MM/yyyy').parse(widget.suggestedValues.data!);
       } catch (_) {}
     }
+    _bancoDePrecos = widget.suggestedValues.bancoDePrecos;
 
     _acceptedItems = {
       for (final item in widget.itensEstimativa)
@@ -355,6 +359,14 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
             widget.suggestedValues.itens.containsKey(item['id']))
           item['id'] as String: true,
     };
+  }
+
+  void setFornecedorPredefinido(FornecedorPredefinido f) {
+    setState(() {
+      _razaoSocialCtrl.text = f.razaoSocial;
+      _cnpjCtrl.text = f.cnpj;
+      _bancoDePrecos = f.bancoDePrecos;
+    });
   }
 
   @override
@@ -396,6 +408,7 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
       cnpj: _cnpjCtrl.text.trim(),
       data: _data != null ? DateFormat('dd/MM/yyyy').format(_data!) : null,
       itens: acceptedMap,
+      bancoDePrecos: _bancoDePrecos,
     );
   }
 
@@ -428,11 +441,9 @@ class _CompanyReviewCardState extends State<_CompanyReviewCard> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: AudespTextField(
+                child: AudespCpfCnpjField(
                   label: 'CNPJ',
                   controller: _cnpjCtrl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                 ),
@@ -606,6 +617,16 @@ class _GeminiOrcamentoReviewDialogState
           const Icon(Icons.auto_fix_high),
           const SizedBox(width: 12),
           const Expanded(child: Text('Revisão da Importação de Orçamento')),
+          PopupMenuButton<FornecedorPredefinido>(
+            icon: const Icon(Icons.list),
+            tooltip: 'Fornecedores Predefinidos',
+            onSelected: (f) {
+              _cardKey.currentState?.setFornecedorPredefinido(f);
+            },
+            itemBuilder: (ctx) => fornecedoresPredefinidos
+                .map((f) => PopupMenuItem(value: f, child: Text(f.razaoSocial)))
+                .toList(),
+          ),
         ],
       ),
       content: SizedBox(

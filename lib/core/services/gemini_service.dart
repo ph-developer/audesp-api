@@ -580,12 +580,14 @@ class GeminiOrcamentoResult {
   final String? cnpj;
   final String? data;
   final Map<String, double> itens;
+  final bool bancoDePrecos;
 
   const GeminiOrcamentoResult({
     this.razaoSocial,
     this.cnpj,
     this.data,
     required this.itens,
+    this.bancoDePrecos = false,
   });
 }
 

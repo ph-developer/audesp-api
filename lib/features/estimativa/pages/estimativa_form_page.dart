@@ -1890,6 +1890,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       razaoSocial: orcamentoResult.razaoSocial ?? '',
       cnpj: orcamentoResult.cnpj ?? '',
       data: orcamentoResult.data ?? '',
+      bancoDePrecos: orcamentoResult.bancoDePrecos,
     );
     _fornecedores.add(novoFornecedor);
 
