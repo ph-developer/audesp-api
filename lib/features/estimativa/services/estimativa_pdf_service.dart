@@ -584,7 +584,7 @@ class EstimativaPdfService {
                       return pw.TableRow(
                         decoration: isVencedor
                             ? const pw.BoxDecoration(
-                                color: PdfColor.fromInt(0xFFE8F5E9),
+                                color: PdfColor.fromInt(0xFFC8E6C9),
                               )
                             : null,
                         children: [

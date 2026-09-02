@@ -287,7 +287,7 @@ class EstimativaHtmlService {
         final nomeComSufixo = isDesclassificado
             ? '$razaoSocial <span style="color: darkred;">(DESCLASSIFICADO)</span>'
             : razaoSocial;
-        final trStyle = isVencedor ? ' style="background-color: #e8f5e9;"' : '';
+        final trStyle = isVencedor ? ' style="background-color: #c8e6c9;"' : '';
         sb.writeln('<tr$trStyle>');
         sb.writeln('<td style="border: 1px solid #ccc;">$nomeComSufixo</td>');
         sb.writeln(

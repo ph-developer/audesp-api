@@ -145,7 +145,7 @@ void main() {
 
       final html = EstimativaHtmlService.gerarHtmlEstimativa(estimativaGlobal);
       expect(html.contains('Menor Preço (Global)'), isTrue);
-      expect(html.contains('style="background-color: #e8f5e9;"'), isTrue);
+      expect(html.contains('style="background-color: #c8e6c9;"'), isTrue);
       expect(html.contains('Subtotal do Lote: R\$&nbsp;190,00') || html.contains('190,00'), isTrue);
     });
 
