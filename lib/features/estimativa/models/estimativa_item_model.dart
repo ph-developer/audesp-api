@@ -107,14 +107,24 @@ class EstimativaItem {
     String calculoGlobal, {
     int casasDecimais = 2,
     List<String> desclassificadosIds = const [],
+    String? fornecedorVencedorId,
   }) {
+    if (calculoGlobal == 'min_global' && fornecedorVencedorId != null) {
+      final orc = orcamentos
+          .where((o) => o.fornecedorId == fornecedorVencedorId)
+          .firstOrNull;
+      if (orc != null && orc.valorUnitario > 0) {
+        return arredondarParaCima(orc.valorUnitario, casasDecimais);
+      }
+    }
+
     final validOrcamentos = orcamentos
         .where((e) => !desclassificadosIds.contains(e.fornecedorId))
         .toList();
 
     if (validOrcamentos.isEmpty) return 0.0;
 
-    final strategy = calculoGlobal;
+    final strategy = calculoGlobal == 'min_global' ? 'min' : calculoGlobal;
     final valores = validOrcamentos.map((e) => e.valorUnitario).toList();
 
     double raw;
@@ -144,12 +154,14 @@ class EstimativaItem {
     String calculoGlobal, {
     int casasDecimais = 2,
     List<String> desclassificadosIds = const [],
+    String? fornecedorVencedorId,
   }) {
     if (tipoFornecimento != 'mensal') return 0.0;
     final vUnit = getValorReferenciaUnitario(
       calculoGlobal,
       casasDecimais: casasDecimais,
       desclassificadosIds: desclassificadosIds,
+      fornecedorVencedorId: fornecedorVencedorId,
     );
     return arredondarParaCima(quantidade * vUnit, casasDecimais);
   }
@@ -158,11 +170,13 @@ class EstimativaItem {
     String calculoGlobal, {
     int casasDecimais = 2,
     List<String> desclassificadosIds = const [],
+    String? fornecedorVencedorId,
   }) {
     final vUnit = getValorReferenciaUnitario(
       calculoGlobal,
       casasDecimais: casasDecimais,
       desclassificadosIds: desclassificadosIds,
+      fornecedorVencedorId: fornecedorVencedorId,
     );
     if (tipoFornecimento == 'mensal') {
       final vMensal = quantidade * vUnit;

@@ -73,11 +73,67 @@ class EstimativaLote {
     );
   }
 
+  /// Retorna o ID do fornecedor com menor valor global para o lote,
+  /// considerando apenas fornecedores válidos (não desclassificados)
+  /// que cotaram todos os itens do lote.
+  String? getFornecedorMenorPrecoGlobalId({
+    List<String> desclassificadosIds = const [],
+  }) {
+    if (itens.isEmpty) return null;
+
+    final todosFornecedores = <String>{};
+    for (final item in itens) {
+      for (final o in item.orcamentos) {
+        if (!desclassificadosIds.contains(o.fornecedorId)) {
+          todosFornecedores.add(o.fornecedorId);
+        }
+      }
+    }
+
+    String? bestFornecedorId;
+    double? minTotal;
+
+    for (final fId in todosFornecedores) {
+      bool cotouTodos = true;
+      double totalFornecedor = 0.0;
+
+      for (final item in itens) {
+        final orc = item.orcamentos
+            .where((o) => o.fornecedorId == fId)
+            .firstOrNull;
+        if (orc == null || orc.valorUnitario <= 0) {
+          cotouTodos = false;
+          break;
+        }
+        final isMensal = item.tipoFornecimento == 'mensal';
+        final vTotalItem = isMensal
+            ? item.quantidade * orc.valorUnitario * item.quantidadeMeses
+            : item.quantidade * orc.valorUnitario;
+        totalFornecedor += vTotalItem;
+      }
+
+      if (cotouTodos) {
+        if (minTotal == null || totalFornecedor < minTotal) {
+          minTotal = totalFornecedor;
+          bestFornecedorId = fId;
+        }
+      }
+    }
+
+    return bestFornecedorId;
+  }
+
   double getValorTotal(
     String calculoGlobal, {
     int casasDecimais = 2,
     List<String> desclassificadosIds = const [],
   }) {
+    final fId = calculoGlobal == 'min_global'
+        ? getFornecedorMenorPrecoGlobalId(
+            desclassificadosIds: desclassificadosIds,
+          )
+        : null;
+
     return itens.fold(
       0.0,
       (sum, item) =>
@@ -86,6 +142,7 @@ class EstimativaLote {
             calculoGlobal,
             casasDecimais: casasDecimais,
             desclassificadosIds: desclassificadosIds,
+            fornecedorVencedorId: fId,
           ),
     );
   }

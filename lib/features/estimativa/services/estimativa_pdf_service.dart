@@ -56,11 +56,10 @@ class EstimativaPdfService {
             ),
             _buildInfoRow(
               'Tipo de Cálculo:',
-              estimativa.calculoGlobal == 'min'
-                  ? 'Menor Preço'
-                  : estimativa.calculoGlobal == 'avg'
-                  ? 'Média'
-                  : 'Mediana',
+              _getCalculoLabel(
+                estimativa.calculoGlobal,
+                isLote: estimativa.tipoEstimativa == 'lote',
+              ),
             ),
             _buildInfoRow(
               'Registro de Preços:',
@@ -175,8 +174,9 @@ class EstimativaPdfService {
     }
   }
 
-  static String _getCalculoLabel(String calc) {
-    if (calc == 'min') return 'Menor Preço';
+  static String _getCalculoLabel(String calc, {bool isLote = false}) {
+    if (calc == 'min') return isLote ? 'Menor Preço (Unitário)' : 'Menor Preço';
+    if (calc == 'min_global') return 'Menor Preço (Global)';
     if (calc == 'avg') return 'Média';
     if (calc == 'median') return 'Mediana';
     return calc;
@@ -280,6 +280,12 @@ class EstimativaPdfService {
                 estimativa.calculoGlobal,
                 fmt,
                 isInsideLote: true,
+                fornecedorVencedorId: estimativa.calculoGlobal == 'min_global'
+                    ? lote.getFornecedorMenorPrecoGlobalId(
+                        desclassificadosIds:
+                            estimativa.fornecedoresDesclassificadosIds,
+                      )
+                    : null,
                 exclusividadeGlobal: estimativa.exclusividadeMeEpp,
                 casasDecimais: estimativa.casasDecimais,
               ),
@@ -287,7 +293,7 @@ class EstimativaPdfService {
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
-                  'Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais))}',
+                  'Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais, desclassificadosIds: estimativa.fornecedoresDesclassificadosIds))}',
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 ),
               ),
@@ -305,6 +311,7 @@ class EstimativaPdfService {
     String globalCalculo,
     NumberFormat fmt, {
     bool isInsideLote = false,
+    String? fornecedorVencedorId,
     String exclusividadeGlobal = 'nenhuma',
     int casasDecimais = 2,
   }) {
@@ -364,7 +371,7 @@ class EstimativaPdfService {
               pw.Text(
                 'Quantidade: ${item.quantidade} ${item.unidade} | '
                 '${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | '
-                'Regra Ref.: ${_getCalculoLabel(calculoUsado)}'.toPdfSafe(),
+                'Regra Ref.: ${_getCalculoLabel(calculoUsado, isLote: isInsideLote)}'.toPdfSafe(),
                 style: const pw.TextStyle(
                   fontSize: 10,
                   color: PdfColors.grey700,
@@ -447,16 +454,16 @@ class EstimativaPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
+                        'Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}',
                         style: const pw.TextStyle(fontSize: 10),
                       ),
                       if (isMensal)
                         pw.Text(
-                          'Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
+                          'Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}',
                           style: const pw.TextStyle(fontSize: 10),
                         ),
                       pw.Text(
-                        'Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}',
+                        'Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}',
                         style: pw.TextStyle(
                           fontSize: 11,
                           fontWeight: pw.FontWeight.bold,

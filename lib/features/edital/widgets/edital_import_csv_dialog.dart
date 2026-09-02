@@ -169,26 +169,15 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
             quantidade: lote.quantidade,
             unidadeMedida: lote.unidade,
             // Unitário do lote = soma do valor total dos itens do lote
-            valorUnitarioEstimado: lote.itens.fold<double>(
-              0.0,
-              (sum, i) =>
-                  sum +
-                  i.getValorTotal(
-                    est.calculoGlobal,
-                    desclassificadosIds: est.fornecedoresDesclassificadosIds,
-                  ),
+            valorUnitarioEstimado: lote.getValorTotal(
+              est.calculoGlobal,
+              desclassificadosIds: est.fornecedoresDesclassificadosIds,
             ),
             // Total é unitário * quantidade
             valorTotal:
-                lote.itens.fold<double>(
-                  0.0,
-                  (sum, i) =>
-                      sum +
-                      i.getValorTotal(
-                        est.calculoGlobal,
-                        desclassificadosIds:
-                            est.fornecedoresDesclassificadosIds,
-                      ),
+                lote.getValorTotal(
+                  est.calculoGlobal,
+                  desclassificadosIds: est.fornecedoresDesclassificadosIds,
                 ) *
                 lote.quantidade,
             criterioJulgamentoId: null,

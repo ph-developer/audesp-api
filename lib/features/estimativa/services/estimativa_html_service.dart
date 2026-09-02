@@ -40,11 +40,10 @@ class EstimativaHtmlService {
     );
     addInfo(
       'Tipo de Cálculo:',
-      estimativa.calculoGlobal == 'min'
-          ? 'Menor Preço'
-          : estimativa.calculoGlobal == 'avg'
-          ? 'Média'
-          : 'Mediana',
+      _getCalculoLabel(
+        estimativa.calculoGlobal,
+        isLote: estimativa.tipoEstimativa == 'lote',
+      ),
     );
     addInfo('Registro de Preços:', estimativa.registroPrecos ? 'Sim' : 'Não');
 
@@ -95,6 +94,7 @@ class EstimativaHtmlService {
     sb.writeln('<hr/>');
 
     if (estimativa.tipoEstimativa == 'lote') {
+      final desclassificados = estimativa.fornecedoresDesclassificadosIds;
       for (final lote in estimativa.lotes) {
         sb.writeln(
           '<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">',
@@ -110,6 +110,12 @@ class EstimativaHtmlService {
           );
         }
 
+        final fVencedorId = estimativa.calculoGlobal == 'min_global'
+            ? lote.getFornecedorMenorPrecoGlobalId(
+                desclassificadosIds: desclassificados,
+              )
+            : null;
+
         sb.write(
           _buildItensHtml(
             lote.itens,
@@ -117,12 +123,13 @@ class EstimativaHtmlService {
             estimativa.calculoGlobal,
             fmt,
             isInsideLote: true,
+            fornecedorVencedorId: fVencedorId,
             exclusividadeGlobal: estimativa.exclusividadeMeEpp,
             casasDecimais: estimativa.casasDecimais,
           ),
         );
         sb.writeln(
-          '<p style="text-align:right; font-weight:bold;">Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais))}</p>',
+          '<p style="text-align:right; font-weight:bold;">Subtotal do Lote: ${fmt.format(lote.getValorTotal(estimativa.calculoGlobal, casasDecimais: estimativa.casasDecimais, desclassificadosIds: desclassificados))}</p>',
         );
         sb.writeln('</div>');
       }
@@ -168,6 +175,7 @@ class EstimativaHtmlService {
     String globalCalculo,
     NumberFormat fmt, {
     bool isInsideLote = false,
+    String? fornecedorVencedorId,
     String exclusividadeGlobal = 'nenhuma',
     int casasDecimais = 2,
   }) {
@@ -195,7 +203,7 @@ class EstimativaHtmlService {
       sb.writeln('</h4>');
 
       sb.writeln(
-        '<p style="font-size:12pt; color:#555;">Quantidade: ${item.quantidade} ${item.unidade} | ${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | Regra Ref.: ${_getCalculoLabel(globalCalculo)}</p>',
+        '<p style="font-size:12pt; color:#555;">Quantidade: ${item.quantidade} ${item.unidade} | ${isMensal ? "Fornecimento: Mensal (${item.quantidadeMeses} meses)" : "Fornecimento: Único"} | Regra Ref.: ${_getCalculoLabel(globalCalculo, isLote: isInsideLote)}</p>',
       );
 
       sb.writeln(
@@ -229,15 +237,15 @@ class EstimativaHtmlService {
 
       sb.writeln('<div style="text-align:right; margin-top:8px;">');
       sb.writeln(
-        '<p style="margin:2px; font-size:12pt;">Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}</p>',
+        '<p style="margin:2px; font-size:12pt;">Valor de Referência Unitário: ${fmt.format(item.getValorReferenciaUnitario(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}</p>',
       );
       if (isMensal) {
         sb.writeln(
-          '<p style="margin:2px; font-size:12pt;">Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}</p>',
+          '<p style="margin:2px; font-size:12pt;">Valor Estimado Mensal: ${fmt.format(item.getValorMensal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}</p>',
         );
       }
       sb.writeln(
-        '<p style="margin:2px; font-weight:bold; font-size:12pt;">Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds))}</p>',
+        '<p style="margin:2px; font-weight:bold; font-size:12pt;">Valor Estimado Total: ${fmt.format(item.getValorTotal(globalCalculo, casasDecimais: casasDecimais, desclassificadosIds: desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId))}</p>',
       );
       sb.writeln('</div>');
       sb.writeln('</div>');
@@ -245,8 +253,9 @@ class EstimativaHtmlService {
     return sb.toString();
   }
 
-  static String _getCalculoLabel(String calc) {
-    if (calc == 'min') return 'Menor Preço';
+  static String _getCalculoLabel(String calc, {bool isLote = false}) {
+    if (calc == 'min') return isLote ? 'Menor Preço (Unitário)' : 'Menor Preço';
+    if (calc == 'min_global') return 'Menor Preço (Global)';
     if (calc == 'avg') return 'Média';
     if (calc == 'median') return 'Mediana';
     return calc;

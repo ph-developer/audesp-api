@@ -448,6 +448,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                         _itens = _converterLotesToItens(_lotes);
                         _lotes = [];
                       }
+                      if (_tipoEstimativa == 'item' &&
+                          _calculoGlobal == 'min_global') {
+                        _calculoGlobal = 'min';
+                      }
+                      if (_tipoEstimativa == 'item' &&
+                          _exclusividadeMeEpp == 'reservada') {
+                        _exclusividadeMeEpp = 'nenhuma';
+                      }
                     });
                   }
                 },
@@ -457,12 +465,22 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             Expanded(
               child: AudespDropdown<String>(
                 label: 'Tipo de Cálculo *',
-                value: _calculoGlobal,
-                items: const {
-                  'min': 'Menor Preço',
-                  'avg': 'Média',
-                  'median': 'Mediana',
-                },
+                value:
+                    _tipoEstimativa == 'item' && _calculoGlobal == 'min_global'
+                    ? 'min'
+                    : _calculoGlobal,
+                items: _tipoEstimativa == 'lote'
+                    ? const {
+                        'min': 'Menor Preço (Unitário)',
+                        'min_global': 'Menor Preço (Global)',
+                        'avg': 'Média',
+                        'median': 'Mediana',
+                      }
+                    : const {
+                        'min': 'Menor Preço',
+                        'avg': 'Média',
+                        'median': 'Mediana',
+                      },
                 onChanged: (v) {
                   if (v != null) setState(() => _calculoGlobal = v);
                 },
@@ -1254,6 +1272,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       );
     }
 
+    final fornecedorVencedorId =
+        (loteIndex != null && _calculoGlobal == 'min_global')
+            ? _lotes[loteIndex].getFornecedorMenorPrecoGlobalId(
+                desclassificadosIds: _desclassificadosIds,
+              )
+            : null;
+
     return Container(
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
@@ -1372,7 +1397,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: Tooltip(
                 message:
                     'Cálculo atual: ${_calculoGlobal == 'min'
-                        ? 'Menor'
+                        ? (_tipoEstimativa == 'lote' ? 'Menor (Unitário)' : 'Menor')
+                        : _calculoGlobal == 'min_global'
+                        ? 'Menor (Global)'
                         : _calculoGlobal == 'avg'
                         ? 'Média'
                         : 'Mediana'}',
@@ -1382,6 +1409,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                       _calculoGlobal,
                       casasDecimais: _casasDecimais,
                       desclassificadosIds: _desclassificadosIds,
+                      fornecedorVencedorId: fornecedorVencedorId,
                     ),
                     casasDecimais: _casasDecimais,
                   ),
@@ -1397,7 +1425,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   ? Tooltip(
                       message:
                           '${formatBRL(
-                            item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds),
+                            item.getValorMensal(_calculoGlobal, casasDecimais: _casasDecimais, desclassificadosIds: _desclassificadosIds, fornecedorVencedorId: fornecedorVencedorId),
                             casasDecimais: _casasDecimais,
                           )}/mês',
                       child: Text(
@@ -1406,6 +1434,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                             _calculoGlobal,
                             casasDecimais: _casasDecimais,
                             desclassificadosIds: _desclassificadosIds,
+                            fornecedorVencedorId: fornecedorVencedorId,
                           ),
                           casasDecimais: _casasDecimais,
                         ),
@@ -1418,6 +1447,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           _calculoGlobal,
                           casasDecimais: _casasDecimais,
                           desclassificadosIds: _desclassificadosIds,
+                          fornecedorVencedorId: fornecedorVencedorId,
                         ),
                         casasDecimais: _casasDecimais,
                       ),
