@@ -38,6 +38,17 @@ abstract final class AjusteRules {
     return empenhoMunicipal || processoDeDespesa;
   }
 
+  /// Valida o código local do contrato de um edital sem PNCP.
+  static String? validarCodigoContratoSemPncp(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Informe o Código do Contrato';
+    }
+    if (value.trim().length > 25) {
+      return 'Máximo 25 caracteres';
+    }
+    return null;
+  }
+
   /// Valida o formato do `codigoContrato` do PNCP (25 dígitos numéricos).
   ///
   /// Estrutura conforme PNCP / Fase IV AUDESP:
@@ -68,4 +79,3 @@ abstract final class AjusteRules {
   static bool isCodigoContratoValido(String? value) =>
       validarCodigoContrato(value) == null;
 }
-

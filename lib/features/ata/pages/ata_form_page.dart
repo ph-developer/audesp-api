@@ -53,6 +53,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   int? _editalId;
   List<Edital> _editais = [];
 
+  bool get _editalSemPncp =>
+      _editais.where((e) => e.id == _editalId).firstOrNull?.semPncp ?? false;
+
   // ── Descritor ─────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
   final _codigoAtaCtrl = TextEditingController();
@@ -158,9 +161,10 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ata.codigoEdital;
-    _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
-      descritor['codigoAta'] as String? ?? ata.codigoAta,
-    );
+    final codigoAta = descritor['codigoAta'] as String? ?? ata.codigoAta;
+    _codigoAtaCtrl.text = _editalSemPncp
+        ? codigoAta
+        : PcnpInputFormatter.applyMask(codigoAta);
     _retificacao = descritor['retificacao'] as bool? ?? ata.retificacao;
     _fillEditalDescriptor();
 
@@ -210,7 +214,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         'municipio': municipio,
         'entidade': entidade,
         'codigoEdital': _codigoEditalCtrl.text.trim(),
-        'codigoAta': PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
+        'codigoAta': _editalSemPncp
+            ? _codigoAtaCtrl.text.trim()
+            : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
         'anoCompra': _anoCompra ?? 0,
         'retificacao': _retificacao,
       },
@@ -241,15 +247,27 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       return false;
     }
     if (_codigoAtaCtrl.text.trim().isEmpty) {
-      _showError('Informe o ID da Ata PNCP para salvar o rascunho.');
+      _showError(
+        _editalSemPncp
+            ? 'Informe o Código da Ata para salvar o rascunho.'
+            : 'Informe o ID da Ata PNCP para salvar o rascunho.',
+      );
       return false;
     }
-    final rawAta = PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
-    if (rawAta.length == 31 && _editalId != null) {
+    final rawAta = _editalSemPncp
+        ? _codigoAtaCtrl.text.trim()
+        : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+    if (_editalSemPncp && rawAta.length > 31) {
+      _showError('Máximo 31 caracteres');
+      return false;
+    }
+    if (!_editalSemPncp && rawAta.length == 31 && _editalId != null) {
       final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
       if (edital != null) {
-        final editalBase =
-            edital.idContratacaoPNCP.replaceAll(RegExp(r'\D'), '');
+        final editalBase = edital.idContratacaoPNCP.replaceAll(
+          RegExp(r'\D'),
+          '',
+        );
         if (editalBase.length == 25 && rawAta.substring(0, 25) != editalBase) {
           _showError(
             'Os 25 primeiros dígitos da Ata (${PcnpInputFormatter.applyMask(rawAta.substring(0, 25))}) devem corresponder ao Edital (${PcnpInputFormatter.applyMask(editalBase)}).',
@@ -271,6 +289,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       final dao = ref.read(atasDaoProvider);
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
+      final codigoAta = _editalSemPncp
+          ? _codigoAtaCtrl.text.trim()
+          : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
 
       if (_loadedId == null) {
         final id = await dao.insertAta(
@@ -278,7 +299,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
+          codigoAta: codigoAta,
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -292,7 +313,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
+          codigoAta: codigoAta,
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -651,10 +672,17 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       if (municipio.isEmpty && entidade.isEmpty) {
                         return const SizedBox.shrink();
                       }
+                      final codigoEdital = _codigoEditalCtrl.text.isEmpty
+                          ? '-'
+                          : _editalSemPncp
+                          ? _codigoEditalCtrl.text
+                          : PcnpInputFormatter.applyMask(
+                              _codigoEditalCtrl.text,
+                            );
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}',
+                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: $codigoEdital',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       );
@@ -663,35 +691,52 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   AudespFieldRow(
                     children: [
                       AudespFieldRowItem(
-                        child: AudespPncpField(
-                          label: 'ID da Ata PNCP *',
-                          controller: _codigoAtaCtrl,
-                          readOnly: readOnly,
-                          isAta: true,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Informe o ID da Ata PNCP';
-                            }
-                            final raw = PcnpInputFormatter.stripMask(v);
-                            if (raw.length < 31) {
-                              return 'ID da Ata PNCP incompleto (31 dígitos)';
-                            }
-                            if (_editalId != null) {
-                              final edital = _editais
-                                  .where((e) => e.id == _editalId)
-                                  .firstOrNull;
-                              if (edital != null) {
-                                final editalBase = edital.idContratacaoPNCP
-                                    .replaceAll(RegExp(r'\D'), '');
-                                if (editalBase.length == 25 &&
-                                    raw.substring(0, 25) != editalBase) {
-                                  return 'Os 25 primeiros dígitos devem corresponder ao Edital (${PcnpInputFormatter.applyMask(editalBase)})';
-                                }
-                              }
-                            }
-                            return null;
-                          },
-                        ),
+                        child: _editalSemPncp
+                            ? AudespTextField(
+                                label: 'Código da Ata (Sem PNCP) *',
+                                controller: _codigoAtaCtrl,
+                                readOnly: readOnly,
+                                maxLength: 31,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'Informe o Código da Ata';
+                                  }
+                                  if (v.trim().length > 31) {
+                                    return 'Máximo 31 caracteres';
+                                  }
+                                  return null;
+                                },
+                              )
+                            : AudespPncpField(
+                                label: 'ID da Ata PNCP *',
+                                controller: _codigoAtaCtrl,
+                                readOnly: readOnly,
+                                isAta: true,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'Informe o ID da Ata PNCP';
+                                  }
+                                  final raw = PcnpInputFormatter.stripMask(v);
+                                  if (raw.length < 31) {
+                                    return 'ID da Ata PNCP incompleto (31 dígitos)';
+                                  }
+                                  if (_editalId != null) {
+                                    final edital = _editais
+                                        .where((e) => e.id == _editalId)
+                                        .firstOrNull;
+                                    if (edital != null) {
+                                      final editalBase = edital
+                                          .idContratacaoPNCP
+                                          .replaceAll(RegExp(r'\D'), '');
+                                      if (editalBase.length == 25 &&
+                                          raw.substring(0, 25) != editalBase) {
+                                        return 'Os 25 primeiros dígitos devem corresponder ao Edital (${PcnpInputFormatter.applyMask(editalBase)})';
+                                      }
+                                    }
+                                  }
+                                  return null;
+                                },
+                              ),
                       ),
                     ],
                   ),

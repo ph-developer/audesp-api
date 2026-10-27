@@ -100,6 +100,39 @@ void main() {
     });
   });
 
+  group('AjusteRules.validarCodigoContratoSemPncp', () {
+    test('aceita código numérico local', () {
+      expect(AjusteRules.validarCodigoContratoSemPncp('202304567'), isNull);
+    });
+
+    test('aceita código alfanumérico local', () {
+      expect(AjusteRules.validarCodigoContratoSemPncp('CT-001/2026'), isNull);
+    });
+
+    test('rejeita nulo, vazio ou só espaços', () {
+      for (final value in [null, '', '   ']) {
+        expect(
+          AjusteRules.validarCodigoContratoSemPncp(value),
+          'Informe o Código do Contrato',
+        );
+      }
+    });
+
+    test('rejeita código com 26 caracteres', () {
+      expect(
+        AjusteRules.validarCodigoContratoSemPncp('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+        'Máximo 25 caracteres',
+      );
+    });
+
+    test('aceita código com exatamente 25 caracteres', () {
+      expect(
+        AjusteRules.validarCodigoContratoSemPncp('ABCDEFGHIJKLMNOPQRSTUVWXY'),
+        isNull,
+      );
+    });
+  });
+
   group('AjusteRules.validarCodigoContrato e isCodigoContratoValido', () {
     test('aceita contrato PNCP válido de 25 dígitos com dígito 2 na 15ª posição (sem máscara)', () {
       // 14 dígitos de CNPJ (12345678000195) + '2' + 6 dígitos sequencial (000001) + 4 dígitos ano (2026) = 25 dígitos
@@ -163,4 +196,3 @@ void main() {
     });
   });
 }
-

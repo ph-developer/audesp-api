@@ -62,6 +62,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   List<Edital> _editais = [];
   List<Ata> _atas = [];
 
+  Edital? get _editalSelecionado =>
+      _editais.where((e) => e.id == _editalId).firstOrNull;
+
+  bool get _editalSemPncp => _editalSelecionado?.semPncp ?? false;
+
+  List<Ata> get _atasDoEdital =>
+      _atas.where((a) => a.editalId == _editalId).toList();
+
   // ── Descritor ─────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
   final _codigoAtaCtrl = TextEditingController();
@@ -167,10 +175,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    final editaisEnviados = await ref
-        .read(editaisDaoProvider)
-        .watchByStatus('sent');
-    _editais = editaisEnviados.where((e) => !e.isSrp).toList();
+    _editais = await ref.read(editaisDaoProvider).watchByStatus('sent');
     _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
 
     await _selectPreselectedEdital(widget.preselectedEditalId);
@@ -183,9 +188,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   void _fillEditalDescriptor() {
-    if (_editalId == null) return;
-    final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
-    if (edital != null && _codigoEditalCtrl.text.isEmpty) {
+    final edital = _editalSelecionado;
+    if (edital != null) {
       _codigoEditalCtrl.text = edital.codigoEdital;
     }
   }
@@ -195,7 +199,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     var edital = _editais.where((e) => e.id == editalId).firstOrNull;
     if (edital == null) {
       final found = await ref.read(editaisDaoProvider).findById(editalId);
-      if (found != null && found.status == 'sent' && !found.isSrp) {
+      if (found != null && found.status == 'sent') {
         edital = found;
         _editais = [..._editais, found];
       }
@@ -212,7 +216,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   bool get _isSelectedAtaAvailable {
     final id = _ataId;
-    return id == null || _atas.any((a) => a.id == id);
+    return id == null || _atasDoEdital.any((a) => a.id == id);
   }
 
   Future<void> _loadExisting(int id) async {
@@ -237,12 +241,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ajuste.codigoEdital;
-    _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
-      descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '',
-    );
-    _codigoContratoCtrl.text = PcnpInputFormatter.applyMask(
-      descritor['codigoContrato'] as String? ?? ajuste.codigoContrato,
-    );
+    final codigoAta =
+        descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '';
+    _codigoAtaCtrl.text = _editalSemPncp
+        ? codigoAta
+        : PcnpInputFormatter.applyMask(codigoAta);
+    final codigoContrato =
+        descritor['codigoContrato'] as String? ?? ajuste.codigoContrato;
+    _codigoContratoCtrl.text = _editalSemPncp
+        ? codigoContrato
+        : PcnpInputFormatter.applyMask(codigoContrato);
     _retificacao = descritor['retificacao'] as bool? ?? ajuste.retificacao;
     _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
     _gerenciadoraJurisdicionada =
@@ -332,7 +340,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'entidade': entidade,
       'adesaoParticipacao': _adesaoParticipacao,
       'codigoEdital': _codigoEditalCtrl.text.trim(),
-      'codigoContrato': PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
+      'codigoContrato': _editalSemPncp
+          ? _codigoContratoCtrl.text.trim()
+          : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
       'retificacao': _retificacao,
     };
     if (_adesaoParticipacao) {
@@ -349,9 +359,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
     }
     if (_codigoAtaCtrl.text.trim().isNotEmpty) {
-      descritor['codigoAta'] = PcnpInputFormatter.stripMask(
-        _codigoAtaCtrl.text,
-      );
+      descritor['codigoAta'] = _editalSemPncp
+          ? _codigoAtaCtrl.text.trim()
+          : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
     }
 
     final map = <String, dynamic>{
@@ -442,8 +452,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       _showError('Informe o Código do Edital para salvar o rascunho.');
       return false;
     }
-    final contratoError =
-        AjusteRules.validarCodigoContrato(_codigoContratoCtrl.text);
+    final contratoError = _editalSemPncp
+        ? AjusteRules.validarCodigoContratoSemPncp(_codigoContratoCtrl.text)
+        : AjusteRules.validarCodigoContrato(_codigoContratoCtrl.text);
     if (contratoError != null) {
       _showError(contratoError);
       return false;
@@ -461,6 +472,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       final dao = ref.read(ajustesDaoProvider);
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
+      final codigoAta = _editalSemPncp
+          ? _codigoAtaCtrl.text.trim()
+          : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+      final codigoContrato = _editalSemPncp
+          ? _codigoContratoCtrl.text.trim()
+          : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text);
 
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
@@ -469,12 +486,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
-              ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
-              : null,
-          codigoContrato: PcnpInputFormatter.stripMask(
-            _codigoContratoCtrl.text,
-          ),
+          codigoAta: codigoAta.isNotEmpty ? codigoAta : null,
+          codigoContrato: codigoContrato,
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -489,12 +502,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEditalCtrl.text.trim(),
-          codigoAta: _codigoAtaCtrl.text.trim().isNotEmpty
-              ? PcnpInputFormatter.stripMask(_codigoAtaCtrl.text)
-              : null,
-          codigoContrato: PcnpInputFormatter.stripMask(
-            _codigoContratoCtrl.text,
-          ),
+          codigoAta: codigoAta.isNotEmpty ? codigoAta : null,
+          codigoContrato: codigoContrato,
           retificacao: _retificacao,
           status: 'draft',
           documentoJson: jsonStr,
@@ -520,6 +529,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Future<void> _enviar() async {
     if (_editalId == null) {
       _showError('Selecione o Edital vinculado.');
+      return;
+    }
+    if (!_adesaoParticipacao &&
+        (_editalSelecionado?.isSrp ?? false) &&
+        _codigoAtaCtrl.text.trim().isEmpty) {
+      _showError(
+        'Edital com SRP: selecione a Ata de Registro de Preços vinculada.',
+      );
       return;
     }
     if (_codigoTipoOrgao == null) {
@@ -1130,6 +1147,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           onChanged: (v) {
                             setState(() {
                               _editalId = v;
+                              if (!_isSelectedAtaAvailable) {
+                                _ataId = null;
+                                _codigoAtaCtrl.clear();
+                              }
                               _fillEditalDescriptor();
                             });
                           },
@@ -1145,14 +1166,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           value: _ataId,
                           items: {
                             null: '— Nenhuma —',
-                            for (final a in _atas) a.id: a.dropdownLabel,
+                            for (final a in _atasDoEdital)
+                              a.id: a.dropdownLabel,
                           },
                           readOnly: readOnly,
                           onChanged: (v) {
                             setState(() {
                               _ataId = v;
                               if (v != null) {
-                                final ata = _atas
+                                final ata = _atasDoEdital
                                     .where((a) => a.id == v)
                                     .firstOrNull;
                                 if (ata != null) {
@@ -1182,10 +1204,22 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       if (municipio.isEmpty && entidade.isEmpty) {
                         return const SizedBox.shrink();
                       }
+                      final codigoEdital = _codigoEditalCtrl.text.isEmpty
+                          ? '-'
+                          : _editalSemPncp
+                          ? _codigoEditalCtrl.text
+                          : PcnpInputFormatter.applyMask(
+                              _codigoEditalCtrl.text,
+                            );
+                      final codigoAta = _codigoAtaCtrl.text.isEmpty
+                          ? '-'
+                          : _editalSemPncp
+                          ? _codigoAtaCtrl.text
+                          : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text);
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: ${_codigoEditalCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoEditalCtrl.text)}   |   Código da Ata: ${_codigoAtaCtrl.text.isEmpty ? '-' : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text)}',
+                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: $codigoEdital   |   Código da Ata: $codigoAta',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       );
@@ -1194,12 +1228,21 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: AudespPncpField(
-                          label: 'ID do Contrato PNCP *',
-                          controller: _codigoContratoCtrl,
-                          readOnly: readOnly,
-                          validator: AjusteRules.validarCodigoContrato,
-                        ),
+                        child: _editalSemPncp
+                            ? AudespTextField(
+                                label: 'Código do Contrato (Sem PNCP) *',
+                                controller: _codigoContratoCtrl,
+                                readOnly: readOnly,
+                                maxLength: 25,
+                                validator:
+                                    AjusteRules.validarCodigoContratoSemPncp,
+                              )
+                            : AudespPncpField(
+                                label: 'ID do Contrato PNCP *',
+                                controller: _codigoContratoCtrl,
+                                readOnly: readOnly,
+                                validator: AjusteRules.validarCodigoContrato,
+                              ),
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
