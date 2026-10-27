@@ -11,6 +11,7 @@ class DocumentCard extends StatelessWidget {
   final String title;
   final Widget? subtitle;
   final List<Widget> chips;
+  final List<Widget> actions;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
   final VoidCallback? onNavigate;
@@ -25,6 +26,7 @@ class DocumentCard extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.chips = const [],
+    this.actions = const [],
     this.onDelete,
     this.onEdit,
     this.onNavigate,
@@ -56,6 +58,7 @@ class DocumentCard extends StatelessWidget {
                 children: [
                   ...chips,
                   if (chips.isNotEmpty) const SizedBox(width: 4),
+                  ...actions,
                   if (onDelete != null)
                     AudespIconButton(
                       icon: Icons.delete_outline,
@@ -85,6 +88,7 @@ class DocumentCard extends StatelessWidget {
 
   bool get _hasTrailing =>
       chips.isNotEmpty ||
+      actions.isNotEmpty ||
       onDelete != null ||
       onEdit != null ||
       onNavigate != null;

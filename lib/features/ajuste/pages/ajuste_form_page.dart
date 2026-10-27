@@ -44,8 +44,14 @@ import '../widgets/gemini_ajuste_import_dialog.dart';
 class AjusteFormPage extends ConsumerStatefulWidget {
   final int? ajusteId;
   final int? preselectedEditalId;
+  final int? preselectedAtaId;
 
-  const AjusteFormPage({super.key, this.ajusteId, this.preselectedEditalId});
+  const AjusteFormPage({
+    super.key,
+    this.ajusteId,
+    this.preselectedEditalId,
+    this.preselectedAtaId,
+  });
 
   @override
   ConsumerState<AjusteFormPage> createState() => _AjusteFormPageState();
@@ -279,6 +285,24 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       await _carregarOpcoesEdital();
       if (!mounted) return;
       await _selectPreselectedEdital(widget.preselectedEditalId);
+      if (!mounted) return;
+      if (widget.preselectedAtaId != null) {
+        final ata = _atas
+            .where((a) => a.id == widget.preselectedAtaId)
+            .firstOrNull;
+        if (ata == null) {
+          _showError(
+            'A ata informada não foi encontrada ou ainda não foi enviada.',
+          );
+        } else {
+          await _selectPreselectedEdital(ata.editalId);
+          if (!mounted) return;
+          if (_editalId == ata.editalId) {
+            _aplicarAta(ata.id);
+            _fillEditalDescriptor();
+          }
+        }
+      }
     }
     if (!mounted) return;
     await _carregarItensLicitacao();
@@ -345,6 +369,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (edital != null) {
       _codigoEditalCtrl.text = edital.codigoEdital;
     }
+  }
+
+  void _aplicarAta(int? ataId) {
+    _ataId = ataId;
+    final ata = _atasDoEdital.where((a) => a.id == ataId).firstOrNull;
+    _codigoAtaCtrl.text = ata?.codigoAta ?? '';
   }
 
   void _alterarCategoriaProcesso(int? categoria) {
@@ -1445,8 +1475,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                               _itensLicitacao = null;
                               if (!_adesaoParticipacao &&
                                   !_isSelectedAtaAvailable) {
-                                _ataId = null;
-                                _codigoAtaCtrl.clear();
+                                _aplicarAta(null);
                               }
                               _fillEditalDescriptor();
                             });
@@ -1472,21 +1501,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                                 a.id: a.dropdownLabel,
                             },
                             readOnly: readOnly,
-                            onChanged: (v) {
-                              setState(() {
-                                _ataId = v;
-                                if (v != null) {
-                                  final ata = _atasDoEdital
-                                      .where((a) => a.id == v)
-                                      .firstOrNull;
-                                  if (ata != null) {
-                                    _codigoAtaCtrl.text = ata.codigoAta;
-                                  }
-                                } else {
-                                  _codigoAtaCtrl.clear();
-                                }
-                              });
-                            },
+                            onChanged: (v) => setState(() => _aplicarAta(v)),
                           ),
                         ),
                       ],

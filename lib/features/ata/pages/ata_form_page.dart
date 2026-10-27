@@ -619,6 +619,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final status = _lastSendLog?.statusProtocolo;
     final rejected = _isRejectedStatus(status);
     final scheme = Theme.of(context).colorScheme;
+    final podeCriarAjuste =
+        ref.watch(localSessionProvider)?.hasPermission(AppPermissions.ajuste) ??
+        false;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -643,6 +646,14 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
             onPressed: _returnToDraft,
             icon: const Icon(Icons.edit_note),
             label: const Text('Retornar para rascunho'),
+          ),
+          const SizedBox(width: 8),
+        ],
+        if (!rejected && podeCriarAjuste) ...[
+          TextButton.icon(
+            onPressed: () => context.go('/ajuste/new?ataId=$_loadedId'),
+            icon: const Icon(Icons.handshake_outlined),
+            label: const Text('Novo ajuste'),
           ),
           const SizedBox(width: 8),
         ],

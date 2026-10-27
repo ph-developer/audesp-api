@@ -432,6 +432,92 @@ void main() {
     });
   });
 
+  group('opcoesAtaParaAjuste', () {
+    test('inclui só atas enviadas e preserva a ordem', () {
+      final processo = _processo(
+        edital: _edital(1, srp: true),
+        licitacoes: [_licitacao(1, status: 'sent')],
+        atas: [
+          _ata(1),
+          _ata(3, status: 'sent'),
+          _ata(2, status: 'sent'),
+        ],
+      );
+
+      final opcoes = ProcessoRules.opcoesAtaParaAjuste([processo]);
+
+      expect(opcoes.map((o) => o.ata.id), [3, 2]);
+      expect(opcoes.every((o) => o.processo == processo), isTrue);
+      expect(opcoes.every((o) => o.liberado), isTrue);
+    });
+
+    test('exclui atas de edital não SRP', () {
+      expect(
+        ProcessoRules.opcoesAtaParaAjuste([
+          _processo(
+            licitacoes: [_licitacao(1, status: 'sent')],
+            atas: [_ata(1, status: 'sent')],
+          ),
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('conta ajustes por ataId em qualquer status sem bloquear novos', () {
+      final processo = _processo(
+        edital: _edital(1, srp: true),
+        licitacoes: [_licitacao(1, status: 'sent')],
+        atas: [
+          _ata(2, status: 'sent'),
+          _ata(1, status: 'sent'),
+          _ata(3, status: 'sent'),
+        ],
+        ajustes: [
+          _ajuste(1, ataId: 1),
+          _ajuste(2, ataId: 1, status: 'sent'),
+          _ajuste(3, ataId: 2),
+          _ajuste(4),
+          _ajuste(5, ataId: 99),
+        ],
+      );
+
+      final opcoes = ProcessoRules.opcoesAtaParaAjuste([processo]);
+
+      expect(opcoes.map((o) => o.ajustesVinculados), [1, 2, 0]);
+      expect(opcoes.every((o) => o.liberado), isTrue);
+    });
+
+    test('mantém ata bloqueada com o motivo da licitação em rascunho', () {
+      final processo = _processo(
+        edital: _edital(1, srp: true),
+        licitacoes: [_licitacao(1)],
+        atas: [_ata(1, status: 'sent')],
+      );
+
+      final opcao = ProcessoRules.opcoesAtaParaAjuste([processo]).single;
+
+      expect(opcao.ata, same(processo.atas.single));
+      expect(opcao.liberado, isFalse);
+      expect(
+        opcao.motivoBloqueio,
+        'A licitação do edital ainda não foi enviada ao AUDESP.',
+      );
+    });
+
+    test('mantém ata bloqueada quando o edital voltou para rascunho', () {
+      final processo = _processo(
+        edital: _edital(1, srp: true, status: 'draft'),
+        licitacoes: [_licitacao(1, status: 'sent')],
+        atas: [_ata(1, status: 'sent')],
+      );
+
+      final opcao = ProcessoRules.opcoesAtaParaAjuste([processo]).single;
+
+      expect(opcao.liberado, isFalse);
+      expect(opcao.motivoBloqueio, 'O edital ainda não foi enviado ao AUDESP.');
+    });
+  });
+
   group('dependentesDe', () {
     test('conta atas e ajustes em qualquer status', () {
       final processo = _processo(

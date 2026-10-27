@@ -22,8 +22,39 @@ class OpcaoEdital {
   bool get liberado => motivoBloqueio == null;
 }
 
+class OpcaoAta {
+  final Processo processo;
+  final Ata ata;
+  final int ajustesVinculados;
+  final String? motivoBloqueio;
+
+  const OpcaoAta({
+    required this.processo,
+    required this.ata,
+    required this.ajustesVinculados,
+    this.motivoBloqueio,
+  });
+
+  bool get liberado => motivoBloqueio == null;
+}
+
 /// Dependências e pendências dos documentos de um processo.
 abstract final class ProcessoRules {
+  static List<OpcaoAta> opcoesAtaParaAjuste(Iterable<Processo> processos) => [
+    for (final processo in processos)
+      if (processo.edital.isSrp)
+        for (final ata in processo.atas)
+          if (ata.status == 'sent')
+            OpcaoAta(
+              processo: processo,
+              ata: ata,
+              ajustesVinculados: processo.ajustes
+                  .where((ajuste) => ajuste.ataId == ata.id)
+                  .length,
+              motivoBloqueio: motivoBloqueioAjuste(processo),
+            ),
+  ];
+
   static List<OpcaoEdital> opcoesAta(Iterable<Processo> processos) => [
     for (final processo in processos)
       if (processo.edital.status == 'sent' && processo.edital.isSrp)
