@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
+import '../../../core/utils/text_validation.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
@@ -755,9 +756,10 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                           label: 'Número da Ata *',
                           controller: _numeroAtaCtrl,
                           readOnly: readOnly,
+                          maxLength: 30,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Informe o número da ata'
-                              : null,
+                              : validarTamanhoMaximo(v, 30),
                         ),
                       ),
                       AudespFieldRowItem(

@@ -28,6 +28,7 @@ import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
 import '../domain/licitacao_itens_resumo.dart';
 import '../domain/licitacao_pessoa.dart';
+import '../domain/licitacao_rules.dart';
 import '../licitacao_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../services/licitacao_service.dart';
@@ -103,7 +104,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   // Fontes de recurso (multi-select)
   Set<int> _fontesRecurso = {};
 
-  // Contratação conduzida por órgão externo
+  // Contratação conduzida por agente, comissão de contratação ou similar
   bool _contratacaoConduzida = false;
   List<String> _cpfsCondutores = [];
 
@@ -460,6 +461,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return;
     }
 
+    final doc = _buildJson();
+    final erroEnvio = LicitacaoRules.validarEnvio(doc);
+    if (erroEnvio != null) {
+      _showError(erroEnvio);
+      return;
+    }
+
     await _saveDraft();
     if (!mounted || _loadedId == null) return;
 
@@ -469,7 +477,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       context,
       ref,
       onConfirm: (token) async {
-        final doc = _buildJson();
         final jsonStr = jsonEncode(doc);
         final service = ref.read(licitacaoServiceProvider);
 
@@ -657,6 +664,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Future<void> _showIndiceDialog(int? editIndex) async {
+    final formKey = GlobalKey<FormState>();
     final initial = editIndex != null ? _indicesEconomicos[editIndex] : null;
     int? tipoIndice = initial?['tipoIndice'] as int?;
     final nomeCtrl = TextEditingController(
@@ -673,25 +681,32 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           title: Text(editIndex == null ? 'Adicionar Índice' : 'Editar Índice'),
           content: SizedBox(
             width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AudespDropdown<int>(
-                  label: 'Tipo *',
-                  value: tipoIndice,
-                  items: kTipoIndice,
-                  onChanged: (v) => setS(() => tipoIndice = v),
-                ),
-                const SizedBox(height: 12),
-                if (tipoIndice == 8)
-                  AudespTextField(
-                    label: 'Nome do Índice (3–50 caracteres)',
-                    controller: nomeCtrl,
-                    maxLength: 50,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AudespDropdown<int>(
+                    label: 'Tipo *',
+                    value: tipoIndice,
+                    items: kTipoIndice,
+                    onChanged: (v) => setS(() => tipoIndice = v),
                   ),
-                const SizedBox(height: 12),
-                AudespNumberField(label: 'Índice *', controller: valorCtrl),
-              ],
+                  const SizedBox(height: 12),
+                  if (tipoIndice == 8)
+                    AudespTextField(
+                      label: 'Nome do Índice (3–50 caracteres) *',
+                      controller: nomeCtrl,
+                      maxLength: 50,
+                      validator: (v) => LicitacaoRules.validarNomeIndice(
+                        tipoIndice: tipoIndice,
+                        nomeIndice: v,
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  AudespNumberField(label: 'Índice *', controller: valorCtrl),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -700,7 +715,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
               child: const Text('Salvar'),
             ),
           ],
@@ -715,7 +734,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         'tipoIndice': tipoIndice,
         'valorIndice': double.parse(valor.toStringAsFixed(4)),
       };
-      if (tipoIndice == 8 && nomeCtrl.text.trim().length >= 3) {
+      if (tipoIndice == 8) {
         entry['nomeIndice'] = nomeCtrl.text.trim();
       }
       setState(() {
@@ -1434,19 +1453,24 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
             AudespFieldRowItem(
               child: AudespNumberField(
-                label: 'Percentual (%)',
+                label: _exigenciaGarantiaLicitantes == 1
+                    ? 'Percentual (%) *'
+                    : 'Percentual (%)',
                 controller: _percentualValorCtrl,
                 enabled: !readOnly && _exigenciaGarantiaLicitantes == 1,
                 hintText: '0 a 100',
                 maxLength: 3,
                 validator: (v) {
                   if (_exigenciaGarantiaLicitantes != 1) return null;
-                  if (v == null || v.trim().isEmpty) return null;
-                  final d = parseBrCurrencyOrNull(v.trim());
-                  if (d == null || d < 0 || d > 100) {
+                  final texto = v?.trim() ?? '';
+                  final d = parseBrCurrencyOrNull(texto);
+                  if (texto.isNotEmpty && d == null) {
                     return 'Valor entre 0 e 100';
                   }
-                  return null;
+                  return LicitacaoRules.validarPercentualGarantia(
+                    exigenciaGarantiaLicitantes: _exigenciaGarantiaLicitantes,
+                    percentualValor: d,
+                  );
                 },
               ),
             ),
@@ -1532,7 +1556,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       title: 'Contratação Conduzida',
       children: [
         AudespCheckbox(
-          label: 'Contratação Conduzida por Órgão Externo',
+          label: 'Conduzida por agente, comissão de contratação ou similar',
           value: _contratacaoConduzida,
           readOnly: readOnly,
           onChanged: (v) => setState(() => _contratacaoConduzida = v),

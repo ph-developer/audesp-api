@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/text_validation.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
@@ -1501,9 +1502,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Número do Contrato/Empenho *',
                           controller: _numeroContratoEmpenhoCtrl,
                           readOnly: readOnly,
+                          maxLength: 50,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Obrigatório'
-                              : null,
+                              : validarTamanhoMaximo(v, 50),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1534,9 +1536,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'Número do Processo *',
                           controller: _processoCtrl,
                           readOnly: readOnly,
+                          maxLength: 50,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Obrigatório'
-                              : null,
+                              : validarTamanhoMaximo(v, 50),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1649,9 +1652,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'NI do Fornecedor (CNPJ/CPF) *',
                           controller: _niFornecedorCtrl,
                           readOnly: readOnly,
+                          maxLength: 50,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Obrigatório'
-                              : null,
+                              : validarTamanhoMaximo(v, 50),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1674,8 +1678,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Nome/Razão Social do Fornecedor *',
                     controller: _nomeRazaoSocialFornecedorCtrl,
                     readOnly: readOnly,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                    maxLength: 100,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Obrigatório'
+                        : validarTamanhoMaximo(v, 100),
                   ),
                 ],
               ),
@@ -1692,6 +1698,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           label: 'NI do Subcontratado',
                           controller: _niFornecedorSubCtrl,
                           readOnly: readOnly,
+                          maxLength: 50,
+                          validator: (v) => validarTamanhoMaximo(v, 50),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1716,6 +1724,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Nome/Razão Social do Subcontratado',
                     controller: _nomeRazaoSocialFornecedorSubCtrl,
                     readOnly: readOnly,
+                    maxLength: 100,
+                    validator: (v) => validarTamanhoMaximo(v, 100),
                   ),
                 ],
               ),
@@ -1739,16 +1749,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     label: 'Objeto do Contrato *',
                     controller: _objetoContratoCtrl,
                     readOnly: readOnly,
+                    maxLength: 5120,
                     maxLines: 3,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Obrigatório'
+                        : validarTamanhoMaximo(v, 5120),
                   ),
                   const SizedBox(height: 12),
                   AudespTextField(
                     label: 'Informações Complementares',
                     controller: _infComplementarCtrl,
                     readOnly: readOnly,
+                    maxLength: 5120,
                     maxLines: 2,
+                    validator: (v) => validarTamanhoMaximo(v, 5120),
                   ),
                   const SizedBox(height: 12),
                   Row(

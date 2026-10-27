@@ -335,6 +335,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_houvePublicacao && _publicacoes.isEmpty) {
+      _showError(
+        'Adicione ao menos uma publicação quando "Houve Publicação" estiver marcado.',
+      );
+      return;
+    }
     if (_itens.isEmpty) {
       _showError('Adicione pelo menos um item de compra.');
       return;

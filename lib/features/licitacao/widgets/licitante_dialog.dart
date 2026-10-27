@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/text_validation.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
@@ -129,7 +130,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                       ? 'Nome/Razão Social *'
                       : 'Nome/Razão Social',
                   controller: _nomeCtrl,
-                  maxLength: 50,
+                  maxLength: 100,
                   validator: (v) {
                     if (_tipoPessoa == 'PE' &&
                         (v == null || v.trim().length < 3)) {
@@ -140,7 +141,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
                         v.trim().length < 3) {
                       return 'Mínimo 3 caracteres';
                     }
-                    return null;
+                    return validarTamanhoMaximo(v, 100);
                   },
                 ),
                 const SizedBox(height: 12),
