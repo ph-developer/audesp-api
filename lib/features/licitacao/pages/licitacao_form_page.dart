@@ -24,6 +24,8 @@ import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../processo/domain/processo_rules.dart';
+import '../../processo/processo_providers.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
 import '../domain/licitacao_itens_resumo.dart';
@@ -419,6 +421,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       }
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
+      ref.invalidate(processosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -490,6 +493,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           userId: user?.id,
         );
 
+        if (!mounted) return;
+        ref.invalidate(processosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -580,12 +585,34 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   Future<void> _returnToDraft() async {
     if (_loadedId == null) return;
 
+    String avisoDependentes;
+    try {
+      final processos = await ref.refresh(processosProvider.future);
+      if (!mounted) return;
+      final processo = processos
+          .where((p) => p.edital.id == _editalId)
+          .firstOrNull;
+      final dependentes = processo == null
+          ? (atas: 0, ajustes: 0)
+          : ProcessoRules.dependentesDe(processo);
+      final vinculos = [
+        if (dependentes.atas > 0) '${dependentes.atas} ata(s)',
+        if (dependentes.ajustes > 0) '${dependentes.ajustes} ajuste(s)',
+      ].join(' e ');
+      avisoDependentes = vinculos.isEmpty
+          ? ''
+          : '\n\nHá $vinculos vinculados a este edital. Enquanto o documento estiver em rascunho, eles não poderão ser enviados.';
+    } catch (e) {
+      _showError('Não foi possível conferir os documentos vinculados: $e');
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
-        content: const Text(
-          'A licitacao voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+        content: Text(
+          'A licitacao voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.$avisoDependentes',
         ),
         actions: [
           TextButton(
@@ -601,12 +628,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       await ref.read(licitacoesDaoProvider).markAsDraft(_loadedId!);
+      if (!mounted) return;
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
+      ref.invalidate(processosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;

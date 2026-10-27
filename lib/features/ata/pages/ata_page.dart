@@ -17,6 +17,7 @@ import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
+import '../../processo/processo_providers.dart';
 import '../ata_providers.dart';
 
 class AtaPage extends ConsumerStatefulWidget {
@@ -82,6 +83,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             onPressed: () {
               ref.invalidate(atasDraftProvider);
               ref.invalidate(atasEnviadasProvider);
+              ref.invalidate(processosProvider);
               ref.invalidate(
                 unlinkedEditaisProvider(UnlinkedEditaisTarget.ata),
               );

@@ -29,6 +29,8 @@ import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../processo/domain/processo_rules.dart';
+import '../../processo/processo_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
 import '../domain/edital_rules.dart';
@@ -323,6 +325,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       }
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
+      ref.invalidate(processosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -437,6 +440,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           userId: user?.id,
         );
 
+        if (!mounted) return;
+        ref.invalidate(processosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -761,12 +766,34 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   Future<void> _returnToDraft() async {
     if (_loadedId == null) return;
 
+    String avisoDependentes;
+    try {
+      final processos = await ref.refresh(processosProvider.future);
+      if (!mounted) return;
+      final processo = processos
+          .where((p) => p.edital.id == _loadedId)
+          .firstOrNull;
+      final dependentes = processo == null
+          ? (atas: 0, ajustes: 0)
+          : ProcessoRules.dependentesDe(processo);
+      final vinculos = [
+        if (dependentes.atas > 0) '${dependentes.atas} ata(s)',
+        if (dependentes.ajustes > 0) '${dependentes.ajustes} ajuste(s)',
+      ].join(' e ');
+      avisoDependentes = vinculos.isEmpty
+          ? ''
+          : '\n\nHá $vinculos vinculados a este edital. Enquanto o documento estiver em rascunho, eles não poderão ser enviados.';
+    } catch (e) {
+      _showError('Não foi possível conferir os documentos vinculados: $e');
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
-        content: const Text(
-          'O edital voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+        content: Text(
+          'O edital voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.$avisoDependentes',
         ),
         actions: [
           TextButton(
@@ -782,12 +809,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       await ref.read(editaisDaoProvider).markAsDraft(_loadedId!);
+      if (!mounted) return;
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
+      ref.invalidate(processosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;

@@ -5,11 +5,8 @@ import '../../../core/database/models/licitacao.dart';
 /// Referência local para conferir os itens de Ata e Ajuste.
 abstract final class LicitacaoReferencia {
   static Licitacao? selecionar(Iterable<Licitacao> licitacoes) {
-    final ordenadas = licitacoes.toList()
+    final ordenadas = licitacoes.where((l) => l.status == 'sent').toList()
       ..sort((a, b) {
-        final enviadaA = a.status == 'sent';
-        final enviadaB = b.status == 'sent';
-        if (enviadaA != enviadaB) return enviadaA ? -1 : 1;
         final data = b.updatedAt.compareTo(a.updatedAt);
         return data != 0 ? data : b.id.compareTo(a.id);
       });

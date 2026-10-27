@@ -22,10 +22,14 @@ import '../../../shared/widgets/audesp_pncp_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/audesp_warning_message.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
+import '../../processo/domain/processo.dart';
+import '../../processo/domain/processo_rules.dart';
+import '../../processo/processo_providers.dart';
 import '../ata_providers.dart';
 import '../domain/ata_rules.dart';
 import '../services/ata_service.dart';
@@ -54,8 +58,25 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   // ── Vínculo com Edital ─────────────────────────────────────────────────
   int? _editalId;
-  List<Edital> _editais = [];
+  List<OpcaoEdital> _opcoesEdital = [];
   Set<int>? _itensLicitacao;
+
+  Iterable<OpcaoEdital> get _opcoesVisiveis => _opcoesEdital.where(
+    (o) => o.liberado || o.processo.edital.id == _editalId,
+  );
+
+  Iterable<Edital> get _editais =>
+      _opcoesVisiveis.map((o) => o.processo.edital);
+
+  String? get _motivoBloqueioEdital {
+    if (_editalId == null) return null;
+    final opcao = _opcoesEdital
+        .where((o) => o.processo.edital.id == _editalId)
+        .firstOrNull;
+    return opcao == null
+        ? 'O edital vinculado não foi encontrado.'
+        : opcao.motivoBloqueio;
+  }
 
   bool get _editalSemPncp =>
       _editais.where((e) => e.id == _editalId).firstOrNull?.semPncp ?? false;
@@ -96,17 +117,41 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   }
 
   Future<void> _init() async {
-    final editaisDao = ref.read(editaisDaoProvider);
-    final editaisEnviados = await editaisDao.watchByStatus('sent');
-    _editais = editaisEnviados.where((e) => e.isSrp).toList();
-
-    await _selectPreselectedEdital(widget.preselectedEditalId);
-
     if (widget.ataId != null) {
       await _loadExisting(widget.ataId!);
+    } else {
+      await _carregarOpcoesEdital();
+      if (!mounted) return;
+      await _selectPreselectedEdital(widget.preselectedEditalId);
     }
+    if (!mounted) return;
     await _carregarItensLicitacao();
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<List<Processo>> _carregarOpcoesEdital() async {
+    final processos = await ref.refresh(processosProvider.future);
+    if (!mounted) return processos;
+    final opcoes = ProcessoRules.opcoesAta(processos);
+    final editalId = _editalId;
+    if (editalId != null &&
+        !opcoes.any((o) => o.processo.edital.id == editalId)) {
+      final edital = await ref.read(editaisDaoProvider).findById(editalId);
+      if (!mounted || editalId != _editalId) return processos;
+      if (edital != null) {
+        final processo =
+            processos.where((p) => p.edital.id == editalId).firstOrNull ??
+            Processo(edital: edital, licitacoes: [], atas: [], ajustes: []);
+        opcoes.add(
+          OpcaoEdital(
+            processo: processo,
+            motivoBloqueio: ProcessoRules.motivoBloqueioAta(processo),
+          ),
+        );
+      }
+    }
+    setState(() => _opcoesEdital = opcoes);
+    return processos;
   }
 
   Future<void> _carregarItensLicitacao() async {
@@ -119,7 +164,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
             .watchByEdital(editalId);
         numeros = LicitacaoReferencia.numerosItens(licitacoes);
       } catch (_) {
-        // A falta de referência local não impede a conferência pelo servidor.
+        // Sem referência legível, o rascunho pode ser salvo, mas não enviado.
       }
     }
     if (!mounted || editalId != _editalId) return;
@@ -142,24 +187,36 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   Future<void> _selectPreselectedEdital(int? editalId) async {
     if (editalId == null) return;
-    var edital = _editais.where((e) => e.id == editalId).firstOrNull;
-    if (edital == null) {
-      final found = await ref.read(editaisDaoProvider).findById(editalId);
-      if (found != null && found.status == 'sent' && found.isSrp) {
-        edital = found;
-        _editais = [..._editais, found];
-      }
+    final opcao = _opcoesEdital
+        .where((o) => o.processo.edital.id == editalId)
+        .firstOrNull;
+    if (opcao == null) {
+      final edital = await ref.read(editaisDaoProvider).findById(editalId);
+      if (!mounted) return;
+      _showError(
+        edital == null
+            ? 'O edital informado não foi encontrado.'
+            : ProcessoRules.motivoBloqueioAta(
+                    Processo(
+                      edital: edital,
+                      licitacoes: [],
+                      atas: [],
+                      ajustes: [],
+                    ),
+                  ) ??
+                  'O edital não está disponível para criar ata.',
+      );
+      return;
     }
-    if (edital == null) return;
+    if (!opcao.liberado) {
+      _showError(opcao.motivoBloqueio!);
+      return;
+    }
+    final edital = opcao.processo.edital;
     _editalId = edital.id;
     _codigoEditalCtrl.text = edital.codigoEdital;
     _retificacao = edital.retificacao;
     _anoCompra = edital.anoCompra;
-  }
-
-  bool get _isSelectedEditalAvailable {
-    final id = _editalId;
-    return id != null && _editais.any((e) => e.id == id);
   }
 
   Future<void> _loadExisting(int id) async {
@@ -172,7 +229,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     _loadedId = ata.id;
     _isSent = ata.status == 'sent';
     _editalId = ata.editalId;
-    if (!_isSelectedEditalAvailable) _editalId = null;
+    await _carregarOpcoesEdital();
+    if (!mounted) return;
 
     Map<String, dynamic> doc = {};
     try {
@@ -341,6 +399,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       }
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
+      ref.invalidate(processosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -359,14 +418,37 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       _showError('Selecione o Edital vinculado.');
       return;
     }
+    final editalId = _editalId;
+    try {
+      final processos = await _carregarOpcoesEdital();
+      if (!mounted || editalId != _editalId) return;
+      final processo = processos
+          .where((p) => p.edital.id == editalId)
+          .firstOrNull;
+      final motivo = processo == null
+          ? 'O edital vinculado não foi encontrado.'
+          : ProcessoRules.motivoBloqueioAta(processo);
+      if (motivo != null) {
+        _showError(motivo);
+        return;
+      }
+    } catch (e) {
+      _showError('Não foi possível conferir as dependências do edital: $e');
+      return;
+    }
+    await _carregarItensLicitacao();
+    if (!mounted || editalId != _editalId) return;
+    if (_itensLicitacao == null) {
+      _showError(
+        'Não foi possível conferir os itens: a licitação enviada do edital não possui itens legíveis.',
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     if (_numerosItem.isEmpty) {
       _showError('Informe pelo menos um número de item.');
       return;
     }
-    final editalId = _editalId;
-    await _carregarItensLicitacao();
-    if (!mounted || editalId != _editalId) return;
     final erroItens = AtaRules.validarItens(
       _numerosItem,
       numerosLicitacao: _itensLicitacao,
@@ -401,6 +483,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           userId: user?.id,
         );
 
+        if (!mounted) return;
+        ref.invalidate(processosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -515,8 +599,10 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
     try {
       await ref.read(atasDaoProvider).markAsDraft(_loadedId!);
+      if (!mounted) return;
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
+      ref.invalidate(processosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;
@@ -672,12 +758,22 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                   AudespFieldRow(
                     children: [
                       AudespFieldRowItem(
-                        child: AudespDropdown<int>(
+                        child: AudespDropdown<int>.items(
                           label: 'Edital *',
-                          value: _editalId,
-                          items: {
-                            for (final e in _editais) e.id: e.dropdownLabel,
-                          },
+                          value: _editais.any((e) => e.id == _editalId)
+                              ? _editalId
+                              : null,
+                          items: [
+                            for (final opcao in _opcoesVisiveis)
+                              DropdownMenuItem(
+                                value: opcao.processo.edital.id,
+                                enabled: opcao.liberado,
+                                child: Text(
+                                  '${opcao.processo.edital.dropdownLabel}${opcao.liberado ? '' : ' — bloqueado'}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
                           readOnly: readOnly,
                           onChanged: (v) async {
                             setState(() {
@@ -702,6 +798,14 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       ),
                     ],
                   ),
+                  if (_motivoBloqueioEdital case final motivo? when !_isSent)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: AudespWarningMessage(
+                        message:
+                            '$motivo O rascunho pode ser salvo; o envio está bloqueado.',
+                      ),
+                    ),
                 ],
               ),
               AudespSpacing.verticalLg,

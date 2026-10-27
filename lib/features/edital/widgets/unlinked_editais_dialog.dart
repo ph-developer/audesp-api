@@ -8,6 +8,9 @@ import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../processo/domain/processo.dart';
+import '../../processo/domain/processo_rules.dart';
+import '../../processo/processo_providers.dart';
 import 'pcnp_input_formatter.dart';
 
 enum UnlinkedEditaisTarget { licitacao, ata, ajuste }
@@ -15,52 +18,56 @@ enum UnlinkedEditaisTarget { licitacao, ata, ajuste }
 class UnlinkedEditaisData {
   final List<Edital> editais;
   final Map<int, int> linkedCounts;
+  final Map<int, String> motivosBloqueio;
 
   const UnlinkedEditaisData({
     required this.editais,
     required this.linkedCounts,
+    this.motivosBloqueio = const {},
   });
 }
 
 final unlinkedEditaisProvider = FutureProvider.autoDispose
     .family<UnlinkedEditaisData, UnlinkedEditaisTarget>((ref, target) async {
-      final editaisEnviados =
-          await ref.watch(editaisDaoProvider).watchByStatus('sent');
-
-      final linkedCounts = <int, int>{};
-
-      switch (target) {
-        case UnlinkedEditaisTarget.licitacao:
-          final licitacoes = await ref.watch(licitacoesDaoProvider).watchAll();
-          for (final l in licitacoes) {
-            linkedCounts[l.editalId] = (linkedCounts[l.editalId] ?? 0) + 1;
-          }
-          return UnlinkedEditaisData(
-            editais: editaisEnviados,
-            linkedCounts: linkedCounts,
-          );
-        case UnlinkedEditaisTarget.ata:
-          final atas = await ref.watch(atasDaoProvider).watchAll();
-          for (final a in atas) {
-            linkedCounts[a.editalId] = (linkedCounts[a.editalId] ?? 0) + 1;
-          }
-          return UnlinkedEditaisData(
-            editais: editaisEnviados.where((e) => e.isSrp).toList(),
-            linkedCounts: linkedCounts,
-          );
-        case UnlinkedEditaisTarget.ajuste:
-          final ajustes = await ref.watch(ajustesDaoProvider).watchAll();
-          for (final a in ajustes) {
-            final editalId = a.editalId;
-            if (editalId != null) {
-              linkedCounts[editalId] = (linkedCounts[editalId] ?? 0) + 1;
-            }
-          }
-          return UnlinkedEditaisData(
-            editais: editaisEnviados.where((e) => !e.isSrp).toList(),
-            linkedCounts: linkedCounts,
-          );
+      if (target == UnlinkedEditaisTarget.licitacao) {
+        final editaisEnviados = await ref
+            .watch(editaisDaoProvider)
+            .watchByStatus('sent');
+        final processos = Processo.agrupar(
+          editais: editaisEnviados,
+          licitacoes: await ref.watch(licitacoesDaoProvider).watchAll(),
+          atas: const [],
+          ajustes: const [],
+        );
+        return UnlinkedEditaisData(
+          editais: editaisEnviados,
+          linkedCounts: {
+            for (final processo in processos)
+              processo.edital.id: processo.licitacoes.length,
+          },
+        );
       }
+
+      final processos = await ref.watch(processosProvider.future);
+      final opcoes = target == UnlinkedEditaisTarget.ata
+          ? ProcessoRules.opcoesAta(processos)
+          : ProcessoRules.opcoesAjuste(
+              processos,
+            ).where((o) => !o.processo.edital.isSrp).toList();
+
+      return UnlinkedEditaisData(
+        editais: opcoes.map((o) => o.processo.edital).toList(),
+        linkedCounts: {
+          for (final opcao in opcoes)
+            opcao.processo.edital.id: target == UnlinkedEditaisTarget.ata
+                ? opcao.processo.atas.length
+                : opcao.processo.ajustes.length,
+        },
+        motivosBloqueio: {
+          for (final opcao in opcoes)
+            opcao.processo.edital.id: ?opcao.motivoBloqueio,
+        },
+      );
     });
 
 Future<Edital?> showUnlinkedEditaisDialog({
@@ -100,6 +107,7 @@ class _UnlinkedEditaisDialogState
     extends ConsumerState<_UnlinkedEditaisDialog> {
   final _searchCtrl = TextEditingController();
   bool _exibirJaEnviados = false;
+  bool _mostrarBloqueados = false;
 
   @override
   void dispose() {
@@ -124,11 +132,13 @@ class _UnlinkedEditaisDialogState
                 widget.target != UnlinkedEditaisTarget.licitacao;
             final canShowAll = showExibirJaEnviados && _exibirJaEnviados;
 
-            final candidates = canShowAll
-                ? data.editais
-                : data.editais
-                    .where((e) => (data.linkedCounts[e.id] ?? 0) == 0)
-                    .toList();
+            final candidates = data.editais.where((e) {
+              if (!canShowAll && (data.linkedCounts[e.id] ?? 0) > 0) {
+                return false;
+              }
+              return _mostrarBloqueados ||
+                  !data.motivosBloqueio.containsKey(e.id);
+            }).toList();
 
             final filtered = candidates.where((edital) {
               return matchesLikeSearch(
@@ -187,6 +197,31 @@ class _UnlinkedEditaisDialogState
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: () => setState(
+                          () => _mostrarBloqueados = !_mostrarBloqueados,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _mostrarBloqueados,
+                                onChanged: (v) => setState(
+                                  () => _mostrarBloqueados = v ?? false,
+                                ),
+                              ),
+                              const Text('Mostrar bloqueados'),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -219,8 +254,11 @@ class _UnlinkedEditaisDialogState
                             ].join(' ');
                             final linkedCount =
                                 data.linkedCounts[edital.id] ?? 0;
+                            final motivoBloqueio =
+                                data.motivosBloqueio[edital.id];
 
                             return ListTile(
+                              enabled: motivoBloqueio == null,
                               leading: const Icon(Icons.article_outlined),
                               title: Text(
                                 compra.isEmpty ? edital.dropdownLabel : compra,
@@ -229,27 +267,33 @@ class _UnlinkedEditaisDialogState
                               ),
                               subtitle: Text(
                                 [
-                                  PcnpInputFormatter.applyMask(
-                                    edital.idContratacaoPNCP,
-                                  ),
-                                  if (edital.objetoCompra.isNotEmpty)
-                                    edital.objetoCompra,
-                                ].join(' - '),
-                                maxLines: 2,
+                                  [
+                                    PcnpInputFormatter.applyMask(
+                                      edital.idContratacaoPNCP,
+                                    ),
+                                    if (edital.objetoCompra.isNotEmpty)
+                                      edital.objetoCompra,
+                                  ].join(' - '),
+                                  ?motivoBloqueio,
+                                ].join('\n'),
+                                maxLines: motivoBloqueio == null ? 2 : 4,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               trailing: linkedCount > 0
                                   ? StatusChip(
-                                      label: widget.target ==
+                                      label:
+                                          widget.target ==
                                               UnlinkedEditaisTarget.ata
                                           ? '$linkedCount ${linkedCount == 1 ? 'ata' : 'atas'}'
                                           : widget.target ==
-                                                  UnlinkedEditaisTarget.ajuste
-                                              ? '$linkedCount ${linkedCount == 1 ? 'ajuste' : 'ajustes'}'
-                                              : '$linkedCount ${linkedCount == 1 ? 'licitação' : 'licitações'}',
+                                                UnlinkedEditaisTarget.ajuste
+                                          ? '$linkedCount ${linkedCount == 1 ? 'ajuste' : 'ajustes'}'
+                                          : '$linkedCount ${linkedCount == 1 ? 'licitação' : 'licitações'}',
                                     )
                                   : null,
-                              onTap: () => Navigator.of(context).pop(edital),
+                              onTap: motivoBloqueio == null
+                                  ? () => Navigator.of(context).pop(edital)
+                                  : null,
                             );
                           },
                         ),
@@ -280,4 +324,3 @@ String _searchableEditalText(Edital edital) {
     edital.objetoCompra,
   ].join(' ');
 }
-
