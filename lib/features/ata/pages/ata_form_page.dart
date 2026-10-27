@@ -13,7 +13,9 @@ import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
@@ -27,6 +29,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
+import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
@@ -53,6 +56,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   bool _saving = false;
   bool _isSent = false;
   bool _updatingStatus = false;
+  bool _importandoItens = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
 
@@ -80,6 +84,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
   bool get _editalSemPncp =>
       _editais.where((e) => e.id == _editalId).firstOrNull?.semPncp ?? false;
+
+  bool get _podeImportarItensHomologados =>
+      !_isSent && _editalId != null && _motivoBloqueioEdital == null;
 
   // ── Descritor ─────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
@@ -497,6 +504,114 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   void _showError(String msg) {
     if (!mounted) return;
     AudespSnackBar.error(context, msg);
+  }
+
+  Future<void> _importarItensHomologados() async {
+    if (!_podeImportarItensHomologados || _importandoItens) return;
+    final editalId = _editalId!;
+    setState(() => _importandoItens = true);
+    try {
+      final licitacoes = await ref
+          .read(licitacoesDaoProvider)
+          .watchByEdital(editalId);
+      if (!mounted || editalId != _editalId || !_podeImportarItensHomologados) {
+        return;
+      }
+      final licitacao = LicitacaoReferencia.selecionar(licitacoes);
+      if (licitacao == null) {
+        _showError('Não há licitação enviada para o edital selecionado.');
+        return;
+      }
+      final licitacaoDoc =
+          jsonDecode(licitacao.documentoJson) as Map<String, dynamic>;
+      final homologados = LicitacaoResultado.itensHomologados(licitacaoDoc);
+      if (homologados.isEmpty) {
+        _showError('A licitação enviada não tem itens homologados.');
+        return;
+      }
+      final edital = await ref.read(editaisDaoProvider).findById(editalId);
+      if (!mounted || editalId != _editalId || !_podeImportarItensHomologados) {
+        return;
+      }
+      if (edital == null) {
+        _showError('O edital selecionado não foi encontrado.');
+        return;
+      }
+      final fornecedores = LicitacaoResultado.fornecedoresVencedores(
+        licitacaoDoc,
+        jsonDecode(edital.documentoJson) as Map<String, dynamic>,
+      );
+      final escolhidos = await showAudespDialog<Set<int>>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Importar itens homologados'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 400),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  ListTile(
+                    title: const Text('Todos os itens homologados'),
+                    subtitle: Text(
+                      'Itens: ${(homologados.toList()..sort()).join(', ')}',
+                    ),
+                    onTap: () => Navigator.of(dialogContext).pop(homologados),
+                  ),
+                  for (final fornecedor in fornecedores) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      title: Text(
+                        fornecedor.nomeRazaoSocial.isEmpty
+                            ? fornecedor.niPessoa
+                            : fornecedor.nomeRazaoSocial,
+                      ),
+                      subtitle: Text(
+                        '${fornecedor.tipoPessoaId == 'PE' ? fornecedor.niPessoa : AudespCpfCnpjField.formatDocument(fornecedor.niPessoa)}\n'
+                        'Itens: ${fornecedor.itens.join(', ')}',
+                      ),
+                      onTap: () => Navigator.of(
+                        dialogContext,
+                      ).pop(fornecedor.itens.toSet()),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted ||
+          escolhidos == null ||
+          editalId != _editalId ||
+          !_podeImportarItensHomologados) {
+        return;
+      }
+      final novos = escolhidos.where((n) => !_numerosItem.contains(n)).toList();
+      setState(() {
+        _numerosItem.addAll(novos);
+        _numerosItem.sort();
+      });
+      AudespSnackBar.success(
+        context,
+        novos.isEmpty
+            ? 'Todos os itens selecionados já estavam na ata.'
+            : '${novos.length} item(ns) acrescentado(s) à ata.',
+      );
+    } catch (e) {
+      if (mounted && editalId == _editalId) {
+        _showError('Erro ao importar itens homologados: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _importandoItens = false);
+    }
   }
 
   // ── Itens ─────────────────────────────────────────────────────────────
@@ -982,6 +1097,16 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               // ── Itens ────────────────────────────────────────────────
               SectionCard(
                 title: 'Itens da Licitação Referenciados',
+                titleActions: [
+                  if (_podeImportarItensHomologados)
+                    TextButton.icon(
+                      onPressed: _importandoItens || _saving
+                          ? null
+                          : _importarItensHomologados,
+                      icon: const Icon(Icons.playlist_add_check),
+                      label: const Text('Importar itens homologados'),
+                    ),
+                ],
                 children: [
                   if (_editalId != null && _itensLicitacao == null)
                     Padding(

@@ -15,6 +15,8 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_currency_field.dart';
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
@@ -29,6 +31,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
+import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
@@ -65,6 +68,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   bool _validacaoSolicitada = false;
   bool _isSent = false;
   bool _importingGemini = false;
+  bool _preenchendoLicitacao = false;
   bool _updatingStatus = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
@@ -95,6 +99,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   Edital? get _editalSelecionado =>
       _editais.where((e) => e.id == _editalId).firstOrNull;
+
+  bool get _podePreencherPelaLicitacao =>
+      !_isSent &&
+      !_adesaoParticipacao &&
+      _editalId != null &&
+      _motivoBloqueioEdital == null;
 
   bool get _exigeEditalLocal =>
       AjusteRules.exigeEditalLocal(adesaoParticipacao: _adesaoParticipacao);
@@ -1112,6 +1122,293 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _despesaFocusNode.requestFocus();
   }
 
+  Future<void> _preencherPelaLicitacao() async {
+    if (!_podePreencherPelaLicitacao || _preenchendoLicitacao) return;
+    final editalId = _editalId!;
+    final ataId = _ataId;
+    setState(() => _preenchendoLicitacao = true);
+    try {
+      final licitacoes = await ref
+          .read(licitacoesDaoProvider)
+          .watchByEdital(editalId);
+      if (!mounted ||
+          editalId != _editalId ||
+          ataId != _ataId ||
+          !_podePreencherPelaLicitacao) {
+        return;
+      }
+      final licitacao = LicitacaoReferencia.selecionar(licitacoes);
+      if (licitacao == null) {
+        _showError('Não há licitação enviada para o edital selecionado.');
+        return;
+      }
+      final edital = await ref.read(editaisDaoProvider).findById(editalId);
+      if (!mounted ||
+          editalId != _editalId ||
+          ataId != _ataId ||
+          !_podePreencherPelaLicitacao) {
+        return;
+      }
+      if (edital == null) {
+        _showError('O edital selecionado não foi encontrado.');
+        return;
+      }
+      Set<int>? limitarItens;
+      if (ataId != null) {
+        final ata = await ref.read(atasDaoProvider).findById(ataId);
+        if (!mounted ||
+            editalId != _editalId ||
+            ataId != _ataId ||
+            !_podePreencherPelaLicitacao) {
+          return;
+        }
+        if (ata == null || ata.editalId != editalId) {
+          _showError('A ata selecionada não foi encontrada para este edital.');
+          return;
+        }
+        final ataDoc = jsonDecode(ata.documentoJson) as Map<String, dynamic>;
+        limitarItens = (ataDoc['numeroItem'] as List<dynamic>? ?? [])
+            .map((n) => (n as num).toInt())
+            .toSet();
+      }
+      final fornecedores = LicitacaoResultado.fornecedoresVencedores(
+        jsonDecode(licitacao.documentoJson) as Map<String, dynamic>,
+        jsonDecode(edital.documentoJson) as Map<String, dynamic>,
+        limitarItens: limitarItens,
+      );
+      if (fornecedores.isEmpty) {
+        _showError(
+          'A licitação enviada não tem vencedores em itens homologados.',
+        );
+        return;
+      }
+      final fornecedor = fornecedores.length == 1
+          ? fornecedores.single
+          : await _escolherFornecedorVencedor(fornecedores);
+      if (!mounted ||
+          fornecedor == null ||
+          editalId != _editalId ||
+          ataId != _ataId ||
+          !_podePreencherPelaLicitacao) {
+        return;
+      }
+      final sugestoes = <String, String>{
+        'niFornecedor': fornecedor.niPessoa,
+        'tipoPessoaFornecedor': fornecedor.tipoPessoaId,
+        if (fornecedor.nomeRazaoSocial.isNotEmpty)
+          'nomeRazaoSocialFornecedor': fornecedor.nomeRazaoSocial,
+        'itens': fornecedor.itens.join(', '),
+        if (fornecedor.valorSugerido != null)
+          'valorInicial': doubleToBrString(fornecedor.valorSugerido),
+      };
+      final aceitos = await showGeminiReviewDialog(
+        context: context,
+        currentValues: _valoresAtuais(),
+        suggestedValues: sugestoes,
+        title: 'Preencher pela licitação',
+        suggestionLabel: 'Licitação',
+      );
+      if (!mounted ||
+          aceitos == null ||
+          aceitos.isEmpty ||
+          editalId != _editalId ||
+          ataId != _ataId ||
+          !_podePreencherPelaLicitacao) {
+        return;
+      }
+      setState(() {
+        final tipoAtual = _tipoPessoaFornecedor;
+        _aplicarCamposAceitos(aceitos);
+        // Na revisão local, o tipo só muda se sua sugestão foi aceita.
+        if (!aceitos.containsKey('tipoPessoaFornecedor')) {
+          _tipoPessoaFornecedor = tipoAtual;
+        }
+      });
+      AudespSnackBar.success(
+        context,
+        '${aceitos.length} campo(s) preenchido(s) pela licitação.',
+      );
+    } catch (e) {
+      if (mounted && editalId == _editalId && ataId == _ataId) {
+        _showError('Erro ao preencher pela licitação: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _preenchendoLicitacao = false);
+    }
+  }
+
+  Future<FornecedorVencedor?> _escolherFornecedorVencedor(
+    List<FornecedorVencedor> fornecedores,
+  ) {
+    return showAudespDialog<FornecedorVencedor>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Escolher fornecedor vencedor'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: fornecedores.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (_, index) {
+                final fornecedor = fornecedores[index];
+                final ni = fornecedor.tipoPessoaId == 'PE'
+                    ? fornecedor.niPessoa
+                    : AudespCpfCnpjField.formatDocument(fornecedor.niPessoa);
+                return ListTile(
+                  title: Text(
+                    fornecedor.nomeRazaoSocial.isEmpty
+                        ? ni
+                        : fornecedor.nomeRazaoSocial,
+                  ),
+                  subtitle: Text(
+                    '$ni\nItens: ${fornecedor.itens.join(', ')}\n'
+                    '${fornecedor.valorSugerido == null ? 'sem sugestão de valor' : 'Valor sugerido: ${formatBRL(fornecedor.valorSugerido)}'}',
+                  ),
+                  onTap: () => Navigator.of(dialogContext).pop(fornecedor),
+                );
+              },
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, String> _valoresAtuais() => {
+    'tipoContratoId': _tipoContratoId?.toString() ?? '',
+    'numeroContratoEmpenho': _numeroContratoEmpenhoCtrl.text.trim(),
+    'anoContrato': _anoContratoCtrl.text.trim(),
+    'processo': _processoCtrl.text.trim(),
+    'categoriaProcessoId': _categoriaProcessoId?.toString() ?? '',
+    'fonteRecursosContratacao': (_fontesRecurso.toList()..sort()).join(', '),
+    'niFornecedor': _niFornecedorCtrl.text.trim(),
+    'tipoPessoaFornecedor': _tipoPessoaFornecedor ?? '',
+    'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
+    'tipoObjetoContrato': _tipoObjetoContrato?.toString() ?? '',
+    'objetoContrato': _objetoContratoCtrl.text.trim(),
+    'valorInicial': _valorInicialCtrl.text.trim(),
+    'itens': _itens.join(', '),
+    'despesas': _despesas.join(', '),
+    'dataAssinatura': _dataAssinatura != null
+        ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!)
+        : '',
+    'dataVigenciaInicio': _dataVigenciaInicio != null
+        ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!)
+        : '',
+    'prazoVigenciaMeses': _vigenciaMesesCtrl.text.trim(),
+    'prazoVigenciaDias': '',
+    'dataVigenciaFim': _dataVigenciaFim != null
+        ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!)
+        : '',
+  };
+
+  void _aplicarCamposAceitos(Map<String, String> aceitos) {
+    if (aceitos.containsKey('tipoContratoId')) {
+      final match = RegExp(r'\d+').firstMatch(aceitos['tipoContratoId']!);
+      if (match != null) _tipoContratoId = int.tryParse(match.group(0)!);
+    }
+    if (aceitos.containsKey('numeroContratoEmpenho')) {
+      _numeroContratoEmpenhoCtrl.text = aceitos['numeroContratoEmpenho']!;
+    }
+    if (aceitos.containsKey('anoContrato')) {
+      _anoContratoCtrl.text = aceitos['anoContrato']!;
+    }
+    if (aceitos.containsKey('processo')) {
+      _processoCtrl.text = aceitos['processo']!;
+    }
+    if (aceitos.containsKey('niFornecedor')) {
+      final ni = aceitos['niFornecedor']!.replaceAll(RegExp(r'\D'), '');
+      _niFornecedorCtrl.text = aceitos['niFornecedor']!;
+      if (ni.length == 11) {
+        _tipoPessoaFornecedor = 'PF';
+      } else if (ni.length == 14) {
+        _tipoPessoaFornecedor = 'PJ';
+      } else if (ni.isNotEmpty) {
+        _tipoPessoaFornecedor = 'PE';
+      }
+    }
+    if (aceitos.containsKey('tipoPessoaFornecedor')) {
+      _tipoPessoaFornecedor = aceitos['tipoPessoaFornecedor'];
+    }
+    if (aceitos.containsKey('itens')) {
+      final itemsRaw = aceitos['itens']!;
+      final regex = RegExp(r'\d+');
+      _itens.clear();
+      for (final match in regex.allMatches(itemsRaw)) {
+        final val = int.tryParse(match.group(0)!);
+        if (val != null && !_itens.contains(val)) {
+          _itens.add(val);
+        }
+      }
+      _itens.sort();
+    }
+    if (aceitos.containsKey('fonteRecursosContratacao')) {
+      _fontesRecurso = _parseFontesRecurso(
+        aceitos['fonteRecursosContratacao']!,
+      );
+    }
+    if (aceitos.containsKey('despesas')) {
+      _despesas = _parseDespesas(aceitos['despesas']!);
+    }
+    if (aceitos.containsKey('categoriaProcessoId')) {
+      final match = RegExp(r'\d+').firstMatch(aceitos['categoriaProcessoId']!);
+      if (match != null) {
+        _categoriaProcessoId = int.tryParse(match.group(0)!);
+      }
+    }
+    if (aceitos.containsKey('nomeRazaoSocialFornecedor')) {
+      _nomeRazaoSocialFornecedorCtrl.text =
+          aceitos['nomeRazaoSocialFornecedor']!;
+    }
+    if (aceitos.containsKey('tipoObjetoContrato')) {
+      final match = RegExp(r'\d+').firstMatch(aceitos['tipoObjetoContrato']!);
+      if (match != null) {
+        _tipoObjetoContrato = int.tryParse(match.group(0)!);
+      }
+    }
+    if (aceitos.containsKey('objetoContrato')) {
+      _objetoContratoCtrl.text = aceitos['objetoContrato']!;
+    }
+    if (aceitos.containsKey('valorInicial')) {
+      _valorInicialCtrl.text = aceitos['valorInicial']!;
+    }
+    if (aceitos.containsKey('dataAssinatura')) {
+      try {
+        _dataAssinatura = DateFormat(
+          'dd/MM/yyyy',
+        ).parse(aceitos['dataAssinatura']!);
+      } catch (_) {}
+    }
+    if (aceitos.containsKey('dataVigenciaInicio')) {
+      try {
+        _dataVigenciaInicio = DateFormat(
+          'dd/MM/yyyy',
+        ).parse(aceitos['dataVigenciaInicio']!);
+      } catch (_) {}
+    }
+    if (aceitos.containsKey('prazoVigenciaMeses')) {
+      final raw = aceitos['prazoVigenciaMeses']!;
+      if (raw.endsWith('d')) {
+        final dias = _parseFirstInt(raw);
+        if (dias != null) _vigenciaMesesCtrl.text = '';
+        _prazoVigenciaDias = dias;
+      } else {
+        final meses = _parseFirstInt(raw);
+        if (meses != null) _vigenciaMesesCtrl.text = meses.toString();
+        _prazoVigenciaDias = null;
+      }
+    }
+  }
+
   // ── Importação via Gemini ─────────────────────────────────────────────
 
   Future<void> _importFromDocument() async {
@@ -1128,34 +1425,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     setState(() => _importingGemini = true);
     try {
-      final currentValues = <String, String>{
-        'tipoContratoId': _tipoContratoId?.toString() ?? '',
-        'numeroContratoEmpenho': _numeroContratoEmpenhoCtrl.text.trim(),
-        'anoContrato': _anoContratoCtrl.text.trim(),
-        'processo': _processoCtrl.text.trim(),
-        'categoriaProcessoId': _categoriaProcessoId?.toString() ?? '',
-        'fonteRecursosContratacao': (_fontesRecurso.toList()..sort()).join(
-          ', ',
-        ),
-        'niFornecedor': _niFornecedorCtrl.text.trim(),
-        'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
-        'tipoObjetoContrato': _tipoObjetoContrato?.toString() ?? '',
-        'objetoContrato': _objetoContratoCtrl.text.trim(),
-        'valorInicial': _valorInicialCtrl.text.trim(),
-        'itens': _itens.join(', '),
-        'despesas': _despesas.join(', '),
-        'dataAssinatura': _dataAssinatura != null
-            ? DateFormat('dd/MM/yyyy').format(_dataAssinatura!)
-            : '',
-        'dataVigenciaInicio': _dataVigenciaInicio != null
-            ? DateFormat('dd/MM/yyyy').format(_dataVigenciaInicio!)
-            : '',
-        'prazoVigenciaMeses': _vigenciaMesesCtrl.text.trim(),
-        'prazoVigenciaDias': '',
-        'dataVigenciaFim': _dataVigenciaFim != null
-            ? DateFormat('dd/MM/yyyy').format(_dataVigenciaFim!)
-            : '',
-      };
+      final currentValues = _valoresAtuais();
 
       Map<String, String>? accepted;
 
@@ -1182,110 +1452,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
       if (!mounted || accepted == null || accepted.isEmpty) return;
 
-      final finalAccepted = accepted;
+      final aceitos = accepted;
       setState(() {
-        if (finalAccepted.containsKey('tipoContratoId')) {
-          final match = RegExp(
-            r'\d+',
-          ).firstMatch(finalAccepted['tipoContratoId']!);
-          if (match != null) _tipoContratoId = int.tryParse(match.group(0)!);
-        }
-        if (finalAccepted.containsKey('numeroContratoEmpenho')) {
-          _numeroContratoEmpenhoCtrl.text =
-              finalAccepted['numeroContratoEmpenho']!;
-        }
-        if (finalAccepted.containsKey('anoContrato')) {
-          _anoContratoCtrl.text = finalAccepted['anoContrato']!;
-        }
-        if (finalAccepted.containsKey('processo')) {
-          _processoCtrl.text = finalAccepted['processo']!;
-        }
-        if (finalAccepted.containsKey('niFornecedor')) {
-          final ni = finalAccepted['niFornecedor']!.replaceAll(
-            RegExp(r'\D'),
-            '',
-          );
-          _niFornecedorCtrl.text = finalAccepted['niFornecedor']!;
-          if (ni.length == 11) {
-            _tipoPessoaFornecedor = 'PF';
-          } else if (ni.length == 14) {
-            _tipoPessoaFornecedor = 'PJ';
-          } else if (ni.isNotEmpty) {
-            _tipoPessoaFornecedor = 'PE';
-          }
-        }
-        if (finalAccepted.containsKey('itens')) {
-          final itemsRaw = finalAccepted['itens']!;
-          final regex = RegExp(r'\d+');
-          _itens.clear();
-          for (final match in regex.allMatches(itemsRaw)) {
-            final val = int.tryParse(match.group(0)!);
-            if (val != null && !_itens.contains(val)) {
-              _itens.add(val);
-            }
-          }
-          _itens.sort();
-        }
-        if (finalAccepted.containsKey('fonteRecursosContratacao')) {
-          _fontesRecurso = _parseFontesRecurso(
-            finalAccepted['fonteRecursosContratacao']!,
-          );
-        }
-        if (finalAccepted.containsKey('despesas')) {
-          _despesas = _parseDespesas(finalAccepted['despesas']!);
-        }
-        if (finalAccepted.containsKey('categoriaProcessoId')) {
-          final match = RegExp(
-            r'\d+',
-          ).firstMatch(finalAccepted['categoriaProcessoId']!);
-          if (match != null) {
-            _categoriaProcessoId = int.tryParse(match.group(0)!);
-          }
-        }
-        if (finalAccepted.containsKey('nomeRazaoSocialFornecedor')) {
-          _nomeRazaoSocialFornecedorCtrl.text =
-              finalAccepted['nomeRazaoSocialFornecedor']!;
-        }
-        if (finalAccepted.containsKey('tipoObjetoContrato')) {
-          final match = RegExp(
-            r'\d+',
-          ).firstMatch(finalAccepted['tipoObjetoContrato']!);
-          if (match != null) {
-            _tipoObjetoContrato = int.tryParse(match.group(0)!);
-          }
-        }
-        if (finalAccepted.containsKey('objetoContrato')) {
-          _objetoContratoCtrl.text = finalAccepted['objetoContrato']!;
-        }
-        if (finalAccepted.containsKey('valorInicial')) {
-          _valorInicialCtrl.text = finalAccepted['valorInicial']!;
-        }
-        if (finalAccepted.containsKey('dataAssinatura')) {
-          try {
-            _dataAssinatura = DateFormat(
-              'dd/MM/yyyy',
-            ).parse(finalAccepted['dataAssinatura']!);
-          } catch (_) {}
-        }
-        if (finalAccepted.containsKey('dataVigenciaInicio')) {
-          try {
-            _dataVigenciaInicio = DateFormat(
-              'dd/MM/yyyy',
-            ).parse(finalAccepted['dataVigenciaInicio']!);
-          } catch (_) {}
-        }
-        if (finalAccepted.containsKey('prazoVigenciaMeses')) {
-          final raw = finalAccepted['prazoVigenciaMeses']!;
-          if (raw.endsWith('d')) {
-            final dias = _parseFirstInt(raw);
-            if (dias != null) _vigenciaMesesCtrl.text = '';
-            _prazoVigenciaDias = dias;
-          } else {
-            final meses = _parseFirstInt(raw);
-            if (meses != null) _vigenciaMesesCtrl.text = meses.toString();
-            _prazoVigenciaDias = null;
-          }
-        }
+        _aplicarCamposAceitos(aceitos);
         _dataVigenciaFim = _calculateVigenciaFim(
           start: _dataVigenciaInicio,
           meses: _parseFirstInt(_vigenciaMesesCtrl.text),
@@ -1297,7 +1466,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${finalAccepted.length} campo(s) preenchido(s) pelo Gemini.',
+              '${aceitos.length} campo(s) preenchido(s) pelo Gemini.',
             ),
           ),
         );
@@ -1402,7 +1571,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               )
             else ...[
               TextButton.icon(
-                onPressed: _importingGemini ? null : _importFromDocument,
+                onPressed: _importingGemini || _preenchendoLicitacao
+                    ? null
+                    : _importFromDocument,
                 icon: _importingGemini
                     ? const SizedBox(
                         width: 16,
@@ -1941,6 +2112,17 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               // ── Fornecedor ────────────────────────────────────────────
               SectionCard(
                 title: 'Fornecedor',
+                titleActions: [
+                  if (_podePreencherPelaLicitacao)
+                    TextButton.icon(
+                      onPressed:
+                          _preenchendoLicitacao || _importingGemini || _saving
+                          ? null
+                          : _preencherPelaLicitacao,
+                      icon: const Icon(Icons.playlist_add_check),
+                      label: const Text('Preencher pela licitação'),
+                    ),
+                ],
                 children: [
                   Row(
                     children: [

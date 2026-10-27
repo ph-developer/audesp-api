@@ -171,6 +171,8 @@ String _displayValue(String key, String raw) {
             ? (_stripIdPrefix(kCategoriaProcesso[id] ?? raw))
             : raw;
       }
+    case 'tipoPessoaFornecedor':
+      return kTipoPessoaFornecedor[raw] ?? raw;
     case 'tipoObjetoContrato':
       {
         final id = int.tryParse(raw);
@@ -256,20 +258,35 @@ Future<Map<String, String>?> showGeminiAjusteImportDialog({
   );
 }
 
-/// Exibe apenas o dialog de revisão, útil para a importação manual (BYO-AI).
+/// Revisa sugestões de IA ou locais. [suggestedValues] também aceita um
+/// `Map<String, String>`, pois GeminiExtractionResult é um alias de Map.
 Future<Map<String, String>?> showGeminiReviewDialog({
   required BuildContext context,
   required Map<String, String> currentValues,
   required GeminiExtractionResult suggestedValues,
+  String title = 'Revisão da Importação',
+  String suggestionLabel = 'Sugestão Gemini',
 }) {
   return showAudespDialog<Map<String, String>?>(
     context: context,
     barrierDismissible: false,
     size: DialogSize.large,
     builder: (_) => _GeminiReviewDialog(
-      fields: kAjusteGeminiFields,
+      fields: [
+        for (final field in kAjusteGeminiFields) ...[
+          field,
+          if (field.key == 'niFornecedor' &&
+              suggestedValues.containsKey('tipoPessoaFornecedor'))
+            const GeminiField(
+              key: 'tipoPessoaFornecedor',
+              label: 'Tipo de Pessoa do Fornecedor',
+            ),
+        ],
+      ],
       currentValues: currentValues,
       suggestedValues: suggestedValues,
+      title: title,
+      suggestionLabel: suggestionLabel,
     ),
   );
 }
@@ -374,11 +391,15 @@ class _GeminiReviewDialog extends StatefulWidget {
   final List<GeminiField> fields;
   final Map<String, String> currentValues;
   final GeminiExtractionResult suggestedValues;
+  final String title;
+  final String suggestionLabel;
 
   const _GeminiReviewDialog({
     required this.fields,
     required this.currentValues,
     required this.suggestedValues,
+    required this.title,
+    required this.suggestionLabel,
   });
 
   @override
@@ -428,7 +449,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         children: [
           const Icon(Icons.auto_fix_high),
           const SizedBox(width: 12),
-          const Expanded(child: Text('Revisão da Importação')),
+          Expanded(child: Text(widget.title)),
         ],
       ),
       content: SizedBox(
@@ -473,7 +494,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
                       children: [
                         _tableHeader('Campo'),
                         _tableHeader('Valor Atual'),
-                        _tableHeader('Sugestão Gemini'),
+                        _tableHeader(widget.suggestionLabel),
                         _tableHeader(''),
                       ],
                     ),
@@ -514,6 +535,18 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
     final suggested = widget.suggestedValues[field.key];
     final hasValue = suggested != null;
     final isAccepted = _accepted[field.key] ?? false;
+    // O NI estrangeiro pode conter letras e pontuação significativa.
+    final currentDisplay =
+        field.key == 'niFornecedor' &&
+            widget.currentValues['tipoPessoaFornecedor'] == 'PE'
+        ? current
+        : _displayValue(field.key, current);
+    final suggestedDisplay = suggested == null
+        ? '—'
+        : field.key == 'niFornecedor' &&
+              widget.suggestedValues['tipoPessoaFornecedor'] == 'PE'
+        ? suggested
+        : _displayValue(field.key, suggested);
 
     return TableRow(
       decoration: BoxDecoration(
@@ -527,7 +560,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(
-            current.isEmpty ? '—' : _displayValue(field.key, current),
+            current.isEmpty ? '—' : currentDisplay,
             style: TextStyle(
               fontSize: 12,
               color: current.isEmpty ? colorScheme.outline : null,
@@ -537,7 +570,7 @@ class _GeminiReviewDialogState extends State<_GeminiReviewDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(
-            hasValue ? _displayValue(field.key, suggested) : '—',
+            suggestedDisplay,
             style: TextStyle(
               fontSize: 12,
               color: hasValue ? colorScheme.primary : colorScheme.outline,

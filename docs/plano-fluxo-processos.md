@@ -29,7 +29,7 @@ A divisão por documento é mantida: ela corresponde aos envios do AUDESP e às 
 | 1 | Módulo `processo/` com as regras de dependência | Concluída |
 | 2 | Exigir Licitação enviada para Ata e Ajuste | Concluída |
 | 3 | Novo Ajuste a partir da Ata | Concluída |
-| 4 | Preencher Ata e Ajuste com dados da Licitação | Pendente |
+| 4 | Preencher Ata e Ajuste com dados da Licitação | Concluída |
 | 5 | Menu lateral reorganizado | Pendente |
 | 6 | Tela de Processos e Pendências | Pendente |
 | 7 | Pontos menores (estado da Estimativa, token AUDESP, Logs) | Pendente |
@@ -73,7 +73,7 @@ Ordem: 1 → 2 → 3 → 4 → 5 → 6 → 7, com a 8 feita ao mexer em cada for
   - `fornecedoresVencedores` (itens agrupados por `niPessoa`, com nome e tipo de pessoa);
   - `valorSugerido`: `tipoValor = M` e proposta unitária → valor × quantidade do edital; proposta global → valor; percentual/desconto → sem sugestão.
 - Ata: botão "Importar itens homologados" (não apaga o que já foi digitado).
-- Ajuste: botão "Preencher pela licitação" → escolha do fornecedor vencedor → fornecedor, itens (cruzados com a ata, se houver) e sugestão de valores; confirma antes de sobrescrever.
+- Ajuste: botão "Preencher pela licitação" → escolha do fornecedor vencedor → fornecedor, itens (cruzados com a ata, se houver) e sugestão de valor inicial, revisados campo a campo na mesma tela de revisão da importação pelo Gemini (generalizada com título e rótulo da coluna de sugestão).
 - Testes: `test/features/licitacao/domain/licitacao_resultado_test.dart`, cobrindo as combinações de `tipoProposta` e `tipoValor`.
 
 ### Fase 5 — Menu lateral
@@ -97,7 +97,9 @@ Ordem: 1 → 2 → 3 → 4 → 5 → 6 → 7, com a 8 feita ao mexer em cada for
 
 ### Fase 8 — Formulários grandes
 
-Dividir em widgets por seção, com a lógica de estado e envio fora da tela, ao mexer em cada formulário: primeiro `ajuste_form_page.dart` (seção do fornecedor, antes da Fase 4) e `ata_form_page.dart`; `licitacao_form_page.dart` e `estimativa_form_page.dart` por último.
+Dividir em widgets por seção, com a lógica de estado e envio fora da tela, ao mexer em cada formulário: primeiro `ajuste_form_page.dart` e `ata_form_page.dart`; `licitacao_form_page.dart` e `estimativa_form_page.dart` por último.
+
+Feito até aqui: na Fase 4, `ajuste_form_page.dart` ganhou `_valoresAtuais()` e `_aplicarCamposAceitos()`, compartilhados entre o Gemini e o preenchimento pela licitação. A divisão em widgets por seção continua pendente.
 
 ## Verificação
 
