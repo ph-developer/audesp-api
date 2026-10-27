@@ -246,8 +246,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                   fornecedor.desclassificado) {
                 continue;
               }
-              final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
-              final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
+              final cnpjLimpo = CsvMappers.cleanNiPessoa(fornecedor.cnpj);
+              final tipoPessoa = CsvMappers.tipoPessoaFromCleanNi(cnpjLimpo);
 
               licitantes.add(
                 LicitanteCsvModel(
@@ -274,7 +274,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
               final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
                   .where((f) => f.desclassificado)
-                  .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
+                  .map((f) => CsvMappers.cleanNiPessoa(f.cnpj))
                   .toList();
 
               final vencedorIndex = licitantes.indexWhere(
@@ -356,8 +356,8 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
                   fornecedor.desclassificado) {
                 continue;
               }
-              final cnpjLimpo = fornecedor.cnpj.replaceAll(RegExp(r'\D'), '');
-              final tipoPessoa = cnpjLimpo.length == 11 ? 'PF' : 'PJ';
+              final cnpjLimpo = CsvMappers.cleanNiPessoa(fornecedor.cnpj);
+              final tipoPessoa = CsvMappers.tipoPessoaFromCleanNi(cnpjLimpo);
 
               licitantes.add(
                 LicitanteCsvModel(
@@ -386,7 +386,7 @@ class _PortalImportDialogState extends State<_PortalImportDialog> {
 
               final disqualifiedCnpjs = _estimativaSelecionada!.fornecedores
                   .where((f) => f.desclassificado)
-                  .map((f) => f.cnpj.replaceAll(RegExp(r'\D'), ''))
+                  .map((f) => CsvMappers.cleanNiPessoa(f.cnpj))
                   .toList();
 
               final vencedorIndex = licitantes.indexWhere(

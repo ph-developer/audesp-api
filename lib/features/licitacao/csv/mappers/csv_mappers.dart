@@ -1,3 +1,5 @@
+import '../../domain/licitacao_pessoa.dart';
+
 /// Funções de mapeamento compartilhadas entre os parsers de portais.
 class CsvMappers {
   CsvMappers._();
@@ -6,9 +8,11 @@ class CsvMappers {
   // NI / TipoPessoa
   // ---------------------------------------------------------------------------
 
-  /// Remove máscara de documento (pontos, barras e traços).
-  static String cleanNiPessoa(String raw) =>
-      raw.replaceAll(RegExp(r'[.\-/]'), '').trim();
+  /// Remove máscara de CPF/CNPJ e preserva identificadores estrangeiros.
+  static String cleanNiPessoa(String raw) {
+    final semMascara = raw.replaceAll(RegExp(r'[.\-/]'), '').trim();
+    return normalizarNiPessoa(tipoPessoaFromCleanNi(semMascara), raw);
+  }
 
   /// Determina o [tipoPessoaId] a partir do NI já limpo (sem máscara).
   ///
@@ -16,8 +20,8 @@ class CsvMappers {
   /// - 11 dígitos → 'PF'  (CPF)
   /// - demais     → 'PE'  (estrangeiro)
   static String tipoPessoaFromCleanNi(String cleanNi) {
-    if (cleanNi.length == 14) return 'PJ';
-    if (cleanNi.length == 11) return 'PF';
+    if (RegExp(r'^\d{14}$').hasMatch(cleanNi)) return 'PJ';
+    if (RegExp(r'^\d{11}$').hasMatch(cleanNi)) return 'PF';
     return 'PE';
   }
 

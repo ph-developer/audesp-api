@@ -100,6 +100,95 @@ void main() {
     });
   });
 
+  group('AjusteRules.exigeDataVigenciaInicio', () {
+    test('exige para os tipos previstos somente quando não há meses', () {
+      for (final tipo in [1, 2, 3, 4, 5, 8, 12]) {
+        expect(
+          AjusteRules.exigeDataVigenciaInicio(
+            tipoContratoId: tipo,
+            vigenciaMesesInformada: false,
+          ),
+          isTrue,
+          reason: 'TipoContratoId $tipo sem meses',
+        );
+        expect(
+          AjusteRules.exigeDataVigenciaInicio(
+            tipoContratoId: tipo,
+            vigenciaMesesInformada: true,
+          ),
+          isFalse,
+          reason: 'TipoContratoId $tipo com meses',
+        );
+      }
+    });
+
+    test('não exige para empenho, demais tipos ou tipo nulo', () {
+      for (final tipo in [6, 7, 9, 10, 11, null]) {
+        for (final mesesInformados in [false, true]) {
+          expect(
+            AjusteRules.exigeDataVigenciaInicio(
+              tipoContratoId: tipo,
+              vigenciaMesesInformada: mesesInformados,
+            ),
+            isFalse,
+            reason: 'TipoContratoId $tipo',
+          );
+        }
+      }
+    });
+  });
+
+  group('AjusteRules.exigeVigenciaMeses', () {
+    test('exige para os tipos previstos somente quando não há início', () {
+      for (final tipo in [1, 2, 3, 4, 5, 8, 12]) {
+        expect(
+          AjusteRules.exigeVigenciaMeses(
+            tipoContratoId: tipo,
+            dataVigenciaInicioInformada: false,
+          ),
+          isTrue,
+          reason: 'TipoContratoId $tipo sem início',
+        );
+        expect(
+          AjusteRules.exigeVigenciaMeses(
+            tipoContratoId: tipo,
+            dataVigenciaInicioInformada: true,
+          ),
+          isFalse,
+          reason: 'TipoContratoId $tipo com início',
+        );
+      }
+    });
+
+    test('não exige para empenho, demais tipos ou tipo nulo', () {
+      for (final tipo in [6, 7, 9, 10, 11, null]) {
+        for (final inicioInformado in [false, true]) {
+          expect(
+            AjusteRules.exigeVigenciaMeses(
+              tipoContratoId: tipo,
+              dataVigenciaInicioInformada: inicioInformado,
+            ),
+            isFalse,
+            reason: 'TipoContratoId $tipo',
+          );
+        }
+      }
+    });
+  });
+
+  group('AjusteRules.exigeDataVigenciaFim', () {
+    test('exige somente quando o início foi informado', () {
+      expect(
+        AjusteRules.exigeDataVigenciaFim(dataVigenciaInicioInformada: true),
+        isTrue,
+      );
+      expect(
+        AjusteRules.exigeDataVigenciaFim(dataVigenciaInicioInformada: false),
+        isFalse,
+      );
+    });
+  });
+
   group('AjusteRules.validarCodigoContratoSemPncp', () {
     test('aceita código numérico local', () {
       expect(AjusteRules.validarCodigoContratoSemPncp('202304567'), isNull);

@@ -27,6 +27,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
 import '../domain/licitacao_itens_resumo.dart';
+import '../domain/licitacao_pessoa.dart';
 import '../licitacao_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../services/licitacao_service.dart';
@@ -226,7 +227,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         doc['declaracaoRecursosContratacao'] as bool? ?? false;
 
     final fontes = doc['fonteRecursosContratacao'] as List<dynamic>? ?? [];
-    _fontesRecurso = fontes.map((e) => (e as num).toInt()).toSet();
+    _fontesRecurso = fontes
+        .map((e) => (e as num).toInt())
+        .where(kFonteRecurso.containsKey)
+        .toSet();
 
     _contratacaoConduzida = doc['contratacaoConduzida'] as bool? ?? false;
     _cpfsCondutores = (doc['cpfsCondutores'] as List<dynamic>? ?? [])
@@ -279,7 +283,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           .whereType<Map<String, dynamic>>()
           .map((l) {
             final ni = l['niPessoa'] as String? ?? '';
-            return {...l, 'niPessoa': ni.replaceAll(RegExp(r'\D'), '')};
+            final tipoPessoa = l['tipoPessoaId'] as String? ?? 'PJ';
+            return {...l, 'niPessoa': normalizarNiPessoa(tipoPessoa, ni)};
           })
           .toList();
       return {...item, 'licitantes': licitantes};
@@ -340,7 +345,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     map['exigenciaVistoCREA'] = _exigenciaVistoCREA;
     map['declaracaoRecursosContratacao'] = _declaracaoRecursos;
 
-    if (_fontesRecurso.isNotEmpty) {
+    if (_declaracaoRecursos && _fontesRecurso.isNotEmpty) {
       map['fonteRecursosContratacao'] = _fontesRecurso.toList()..sort();
     }
 
@@ -432,8 +437,10 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
-    if (_fontesRecurso.isEmpty) {
-      _showError('Selecione ao menos uma fonte de recurso.');
+    if (_declaracaoRecursos && _fontesRecurso.isEmpty) {
+      _showError(
+        'Selecione ao menos uma fonte de recurso quando houver declaração de recursos.',
+      );
       return;
     }
     if (_contratacaoConduzida && _cpfsCondutores.isEmpty) {
@@ -912,7 +919,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 .whereType<int>()
                 .toSet();
           }
-          if (parsed.isNotEmpty) _fontesRecurso = parsed;
+          final validas = parsed.where(kFonteRecurso.containsKey).toSet();
+          if (validas.isNotEmpty) _fontesRecurso = validas;
         }
         if (finalAccepted.containsKey('exigenciaIndicesEconomicos')) {
           _exigenciaIndicesEconomicos = int.tryParse(
@@ -1488,6 +1496,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Fontes de Recurso',
       children: [
+        if (!_declaracaoRecursos) ...[
+          const Text(
+            'As fontes de recurso só se aplicam quando há declaração de recursos.',
+            style: TextStyle(fontSize: 12),
+          ),
+          AudespSpacing.verticalSm,
+        ],
         Wrap(
           spacing: 8,
           runSpacing: 4,
@@ -1496,7 +1511,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             return FilterChip(
               label: Text(e.value, style: const TextStyle(fontSize: 11)),
               selected: selected,
-              onSelected: readOnly
+              onSelected: readOnly || !_declaracaoRecursos
                   ? null
                   : (v) => setState(() {
                       if (v) {

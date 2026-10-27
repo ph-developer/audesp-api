@@ -26,6 +26,14 @@ void main() {
       test('mantém número já limpo', () {
         expect(CsvMappers.cleanNiPessoa('14733837000154'), '14733837000154');
       });
+
+      test('preserva letras e pontuação de identificador estrangeiro', () {
+        expect(
+          CsvMappers.cleanNiPessoa(' 01234FG567890123 '),
+          '01234FG567890123',
+        );
+        expect(CsvMappers.cleanNiPessoa(' AB-12.34/FG '), 'AB-12.34/FG');
+      });
     });
 
     group('tipoPessoaFromCleanNi', () {
@@ -39,6 +47,11 @@ void main() {
 
       test('outro comprimento → PE', () {
         expect(CsvMappers.tipoPessoaFromCleanNi('123456'), 'PE');
+      });
+
+      test('identificador com letras é PE mesmo com 11 ou 14 caracteres', () {
+        expect(CsvMappers.tipoPessoaFromCleanNi('AB123456789'), 'PE');
+        expect(CsvMappers.tipoPessoaFromCleanNi('AB123456789012'), 'PE');
       });
     });
 

@@ -283,7 +283,7 @@ const kAmparosLegais = <int, String>{
   158: '158 - Lei 14.981/2024, art. 2º, I (Calamidade pública)',
   159: '159 - Lei 14.981/2024, art. 2º, II (Calamidade pública)',
   160: '160 - Lei 14.981/2024, art. 2º, IV (Calamidade pública)',
-  161: '161 - Lei 14.981/2024, art. 21 (Calamidade pública)',
+  // 161: ausente do enum do schema de 15/10/2026
   162: '162 - Lei 14.133/2021, art. 60, III',
   163: '163 - Lei 14.133/2021, art. 60, IV',
   164: '164 - Lei 14.133/2021 art.60, II',
@@ -485,7 +485,7 @@ const kAmparosLegaisValidos = {
   158,
   159,
   160,
-  161,
+  // 161: ausente do enum do schema de 15/10/2026
   162,
   163,
   164,

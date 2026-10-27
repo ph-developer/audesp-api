@@ -1,5 +1,7 @@
-/// Regras condicionais do Ajuste conforme o Modelo da Fase IV 2026 v02.
+/// Regras condicionais do Ajuste conforme o Modelo da Fase IV 2026 v04.
 abstract final class AjusteRules {
+  static const _tiposContratoComVigencia = <int>{1, 2, 3, 4, 5, 8, 12};
+
   static const _orgaosFonteRecursos = <int>{1, 10, 13, 20, 25};
 
   static const _orgaosClassificacaoDespesa = <int>{
@@ -36,6 +38,28 @@ abstract final class AjusteRules {
     final processoDeDespesa =
         !receita && _orgaosClassificacaoDespesa.contains(codigoTipoOrgao);
     return empenhoMunicipal || processoDeDespesa;
+  }
+
+  static bool exigeDataVigenciaInicio({
+    required int? tipoContratoId,
+    required bool vigenciaMesesInformada,
+  }) {
+    return _tiposContratoComVigencia.contains(tipoContratoId) &&
+        !vigenciaMesesInformada;
+  }
+
+  static bool exigeVigenciaMeses({
+    required int? tipoContratoId,
+    required bool dataVigenciaInicioInformada,
+  }) {
+    return _tiposContratoComVigencia.contains(tipoContratoId) &&
+        !dataVigenciaInicioInformada;
+  }
+
+  static bool exigeDataVigenciaFim({
+    required bool dataVigenciaInicioInformada,
+  }) {
+    return dataVigenciaInicioInformada;
   }
 
   /// Valida o código local do contrato de um edital sem PNCP.

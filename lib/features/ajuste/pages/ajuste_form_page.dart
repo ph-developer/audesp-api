@@ -50,6 +50,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _validacaoSolicitada = false;
   bool _isSent = false;
   bool _importingGemini = false;
   bool _updatingStatus = false;
@@ -132,6 +133,54 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     tipoContratoId: _tipoContratoId,
     receita: _receita,
   );
+
+  bool get _exigeDataVigenciaInicio => AjusteRules.exigeDataVigenciaInicio(
+    tipoContratoId: _tipoContratoId,
+    vigenciaMesesInformada: _vigenciaMesesCtrl.text.trim().isNotEmpty,
+  );
+
+  bool get _exigeVigenciaMeses => AjusteRules.exigeVigenciaMeses(
+    tipoContratoId: _tipoContratoId,
+    dataVigenciaInicioInformada: _dataVigenciaInicio != null,
+  );
+
+  bool get _exigeDataVigenciaFim => AjusteRules.exigeDataVigenciaFim(
+    dataVigenciaInicioInformada: _dataVigenciaInicio != null,
+  );
+
+  String? _validarDataVigenciaInicio(DateTime? data) {
+    if (_exigeDataVigenciaInicio && data == null) {
+      return 'Informe o início da vigência ou a vigência em meses.';
+    }
+    return null;
+  }
+
+  String? _validarDataVigenciaFim(DateTime? data) {
+    if (_exigeDataVigenciaFim && data == null) {
+      return 'Informe o fim da vigência quando houver início.';
+    }
+    if (data != null &&
+        _dataVigenciaInicio != null &&
+        data.isBefore(_dataVigenciaInicio!)) {
+      return 'O fim da vigência não pode ser anterior ao início.';
+    }
+    return null;
+  }
+
+  String? _validarVigenciaMeses(String? value) {
+    final texto = value?.trim() ?? '';
+    if (texto.isEmpty) {
+      return _exigeVigenciaMeses
+          ? 'Informe a vigência em meses ou o início da vigência.'
+          : null;
+    }
+    final meses = int.tryParse(texto);
+    if (meses == null || meses < 1) {
+      return 'Informe um número inteiro de meses maior ou igual a 1.';
+    }
+    return null;
+  }
+
   int? _prazoVigenciaDias;
 
   // ── Objeto do Contrato ────────────────────────────────────────────────
@@ -382,15 +431,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'dataAssinatura': _dataAssinatura != null
           ? isoFmt.format(_dataAssinatura!)
           : '',
-      'dataVigenciaInicio': _dataVigenciaInicio != null
-          ? isoFmt.format(_dataVigenciaInicio!)
-          : '',
-      'dataVigenciaFim': _dataVigenciaFim != null
-          ? isoFmt.format(_dataVigenciaFim!)
-          : '',
       'tipoObjetoContrato': _tipoObjetoContrato,
     };
 
+    if (_dataVigenciaInicio != null) {
+      map['dataVigenciaInicio'] = isoFmt.format(_dataVigenciaInicio!);
+    }
+    if (_dataVigenciaFim != null) {
+      map['dataVigenciaFim'] = isoFmt.format(_dataVigenciaFim!);
+    }
     if (_fontesRecurso.isNotEmpty) {
       map['fonteRecursosContratacao'] = _fontesRecurso.toList()..sort();
     }
@@ -545,6 +594,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       );
       return;
     }
+    setState(() => _validacaoSolicitada = true);
     if (!_formKey.currentState!.validate()) return;
     if (_exigeFonteRecursos && _fontesRecurso.isEmpty) {
       _showError(
@@ -570,10 +620,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       );
       return;
     }
-    if (_dataAssinatura == null ||
-        _dataVigenciaInicio == null ||
-        _dataVigenciaFim == null) {
-      _showError('Preencha todas as datas obrigatórias.');
+    if (_dataAssinatura == null) {
+      _showError('Informe a data de assinatura.');
+      return;
+    }
+    final erroVigencia =
+        _validarDataVigenciaInicio(_dataVigenciaInicio) ??
+        _validarVigenciaMeses(_vigenciaMesesCtrl.text) ??
+        _validarDataVigenciaFim(_dataVigenciaFim);
+    if (erroVigencia != null) {
+      _showError(erroVigencia);
       return;
     }
 
@@ -1124,6 +1180,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       ),
       body: Form(
         key: _formKey,
+        autovalidateMode: _validacaoSolicitada
+            ? AutovalidateMode.always
+            : AutovalidateMode.disabled,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -1765,33 +1824,41 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: AudespDatePickerField(
-                          label: 'Início da Vigência *',
+                          label: _exigeDataVigenciaInicio
+                              ? 'Início da Vigência *'
+                              : 'Início da Vigência',
                           value: _dataVigenciaInicio,
                           readOnly: readOnly,
                           onChanged: (d) =>
                               setState(() => _dataVigenciaInicio = d),
-                          validator: (d) => d == null ? 'Obrigatório' : null,
+                          validator: _validarDataVigenciaInicio,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: AudespDatePickerField(
-                          label: 'Fim da Vigência *',
+                          label: _exigeDataVigenciaFim
+                              ? 'Fim da Vigência *'
+                              : 'Fim da Vigência',
                           value: _dataVigenciaFim,
                           readOnly: readOnly,
                           onChanged: (d) =>
                               setState(() => _dataVigenciaFim = d),
-                          validator: (d) => d == null ? 'Obrigatório' : null,
+                          validator: _validarDataVigenciaFim,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   AudespNumberField(
-                    label: 'Vigência em Meses',
+                    label: _exigeVigenciaMeses
+                        ? 'Vigência em Meses *'
+                        : 'Vigência em Meses',
                     controller: _vigenciaMesesCtrl,
                     readOnly: readOnly,
                     decimals: false,
+                    onChanged: (_) => setState(() {}),
+                    validator: _validarVigenciaMeses,
                   ),
                 ],
               ),

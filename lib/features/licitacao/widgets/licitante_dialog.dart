@@ -7,6 +7,7 @@ import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/licitacao_domain.dart';
+import '../domain/licitacao_pessoa.dart';
 
 /// Exibe o diálogo para adicionar ou editar um licitante dentro de um item.
 ///
@@ -66,7 +67,7 @@ class _LicitanteDialogState extends State<_LicitanteDialog> {
     if (!_formKey.currentState!.validate()) return;
     final map = <String, dynamic>{
       'tipoPessoaId': _tipoPessoa,
-      'niPessoa': _niCtrl.text.replaceAll(RegExp(r'\D'), ''),
+      'niPessoa': normalizarNiPessoa(_tipoPessoa, _niCtrl.text),
       'declaracaoMEouEPP': _declaracaoME!,
       'resultadoHabilitacao': _resultadoHabilitacao!,
     };
