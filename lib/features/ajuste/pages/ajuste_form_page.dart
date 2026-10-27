@@ -69,6 +69,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Edital? get _editalSelecionado =>
       _editais.where((e) => e.id == _editalId).firstOrNull;
 
+  bool get _exigeEditalLocal =>
+      AjusteRules.exigeEditalLocal(adesaoParticipacao: _adesaoParticipacao);
+
   bool get _editalSemPncp => _editalSelecionado?.semPncp ?? false;
 
   bool get _referenciasSemPncp => !_adesaoParticipacao && _editalSemPncp;
@@ -576,7 +579,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── Salvar rascunho ───────────────────────────────────────────────────
 
   bool _validateDraft() {
-    if (_editalId == null) {
+    if (_exigeEditalLocal && _editalId == null) {
       _showError('Selecione o Edital vinculado para salvar o rascunho.');
       return false;
     }
@@ -611,7 +614,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
-          editalId: _editalId!,
+          editalId: _editalId,
           ataId: _adesaoParticipacao ? null : _ataId,
           municipio: municipio,
           entidade: entidade,
@@ -627,7 +630,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       } else {
         await dao.updateAjuste(
           id: _loadedId!,
-          editalId: _editalId!,
+          editalId: _editalId,
           ataId: _adesaoParticipacao ? null : _ataId,
           municipio: municipio,
           entidade: entidade,
@@ -657,7 +660,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   // ── Enviar ────────────────────────────────────────────────────────────
 
   Future<void> _enviar() async {
-    if (_editalId == null) {
+    if (_exigeEditalLocal && _editalId == null) {
       _showError('Selecione o Edital vinculado.');
       return;
     }
@@ -1307,12 +1310,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: AudespDropdown<int>(
+                        child: AudespDropdown<int?>(
                           label: _adesaoParticipacao
-                              ? 'Edital local (vínculo de cadastro) *'
+                              ? 'Edital local (vínculo de cadastro)'
                               : 'Edital *',
                           value: _editalId,
                           items: {
+                            if (_adesaoParticipacao) null: '— Nenhum —',
                             for (final e in _editais) e.id: e.dropdownLabel,
                           },
                           readOnly: readOnly,
@@ -1329,8 +1333,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             });
                             await _carregarItensLicitacao();
                           },
-                          validator: (v) =>
-                              v == null ? 'Selecione o edital vinculado' : null,
+                          validator: _exigeEditalLocal
+                              ? (v) => v == null
+                                    ? 'Selecione o edital vinculado'
+                                    : null
+                              : null,
                         ),
                       ),
                       if (!_adesaoParticipacao) ...[
@@ -1369,7 +1376,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   if (_adesaoParticipacao) ...[
                     const SizedBox(height: 12),
                     const Text(
-                      'Na adesão, o edital local serve como vínculo de cadastro. Informe os códigos PNCP da entidade gerenciadora no descritor.',
+                      'Na adesão, o vínculo com um edital local é opcional e serve apenas para cadastro. Informe os códigos PNCP da entidade gerenciadora no descritor.',
                     ),
                   ],
                 ],

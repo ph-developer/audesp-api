@@ -2,7 +2,7 @@ import 'dart:convert';
 
 class Ajuste {
   final int id;
-  final int editalId;
+  final int? editalId;
   final int? ataId;
   final String municipio;
   final String entidade;
@@ -33,7 +33,7 @@ class Ajuste {
 
   factory Ajuste.fromMap(Map<String, dynamic> row) => Ajuste(
     id: row['id'] as int,
-    editalId: row['edital_id'] as int,
+    editalId: row['edital_id'] as int?,
     ataId: row['ata_id'] as int?,
     municipio: row['municipio'] as String,
     entidade: row['entidade'] as String,

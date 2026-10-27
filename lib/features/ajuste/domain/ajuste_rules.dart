@@ -2,6 +2,10 @@ import '../../licitacao/domain/licitacao_referencia.dart';
 
 /// Regras condicionais do Ajuste conforme o Modelo da Fase IV 2026 v04.
 abstract final class AjusteRules {
+  static bool exigeEditalLocal({required bool adesaoParticipacao}) {
+    return !adesaoParticipacao;
+  }
+
   static const objetosPorCategoria = <int, Set<int>>{
     1: {1, 2},
     2: {3, 4, 5, 6, 7, 8, 9, 10, 11},

@@ -36,7 +36,7 @@ class AjustesDao {
   }
 
   Future<int> insertAjuste({
-    required int editalId,
+    required int? editalId,
     int? ataId,
     required String municipio,
     required String entidade,
@@ -70,7 +70,7 @@ class AjustesDao {
 
   Future<bool> updateAjuste({
     required int id,
-    required int editalId,
+    required int? editalId,
     int? ataId,
     required String municipio,
     required String entidade,

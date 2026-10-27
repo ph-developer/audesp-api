@@ -135,7 +135,9 @@ class _AjusteList extends ConsumerWidget {
         final filtered = search.isEmpty
             ? ajustes
             : ajustes.where((a) {
-                final edital = editaisAsync.value?[a.editalId];
+                final edital = a.editalId == null
+                    ? null
+                    : editaisAsync.value?[a.editalId];
                 final atasMap = atasAsync.value;
                 final ata = atasMap != null && a.ataId != null
                     ? atasMap[a.ataId]
@@ -143,6 +145,8 @@ class _AjusteList extends ConsumerWidget {
                 final searchable = [
                   a.codigoContrato,
                   a.codigoEdital,
+                  if (a.editalId == null)
+                    'Adesão — ${PcnpInputFormatter.applyMask(a.codigoEdital)}',
                   a.codigoAta ?? '',
                   edital?.idContratacaoPNCP ?? '',
                   edital?.objetoCompra ?? '',
@@ -180,7 +184,9 @@ class _AjusteList extends ConsumerWidget {
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final ajuste = filtered[i];
-                    final edital = editaisMap[ajuste.editalId];
+                    final edital = ajuste.editalId != null
+                        ? editaisMap[ajuste.editalId]
+                        : null;
                     final ata = ajuste.ataId != null
                         ? atasMap[ajuste.ataId]
                         : null;
@@ -208,6 +214,8 @@ class _AjusteList extends ConsumerWidget {
                           Builder(
                             builder: (context) {
                               final parts = <String>[
+                                if (ajuste.editalId == null)
+                                  'Adesão — ${PcnpInputFormatter.applyMask(ajuste.codigoEdital)}',
                                 if (edital != null &&
                                     edital.modalidadeLabel.isNotEmpty &&
                                     edital.numeroCompra.isNotEmpty &&

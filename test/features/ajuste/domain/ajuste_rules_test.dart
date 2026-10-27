@@ -2,6 +2,22 @@ import 'package:audesp_api/features/ajuste/domain/ajuste_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('AjusteRules.exigeEditalLocal', () {
+    test('dispensa vínculo local na adesão ou participação', () {
+      expect(
+        AjusteRules.exigeEditalLocal(adesaoParticipacao: true),
+        isFalse,
+      );
+    });
+
+    test('exige vínculo local nos demais ajustes', () {
+      expect(
+        AjusteRules.exigeEditalLocal(adesaoParticipacao: false),
+        isTrue,
+      );
+    });
+  });
+
   group('AjusteRules.exigeFonteRecursos', () {
     test('exige para despesa dos tipos de órgão previstos na v02', () {
       for (final codigo in [1, 10, 13, 20, 25]) {

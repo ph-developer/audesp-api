@@ -51,7 +51,10 @@ final unlinkedEditaisProvider = FutureProvider.autoDispose
         case UnlinkedEditaisTarget.ajuste:
           final ajustes = await ref.watch(ajustesDaoProvider).watchAll();
           for (final a in ajustes) {
-            linkedCounts[a.editalId] = (linkedCounts[a.editalId] ?? 0) + 1;
+            final editalId = a.editalId;
+            if (editalId != null) {
+              linkedCounts[editalId] = (linkedCounts[editalId] ?? 0) + 1;
+            }
           }
           return UnlinkedEditaisData(
             editais: editaisEnviados.where((e) => !e.isSrp).toList(),

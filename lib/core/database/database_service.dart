@@ -102,7 +102,7 @@ class DatabaseService {
       await pool.execute('''
         CREATE TABLE IF NOT EXISTS ajustes (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-          edital_id BIGINT NOT NULL,
+          edital_id BIGINT NULL,
           ata_id BIGINT NULL,
           municipio TEXT NOT NULL,
           entidade TEXT NOT NULL,
@@ -319,6 +319,18 @@ class DatabaseService {
         );
       }
       await setSchemaVersion(11);
+    }
+
+    if (version < 12) {
+      final found = await pool.execute(
+        "SELECT IS_NULLABLE FROM information_schema.columns "
+        "WHERE table_schema = (SELECT DATABASE()) "
+        "AND table_name = 'ajustes' AND column_name = 'edital_id'",
+      );
+      if (found.rows.first.typedAssoc()['IS_NULLABLE'] == 'NO') {
+        await pool.execute('ALTER TABLE ajustes MODIFY edital_id BIGINT NULL');
+      }
+      await setSchemaVersion(12);
     }
   }
 
