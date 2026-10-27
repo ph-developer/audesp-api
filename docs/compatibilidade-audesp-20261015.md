@@ -35,7 +35,7 @@ Atualizado em 27/10/2026. Cada achado abaixo traz também uma linha **Situação
 | A1 — editais SRP excluídos do ajuste | ✅ Corrigido | `c7f9d92` |
 | A2 — vigência apenas em meses | ✅ Corrigido | `77ce34b` |
 | A3 — código de contrato local | ✅ Corrigido (código livre quando o edital é "Sem PNCP") | `c7f9d92` |
-| A4 — adesão depende de edital local | 🟡 Parcial: códigos PNCP digitáveis na adesão; vínculo com edital local continua obrigatório porque `ajustes.edital_id` é `NOT NULL` | `c2d8536` |
+| A4 — adesão depende de edital local | ✅ Corrigido (vínculo local opcional na adesão; migração v12 torna `ajustes.edital_id` anulável) | `c2d8536`, `fe7820f` |
 | A5 — categoria × objeto do contrato | ✅ Corrigido | `c2d8536` |
 | A6 — limites de campos do contrato | ✅ Corrigido | `118d2a1` |
 | T1 — código local de ata | ✅ Corrigido (código livre quando o edital é "Sem PNCP") | `c7f9d92` |
@@ -234,7 +234,7 @@ A planilha pede o número de controle PNCP quando a entidade efetuou a publicaç
 
 ### A4 — P2: adesão a contratação externa depende indevidamente de edital local
 
-**Situação:** 🟡 Parcial em `c2d8536`. Na adesão, os IDs PNCP de contratação e ata podem ser digitados; o vínculo com um edital local continua obrigatório porque `ajustes.edital_id` é `NOT NULL` (remover exigiria migração do banco).
+**Situação:** ✅ Corrigido em `c2d8536` e `fe7820f`. Na adesão, os IDs PNCP de contratação e ata são digitados e o vínculo com um edital local é opcional; a migração v12 tornou `ajustes.edital_id` anulável.
 
 Mesmo marcando adesão/participação e gerenciadora não jurisdicionada, o formulário exige selecionar um edital local enviado. O código do edital é preenchido a partir dessa seleção e não há entrada independente para o identificador da contratação externa. A planilha prevê esse caso com consulta ao PNCP, sem exigir que a própria entidade tenha prestado o edital gerenciado por outra entidade.
 

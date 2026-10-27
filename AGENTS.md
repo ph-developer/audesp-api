@@ -29,7 +29,7 @@ flutter analyze                    # lint (uses flutter_lints)
 
 ## Database
 
-- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v11); migrations are the `if (version < N)` blocks in `database_service.dart`
+- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v12); migrations are the `if (version < N)` blocks in `database_service.dart`
 - Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`
 - Timestamps are **Unix epoch seconds** stored as `BIGINT`
 - `documento_json` stored as `LONGTEXT` (raw JSON string)
@@ -47,6 +47,7 @@ flutter analyze                    # lint (uses flutter_lints)
 - **CSV parsers** support UTF-8 (with/without BOM) and Latin-1; use `CsvUtils` (`lib/core/utils/csv_utils.dart`)
 - **Edital "Sem PNCP"** (`Edital.semPncp`): the edital uses a local `codigoEdital` instead of the PNCP id. Contracts (Ajuste) and Atas derived from it are not on PNCP either, so their forms switch `codigoContrato` / `codigoAta` to free local codes (max 25 / 31 chars) instead of the masked PNCP field. Use `text.trim()` (not `PcnpInputFormatter.stripMask`) for local codes.
 - **SRP:** the Ata form only lists SRP editais. The Ajuste form lists all sent editais, shows only atas of the selected edital, and requires the ata when the edital is SRP and it is not an adesão/participação.
+- **Ajuste de adesão/participação:** `ajustes.edital_id` is nullable (v12). With `adesaoParticipacao = true` the local edital link is optional and `codigoEdital`/`codigoAta` are typed PNCP ids of the managing entity; `Ajuste.editalId` is `int?`, so code reading it must handle null.
 - **Licitante `niPessoa`:** normalize with `normalizarNiPessoa` (`licitacao/domain/licitacao_pessoa.dart`) — digits only for PJ/PF, kept as typed for PE (foreign ids contain letters).
 
 ## AUDESP documentation
