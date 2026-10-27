@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "title": "Edital",
-  "description": "JSON schema para o envio de ajustes. Ano exercício: 2023.",
+  "description": "JSON schema para o envio de ajustes.",
   "type": "object",
   "required": [
     "descritor",
-    "fonteRecursosContratacao",
     "itens",
     "tipoContratoId",
     "numeroContratoEmpenho",
     "anoContrato",
+	"processo",
     "categoriaProcessoId",
     "receita",
     "niFornecedor",
@@ -18,8 +18,6 @@
     "objetoContrato",
     "valorInicial",
     "dataAssinatura",
-    "dataVigenciaInicio",
-    "dataVigenciaFim",
     "tipoObjetoContrato"
   ],
   "properties": {
@@ -81,7 +79,7 @@
           "$id": "#root/descritor/codigoAta",
           "title": "Código da ata de registro de preços",
           "type": "string",
-          "maxLength": 30
+          "maxLength": 31
         },
         "codigoContrato": {
           "$id": "#root/descritor/codigoContrato",

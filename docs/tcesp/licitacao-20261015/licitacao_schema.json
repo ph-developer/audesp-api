@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "title": "Edital",
-  "description": "JSON schema para o envio de editais de licitação/compra. Ano exercício: 2023.",
+  "description": "JSON schema para o envio de licitações.",
   "type": "object",
   "required": [
     "descritor",
@@ -416,10 +416,10 @@
                     "maxLength": 30
                   },
                   "nomeRazaoSocial": {
-                    "title": "Nome do responsável pelo orçamento",
+                    "title": "Nome ou razão social do licitante no caso de PE - Estrangeiro",
                     "type": "string",
                     "minLength": 3,
-                    "maxLength": 50
+                    "maxLength": 100
                   },
                   "declaracaoMEouEPP": {
                     "title": "Indica se é micro empresa ou empresa de pequeno porte",

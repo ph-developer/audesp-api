@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "title": "Edital",
+  "title": "Empenho",
   "description": "JSON schema para o envio de empenhos de contrato.",
   "type": "object",
   "properties": {
@@ -52,18 +52,81 @@
       "$id": "#root/codigoContrato",
       "title": "Código único que identifica o ajuste (contrato)",
       "type": "string",
-      "maxLength": 30
+      "maxLength": 25
     },
     "dataEmissaoEmpenho": {
       "title": "Informar a data da emissão do empenho",
       "type": "string",
       "format": "date"
+    },
+    "valorTotal": {
+      "$id": "#root/valorTotal",
+      "title": "Valor total do Empenho",
+      "type": "number",
+      "multipleOf": 0.0001
+    },
+    "tipoPessoa": {
+      "$id": "#root/tipoPessoa",
+      "title": "PJ-Pessoa Jurídica PF-Pessoa Física PE-Estrangeiro",
+      "type": "string",
+      "enum": [
+        "PJ",
+        "PF",
+        "PE"
+      ]
+    },
+    "niCredorFornecedor": {
+      "$id": "#root/niCredorFornecedor",
+      "title": "Número de identificação do fornecedor contratado; CNPJ, CPF ou identificador de empresa estrangeira",
+      "type": "string",
+      "maxLength": 50
+    },
+    "nomeCredorFornecedor": {
+      "$id": "#root/nomeCredorFornecedor",
+      "title": "Nome do credor/fornecedor",
+      "type": "string",
+      "maxLength": 100
+    },
+    "codigoNaturezaDespesa": {
+      "$id": "#root/codigoNaturezaDespesa",
+      "title": "Classificação Econômica da Despesa até o nível de elemento",
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 8
+    },
+    "fonteRecurso": {
+      "$id": "#root/fonteRecurso",
+      "title": "Informa a Fonte de Recursos do empenho",
+      "type": "number",
+      "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99
+      ]      
     }
   },
   "required": [
     "descritor",
     "codigoContrato",
-    "dataEmissaoEmpenho"
+    "dataEmissaoEmpenho",
+    "valorTotal",
+    "tipoPessoa",
+    "niCredorFornecedor",
+	"nomeCredorFornecedor"
   ],
   "additionalProperties": false
 }

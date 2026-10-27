@@ -21,7 +21,7 @@ flutter analyze                    # lint (uses flutter_lints)
 ## Architecture
 
 - **State:** Riverpod (`flutter_riverpod`) — one provider file per feature, DAOs via `Provider`, services via `Provider`
-- **Router:** `go_router` with `ShellRoute` + `NavigationRail`. Shell wraps Edital/Licitação/Ata/Ajuste/Logs. Login, Profile, Admin are outside the shell.
+- **Router:** `go_router` with `ShellRoute` + `NavigationRail`. Shell wraps Edital/Licitação/Ata/Ajuste/Estimativa/Logs. Login, Profile, Admin are outside the shell.
 - **Pattern per feature:** `providers.dart`, `services/`, `pages/`, `widgets/`, optional `domain/` (domain logic) and `csv/` (import parsers)
 - **Auth:** local DB users (SHA-256 + pepper). Admin user is seeded on first DB initialization. AUDESP API token stored in memory only via `AuthService`.
 - **Env switching:** Piloto (`https://audesp-piloto.tce.sp.gov.br`) / Oficial (`https://audesp.tce.sp.gov.br`), persisted in `app_settings` table
@@ -29,8 +29,8 @@ flutter analyze                    # lint (uses flutter_lints)
 
 ## Database
 
-- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v2)
-- Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`
+- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v11); migrations are the `if (version < N)` blocks in `database_service.dart`
+- Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`
 - Timestamps are **Unix epoch seconds** stored as `BIGINT`
 - `documento_json` stored as `LONGTEXT` (raw JSON string)
 - `app_settings` is a key-value store (`SettingsKeys` constants in `app_settings_dao.dart`)
@@ -45,12 +45,23 @@ flutter analyze                    # lint (uses flutter_lints)
 - **Gemini default model:** hardcoded as `'gemini-3.1-flash-lite'` in `GeminiService`; API key configured via Admin UI → stored in `app_settings`
 - **AUDESP API auth:** email:password → POST `/login` → returns `access_token`, attached as `Authorization: Bearer <token>` by Dio interceptor (`ApiService`)
 - **CSV parsers** support UTF-8 (with/without BOM) and Latin-1; use `CsvUtils` (`lib/core/utils/csv_utils.dart`)
+- **Edital "Sem PNCP"** (`Edital.semPncp`): the edital uses a local `codigoEdital` instead of the PNCP id. Contracts (Ajuste) and Atas derived from it are not on PNCP either, so their forms switch `codigoContrato` / `codigoAta` to free local codes (max 25 / 31 chars) instead of the masked PNCP field. Use `text.trim()` (not `PcnpInputFormatter.stripMask`) for local codes.
+- **SRP:** the Ata form only lists SRP editais. The Ajuste form lists all sent editais, shows only atas of the selected edital, and requires the ata when the edital is SRP and it is not an adesão/participação.
+- **Licitante `niPessoa`:** normalize with `normalizarNiPessoa` (`licitacao/domain/licitacao_pessoa.dart`) — digits only for PJ/PF, kept as typed for PE (foreign ids contain letters).
+
+## AUDESP documentation
+
+- Official docs live in `docs/tcesp/`: one folder per document with JSON schema + example (`edital-20261015/`, `licitacao-20261015/`, `ajuste-20261015/`, `ata-20261015/`, `empenho-20261015/`), the HTTP contract `audesp.yaml`, and the rules/domains spreadsheet `Novo Modelo da Fase IV_2026_v04_externo.xlsx` (sheet "Alterações" is the changelog).
+- **The JSON schema is what the server validates.** When the spreadsheet lists domain codes the schema enum lacks (e.g. amparos 174–189, fonte de recurso 19/99), follow the schema and leave a comment in the domain file.
+- Domain constants are in each feature's `domain/*_domain.dart`; conditional rules (e.g. Ajuste fontes, despesas, vigência) in `domain/*_rules.dart` with unit tests.
+- `docs/compatibilidade-audesp-20261015.md` is the compatibility review of the 15/10/2026 update, with the status of each finding.
+- The Empenho module is not used by the app for now.
 
 ## Testing
 
-- Only **CSV parser tests** exist (4 files under `test/features/`)
-- Use `flutter_test` with inline byte fixtures (`utf8.encode`, `latin1.encode`)
-- `CsvParseException` from `csv_utils.dart` is expected in error cases
+- Tests under `test/` mirror `lib/` (domain rules, CSV parsers/mappers, services, models, some shared widgets).
+- CSV tests use `flutter_test` with inline byte fixtures (`utf8.encode`, `latin1.encode`); `CsvParseException` from `csv_utils.dart` is expected in error cases.
+- Prefer extracting business rules into pure functions in `domain/` and testing them there; widget tests are only used for shared widgets and import dialogs.
 
 ## Gotchas
 
