@@ -27,6 +27,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../licitacao/domain/licitacao_referencia.dart';
 import '../domain/ajuste_domain.dart';
 import '../domain/ajuste_rules.dart';
 import '../ajuste_providers.dart';
@@ -63,11 +64,31 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   int? _ataId;
   List<Edital> _editais = [];
   List<Ata> _atas = [];
+  Set<int>? _itensLicitacao;
 
   Edital? get _editalSelecionado =>
       _editais.where((e) => e.id == _editalId).firstOrNull;
 
   bool get _editalSemPncp => _editalSelecionado?.semPncp ?? false;
+
+  bool get _referenciasSemPncp => !_adesaoParticipacao && _editalSemPncp;
+
+  String get _codigoEdital => _adesaoParticipacao
+      ? PcnpInputFormatter.stripMask(_codigoEditalCtrl.text)
+      : _codigoEditalCtrl.text.trim();
+
+  String get _codigoAta => _referenciasSemPncp
+      ? _codigoAtaCtrl.text.trim()
+      : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+
+  Map<int, String> get _objetosPermitidos => {
+    for (final objeto in kTipoObjetoContrato.entries)
+      if (AjusteRules.objetosPorCategoria[_categoriaProcessoId]?.contains(
+            objeto.key,
+          ) ??
+          false)
+        objeto.key: objeto.value,
+  };
 
   List<Ata> get _atasDoEdital =>
       _atas.where((a) => a.editalId == _editalId).toList();
@@ -232,16 +253,75 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     if (widget.ajusteId != null) {
       await _loadExisting(widget.ajusteId!);
-    } else {
-      if (mounted) setState(() => _loading = false);
     }
+    await _carregarItensLicitacao();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _carregarItensLicitacao() async {
+    final editalId = _editalId;
+    final adesao = _adesaoParticipacao;
+    Set<int>? numeros;
+    if (editalId != null && !adesao) {
+      try {
+        final licitacoes = await ref
+            .read(licitacoesDaoProvider)
+            .watchByEdital(editalId);
+        numeros = LicitacaoReferencia.numerosItens(licitacoes);
+      } catch (_) {
+        // A falta de referência local não impede a conferência pelo servidor.
+      }
+    }
+    if (!mounted || editalId != _editalId || adesao != _adesaoParticipacao) {
+      return;
+    }
+    setState(() => _itensLicitacao = numeros);
   }
 
   void _fillEditalDescriptor() {
+    if (_adesaoParticipacao) return;
     final edital = _editalSelecionado;
     if (edital != null) {
       _codigoEditalCtrl.text = edital.codigoEdital;
     }
+  }
+
+  void _alterarCategoriaProcesso(int? categoria) {
+    setState(() {
+      _categoriaProcessoId = categoria;
+      if (AjusteRules.validarTipoObjetoContrato(
+            categoriaProcessoId: categoria,
+            tipoObjetoContrato: _tipoObjetoContrato,
+          ) !=
+          null) {
+        _tipoObjetoContrato = null;
+      }
+    });
+  }
+
+  Future<void> _alterarAdesao(bool adesao) async {
+    setState(() {
+      _adesaoParticipacao = adesao;
+      _itensLicitacao = null;
+      _ataId = null;
+      if (adesao) {
+        if (_editalSelecionado?.semPncp ?? false) {
+          _codigoEditalCtrl.clear();
+          _codigoAtaCtrl.clear();
+        } else {
+          _codigoEditalCtrl.text = PcnpInputFormatter.applyMask(
+            _codigoEditalCtrl.text,
+          );
+          _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
+            _codigoAtaCtrl.text,
+          );
+        }
+      } else {
+        _codigoAtaCtrl.clear();
+        _fillEditalDescriptor();
+      }
+    });
+    await _carregarItensLicitacao();
   }
 
   Future<void> _selectPreselectedEdital(int? editalId) async {
@@ -289,11 +369,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     } catch (_) {}
 
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
+    _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
+    if (_adesaoParticipacao) _ataId = null;
     _codigoEditalCtrl.text =
         descritor['codigoEdital'] as String? ?? ajuste.codigoEdital;
+    if (_adesaoParticipacao) {
+      _codigoEditalCtrl.text = PcnpInputFormatter.applyMask(
+        _codigoEditalCtrl.text,
+      );
+    }
     final codigoAta =
         descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '';
-    _codigoAtaCtrl.text = _editalSemPncp
+    _codigoAtaCtrl.text = _referenciasSemPncp
         ? codigoAta
         : PcnpInputFormatter.applyMask(codigoAta);
     final codigoContrato =
@@ -302,7 +389,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         ? codigoContrato
         : PcnpInputFormatter.applyMask(codigoContrato);
     _retificacao = descritor['retificacao'] as bool? ?? ajuste.retificacao;
-    _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
     _gerenciadoraJurisdicionada =
         descritor['gerenciadoraJurisdicionada'] as bool? ?? false;
     _cnpjGerenciadoraCtrl.text = descritor['cnpjGerenciadora'] as String? ?? '';
@@ -374,8 +460,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             retificacao: ajuste.retificacao,
           );
     }
-
-    if (mounted) setState(() => _loading = false);
   }
 
   // ── JSON builder ──────────────────────────────────────────────────────
@@ -389,7 +473,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'municipio': municipio,
       'entidade': entidade,
       'adesaoParticipacao': _adesaoParticipacao,
-      'codigoEdital': _codigoEditalCtrl.text.trim(),
+      'codigoEdital': _codigoEdital,
       'codigoContrato': _editalSemPncp
           ? _codigoContratoCtrl.text.trim()
           : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text),
@@ -409,9 +493,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
     }
     if (_codigoAtaCtrl.text.trim().isNotEmpty) {
-      descritor['codigoAta'] = _editalSemPncp
-          ? _codigoAtaCtrl.text.trim()
-          : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+      descritor['codigoAta'] = _codigoAta;
     }
 
     final map = <String, dynamic>{
@@ -522,9 +604,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       final dao = ref.read(ajustesDaoProvider);
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
-      final codigoAta = _editalSemPncp
-          ? _codigoAtaCtrl.text.trim()
-          : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+      final codigoAta = _codigoAta;
       final codigoContrato = _editalSemPncp
           ? _codigoContratoCtrl.text.trim()
           : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text);
@@ -532,10 +612,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
           editalId: _editalId!,
-          ataId: _ataId,
+          ataId: _adesaoParticipacao ? null : _ataId,
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: _codigoEditalCtrl.text.trim(),
+          codigoEdital: _codigoEdital,
           codigoAta: codigoAta.isNotEmpty ? codigoAta : null,
           codigoContrato: codigoContrato,
           retificacao: _retificacao,
@@ -548,10 +628,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         await dao.updateAjuste(
           id: _loadedId!,
           editalId: _editalId!,
-          ataId: _ataId,
+          ataId: _adesaoParticipacao ? null : _ataId,
           municipio: municipio,
           entidade: entidade,
-          codigoEdital: _codigoEditalCtrl.text.trim(),
+          codigoEdital: _codigoEdital,
           codigoAta: codigoAta.isNotEmpty ? codigoAta : null,
           codigoContrato: codigoContrato,
           retificacao: _retificacao,
@@ -605,6 +685,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     if (_itens.isEmpty) {
       _showError('Informe ao menos um item contratado.');
+      return;
+    }
+    final editalId = _editalId;
+    final adesao = _adesaoParticipacao;
+    await _carregarItensLicitacao();
+    if (!mounted || editalId != _editalId || adesao != _adesaoParticipacao) {
+      return;
+    }
+    final erroEnvio = AjusteRules.validarEnvio(
+      _buildJson(),
+      numerosLicitacao: _itensLicitacao,
+    );
+    if (erroEnvio != null) {
+      _showError(erroEnvio);
       return;
     }
     final isEmpenho = _tipoContratoId == 7;
@@ -822,15 +916,31 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     );
   }
 
-  void _addItem() {
+  Future<void> _addItem() async {
     final val = int.tryParse(_itemCtrl.text.trim());
     if (val == null || val < 1) {
       _showError('Informe um número de item válido.');
       _itemFocusNode.requestFocus();
       return;
     }
+    final editalId = _editalId;
+    final adesao = _adesaoParticipacao;
+    await _carregarItensLicitacao();
+    if (!mounted || editalId != _editalId || adesao != _adesaoParticipacao) {
+      return;
+    }
     if (_itens.contains(val)) {
       _showError('Item/Lote $val já adicionado.');
+      _itemFocusNode.requestFocus();
+      return;
+    }
+    final erro = AjusteRules.validarItens(
+      [val],
+      adesaoParticipacao: _adesaoParticipacao,
+      numerosLicitacao: _itensLicitacao,
+    );
+    if (erro != null) {
+      _showError(erro);
       _itemFocusNode.requestFocus();
       return;
     }
@@ -1198,57 +1308,70 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       Expanded(
                         flex: 2,
                         child: AudespDropdown<int>(
-                          label: 'Edital *',
+                          label: _adesaoParticipacao
+                              ? 'Edital local (vínculo de cadastro) *'
+                              : 'Edital *',
                           value: _editalId,
                           items: {
                             for (final e in _editais) e.id: e.dropdownLabel,
                           },
                           readOnly: readOnly,
-                          onChanged: (v) {
+                          onChanged: (v) async {
                             setState(() {
                               _editalId = v;
-                              if (!_isSelectedAtaAvailable) {
+                              _itensLicitacao = null;
+                              if (!_adesaoParticipacao &&
+                                  !_isSelectedAtaAvailable) {
                                 _ataId = null;
                                 _codigoAtaCtrl.clear();
                               }
                               _fillEditalDescriptor();
                             });
+                            await _carregarItensLicitacao();
                           },
                           validator: (v) =>
                               v == null ? 'Selecione o edital vinculado' : null,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 1,
-                        child: AudespDropdown<int?>(
-                          label: 'Ata (somente para SRP)',
-                          value: _ataId,
-                          items: {
-                            null: '— Nenhuma —',
-                            for (final a in _atasDoEdital)
-                              a.id: a.dropdownLabel,
-                          },
-                          readOnly: readOnly,
-                          onChanged: (v) {
-                            setState(() {
-                              _ataId = v;
-                              if (v != null) {
-                                final ata = _atasDoEdital
-                                    .where((a) => a.id == v)
-                                    .firstOrNull;
-                                if (ata != null) {
-                                  _codigoAtaCtrl.text = ata.codigoAta;
+                      if (!_adesaoParticipacao) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 1,
+                          child: AudespDropdown<int?>(
+                            label: 'Ata (somente para SRP)',
+                            value: _ataId,
+                            items: {
+                              null: '— Nenhuma —',
+                              for (final a in _atasDoEdital)
+                                a.id: a.dropdownLabel,
+                            },
+                            readOnly: readOnly,
+                            onChanged: (v) {
+                              setState(() {
+                                _ataId = v;
+                                if (v != null) {
+                                  final ata = _atasDoEdital
+                                      .where((a) => a.id == v)
+                                      .firstOrNull;
+                                  if (ata != null) {
+                                    _codigoAtaCtrl.text = ata.codigoAta;
+                                  }
+                                } else {
+                                  _codigoAtaCtrl.clear();
                                 }
-                              } else {
-                                _codigoAtaCtrl.clear();
-                              }
-                            });
-                          },
+                              });
+                            },
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
+                  if (_adesaoParticipacao) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Na adesão, o edital local serve como vínculo de cadastro. Informe os códigos PNCP da entidade gerenciadora no descritor.',
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),
@@ -1266,14 +1389,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       }
                       final codigoEdital = _codigoEditalCtrl.text.isEmpty
                           ? '-'
-                          : _editalSemPncp
+                          : _referenciasSemPncp
                           ? _codigoEditalCtrl.text
                           : PcnpInputFormatter.applyMask(
                               _codigoEditalCtrl.text,
                             );
                       final codigoAta = _codigoAtaCtrl.text.isEmpty
                           ? '-'
-                          : _editalSemPncp
+                          : _referenciasSemPncp
                           ? _codigoAtaCtrl.text
                           : PcnpInputFormatter.applyMask(_codigoAtaCtrl.text);
                       return Padding(
@@ -1328,11 +1451,25 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   AudespCheckbox(
                     label: 'Adesão / Participação',
                     value: _adesaoParticipacao,
-                    onChanged: readOnly
-                        ? null
-                        : (v) => setState(() => _adesaoParticipacao = v),
+                    onChanged: readOnly ? null : _alterarAdesao,
                   ),
                   if (_adesaoParticipacao) ...[
+                    const SizedBox(height: 12),
+                    AudespPncpField(
+                      label: 'ID de Contratação PNCP da Adesão *',
+                      controller: _codigoEditalCtrl,
+                      readOnly: readOnly,
+                      validator: AjusteRules.validarCodigoEditalAdesao,
+                    ),
+                    const SizedBox(height: 12),
+                    AudespPncpField(
+                      label: 'ID da Ata PNCP da Adesão (opcional)',
+                      controller: _codigoAtaCtrl,
+                      readOnly: readOnly,
+                      isAta: true,
+                      validator: AjusteRules.validarCodigoAtaAdesao,
+                    ),
+                    const SizedBox(height: 12),
                     AudespCheckbox(
                       label: 'Gerenciadora Jurisdicionada',
                       value: _gerenciadoraJurisdicionada,
@@ -1433,6 +1570,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Itens/Lotes Contratados',
                 children: [
+                  if (!_adesaoParticipacao &&
+                      _editalId != null &&
+                      _itensLicitacao == null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Aviso: os itens não puderam ser conferidos com uma licitação local para este edital.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                    ),
                   if (!readOnly)
                     AudespTextField(
                       label: 'Número do item/Lote',
@@ -1549,8 +1698,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           value: _categoriaProcessoId,
                           items: kCategoriaProcesso,
                           readOnly: readOnly,
-                          onChanged: (v) =>
-                              setState(() => _categoriaProcessoId = v),
+                          onChanged: _alterarCategoriaProcesso,
                           validator: (v) => v == null
                               ? 'Selecione a categoria do processo'
                               : null,
@@ -1736,13 +1884,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 title: 'Objeto e Valores',
                 children: [
                   AudespDropdown<int>(
+                    key: ValueKey(_categoriaProcessoId),
                     label: 'Tipo de Objeto do Contrato *',
-                    value: _tipoObjetoContrato,
-                    items: kTipoObjetoContrato,
+                    value: _objetosPermitidos.containsKey(_tipoObjetoContrato)
+                        ? _tipoObjetoContrato
+                        : null,
+                    items: _objetosPermitidos,
                     readOnly: readOnly,
                     onChanged: (v) => setState(() => _tipoObjetoContrato = v),
-                    validator: (v) =>
-                        v == null ? 'Selecione o tipo de objeto' : null,
+                    validator: (v) => AjusteRules.validarTipoObjetoContrato(
+                      categoriaProcessoId: _categoriaProcessoId,
+                      tipoObjetoContrato: _tipoObjetoContrato,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AudespTextField(

@@ -462,7 +462,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
 
     final doc = _buildJson();
-    final erroEnvio = LicitacaoRules.validarEnvio(doc);
+    final erroEnvio = LicitacaoRules.validarEnvio(
+      doc,
+      edital: _getDocumentoEdital(),
+      hoje: DateTime.now(),
+    );
     if (erroEnvio != null) {
       _showError(erroEnvio);
       return;
@@ -1651,12 +1655,20 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Map<int, double> _getQuantidadesEdital() {
+  Map<String, dynamic>? _getDocumentoEdital() {
     final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
-    if (edital == null) return const {};
+    if (edital == null) return null;
     try {
-      final documento =
-          jsonDecode(edital.documentoJson) as Map<String, dynamic>;
+      return jsonDecode(edital.documentoJson) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<int, double> _getQuantidadesEdital() {
+    final documento = _getDocumentoEdital();
+    if (documento == null) return const {};
+    try {
       final itensEdital =
           (documento['itensCompra'] as List<dynamic>? ?? const [])
               .whereType<Map<String, dynamic>>();
@@ -1942,8 +1954,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                     final nomeExibicao = fornecedor.nomeRazaoSocial.isNotEmpty
                         ? fornecedor.nomeRazaoSocial
                         : (niFormatado.isNotEmpty
-                            ? niFormatado
-                            : 'Sem identificação');
+                              ? niFormatado
+                              : 'Sem identificação');
                     final percentual = resumo.valorVencedores > 0
                         ? (fornecedor.valorTotal / resumo.valorVencedores) * 100
                         : 0.0;

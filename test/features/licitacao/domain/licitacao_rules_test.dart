@@ -2,6 +2,7 @@ import 'package:audesp_api/features/licitacao/domain/licitacao_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final hoje = DateTime(2026, 10, 27);
   group('LicitacaoRules.validarPercentualGarantia', () {
     test('exige percentual quando a garantia é exigida', () {
       expect(
@@ -87,7 +88,9 @@ void main() {
   group('LicitacaoRules.validarEnvio', () {
     test('bloqueia documento final sem percentual da garantia exigida', () {
       expect(
-        LicitacaoRules.validarEnvio({'exigenciaGarantiaLicitantes': 1}),
+        LicitacaoRules.validarEnvio({
+          'exigenciaGarantiaLicitantes': 1,
+        }, hoje: hoje),
         'Informe o percentual da garantia quando a exigência for "Sim".',
       );
     });
@@ -97,7 +100,7 @@ void main() {
         LicitacaoRules.validarEnvio({
           'exigenciaGarantiaLicitantes': 1,
           'percentualValor': 101,
-        }),
+        }, hoje: hoje),
         'O percentual da garantia deve estar entre 0 e 100.',
       );
     });
@@ -111,7 +114,7 @@ void main() {
               {'tipoIndice': 1, 'valorIndice': 1.5},
               {'tipoIndice': 8, 'valorIndice': 1.0, 'nomeIndice': ?nome},
             ],
-          }),
+          }, hoje: hoje),
           'Informe o nome do índice "Outro" com 3 a 50 caracteres.',
         );
       }
@@ -126,14 +129,16 @@ void main() {
             {'tipoIndice': 1, 'valorIndice': 1.5},
             {'tipoIndice': 8, 'valorIndice': 1.0, 'nomeIndice': 'Outro índice'},
           ],
-        }),
+        }, hoje: hoje),
         isNull,
       );
     });
 
     test('aceita documento sem garantia exigida nem índices', () {
       expect(
-        LicitacaoRules.validarEnvio({'exigenciaGarantiaLicitantes': 2}),
+        LicitacaoRules.validarEnvio({
+          'exigenciaGarantiaLicitantes': 2,
+        }, hoje: hoje),
         isNull,
       );
     });

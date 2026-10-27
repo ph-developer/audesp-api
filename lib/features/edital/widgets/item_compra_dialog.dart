@@ -9,8 +9,10 @@ import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../domain/edital_domain.dart';
+import '../domain/edital_rules.dart';
 
 /// Diálogo para adicionar ou editar um Item de Compra do Edital.
 ///
@@ -19,19 +21,29 @@ import '../domain/edital_domain.dart';
 Future<Map<String, dynamic>?> showItemCompraDialog(
   BuildContext context, {
   required int numero,
+  int? modalidadeId,
   Map<String, dynamic>? initial,
 }) {
   return showAudespDialog<Map<String, dynamic>>(
     context: context,
     size: DialogSize.large,
-    builder: (_) => _ItemCompraDialog(numero: numero, initial: initial),
+    builder: (_) => _ItemCompraDialog(
+      numero: numero,
+      modalidadeId: modalidadeId,
+      initial: initial,
+    ),
   );
 }
 
 class _ItemCompraDialog extends StatefulWidget {
   final int numero;
+  final int? modalidadeId;
   final Map<String, dynamic>? initial;
-  const _ItemCompraDialog({required this.numero, this.initial});
+  const _ItemCompraDialog({
+    required this.numero,
+    this.modalidadeId,
+    this.initial,
+  });
 
   @override
   State<_ItemCompraDialog> createState() => _ItemCompraDialogState();
@@ -70,6 +82,11 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
     _qtdCtrl.addListener(_recalcularTotal);
     _valorUnitCtrl.addListener(_recalcularTotal);
     final ini = widget.initial;
+    if (ini == null &&
+        widget.modalidadeId != null &&
+        !EditalRules.isLeilao(widget.modalidadeId)) {
+      _itemCategoria = 3;
+    }
     if (ini != null) {
       _materialOuServico = ini['materialOuServico'] as String? ?? 'M';
       _tipoBeneficio = ini['tipoBeneficioId'] as int?;
@@ -128,7 +145,19 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
     if (_registroImobCtrl.text.trim().isNotEmpty) {
       result['codigoRegistroImobiliario'] = _registroImobCtrl.text.trim();
     }
+    final erro = EditalRules.validarItem(
+      modalidadeId: widget.modalidadeId,
+      item: result,
+    );
+    if (erro != null) {
+      _showError(erro);
+      return;
+    }
     Navigator.of(context).pop(result);
+  }
+
+  void _showError(String msg) {
+    AudespSnackBar.error(context, msg);
   }
 
   @override

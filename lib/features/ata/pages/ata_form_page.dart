@@ -25,7 +25,9 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../licitacao/domain/licitacao_referencia.dart';
 import '../ata_providers.dart';
+import '../domain/ata_rules.dart';
 import '../services/ata_service.dart';
 
 /// Formulário de criação/edição de Ata (Fase 6 – Módulo 3).
@@ -53,6 +55,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   // ── Vínculo com Edital ─────────────────────────────────────────────────
   int? _editalId;
   List<Edital> _editais = [];
+  Set<int>? _itensLicitacao;
 
   bool get _editalSemPncp =>
       _editais.where((e) => e.id == _editalId).firstOrNull?.semPncp ?? false;
@@ -101,9 +104,26 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
     if (widget.ataId != null) {
       await _loadExisting(widget.ataId!);
-    } else {
-      if (mounted) setState(() => _loading = false);
     }
+    await _carregarItensLicitacao();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _carregarItensLicitacao() async {
+    final editalId = _editalId;
+    Set<int>? numeros;
+    if (editalId != null) {
+      try {
+        final licitacoes = await ref
+            .read(licitacoesDaoProvider)
+            .watchByEdital(editalId);
+        numeros = LicitacaoReferencia.numerosItens(licitacoes);
+      } catch (_) {
+        // A falta de referência local não impede a conferência pelo servidor.
+      }
+    }
+    if (!mounted || editalId != _editalId) return;
+    setState(() => _itensLicitacao = numeros);
   }
 
   void _fillEditalDescriptor() {
@@ -200,8 +220,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
             retificacao: ata.retificacao,
           );
     }
-
-    if (mounted) setState(() => _loading = false);
   }
 
   // ── JSON builder ──────────────────────────────────────────────────────
@@ -344,6 +362,17 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_numerosItem.isEmpty) {
       _showError('Informe pelo menos um número de item.');
+      return;
+    }
+    final editalId = _editalId;
+    await _carregarItensLicitacao();
+    if (!mounted || editalId != _editalId) return;
+    final erroItens = AtaRules.validarItens(
+      _numerosItem,
+      numerosLicitacao: _itensLicitacao,
+    );
+    if (erroItens != null) {
+      _showError(erroItens);
       return;
     }
     if (_dataAssinatura == null ||
@@ -544,7 +573,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     );
   }
 
-  void _addItem() {
+  Future<void> _addItem() async {
     final raw = _itemCtrl.text.trim();
     final num = int.tryParse(raw);
     if (num == null || num < 1) {
@@ -552,8 +581,19 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       _itemFocusNode.requestFocus();
       return;
     }
+    final editalId = _editalId;
+    await _carregarItensLicitacao();
+    if (!mounted || editalId != _editalId) return;
     if (_numerosItem.contains(num)) {
       _showError('Item $num já adicionado.');
+      _itemFocusNode.requestFocus();
+      return;
+    }
+    final erro = AtaRules.validarItens([
+      num,
+    ], numerosLicitacao: _itensLicitacao);
+    if (erro != null) {
+      _showError(erro);
       _itemFocusNode.requestFocus();
       return;
     }
@@ -639,9 +679,13 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             for (final e in _editais) e.id: e.dropdownLabel,
                           },
                           readOnly: readOnly,
-                          onChanged: (v) {
-                            setState(() => _editalId = v);
-                            _fillEditalDescriptor();
+                          onChanged: (v) async {
+                            setState(() {
+                              _editalId = v;
+                              _itensLicitacao = null;
+                              _fillEditalDescriptor();
+                            });
+                            await _carregarItensLicitacao();
                           },
                           validator: (v) =>
                               v == null ? 'Selecione o edital vinculado' : null,
@@ -824,6 +868,16 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               SectionCard(
                 title: 'Itens da Licitação Referenciados',
                 children: [
+                  if (_editalId != null && _itensLicitacao == null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Aviso: os itens não puderam ser conferidos com uma licitação local para este edital.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                    ),
                   if (!readOnly)
                     AudespTextField(
                       label: 'Número do item',

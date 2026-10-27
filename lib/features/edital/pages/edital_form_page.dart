@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_date_time_picker_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
+import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
@@ -29,6 +31,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
+import '../domain/edital_rules.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
@@ -335,6 +338,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
+    final erroEnvio = EditalRules.validarEnvio(_buildJson());
+    if (erroEnvio != null) {
+      _showError(erroEnvio);
+      return;
+    }
     if (_houvePublicacao && _publicacoes.isEmpty) {
       _showError(
         'Adicione ao menos uma publicação quando "Houve Publicação" estiver marcado.',
@@ -359,6 +367,43 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       }
     }
 
+    final temPdf = _pdfPath?.trim().isNotEmpty ?? false;
+    final erroPdf = EditalRules.validarPdfObrigatorio(
+      modalidadeId: _modalidade,
+      temPdf: temPdf,
+    );
+    if (erroPdf != null) {
+      _showError(erroPdf);
+      return;
+    }
+    if (temPdf && !await _validarArquivoPdf(_pdfPath!)) return;
+    if (!mounted) return;
+    if (EditalRules.exigeConfirmacaoSemPdf(
+      modalidadeId: _modalidade,
+      temPdf: temPdf,
+    )) {
+      final confirmado = await showAudespDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Enviar sem PDF?'),
+          content: const Text(
+            'Para inexigibilidade, o AUDESP aceitará o edital sem PDF com erro indicativo. Deseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmado != true || !mounted) return;
+    }
+
     // Garante que o rascunho mais recente está salvo
     await _saveDraft();
     if (!mounted || _loadedId == null) return;
@@ -369,6 +414,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       context,
       ref,
       onConfirm: (token) async {
+        if (temPdf && !await _validarArquivoPdf(_pdfPath!)) return;
         final doc = _buildJson();
         if (_criterioJulgamentoId != null) {
           final itens = (doc['itensCompra'] as List<dynamic>)
@@ -402,12 +448,34 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── PDF picker ────────────────────────────────────────────────────────────
 
+  Future<bool> _validarArquivoPdf(String caminho) async {
+    try {
+      final arquivo = File(caminho);
+      final existe = await arquivo.exists();
+      final erro = EditalRules.validarArquivoPdf(
+        existe: existe,
+        tamanhoBytes: existe ? await arquivo.length() : 0,
+      );
+      if (erro != null) {
+        _showError(erro);
+        return false;
+      }
+      return true;
+    } on FileSystemException {
+      _showError(
+        'Não foi possível ler o PDF selecionado. Selecione o arquivo novamente.',
+      );
+      return false;
+    }
+  }
+
   Future<void> _pickPdf() async {
     final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
     if (file != null && file.path != null) {
+      if (!await _validarArquivoPdf(file.path!) || !mounted) return;
       setState(() => _pdfPath = file.path);
     }
   }
@@ -1128,7 +1196,12 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           items: kModalidades,
           readOnly: readOnly,
           onChanged: (v) => setState(() => _modalidade = v),
-          validator: (v) => v == null ? 'Obrigatório' : null,
+          validator: (v) => v == null
+              ? 'Obrigatório'
+              : EditalRules.validarInstrumentoModalidade(
+                  tipoInstrumentoId: _tipoInstrumento,
+                  modalidadeId: v,
+                ),
         ),
         const SizedBox(height: 12),
         // Modo de Disputa
@@ -1225,13 +1298,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 value: _dataAbertura,
                 readOnly: readOnly,
                 onChanged: (d) => setState(() => _dataAbertura = d),
-                validator: (d) {
-                  if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
-                      d == null) {
-                    return 'Obrigatório para instrumento tipo 1 ou 2';
-                  }
-                  return null;
-                },
+                validator: (d) => EditalRules.validarDataAbertura(
+                  tipoInstrumentoId: _tipoInstrumento,
+                  dataAbertura: d,
+                ),
               ),
             ),
             AudespFieldRowItem(
@@ -1240,13 +1310,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 value: _dataEncerramento,
                 readOnly: readOnly,
                 onChanged: (d) => setState(() => _dataEncerramento = d),
-                validator: (d) {
-                  if ((_tipoInstrumento == 1 || _tipoInstrumento == 2) &&
-                      d == null) {
-                    return 'Obrigatório para instrumento tipo 1 ou 2';
-                  }
-                  return null;
-                },
+                validator: (d) => EditalRules.validarDataEncerramento(
+                  tipoInstrumentoId: _tipoInstrumento,
+                  dataAbertura: _dataAbertura,
+                  dataEncerramento: d,
+                ),
               ),
             ),
           ],
@@ -1373,7 +1441,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Future<void> _addItem() async {
     final numero = _itens.length + 1;
-    final result = await showItemCompraDialog(context, numero: numero);
+    final result = await showItemCompraDialog(
+      context,
+      numero: numero,
+      modalidadeId: _modalidade,
+    );
     if (result != null) setState(() => _itens.add(result));
   }
 
@@ -1381,6 +1453,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final result = await showItemCompraDialog(
       context,
       numero: index + 1,
+      modalidadeId: _modalidade,
       initial: _itens[index],
     );
     if (result != null) setState(() => _itens[index] = result);

@@ -145,6 +145,7 @@ class _FornecedorAcumulador {
     );
   }
 }
+
 bool isItemLote(Map<String, dynamic> item) {
   final tipoOrcamento = (item['tipoOrcamento'] as num?)?.toInt();
   final tipoProposta = (item['tipoProposta'] as num?)?.toInt();
@@ -154,6 +155,9 @@ bool isItemLote(Map<String, dynamic> item) {
 }
 
 double? valorMedioDoItem(Map<String, dynamic> item) => _toDouble(item['valor']);
+
+int quantidadeVencedoresDoItem(Map<String, dynamic> item) =>
+    _licitantesDoItem(item).where(_isVencedor).length;
 
 double? valorVencedorDoItem(Map<String, dynamic> item) {
   final valores = _licitantesDoItem(item)

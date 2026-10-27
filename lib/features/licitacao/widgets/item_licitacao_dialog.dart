@@ -8,7 +8,9 @@ import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../domain/licitacao_domain.dart';
+import '../domain/licitacao_rules.dart';
 import 'licitante_dialog.dart';
 
 /// Exibe o diálogo para adicionar ou editar um item de licitação.
@@ -85,7 +87,15 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
 
   Future<void> _addLicitante() async {
     final result = await showLicitanteDialog(context);
-    if (result != null) {
+    if (result != null && mounted) {
+      final erro = LicitacaoRules.validarLicitantesDuplicados([
+        ..._licitantes,
+        result,
+      ], numeroItem: _numeroItemCtrl.text.trim());
+      if (erro != null) {
+        _showError(erro);
+        return;
+      }
       setState(() => _licitantes.add(result));
     }
   }
@@ -95,7 +105,16 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
       context,
       initial: _licitantes[index],
     );
-    if (result != null) {
+    if (result != null && mounted) {
+      final candidatos = [..._licitantes]..[index] = result;
+      final erro = LicitacaoRules.validarLicitantesDuplicados(
+        candidatos,
+        numeroItem: _numeroItemCtrl.text.trim(),
+      );
+      if (erro != null) {
+        _showError(erro);
+        return;
+      }
       setState(() => _licitantes[index] = result);
     }
   }
@@ -126,7 +145,16 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
     if (_dataOrcamento != null) {
       map['dataOrcamento'] = _dataOrcamento!.toIso8601String().substring(0, 10);
     }
+    final erro = LicitacaoRules.validarItens([map], hoje: DateTime.now());
+    if (erro != null) {
+      _showError(erro);
+      return;
+    }
     Navigator.of(context).pop(map);
+  }
+
+  void _showError(String msg) {
+    AudespSnackBar.error(context, msg);
   }
 
   @override
@@ -175,17 +203,15 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         label: 'Valor Médio dos Orçamentos (R\$)',
                         controller: _valorCtrl,
                         validator: (v) {
-                          if (_tipoOrcamento != null &&
-                              _tipoOrcamento != 0 &&
-                              (v == null || v.trim().isEmpty)) {
-                            return 'Obrigatório para o tipo de orçamento selecionado';
-                          }
                           if (v != null && v.trim().isNotEmpty) {
                             if (parseBrCurrencyOrNull(v.trim()) == null) {
                               return 'Valor inválido';
                             }
                           }
-                          return null;
+                          return LicitacaoRules.validarValorOrcamento(
+                            tipoOrcamento: _tipoOrcamento,
+                            valor: parseBrCurrencyOrNull(v ?? ''),
+                          );
                         },
                       ),
                     ),
@@ -194,14 +220,10 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         label: 'Data do Orçamento',
                         value: _dataOrcamento,
                         onChanged: (d) => setState(() => _dataOrcamento = d),
-                        validator: (d) {
-                          if (_tipoOrcamento != null &&
-                              _tipoOrcamento != 0 &&
-                              d == null) {
-                            return 'Obrigatória para o tipo de orçamento selecionado';
-                          }
-                          return null;
-                        },
+                        validator: (d) => LicitacaoRules.validarDataOrcamento(
+                          valor: parseBrCurrencyOrNull(_valorCtrl.text),
+                          dataOrcamento: d,
+                        ),
                       ),
                     ),
                   ],
@@ -224,7 +246,11 @@ class _ItemLicitacaoDialogState extends State<_ItemLicitacaoDialog> {
                         label: 'Data da Situação *',
                         value: _dataSituacao,
                         onChanged: (d) => setState(() => _dataSituacao = d),
-                        validator: (d) => d == null ? 'Obrigatório' : null,
+                        validator: (d) =>
+                            LicitacaoRules.validarDataSituacaoItem(
+                              d,
+                              hoje: DateTime.now(),
+                            ),
                       ),
                     ),
                   ],
