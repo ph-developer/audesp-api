@@ -45,10 +45,9 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
       user,
       processosAsync.value ?? const [],
     );
-    final pendenciasPorEdital = <int, List<Pendencia>>{};
-    for (final pendencia in pendencias) {
-      (pendenciasPorEdital[pendencia.processo.edital.id] ??= []).add(pendencia);
-    }
+    final editaisComPendencia = {
+      for (final pendencia in pendencias) pendencia.processo.edital.id,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -102,9 +101,7 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
               data: (processos) {
                 final filtered = processos.where((processo) {
                   return (!_minhasPendencias ||
-                          pendenciasPorEdital.containsKey(
-                            processo.edital.id,
-                          )) &&
+                          editaisComPendencia.contains(processo.edital.id)) &&
                       matchesLikeSearch(
                         _searchableEditalText(processo.edital),
                         _searchCtrl.text,
@@ -144,11 +141,7 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final processo = filtered[index];
-                    return _ProcessoCard(
-                      processo: processo,
-                      user: user,
-                      pendencias: pendenciasPorEdital[processo.edital.id] ?? [],
-                    );
+                    return _ProcessoCard(processo: processo, user: user);
                   },
                 );
               },
@@ -163,13 +156,8 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
 class _ProcessoCard extends StatelessWidget {
   final Processo processo;
   final User user;
-  final List<Pendencia> pendencias;
 
-  const _ProcessoCard({
-    required this.processo,
-    required this.user,
-    required this.pendencias,
-  });
+  const _ProcessoCard({required this.processo, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -237,21 +225,6 @@ class _ProcessoCard extends StatelessWidget {
             ],
           ),
         ),
-        if (pendencias.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final pendencia in pendencias)
-                TextButton.icon(
-                  icon: const Icon(Icons.arrow_forward, size: 16),
-                  label: Text(descricaoPendencia(pendencia)),
-                  onPressed: () => context.go(rotaPendencia(pendencia)),
-                ),
-            ],
-          ),
-        ],
       ],
     );
   }

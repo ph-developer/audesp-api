@@ -1,7 +1,6 @@
 import 'package:audesp_api/core/database/app_database.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/domain/processo_etapas.dart';
-import 'package:audesp_api/features/processo/domain/processo_rules.dart';
 import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -377,58 +376,5 @@ void main() {
       usuarioFixture(permissions: AppPermissions.estimativa),
     );
     expect(etapas.expand((etapa) => etapa.acoes), isEmpty);
-  });
-
-  group('pendências', () {
-    test('rótulos e rotas preservam os vínculos ao criar documentos', () {
-      final processo = processoFixture(id: 42);
-      final casos = [
-        (
-          TipoPendencia.criarLicitacao,
-          'Criar licitação',
-          '/licitacao/new?editalId=42',
-        ),
-        (TipoPendencia.criarAta, 'Criar ata', '/ata/new?editalId=42'),
-        (TipoPendencia.criarAjuste, 'Criar ajuste', '/ajuste/new?editalId=42'),
-      ];
-      for (final (tipo, descricao, rota) in casos) {
-        final pendencia = Pendencia(processo: processo, tipo: tipo);
-        expect(descricaoPendencia(pendencia), descricao);
-        expect(rotaPendencia(pendencia), rota);
-      }
-    });
-
-    test(
-      'enviar abre o rascunho atualizado mais recentemente, sem ordenar a origem',
-      () {
-        final antigo = licitacaoFixture(9, updatedAt: DateTime(2026, 10, 20));
-        final recente = licitacaoFixture(2, updatedAt: DateTime(2026, 10, 28));
-        final processo = processoFixture(
-          licitacoes: [
-            antigo,
-            recente,
-            licitacaoFixture(99, status: 'sent'),
-          ],
-        );
-        final pendencia = Pendencia(
-          processo: processo,
-          tipo: TipoPendencia.enviarLicitacao,
-        );
-
-        expect(descricaoPendencia(pendencia), 'Enviar licitação');
-        expect(rotaPendencia(pendencia), '/licitacao/2');
-        expect(processo.licitacoes.first, antigo);
-      },
-    );
-
-    test('datas iguais usam o maior id para o rascunho mais recente', () {
-      final pendencia = Pendencia(
-        processo: processoFixture(
-          licitacoes: [licitacaoFixture(9), licitacaoFixture(2)],
-        ),
-        tipo: TipoPendencia.enviarLicitacao,
-      );
-      expect(rotaPendencia(pendencia), '/licitacao/9');
-    });
   });
 }

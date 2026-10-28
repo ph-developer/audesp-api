@@ -92,7 +92,7 @@ Ordem: 1 → 2 → 3 → 4 → 5 → 6 → 7, com a 8 feita ao mexer em cada for
 - Rota `/processos`: página inicial de quem tem Edital, Licitação, Ata ou Ajuste (perfil só de Estimativa continua em `/estimativa`).
 - Uma linha por edital com as etapas e o estado de cada uma; clicar abre ou cria o documento, respeitando a permissão.
 - Filtro "Pendências" / "Todos" (pendências por padrão) e busca por código e objeto, na barra superior como nas demais telas.
-- Etapas calculadas em `lib/features/processo/domain/processo_etapas.dart` (situação, motivo do bloqueio e ações já filtradas por permissão); página em `lib/features/processo/pages/processos_page.dart`. Etapa com várias ações abre um menu; as pendências aparecem como atalhos no card.
+- Etapas calculadas em `lib/features/processo/domain/processo_etapas.dart` (situação, motivo do bloqueio e ações já filtradas por permissão); página em `lib/features/processo/pages/processos_page.dart`. Etapa com várias ações abre um menu; as pendências só filtram a lista (o card não tem atalhos além das etapas).
 
 ### Fase 7 — Pontos menores
 

@@ -1,6 +1,5 @@
 import '../../../core/database/models/ajuste.dart';
 import '../../../core/database/models/ata.dart';
-import '../../../core/database/models/licitacao.dart';
 import '../../../core/database/models/user.dart';
 import '../../../core/navigation/app_modules.dart' show canAccessLocation;
 import '../../../shared/formatters/pcnp_input_formatter.dart';
@@ -182,26 +181,3 @@ String _rotulo(String numero, int ano, String codigo, int id) {
       ? '$id'
       : PcnpInputFormatter.applyMask(codigoLimpo);
 }
-
-String descricaoPendencia(Pendencia p) => switch (p.tipo) {
-  TipoPendencia.criarLicitacao => 'Criar licitação',
-  TipoPendencia.enviarLicitacao => 'Enviar licitação',
-  TipoPendencia.criarAta => 'Criar ata',
-  TipoPendencia.criarAjuste => 'Criar ajuste',
-};
-
-String rotaPendencia(Pendencia p) => switch (p.tipo) {
-  TipoPendencia.criarLicitacao =>
-    '/licitacao/new?editalId=${p.processo.edital.id}',
-  TipoPendencia.enviarLicitacao =>
-    '/licitacao/${_rascunhoMaisRecente(p.processo).id}',
-  TipoPendencia.criarAta => '/ata/new?editalId=${p.processo.edital.id}',
-  TipoPendencia.criarAjuste => '/ajuste/new?editalId=${p.processo.edital.id}',
-};
-
-Licitacao _rascunhoMaisRecente(Processo processo) => processo.licitacoes
-    .where((licitacao) => licitacao.status == 'draft')
-    .reduce((a, b) {
-      final comparacao = a.updatedAt.compareTo(b.updatedAt);
-      return comparacao > 0 || (comparacao == 0 && a.id > b.id) ? a : b;
-    });

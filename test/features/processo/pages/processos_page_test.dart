@@ -168,7 +168,8 @@ void main() {
     expect(find.text('Objeto do edital 1'), findsOneWidget);
     expect(find.text('Objeto do edital 2'), findsNothing);
     expect(find.text('Objeto do edital 3'), findsNothing);
-    expect(find.text('Criar licitação'), findsOneWidget);
+    // As pendências só filtram; o card não tem atalhos além das etapas.
+    expect(find.text('Criar licitação'), findsNothing);
 
     await tester.tap(find.text('Todos'));
     await tester.pumpAndSettle();
@@ -206,8 +207,6 @@ void main() {
         ],
       );
 
-      expect(find.text('Criar ata'), findsOneWidget);
-      expect(find.text('Criar ajuste'), findsOneWidget);
       expect(find.text('Objeto do edital 1'), findsNothing);
       expect(find.text('Objeto do edital 2'), findsOneWidget);
       expect(find.text('Objeto do edital 3'), findsOneWidget);
@@ -407,26 +406,6 @@ void main() {
     },
   );
 
-  testWidgets('botão de pendência abre o rascunho mais recente', (
-    tester,
-  ) async {
-    final router = await _pumpPage(
-      tester,
-      processos: [
-        processoFixture(
-          licitacoes: [
-            licitacaoFixture(9, updatedAt: DateTime(2026, 10, 20)),
-            licitacaoFixture(2),
-          ],
-        ),
-      ],
-    );
-
-    await tester.tap(find.text('Enviar licitação'));
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/licitacao/2');
-  });
-
   testWidgets(
     'vazio orienta a desligar o filtro e distingue a lista completa',
     (tester) async {
@@ -480,7 +459,7 @@ void main() {
         return processos;
       },
     );
-    await tester.tap(find.text('Criar licitação'));
+    await tester.tap(_chip(1, 'licitacao'));
     await tester.pumpAndSettle();
     expect(consultas, 1);
 
