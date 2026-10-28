@@ -65,27 +65,35 @@ Semantics _destinationSemantics(WidgetTester tester, String label) =>
     );
 
 void main() {
-  testWidgets('admin vê os grupos em ordem e duas divisórias curtas', (
+  testWidgets('admin vê Processos no topo e três divisórias curtas', (
     tester,
   ) async {
     await _pumpRail(tester, modulosPara(_user(isAdmin: true)));
 
-    expect(find.byType(Divider), findsNWidgets(2));
+    expect(find.byType(Divider), findsNWidgets(3));
     final dividers = find.byType(Divider);
     expect(
       tester.getCenter(dividers.at(0)).dy,
-      greaterThan(tester.getCenter(find.text('Estimativa')).dy),
+      greaterThan(tester.getCenter(find.text('Processos')).dy),
     );
     expect(
       tester.getCenter(dividers.at(0)).dy,
+      lessThan(tester.getCenter(find.text('Estimativa')).dy),
+    );
+    expect(
+      tester.getCenter(dividers.at(1)).dy,
+      greaterThan(tester.getCenter(find.text('Estimativa')).dy),
+    );
+    expect(
+      tester.getCenter(dividers.at(1)).dy,
       lessThan(tester.getCenter(find.text('Edital')).dy),
     );
     expect(
-      tester.getCenter(dividers.at(1)).dy,
+      tester.getCenter(dividers.at(2)).dy,
       greaterThan(tester.getCenter(find.text('Licitação')).dy),
     );
     expect(
-      tester.getCenter(dividers.at(1)).dy,
+      tester.getCenter(dividers.at(2)).dy,
       lessThan(tester.getCenter(find.text('Ata')).dy),
     );
     for (final divider in tester.widgetList<Divider>(dividers)) {
@@ -102,13 +110,19 @@ void main() {
     AppPermissions.ata | AppPermissions.ajuste,
     AppPermissions.none,
   ]) {
-    testWidgets('um grupo ou nenhum não gera divisórias ($permissions)', (
+    testWidgets('separa Processos do único grupo visível ($permissions)', (
       tester,
     ) async {
       final modules = modulosPara(_user(permissions: permissions));
       await _pumpRail(tester, modules);
 
-      expect(find.byType(Divider), findsNothing);
+      expect(
+        find.byType(Divider),
+        permissions == AppPermissions.none ||
+                permissions == AppPermissions.estimativa
+            ? findsNothing
+            : findsOneWidget,
+      );
       for (final module in kAppModules) {
         expect(
           find.byTooltip(module.label),
@@ -129,7 +143,8 @@ void main() {
       ),
     );
 
-    expect(find.byType(Divider), findsOneWidget);
+    expect(find.byType(Divider), findsNWidgets(2));
+    expect(find.byTooltip('Processos'), findsOneWidget);
     expect(find.byTooltip('Estimativa'), findsOneWidget);
     expect(find.byTooltip('Ajuste'), findsOneWidget);
     expect(find.byTooltip('Edital'), findsNothing);
@@ -185,5 +200,15 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, '/ajuste');
     expect(_destinationSemantics(tester, 'Ajuste').properties.selected, isTrue);
+
+    await tester.tap(find.byTooltip('Processos'));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/processos');
+    expect(find.byIcon(Icons.account_tree), findsOneWidget);
+    expect(
+      _destinationSemantics(tester, 'Processos').properties.selected,
+      isTrue,
+    );
   });
 }

@@ -4,6 +4,12 @@ import '../database/models/user.dart';
 
 enum AppModuleGroup { planejamento, contratacao, contratos }
 
+const _permissoesEnvio =
+    AppPermissions.edital |
+    AppPermissions.licitacao |
+    AppPermissions.ata |
+    AppPermissions.ajuste;
+
 class AppModule {
   final String route;
   final String label;
@@ -28,6 +34,13 @@ class AppModule {
 // A ordem também define o módulo inicial. Módulos sem grupo podem ser
 // acrescentados no topo sem mudar as regras de navegação ou o rail.
 final List<AppModule> kAppModules = List.unmodifiable([
+  AppModule(
+    route: '/processos',
+    label: 'Processos',
+    icon: Icons.account_tree_outlined,
+    activeIcon: Icons.account_tree,
+    podeAcessar: (user) => user.hasAnyPermission(_permissoesEnvio),
+  ),
   AppModule(
     route: '/estimativa',
     label: 'Estimativa',
@@ -75,12 +88,7 @@ final AppModule kLogsModule = AppModule(
   label: 'Logs',
   icon: Icons.history_outlined,
   activeIcon: Icons.history,
-  podeAcessar: (user) => user.hasAnyPermission(
-    AppPermissions.edital |
-        AppPermissions.licitacao |
-        AppPermissions.ata |
-        AppPermissions.ajuste,
-  ),
+  podeAcessar: (user) => user.hasAnyPermission(_permissoesEnvio),
 );
 
 List<AppModule> modulosPara(User user) => [

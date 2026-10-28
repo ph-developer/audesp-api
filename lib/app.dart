@@ -20,6 +20,7 @@ import 'features/licitacao/pages/licitacao_page.dart';
 import 'features/estimativa/pages/estimativas_list_page.dart';
 import 'features/estimativa/pages/estimativa_form_page.dart';
 import 'features/logs/pages/logs_page.dart';
+import 'features/processo/pages/processos_page.dart';
 import 'features/shell/shell_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
 
   return GoRouter(
-    initialLocation: '/edital',
+    initialLocation: '/processos',
     refreshListenable: notifier,
     redirect: (context, state) {
       final user = ref.read(localSessionProvider);
@@ -74,6 +75,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
         routes: [
+          GoRoute(
+            path: '/processos',
+            builder: (context, _) => const ProcessosPage(),
+          ),
           GoRoute(
             path: '/edital',
             builder: (context, _) => const EditalPage(),

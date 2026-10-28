@@ -14,6 +14,7 @@ User _user({int permissions = 0, bool isAdmin = false}) => User(
 void main() {
   test('kAppModules mantém a ordem e os grupos, com Logs separado', () {
     expect(kAppModules.map((module) => module.route), [
+      '/processos',
       '/estimativa',
       '/edital',
       '/licitacao',
@@ -21,6 +22,7 @@ void main() {
       '/ajuste',
     ]);
     expect(kAppModules.map((module) => module.label), [
+      'Processos',
       'Estimativa',
       'Edital',
       'Licitação',
@@ -28,6 +30,7 @@ void main() {
       'Ajuste',
     ]);
     expect(kAppModules.map((module) => module.group), [
+      null,
       AppModuleGroup.planejamento,
       AppModuleGroup.contratacao,
       AppModuleGroup.contratacao,
@@ -50,22 +53,29 @@ void main() {
       name: 'Contratação',
       permissions: AppPermissions.edital | AppPermissions.licitacao,
       isAdmin: false,
-      routes: ['/edital', '/licitacao'],
-      home: '/edital',
+      routes: ['/processos', '/edital', '/licitacao'],
+      home: '/processos',
     ),
     (
       name: 'Contratos',
       permissions: AppPermissions.ata | AppPermissions.ajuste,
       isAdmin: false,
-      routes: ['/ata', '/ajuste'],
-      home: '/ata',
+      routes: ['/processos', '/ata', '/ajuste'],
+      home: '/processos',
     ),
     (
       name: 'admin sem bits de permissão',
       permissions: AppPermissions.none,
       isAdmin: true,
-      routes: ['/estimativa', '/edital', '/licitacao', '/ata', '/ajuste'],
-      home: '/estimativa',
+      routes: [
+        '/processos',
+        '/estimativa',
+        '/edital',
+        '/licitacao',
+        '/ata',
+        '/ajuste',
+      ],
+      home: '/processos',
     ),
     (
       name: 'sem permissões',
@@ -113,15 +123,22 @@ void main() {
       AppPermissions.ajuste,
     ];
     for (var i = 0; i < permissions.length; i++) {
-      expect(modulosPara(_user(permissions: permissions[i])), [kAppModules[i]]);
+      final user = _user(permissions: permissions[i]);
+      final module = kAppModules[i + 1];
+      expect(modulosPara(user), [
+        if (permissions[i] != AppPermissions.estimativa) kAppModules.first,
+        module,
+      ]);
       expect(
-        homeLocationFor(_user(permissions: permissions[i])),
-        kAppModules[i].route,
+        homeLocationFor(user),
+        permissions[i] == AppPermissions.estimativa
+            ? '/estimativa'
+            : '/processos',
       );
     }
   });
 
-  test('Logs exige alguma permissão de envio ou admin', () {
+  test('Processos e Logs exigem alguma permissão de envio ou admin', () {
     final deniedUsers = [
       _user(),
       _user(permissions: AppPermissions.estimativa),
@@ -137,11 +154,15 @@ void main() {
     ];
 
     for (final user in deniedUsers) {
+      expect(kAppModules.first.podeAcessar(user), isFalse);
+      expect(canAccessLocation(user, '/processos'), isFalse);
       expect(kLogsModule.podeAcessar(user), isFalse);
       expect(canAccessLocation(user, '/logs'), isFalse);
       expect(canAccessLocation(user, '/logs/42'), isFalse);
     }
     for (final user in allowedUsers) {
+      expect(kAppModules.first.podeAcessar(user), isTrue);
+      expect(canAccessLocation(user, '/processos'), isTrue);
       expect(kLogsModule.podeAcessar(user), isTrue);
       expect(canAccessLocation(user, '/logs'), isTrue);
       expect(canAccessLocation(user, '/logs/42'), isTrue);

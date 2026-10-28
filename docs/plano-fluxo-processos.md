@@ -31,7 +31,7 @@ A divisão por documento é mantida: ela corresponde aos envios do AUDESP e às 
 | 3 | Novo Ajuste a partir da Ata | Concluída |
 | 4 | Preencher Ata e Ajuste com dados da Licitação | Concluída |
 | 5 | Menu lateral reorganizado | Concluída |
-| 6 | Tela de Processos e Pendências | Pendente |
+| 6 | Tela de Processos e Pendências | Concluída |
 | 7 | Pontos menores (estado da Estimativa, token AUDESP, Logs) | Pendente |
 | 8 | Divisão dos formulários grandes (incremental) | Pendente |
 
@@ -88,6 +88,7 @@ Ordem: 1 → 2 → 3 → 4 → 5 → 6 → 7, com a 8 feita ao mexer em cada for
 - Rota `/processos`: página inicial de quem tem Edital, Licitação, Ata ou Ajuste (perfil só de Estimativa continua em `/estimativa`).
 - Uma linha por edital com as etapas e o estado de cada uma; clicar abre ou cria o documento, respeitando a permissão.
 - Filtro "Minhas pendências" ligado por padrão, mais busca por código e objeto.
+- Etapas calculadas em `lib/features/processo/domain/processo_etapas.dart` (situação, motivo do bloqueio e ações já filtradas por permissão); página em `lib/features/processo/pages/processos_page.dart`. Etapa com várias ações abre um menu; as pendências aparecem como atalhos no card.
 
 ### Fase 7 — Pontos menores
 

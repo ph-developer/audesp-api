@@ -36,7 +36,7 @@ Future<GoRouter> _pumpShell(
       );
 
   final router = GoRouter(
-    initialLocation: '/edital',
+    initialLocation: '/processos',
     routes: [
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
@@ -71,6 +71,7 @@ void main() {
       await _pumpShell(tester, permissions: permissions);
 
       expect(find.byTooltip('Logs'), findsNothing);
+      expect(find.byTooltip('Processos'), findsNothing);
       expect(find.byTooltip('Meu perfil'), findsOneWidget);
       expect(find.byType(Chip), findsOneWidget);
       expect(find.byType(CircleAvatar), findsOneWidget);
@@ -100,6 +101,7 @@ void main() {
       );
 
       expect(logs, findsOneWidget);
+      expect(find.byTooltip('Processos'), findsOneWidget);
       expect(tester.widget<IconButton>(logs).isSelected, isFalse);
       expect(
         tester.getCenter(logs).dy,
@@ -119,7 +121,7 @@ void main() {
       final colors = Theme.of(tester.element(selectedLogs)).colorScheme;
       expect(style.backgroundColor!.resolve({}), colors.secondaryContainer);
 
-      router.go('/edital');
+      router.go('/processos');
       await tester.pumpAndSettle();
 
       expect(tester.widget<IconButton>(logs).isSelected, isFalse);
