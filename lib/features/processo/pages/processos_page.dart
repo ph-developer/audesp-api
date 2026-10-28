@@ -274,15 +274,13 @@ class _EtapaChip extends StatelessWidget {
       SituacaoEtapa.enviada => colors.primary,
       SituacaoEtapa.rascunho => colors.tertiary,
       SituacaoEtapa.aCriar => colors.secondary,
-      SituacaoEtapa.bloqueada ||
-      SituacaoEtapa.naoSeAplica => colors.onSurfaceVariant,
+      SituacaoEtapa.bloqueada => colors.onSurfaceVariant,
     };
     final situacao = switch (etapa.situacao) {
       SituacaoEtapa.enviada => 'Enviado',
       SituacaoEtapa.rascunho => 'Rascunho',
       SituacaoEtapa.aCriar => 'A criar',
       SituacaoEtapa.bloqueada => 'Bloqueado',
-      SituacaoEtapa.naoSeAplica => '—',
     };
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -290,9 +288,7 @@ class _EtapaChip extends StatelessWidget {
         color: color.withAlpha(20),
         shape: StadiumBorder(
           side: BorderSide(
-            color:
-                etapa.situacao == SituacaoEtapa.bloqueada ||
-                    etapa.situacao == SituacaoEtapa.naoSeAplica
+            color: etapa.situacao == SituacaoEtapa.bloqueada
                 ? colors.outline
                 : color.withAlpha(100),
           ),

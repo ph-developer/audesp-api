@@ -9,7 +9,7 @@ import 'processo_rules.dart';
 
 enum EtapaTipo { edital, licitacao, ata, ajuste }
 
-enum SituacaoEtapa { naoSeAplica, bloqueada, aCriar, rascunho, enviada }
+enum SituacaoEtapa { bloqueada, aCriar, rascunho, enviada }
 
 class AcaoEtapa {
   final String label;
@@ -98,18 +98,18 @@ abstract final class ProcessoEtapas {
             ),
         ],
       ),
-      etapa(
-        tipo: EtapaTipo.ata,
-        situacao: !edital.isSrp
-            ? SituacaoEtapa.naoSeAplica
-            : _situacaoDocumentos(
-                processo.atas.map((ata) => ata.status),
-                motivoAta,
-              ),
-        quantidade: processo.atas.length,
-        motivoBloqueio: motivoAta,
-        acoes: [
-          if (edital.isSrp) ...[
+      // A licitação gera Ata (edital SRP) ou Ajuste (não SRP); a etapa que
+      // não se aplica só aparece quando já há documentos antigos nela.
+      if (edital.isSrp || processo.atas.isNotEmpty)
+        etapa(
+          tipo: EtapaTipo.ata,
+          situacao: _situacaoDocumentos(
+            processo.atas.map((ata) => ata.status),
+            motivoAta,
+          ),
+          quantidade: processo.atas.length,
+          motivoBloqueio: motivoAta,
+          acoes: [
             for (final ata in processo.atas)
               AcaoEtapa(
                 label: 'Abrir ata ${_rotuloAta(ata)}',
@@ -121,31 +121,29 @@ abstract final class ProcessoEtapas {
                 route: '/ata/new?editalId=${edital.id}',
               ),
           ],
-        ],
-      ),
-      etapa(
-        tipo: EtapaTipo.ajuste,
-        situacao: edital.isSrp && processo.ajustes.isEmpty
-            ? SituacaoEtapa.naoSeAplica
-            : _situacaoDocumentos(
-                processo.ajustes.map((ajuste) => ajuste.status),
-                motivoAjuste,
+        ),
+      if (!edital.isSrp || processo.ajustes.isNotEmpty)
+        etapa(
+          tipo: EtapaTipo.ajuste,
+          situacao: _situacaoDocumentos(
+            processo.ajustes.map((ajuste) => ajuste.status),
+            motivoAjuste,
+          ),
+          quantidade: processo.ajustes.length,
+          motivoBloqueio: motivoAjuste,
+          acoes: [
+            for (final ajuste in processo.ajustes)
+              AcaoEtapa(
+                label: 'Abrir ajuste ${_rotuloAjuste(ajuste)}',
+                route: '/ajuste/${ajuste.id}',
               ),
-        quantidade: processo.ajustes.length,
-        motivoBloqueio: motivoAjuste,
-        acoes: [
-          for (final ajuste in processo.ajustes)
-            AcaoEtapa(
-              label: 'Abrir ajuste ${_rotuloAjuste(ajuste)}',
-              route: '/ajuste/${ajuste.id}',
-            ),
-          if (!edital.isSrp && ProcessoRules.podeCriarAjuste(processo))
-            AcaoEtapa(
-              label: 'Novo ajuste',
-              route: '/ajuste/new?editalId=${edital.id}',
-            ),
-        ],
-      ),
+            if (!edital.isSrp && ProcessoRules.podeCriarAjuste(processo))
+              AcaoEtapa(
+                label: 'Novo ajuste',
+                route: '/ajuste/new?editalId=${edital.id}',
+              ),
+          ],
+        ),
     ];
   }
 }

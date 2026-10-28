@@ -208,10 +208,10 @@ void main() {
       expect(find.text('Objeto do edital 1'), findsNothing);
       expect(find.text('Objeto do edital 2'), findsOneWidget);
       expect(find.text('Objeto do edital 3'), findsOneWidget);
-      expect(
-        find.descendant(of: _chip(2, 'ajuste'), matching: find.text('—')),
-        findsOneWidget,
-      );
+      expect(_chip(2, 'ata'), findsOneWidget);
+      expect(_chip(2, 'ajuste'), findsNothing);
+      expect(_chip(3, 'ata'), findsNothing);
+      expect(_chip(3, 'ajuste'), findsOneWidget);
     },
   );
 
