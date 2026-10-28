@@ -15,7 +15,6 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
-import '../../auth/auth_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
@@ -129,9 +128,6 @@ class _AtaList extends ConsumerWidget {
         : ref.watch(atasEnviadasProvider);
 
     final editaisAsync = ref.watch(_editaisMapProvider);
-    final podeCriarAjuste =
-        ref.watch(localSessionProvider)?.hasPermission(AppPermissions.ajuste) ??
-        false;
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -235,15 +231,6 @@ class _AtaList extends ConsumerWidget {
                     ],
                   ),
                   chips: [if (ata.retificacao) StatusChip.retificacao()],
-                  actions: [
-                    if (isSent && podeCriarAjuste)
-                      AudespIconButton(
-                        icon: Icons.handshake_outlined,
-                        tooltip: 'Novo ajuste desta ata',
-                        onPressed: () =>
-                            context.go('/ajuste/new?ataId=${ata.id}'),
-                      ),
-                  ],
                   onDelete: isSent
                       ? null
                       : () => _confirmDelete(context, ref, ata),

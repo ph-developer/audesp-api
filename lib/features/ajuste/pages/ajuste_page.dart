@@ -19,7 +19,6 @@ import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
 import '../ajuste_providers.dart';
-import '../widgets/atas_para_ajuste_dialog.dart';
 
 class AjustePage extends ConsumerStatefulWidget {
   const AjustePage({super.key});
@@ -85,7 +84,6 @@ class _AjustePageState extends ConsumerState<AjustePage> {
               ref.invalidate(ajustesDraftProvider);
               ref.invalidate(ajustesEnviadosProvider);
               ref.invalidate(processosProvider);
-              ref.invalidate(atasParaAjusteProvider);
               ref.invalidate(
                 unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
               );
@@ -98,13 +96,6 @@ class _AjustePageState extends ConsumerState<AjustePage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          HoverExpandFab(
-            heroTag: 'criarPorAta',
-            onPressed: () => _openAtasParaAjusteDialog(context),
-            icon: Icons.assignment_outlined,
-            tooltip: 'Criar por Ata',
-          ),
-          const SizedBox(height: 12),
           HoverExpandFab(
             heroTag: 'criarPorEdital',
             onPressed: () => _openUnlinkedEditaisDialog(context, ref),
@@ -311,12 +302,6 @@ Future<void> _openUnlinkedEditaisDialog(
   );
   if (edital == null || !context.mounted) return;
   context.go('/ajuste/new?editalId=${edital.id}');
-}
-
-Future<void> _openAtasParaAjusteDialog(BuildContext context) async {
-  final ata = await showAtasParaAjusteDialog(context: context);
-  if (ata == null || !context.mounted) return;
-  context.go('/ajuste/new?ataId=${ata.id}');
 }
 
 final _editaisMapProvider = FutureProvider<Map<int, Edital>>((ref) async {

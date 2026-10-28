@@ -51,9 +51,7 @@ final unlinkedEditaisProvider = FutureProvider.autoDispose
       final processos = await ref.watch(processosProvider.future);
       final opcoes = target == UnlinkedEditaisTarget.ata
           ? ProcessoRules.opcoesAta(processos)
-          : ProcessoRules.opcoesAjuste(
-              processos,
-            ).where((o) => !o.processo.edital.isSrp).toList();
+          : ProcessoRules.opcoesAjuste(processos);
 
       return UnlinkedEditaisData(
         editais: opcoes.map((o) => o.processo.edital).toList(),

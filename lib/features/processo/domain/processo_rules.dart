@@ -8,9 +8,8 @@ enum TipoPendencia { criarLicitacao, enviarLicitacao, criarAta, criarAjuste }
 class Pendencia {
   final Processo processo;
   final TipoPendencia tipo;
-  final Ata? ata;
 
-  const Pendencia({required this.processo, required this.tipo, this.ata});
+  const Pendencia({required this.processo, required this.tipo});
 }
 
 class OpcaoEdital {
@@ -22,39 +21,8 @@ class OpcaoEdital {
   bool get liberado => motivoBloqueio == null;
 }
 
-class OpcaoAta {
-  final Processo processo;
-  final Ata ata;
-  final int ajustesVinculados;
-  final String? motivoBloqueio;
-
-  const OpcaoAta({
-    required this.processo,
-    required this.ata,
-    required this.ajustesVinculados,
-    this.motivoBloqueio,
-  });
-
-  bool get liberado => motivoBloqueio == null;
-}
-
 /// Dependências e pendências dos documentos de um processo.
 abstract final class ProcessoRules {
-  static List<OpcaoAta> opcoesAtaParaAjuste(Iterable<Processo> processos) => [
-    for (final processo in processos)
-      if (processo.edital.isSrp)
-        for (final ata in processo.atas)
-          if (ata.status == 'sent')
-            OpcaoAta(
-              processo: processo,
-              ata: ata,
-              ajustesVinculados: processo.ajustes
-                  .where((ajuste) => ajuste.ataId == ata.id)
-                  .length,
-              motivoBloqueio: motivoBloqueioAjuste(processo),
-            ),
-  ];
-
   static List<OpcaoEdital> opcoesAta(Iterable<Processo> processos) => [
     for (final processo in processos)
       if (processo.edital.status == 'sent' && processo.edital.isSrp)
@@ -69,7 +37,8 @@ abstract final class ProcessoRules {
     bool adesaoParticipacao = false,
   }) => [
     for (final processo in processos)
-      if (processo.edital.status == 'sent')
+      if (processo.edital.status == 'sent' &&
+          (adesaoParticipacao || !processo.edital.isSrp))
         OpcaoEdital(
           processo: processo,
           motivoBloqueio: motivoBloqueioAjuste(
@@ -111,6 +80,9 @@ abstract final class ProcessoRules {
     if (adesaoParticipacao) return null;
     if (processo.edital.status != 'sent') {
       return 'O edital ainda não foi enviado ao AUDESP.';
+    }
+    if (processo.edital.isSrp) {
+      return 'Edital com registro de preços gera ata, não ajuste.';
     }
     return _motivoBloqueioLicitacao(processo);
   }
@@ -167,21 +139,9 @@ abstract final class ProcessoRules {
         );
       }
 
-      if (!podeAjuste) continue;
-      if (isSrp) {
-        final atasComAjuste = processo.ajustes.map((a) => a.ataId).toSet();
-        for (final ata in processo.atas) {
-          if (ata.status == 'sent' && !atasComAjuste.contains(ata.id)) {
-            pendencias.add(
-              Pendencia(
-                processo: processo,
-                tipo: TipoPendencia.criarAjuste,
-                ata: ata,
-              ),
-            );
-          }
-        }
-      } else if (situacao == SituacaoLicitacao.enviada &&
+      if (podeAjuste &&
+          !isSrp &&
+          situacao == SituacaoLicitacao.enviada &&
           processo.ajustes.isEmpty) {
         pendencias.add(
           Pendencia(processo: processo, tipo: TipoPendencia.criarAjuste),

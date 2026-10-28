@@ -42,12 +42,7 @@ abstract final class ProcessoEtapas {
       processo.licitacoes,
     );
     final motivoAta = ProcessoRules.motivoBloqueioAta(processo);
-    final atasEnviadas = processo.atas.where((ata) => ata.status == 'sent');
-    final motivoAjuste =
-        ProcessoRules.motivoBloqueioAjuste(processo) ??
-        (edital.isSrp && atasEnviadas.isEmpty
-            ? 'O edital SRP ainda não tem ata enviada ao AUDESP.'
-            : null);
+    final motivoAjuste = ProcessoRules.motivoBloqueioAjuste(processo);
 
     EtapaProcesso etapa({
       required EtapaTipo tipo,
@@ -130,10 +125,12 @@ abstract final class ProcessoEtapas {
       ),
       etapa(
         tipo: EtapaTipo.ajuste,
-        situacao: _situacaoDocumentos(
-          processo.ajustes.map((ajuste) => ajuste.status),
-          motivoAjuste,
-        ),
+        situacao: edital.isSrp && processo.ajustes.isEmpty
+            ? SituacaoEtapa.naoSeAplica
+            : _situacaoDocumentos(
+                processo.ajustes.map((ajuste) => ajuste.status),
+                motivoAjuste,
+              ),
         quantidade: processo.ajustes.length,
         motivoBloqueio: motivoAjuste,
         acoes: [
@@ -142,12 +139,6 @@ abstract final class ProcessoEtapas {
               label: 'Abrir ajuste ${_rotuloAjuste(ajuste)}',
               route: '/ajuste/${ajuste.id}',
             ),
-          if (edital.isSrp && motivoAjuste == null)
-            for (final ata in atasEnviadas)
-              AcaoEtapa(
-                label: 'Novo ajuste da ata ${_rotuloAta(ata)}',
-                route: '/ajuste/new?ataId=${ata.id}',
-              ),
           if (!edital.isSrp && ProcessoRules.podeCriarAjuste(processo))
             AcaoEtapa(
               label: 'Novo ajuste',
@@ -198,10 +189,7 @@ String descricaoPendencia(Pendencia p) => switch (p.tipo) {
   TipoPendencia.criarLicitacao => 'Criar licitação',
   TipoPendencia.enviarLicitacao => 'Enviar licitação',
   TipoPendencia.criarAta => 'Criar ata',
-  TipoPendencia.criarAjuste =>
-    p.ata == null
-        ? 'Criar ajuste'
-        : 'Criar ajuste da ata ${_rotuloAta(p.ata!)}',
+  TipoPendencia.criarAjuste => 'Criar ajuste',
 };
 
 String rotaPendencia(Pendencia p) => switch (p.tipo) {
@@ -210,10 +198,7 @@ String rotaPendencia(Pendencia p) => switch (p.tipo) {
   TipoPendencia.enviarLicitacao =>
     '/licitacao/${_rascunhoMaisRecente(p.processo).id}',
   TipoPendencia.criarAta => '/ata/new?editalId=${p.processo.edital.id}',
-  TipoPendencia.criarAjuste =>
-    p.ata == null
-        ? '/ajuste/new?editalId=${p.processo.edital.id}'
-        : '/ajuste/new?ataId=${p.ata!.id}',
+  TipoPendencia.criarAjuste => '/ajuste/new?editalId=${p.processo.edital.id}',
 };
 
 Licitacao _rascunhoMaisRecente(Processo processo) => processo.licitacoes

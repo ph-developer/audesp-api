@@ -83,44 +83,45 @@ void main() {
     <Licitacao>[],
     [licitacaoFixture(1)],
   ]) {
-    test('SRP sem licitação enviada bloqueia ata e ajuste ($licitacoes)', () {
-      final processo = processoFixture(srp: true, licitacoes: licitacoes);
+    test(
+      'SRP sem licitação enviada bloqueia ata e dispensa ajuste ($licitacoes)',
+      () {
+        final processo = processoFixture(srp: true, licitacoes: licitacoes);
 
-      for (final tipo in [EtapaTipo.ata, EtapaTipo.ajuste]) {
-        final etapa = _etapa(processo, tipo);
-        expect(etapa.situacao, SituacaoEtapa.bloqueada);
+        final ata = _etapa(processo, EtapaTipo.ata);
+        expect(ata.situacao, SituacaoEtapa.bloqueada);
         expect(
-          etapa.motivoBloqueio,
+          ata.motivoBloqueio,
           licitacoes.isEmpty
               ? 'O edital ainda não tem licitação.'
               : 'A licitação do edital ainda não foi enviada ao AUDESP.',
         );
-        expect(etapa.acoes, isEmpty);
-      }
-    });
+        expect(ata.acoes, isEmpty);
+        final ajuste = _etapa(processo, EtapaTipo.ajuste);
+        expect(ajuste.situacao, SituacaoEtapa.naoSeAplica);
+        expect(ajuste.motivoBloqueio, isNull);
+        expect(ajuste.acoes, isEmpty);
+      },
+    );
   }
 
-  test(
-    'SRP com licitação enviada libera ata e aguarda ata enviada para ajuste',
-    () {
-      final processo = processoFixture(
-        srp: true,
-        licitacoes: [licitacaoFixture(1, status: 'sent')],
-      );
-      final ata = _etapa(processo, EtapaTipo.ata);
-      expect(ata.situacao, SituacaoEtapa.aCriar);
-      expect(ata.acoes.single.label, 'Nova ata');
-      expect(ata.acoes.single.route, '/ata/new?editalId=1');
-      final ajuste = _etapa(processo, EtapaTipo.ajuste);
-      expect(ajuste.situacao, SituacaoEtapa.bloqueada);
-      expect(
-        ajuste.motivoBloqueio,
-        'O edital SRP ainda não tem ata enviada ao AUDESP.',
-      );
-    },
-  );
+  test('SRP com licitação enviada libera só ata e ajuste não se aplica', () {
+    final processo = processoFixture(
+      srp: true,
+      licitacoes: [licitacaoFixture(1, status: 'sent')],
+    );
+    final ata = _etapa(processo, EtapaTipo.ata);
+    expect(ata.situacao, SituacaoEtapa.aCriar);
+    expect(ata.acoes.single.label, 'Nova ata');
+    expect(ata.acoes.single.route, '/ata/new?editalId=1');
+    final ajuste = _etapa(processo, EtapaTipo.ajuste);
+    expect(ajuste.situacao, SituacaoEtapa.naoSeAplica);
+    expect(ajuste.quantidade, 0);
+    expect(ajuste.motivoBloqueio, isNull);
+    expect(ajuste.acoes, isEmpty);
+  });
 
-  test('rascunho de ata não libera ajuste SRP', () {
+  test('ajuste não se aplica ao SRP com ata em rascunho', () {
     final processo = processoFixture(
       srp: true,
       licitacoes: [licitacaoFixture(1, status: 'sent')],
@@ -130,14 +131,13 @@ void main() {
     expect(_etapa(processo, EtapaTipo.ata).situacao, SituacaoEtapa.rascunho);
     expect(
       _etapa(processo, EtapaTipo.ajuste).situacao,
-      SituacaoEtapa.bloqueada,
+      SituacaoEtapa.naoSeAplica,
     );
     expect(_etapa(processo, EtapaTipo.ajuste).acoes, isEmpty);
   });
 
-  test(
-    'SRP oferece novo ajuste por ata enviada, inclusive com ajustes existentes',
-    () {
+  for (final status in ['draft', 'sent']) {
+    test('SRP mantém abertura do ajuste antigo sem criar outro ($status)', () {
       final processo = processoFixture(
         srp: true,
         licitacoes: [licitacaoFixture(1, status: 'sent')],
@@ -146,25 +146,21 @@ void main() {
           ataFixture(12),
           ataFixture(13, status: 'sent'),
         ],
-        ajustes: [ajusteFixture(21, ataId: 11, status: 'sent')],
+        ajustes: [ajusteFixture(21, ataId: 11, status: status)],
       );
       final ajuste = _etapa(processo, EtapaTipo.ajuste);
 
-      expect(ajuste.situacao, SituacaoEtapa.enviada);
-      expect(ajuste.acoes.map((acao) => acao.label), [
-        'Abrir ajuste ajuste-21',
-        'Novo ajuste da ata ata-11',
-        'Novo ajuste da ata ata-13',
-      ]);
-      expect(ajuste.acoes.map((acao) => acao.route), [
-        '/ajuste/21',
-        '/ajuste/new?ataId=11',
-        '/ajuste/new?ataId=13',
-      ]);
-    },
-  );
+      expect(
+        ajuste.situacao,
+        status == 'sent' ? SituacaoEtapa.enviada : SituacaoEtapa.rascunho,
+      );
+      expect(ajuste.quantidade, 1);
+      expect(ajuste.acoes.single.label, 'Abrir ajuste ajuste-21');
+      expect(ajuste.acoes.single.route, '/ajuste/21');
+    });
+  }
 
-  test('SRP com ata enviada e sem ajustes deixa ajuste a criar', () {
+  test('SRP com ata enviada e sem ajustes não oferece criação de ajuste', () {
     final processo = processoFixture(
       srp: true,
       licitacoes: [licitacaoFixture(1, status: 'sent')],
@@ -173,25 +169,22 @@ void main() {
 
     expect(_etapa(processo, EtapaTipo.ata).situacao, SituacaoEtapa.enviada);
     final ajuste = _etapa(processo, EtapaTipo.ajuste);
-    expect(ajuste.situacao, SituacaoEtapa.aCriar);
+    expect(ajuste.situacao, SituacaoEtapa.naoSeAplica);
     expect(ajuste.motivoBloqueio, isNull);
-    expect(ajuste.acoes.single.route, '/ajuste/new?ataId=11');
+    expect(ajuste.acoes, isEmpty);
   });
 
-  test(
-    'SRP com ata enviada ainda exige edital e licitação enviados para novo ajuste',
-    () {
-      final processo = processoFixture(
-        srp: true,
-        atas: [ataFixture(11, status: 'sent')],
-      );
+  test('SRP sem licitação e com ata enviada também dispensa ajuste', () {
+    final processo = processoFixture(
+      srp: true,
+      atas: [ataFixture(11, status: 'sent')],
+    );
 
-      final ajuste = _etapa(processo, EtapaTipo.ajuste);
-      expect(ajuste.situacao, SituacaoEtapa.bloqueada);
-      expect(ajuste.motivoBloqueio, 'O edital ainda não tem licitação.');
-      expect(ajuste.acoes, isEmpty);
-    },
-  );
+    final ajuste = _etapa(processo, EtapaTipo.ajuste);
+    expect(ajuste.situacao, SituacaoEtapa.naoSeAplica);
+    expect(ajuste.motivoBloqueio, isNull);
+    expect(ajuste.acoes, isEmpty);
+  });
 
   test('não SRP com licitação enviada cria ajuste diretamente pelo edital', () {
     final processo = processoFixture(
@@ -202,6 +195,14 @@ void main() {
     expect(ajuste.situacao, SituacaoEtapa.aCriar);
     expect(ajuste.acoes.single.label, 'Novo ajuste');
     expect(ajuste.acoes.single.route, '/ajuste/new?editalId=1');
+  });
+
+  test('não SRP sem licitação enviada bloqueia ajuste', () {
+    final ajuste = _etapa(processoFixture(), EtapaTipo.ajuste);
+
+    expect(ajuste.situacao, SituacaoEtapa.bloqueada);
+    expect(ajuste.motivoBloqueio, 'O edital ainda não tem licitação.');
+    expect(ajuste.acoes, isEmpty);
   });
 
   test(
@@ -318,11 +319,7 @@ void main() {
       'Abrir ata 12345678000190-1-123456/2026-000001',
       'Nova ata',
     ]);
-    expect(ajuste.acoes.map((a) => a.label), [
-      'Abrir ajuste 15/2026',
-      'Novo ajuste da ata 7/2026',
-      'Novo ajuste da ata 12345678000190-1-123456/2026-000001',
-    ]);
+    expect(ajuste.acoes.single.label, 'Abrir ajuste 15/2026');
   });
 
   test('Contratação não recebe ações de Ata ou Ajuste', () {
@@ -389,17 +386,6 @@ void main() {
         expect(descricaoPendencia(pendencia), descricao);
         expect(rotaPendencia(pendencia), rota);
       }
-
-      final pendencia = Pendencia(
-        processo: processo,
-        tipo: TipoPendencia.criarAjuste,
-        ata: ataFixture(11, codigo: 'LOCAL-ARP/2026'),
-      );
-      expect(
-        descricaoPendencia(pendencia),
-        'Criar ajuste da ata LOCAL-ARP/2026',
-      );
-      expect(rotaPendencia(pendencia), '/ajuste/new?ataId=11');
     });
 
     test(

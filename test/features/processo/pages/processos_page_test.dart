@@ -176,7 +176,7 @@ void main() {
   });
 
   testWidgets(
-    'total conta pendências, incluindo várias atas no mesmo processo',
+    'Contratos recebe só criar ata para SRP e criar ajuste para não SRP',
     (tester) async {
       await _pumpPage(
         tester,
@@ -190,14 +190,28 @@ void main() {
               ataFixture(12, status: 'sent'),
             ],
           ),
-          processoFixture(id: 2),
+          processoFixture(
+            id: 2,
+            srp: true,
+            licitacoes: [licitacaoFixture(2, editalId: 2, status: 'sent')],
+          ),
+          processoFixture(
+            id: 3,
+            licitacoes: [licitacaoFixture(3, editalId: 3, status: 'sent')],
+          ),
         ],
       );
 
       expect(find.text('Minhas pendências (2)'), findsOneWidget);
-      expect(find.text('Criar ajuste da ata ata-11'), findsOneWidget);
-      expect(find.text('Criar ajuste da ata ata-12'), findsOneWidget);
-      expect(find.text('Objeto do edital 2'), findsNothing);
+      expect(find.text('Criar ata'), findsOneWidget);
+      expect(find.text('Criar ajuste'), findsOneWidget);
+      expect(find.text('Objeto do edital 1'), findsNothing);
+      expect(find.text('Objeto do edital 2'), findsOneWidget);
+      expect(find.text('Objeto do edital 3'), findsOneWidget);
+      expect(
+        find.descendant(of: _chip(2, 'ajuste'), matching: find.text('—')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -344,7 +358,7 @@ void main() {
   });
 
   testWidgets(
-    'chip com várias ações abre menu e cria ajuste pela ata escolhida',
+    'chip SRP com ajustes antigos oferece só abertura e preserva navegação',
     (tester) async {
       final router = await _pumpPage(
         tester,
@@ -364,6 +378,8 @@ void main() {
           ),
         ],
       );
+      await tester.tap(find.byType(FilterChip));
+      await tester.pumpAndSettle();
 
       expect(
         find.descendant(
@@ -377,13 +393,13 @@ void main() {
 
       expect(find.text('Abrir ajuste ajuste-21'), findsOneWidget);
       expect(find.text('Abrir ajuste ajuste-22'), findsOneWidget);
-      expect(find.text('Novo ajuste da ata ata-11'), findsOneWidget);
-      expect(find.text('Novo ajuste da ata ata-12'), findsOneWidget);
-      await tester.tap(find.text('Novo ajuste da ata ata-12'));
+      expect(find.byType(PopupMenuItem<String>), findsNWidgets(2));
+      expect(find.textContaining('Novo ajuste'), findsNothing);
+      await tester.tap(find.text('Abrir ajuste ajuste-22'));
       await tester.pumpAndSettle();
       expect(
         router.routeInformationProvider.value.uri.toString(),
-        '/ajuste/new?ataId=12',
+        '/ajuste/22',
       );
     },
   );

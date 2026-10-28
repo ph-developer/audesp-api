@@ -299,24 +299,45 @@ void main() {
   });
 
   group('motivoBloqueioAjuste e podeCriarAjuste', () {
-    test('edital não enviado tem prioridade sobre a ausência de licitação', () {
-      final processo = _processo(edital: _edital(1, status: 'draft'));
-      expect(
-        ProcessoRules.motivoBloqueioAjuste(processo),
-        'O edital ainda não foi enviado ao AUDESP.',
-      );
-      expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
-    });
-
-    test('exige licitação independentemente de SRP', () {
+    test('edital não enviado tem prioridade sobre SRP e licitação', () {
       for (final srp in [false, true]) {
-        final processo = _processo(edital: _edital(1, srp: srp));
+        final processo = _processo(
+          edital: _edital(1, status: 'draft', srp: srp),
+        );
         expect(
           ProcessoRules.motivoBloqueioAjuste(processo),
-          'O edital ainda não tem licitação.',
+          'O edital ainda não foi enviado ao AUDESP.',
         );
         expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
       }
+    });
+
+    test('SRP bloqueia ajuste independentemente da licitação ou ata', () {
+      for (final licitacoes in <List<Licitacao>>[
+        [],
+        [_licitacao(1)],
+        [_licitacao(1, status: 'sent')],
+      ]) {
+        final processo = _processo(
+          edital: _edital(1, srp: true),
+          licitacoes: licitacoes,
+          atas: [_ata(1, status: 'sent')],
+        );
+        expect(
+          ProcessoRules.motivoBloqueioAjuste(processo),
+          'Edital com registro de preços gera ata, não ajuste.',
+        );
+        expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
+      }
+    });
+
+    test('exige licitação para edital não SRP', () {
+      final processo = _processo();
+      expect(
+        ProcessoRules.motivoBloqueioAjuste(processo),
+        'O edital ainda não tem licitação.',
+      );
+      expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
     });
 
     test('exige envio da licitação em rascunho', () {
@@ -328,24 +349,26 @@ void main() {
       expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
     });
 
-    test('libera edital e licitação enviados independentemente de SRP', () {
-      for (final srp in [false, true]) {
-        final processo = _processo(
-          edital: _edital(1, srp: srp),
-          licitacoes: [
-            _licitacao(1),
-            _licitacao(2, status: 'sent'),
-          ],
-        );
-        expect(ProcessoRules.motivoBloqueioAjuste(processo), isNull);
-        expect(ProcessoRules.podeCriarAjuste(processo), isTrue);
-      }
+    test('libera edital não SRP e licitação enviados', () {
+      final processo = _processo(
+        licitacoes: [
+          _licitacao(1),
+          _licitacao(2, status: 'sent'),
+        ],
+      );
+      expect(ProcessoRules.motivoBloqueioAjuste(processo), isNull);
+      expect(ProcessoRules.podeCriarAjuste(processo), isTrue);
+      expect(ProcessoRules.podeCriarAta(processo), isFalse);
     });
 
     test('adesão ou participação fica isenta de todos os bloqueios', () {
       final processos = [
         _processo(edital: _edital(1, status: 'draft')),
         _processo(edital: _edital(1, srp: true)),
+        _processo(
+          edital: _edital(1, srp: true),
+          licitacoes: [_licitacao(1, status: 'sent')],
+        ),
         _processo(licitacoes: [_licitacao(1)]),
       ];
       for (final processo in processos) {
@@ -412,7 +435,7 @@ void main() {
       },
     );
 
-    test('ajuste inclui enviados SRP ou não com o motivo de cada bloqueio', () {
+    test('ajuste inclui só enviados não SRP com o motivo de cada bloqueio', () {
       final processos = [
         for (final srp in [false, true]) ...[
           _processo(edital: _edital(srp ? 4 : 1, srp: srp)),
@@ -435,18 +458,12 @@ void main() {
         _processo(edital: _edital(8, status: 'draft', srp: true)),
       ]);
 
-      expect(opcoes.map((o) => o.processo), processos);
-      expect(opcoes.map((o) => o.liberado), [
-        false,
-        false,
-        true,
-        false,
-        false,
-        true,
-      ]);
+      final naoSrp = processos.where((p) => !p.edital.isSrp);
+      expect(opcoes.map((o) => o.processo), naoSrp);
+      expect(opcoes.map((o) => o.liberado), [false, false, true]);
       expect(
         opcoes.map((o) => o.motivoBloqueio),
-        processos.map(ProcessoRules.motivoBloqueioAjuste),
+        naoSrp.map(ProcessoRules.motivoBloqueioAjuste),
       );
     });
 
@@ -470,92 +487,6 @@ void main() {
       expect(opcoes.map((o) => o.processo), processos);
       expect(opcoes.every((o) => o.liberado), isTrue);
       expect(opcoes.every((o) => o.motivoBloqueio == null), isTrue);
-    });
-  });
-
-  group('opcoesAtaParaAjuste', () {
-    test('inclui só atas enviadas e preserva a ordem', () {
-      final processo = _processo(
-        edital: _edital(1, srp: true),
-        licitacoes: [_licitacao(1, status: 'sent')],
-        atas: [
-          _ata(1),
-          _ata(3, status: 'sent'),
-          _ata(2, status: 'sent'),
-        ],
-      );
-
-      final opcoes = ProcessoRules.opcoesAtaParaAjuste([processo]);
-
-      expect(opcoes.map((o) => o.ata.id), [3, 2]);
-      expect(opcoes.every((o) => o.processo == processo), isTrue);
-      expect(opcoes.every((o) => o.liberado), isTrue);
-    });
-
-    test('exclui atas de edital não SRP', () {
-      expect(
-        ProcessoRules.opcoesAtaParaAjuste([
-          _processo(
-            licitacoes: [_licitacao(1, status: 'sent')],
-            atas: [_ata(1, status: 'sent')],
-          ),
-        ]),
-        isEmpty,
-      );
-    });
-
-    test('conta ajustes por ataId em qualquer status sem bloquear novos', () {
-      final processo = _processo(
-        edital: _edital(1, srp: true),
-        licitacoes: [_licitacao(1, status: 'sent')],
-        atas: [
-          _ata(2, status: 'sent'),
-          _ata(1, status: 'sent'),
-          _ata(3, status: 'sent'),
-        ],
-        ajustes: [
-          _ajuste(1, ataId: 1),
-          _ajuste(2, ataId: 1, status: 'sent'),
-          _ajuste(3, ataId: 2),
-          _ajuste(4),
-          _ajuste(5, ataId: 99),
-        ],
-      );
-
-      final opcoes = ProcessoRules.opcoesAtaParaAjuste([processo]);
-
-      expect(opcoes.map((o) => o.ajustesVinculados), [1, 2, 0]);
-      expect(opcoes.every((o) => o.liberado), isTrue);
-    });
-
-    test('mantém ata bloqueada com o motivo da licitação em rascunho', () {
-      final processo = _processo(
-        edital: _edital(1, srp: true),
-        licitacoes: [_licitacao(1)],
-        atas: [_ata(1, status: 'sent')],
-      );
-
-      final opcao = ProcessoRules.opcoesAtaParaAjuste([processo]).single;
-
-      expect(opcao.ata, same(processo.atas.single));
-      expect(opcao.liberado, isFalse);
-      expect(
-        opcao.motivoBloqueio,
-        'A licitação do edital ainda não foi enviada ao AUDESP.',
-      );
-    });
-
-    test('mantém ata bloqueada quando o edital voltou para rascunho', () {
-      final processo = _processo(
-        edital: _edital(1, srp: true, status: 'draft'),
-        licitacoes: [_licitacao(1, status: 'sent')],
-        atas: [_ata(1, status: 'sent')],
-      );
-
-      final opcao = ProcessoRules.opcoesAtaParaAjuste([processo]).single;
-
-      expect(opcao.liberado, isFalse);
-      expect(opcao.motivoBloqueio, 'O edital ainda não foi enviado ao AUDESP.');
     });
   });
 
@@ -608,7 +539,6 @@ void main() {
 
       expect(pendencia.processo, same(processo));
       expect(pendencia.tipo, TipoPendencia.criarLicitacao);
-      expect(pendencia.ata, isNull);
     });
 
     test('edital enviado com licitações em rascunho pede um único envio', () {
@@ -620,7 +550,6 @@ void main() {
 
       expect(pendencia.processo, same(processo));
       expect(pendencia.tipo, TipoPendencia.enviarLicitacao);
-      expect(pendencia.ata, isNull);
     });
 
     test('edital em rascunho não pede criar ou enviar licitação', () {
@@ -645,13 +574,12 @@ void main() {
         ],
       );
       final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.ata),
+        _user(permissions: AppPermissions.ata | AppPermissions.ajuste),
         [processo],
       ).single;
 
       expect(pendencia.processo, same(processo));
       expect(pendencia.tipo, TipoPendencia.criarAta);
-      expect(pendencia.ata, isNull);
     });
 
     test('ata existente em qualquer status dispensa criar ata', () {
@@ -669,7 +597,7 @@ void main() {
       }
     });
 
-    test('sem licitação enviada não pede criar ata ou ajuste sem ata', () {
+    test('sem licitação enviada não pede criar ata ou ajuste', () {
       for (final srp in [false, true]) {
         for (final licitacoes in <List<Licitacao>>[
           [],
@@ -691,91 +619,42 @@ void main() {
       }
     });
 
-    test('cada ata SRP enviada sem ajuste pede ajuste vinculado à ata', () {
-      final atas = [_ata(2, status: 'sent'), _ata(1, status: 'sent')];
-      final processo = _processo(
-        edital: _edital(1, srp: true),
-        licitacoes: [_licitacao(1, status: 'sent')],
-        atas: atas,
-      );
-      final pendencias = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.ajuste),
-        [processo],
-      );
-
-      expect(pendencias.map((p) => p.processo), [processo, processo]);
-      expect(pendencias.map((p) => p.tipo), [
-        TipoPendencia.criarAjuste,
-        TipoPendencia.criarAjuste,
-      ]);
-      expect(pendencias.map((p) => p.ata), atas);
-    });
-
-    test('ata em rascunho não gera pendência de ajuste', () {
-      expect(
-        ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-          _processo(
-            edital: _edital(1, srp: true),
-            licitacoes: [_licitacao(1, status: 'sent')],
-            atas: [_ata(1)],
-          ),
-        ]),
-        isEmpty,
-      );
-    });
-
     test(
-      'ajuste em qualquer status dispensa pendência só da ata vinculada',
+      'ata SRP nunca gera pendência de ajuste, com ou sem ajustes antigos',
       () {
-        final ataSemAjuste = _ata(2, status: 'sent');
         for (final status in ['draft', 'sent']) {
-          final processo = _processo(
-            edital: _edital(1, srp: true),
-            licitacoes: [_licitacao(1, status: 'sent')],
-            atas: [
-              _ata(1, status: 'sent'),
-              ataSemAjuste,
-            ],
-            ajustes: [
-              _ajuste(1, ataId: 1, status: status),
-              _ajuste(2),
-            ],
-          );
-          final pendencia = ProcessoRules.pendenciasPara(
-            _user(permissions: AppPermissions.ajuste),
-            [processo],
-          ).single;
-
-          expect(pendencia.tipo, TipoPendencia.criarAjuste);
-          expect(pendencia.ata, same(ataSemAjuste));
+          for (final ajustes in <List<Ajuste>>[
+            [],
+            [_ajuste(1, ataId: 1, status: status)],
+          ]) {
+            expect(
+              ProcessoRules.pendenciasPara(_user(isAdmin: true), [
+                _processo(
+                  edital: _edital(1, srp: true),
+                  licitacoes: [_licitacao(1, status: 'sent')],
+                  atas: [
+                    _ata(1, status: status),
+                    _ata(2, status: 'sent'),
+                  ],
+                  ajustes: ajustes,
+                ),
+              ]),
+              isEmpty,
+            );
+          }
         }
       },
     );
 
-    test('ata enviada com ajuste não gera pendência', () {
-      expect(
-        ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-          _processo(
-            edital: _edital(1, srp: true),
-            licitacoes: [_licitacao(1, status: 'sent')],
-            atas: [_ata(1, status: 'sent')],
-            ajustes: [_ajuste(1, ataId: 1)],
-          ),
-        ]),
-        isEmpty,
-      );
-    });
-
-    test('licitação enviada não SRP sem ajuste pede ajuste sem ata', () {
+    test('licitação enviada não SRP sem ajuste pede só criar ajuste', () {
       final processo = _processo(licitacoes: [_licitacao(1, status: 'sent')]);
       final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.ajuste),
+        _user(permissions: AppPermissions.ata | AppPermissions.ajuste),
         [processo],
       ).single;
 
       expect(pendencia.processo, same(processo));
       expect(pendencia.tipo, TipoPendencia.criarAjuste);
-      expect(pendencia.ata, isNull);
     });
 
     test('edital não SRP com ajuste em qualquer status não pede ajuste', () {
@@ -803,13 +682,9 @@ void main() {
           TipoPendencia.enviarLicitacao,
         ],
         AppPermissions.ata: [TipoPendencia.criarAta],
-        AppPermissions.ajuste: [
-          TipoPendencia.criarAjuste,
-          TipoPendencia.criarAjuste,
-        ],
+        AppPermissions.ajuste: [TipoPendencia.criarAjuste],
         AppPermissions.ata | AppPermissions.ajuste: [
           TipoPendencia.criarAta,
-          TipoPendencia.criarAjuste,
           TipoPendencia.criarAjuste,
         ],
       };
@@ -834,20 +709,17 @@ void main() {
         processos,
       );
 
-      expect(pendencias.map((p) => p.processo), processos);
+      expect(pendencias.map((p) => p.processo), [
+        processos[0],
+        processos[1],
+        processos[2],
+        processos[4],
+      ]);
       expect(pendencias.map((p) => p.tipo), [
         TipoPendencia.criarLicitacao,
         TipoPendencia.enviarLicitacao,
         TipoPendencia.criarAta,
         TipoPendencia.criarAjuste,
-        TipoPendencia.criarAjuste,
-      ]);
-      expect(pendencias.map((p) => p.ata), [
-        null,
-        null,
-        null,
-        processos[3].atas.single,
-        null,
       ]);
     });
   });

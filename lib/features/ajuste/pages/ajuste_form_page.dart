@@ -47,14 +47,8 @@ import '../widgets/gemini_ajuste_import_dialog.dart';
 class AjusteFormPage extends ConsumerStatefulWidget {
   final int? ajusteId;
   final int? preselectedEditalId;
-  final int? preselectedAtaId;
 
-  const AjusteFormPage({
-    super.key,
-    this.ajusteId,
-    this.preselectedEditalId,
-    this.preselectedAtaId,
-  });
+  const AjusteFormPage({super.key, this.ajusteId, this.preselectedEditalId});
 
   @override
   ConsumerState<AjusteFormPage> createState() => _AjusteFormPageState();
@@ -73,11 +67,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   int? _loadedId;
   ApiLog? _lastSendLog;
 
-  // ── Vínculo com Edital e Ata ──────────────────────────────────────────
+  // ── Vínculo com Edital ────────────────────────────────────────────────
   int? _editalId;
-  int? _ataId;
+  // Vínculo legado: preservado ao salvar, sem seleção de ata local.
+  int? _ataIdOriginal;
   List<OpcaoEdital> _opcoesEdital = [];
-  List<Ata> _atas = [];
   Set<int>? _itensLicitacao;
 
   Iterable<OpcaoEdital> get _opcoesVisiveis => _opcoesEdital.where(
@@ -94,8 +88,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         .firstOrNull;
     return opcao == null
         ? 'O edital vinculado não foi encontrado.'
-        : opcao.motivoBloqueio;
+        : opcao.motivoBloqueio ?? _motivoBloqueioAta;
   }
+
+  String? get _motivoBloqueioAta =>
+      _ataIdOriginal != null && !_adesaoParticipacao
+      ? 'Ajuste vinculado a ata não pode ser enviado.'
+      : null;
 
   Edital? get _editalSelecionado =>
       _editais.where((e) => e.id == _editalId).firstOrNull;
@@ -129,9 +128,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           false)
         objeto.key: objeto.value,
   };
-
-  List<Ata> get _atasDoEdital =>
-      _atas.where((a) => a.editalId == _editalId).toList();
 
   // ── Descritor ─────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
@@ -286,33 +282,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   }
 
   Future<void> _init() async {
-    _atas = await ref.read(atasDaoProvider).watchByStatus('sent');
-    if (!mounted) return;
-
     if (widget.ajusteId != null) {
       await _loadExisting(widget.ajusteId!);
     } else {
       await _carregarOpcoesEdital();
       if (!mounted) return;
       await _selectPreselectedEdital(widget.preselectedEditalId);
-      if (!mounted) return;
-      if (widget.preselectedAtaId != null) {
-        final ata = _atas
-            .where((a) => a.id == widget.preselectedAtaId)
-            .firstOrNull;
-        if (ata == null) {
-          _showError(
-            'A ata informada não foi encontrada ou ainda não foi enviada.',
-          );
-        } else {
-          await _selectPreselectedEdital(ata.editalId);
-          if (!mounted) return;
-          if (_editalId == ata.editalId) {
-            _aplicarAta(ata.id);
-            _fillEditalDescriptor();
-          }
-        }
-      }
     }
     if (!mounted) return;
     await _carregarItensLicitacao();
@@ -381,12 +356,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
   }
 
-  void _aplicarAta(int? ataId) {
-    _ataId = ataId;
-    final ata = _atasDoEdital.where((a) => a.id == ataId).firstOrNull;
-    _codigoAtaCtrl.text = ata?.codigoAta ?? '';
-  }
-
   void _alterarCategoriaProcesso(int? categoria) {
     setState(() {
       _categoriaProcessoId = categoria;
@@ -404,7 +373,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     setState(() {
       _adesaoParticipacao = adesao;
       _itensLicitacao = null;
-      _ataId = null;
       if (adesao) {
         if (_editalSelecionado?.semPncp ?? false) {
           _codigoEditalCtrl.clear();
@@ -460,11 +428,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _codigoEditalCtrl.text = edital.codigoEdital;
   }
 
-  bool get _isSelectedAtaAvailable {
-    final id = _ataId;
-    return id == null || _atasDoEdital.any((a) => a.id == id);
-  }
-
   Future<void> _loadExisting(int id) async {
     final dao = ref.read(ajustesDaoProvider);
     final ajuste = await dao.findById(id);
@@ -475,8 +438,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _loadedId = ajuste.id;
     _isSent = ajuste.status == 'sent';
     _editalId = ajuste.editalId;
-    _ataId = ajuste.ataId;
-    if (!_isSelectedAtaAvailable) _ataId = null;
+    _ataIdOriginal = ajuste.ataId;
 
     Map<String, dynamic> doc = {};
     try {
@@ -485,7 +447,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
-    if (_adesaoParticipacao) _ataId = null;
     await _carregarOpcoesEdital();
     if (!mounted) return;
     _codigoEditalCtrl.text =
@@ -729,7 +690,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
           editalId: _editalId,
-          ataId: _adesaoParticipacao ? null : _ataId,
+          ataId: null,
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEdital,
@@ -745,7 +706,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         await dao.updateAjuste(
           id: _loadedId!,
           editalId: _editalId,
-          ataId: _adesaoParticipacao ? null : _ataId,
+          ataId: _ataIdOriginal,
           municipio: municipio,
           entidade: entidade,
           codigoEdital: _codigoEdital,
@@ -794,7 +755,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
             .firstOrNull;
         final motivo = processo == null
             ? 'O edital vinculado não foi encontrado.'
-            : ProcessoRules.motivoBloqueioAjuste(processo);
+            : ProcessoRules.motivoBloqueioAjuste(processo) ??
+                  _motivoBloqueioAta;
         if (motivo != null) {
           _showError(motivo);
           return;
@@ -811,14 +773,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (!adesao && editalId != null && _itensLicitacao == null) {
       _showError(
         'Não foi possível conferir os itens: a licitação enviada do edital não possui itens legíveis.',
-      );
-      return;
-    }
-    if (!_adesaoParticipacao &&
-        (_editalSelecionado?.isSrp ?? false) &&
-        _codigoAtaCtrl.text.trim().isEmpty) {
-      _showError(
-        'Edital com SRP: selecione a Ata de Registro de Preços vinculada.',
       );
       return;
     }
@@ -1125,16 +1079,12 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Future<void> _preencherPelaLicitacao() async {
     if (!_podePreencherPelaLicitacao || _preenchendoLicitacao) return;
     final editalId = _editalId!;
-    final ataId = _ataId;
     setState(() => _preenchendoLicitacao = true);
     try {
       final licitacoes = await ref
           .read(licitacoesDaoProvider)
           .watchByEdital(editalId);
-      if (!mounted ||
-          editalId != _editalId ||
-          ataId != _ataId ||
-          !_podePreencherPelaLicitacao) {
+      if (!mounted || editalId != _editalId || !_podePreencherPelaLicitacao) {
         return;
       }
       final licitacao = LicitacaoReferencia.selecionar(licitacoes);
@@ -1143,38 +1093,16 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         return;
       }
       final edital = await ref.read(editaisDaoProvider).findById(editalId);
-      if (!mounted ||
-          editalId != _editalId ||
-          ataId != _ataId ||
-          !_podePreencherPelaLicitacao) {
+      if (!mounted || editalId != _editalId || !_podePreencherPelaLicitacao) {
         return;
       }
       if (edital == null) {
         _showError('O edital selecionado não foi encontrado.');
         return;
       }
-      Set<int>? limitarItens;
-      if (ataId != null) {
-        final ata = await ref.read(atasDaoProvider).findById(ataId);
-        if (!mounted ||
-            editalId != _editalId ||
-            ataId != _ataId ||
-            !_podePreencherPelaLicitacao) {
-          return;
-        }
-        if (ata == null || ata.editalId != editalId) {
-          _showError('A ata selecionada não foi encontrada para este edital.');
-          return;
-        }
-        final ataDoc = jsonDecode(ata.documentoJson) as Map<String, dynamic>;
-        limitarItens = (ataDoc['numeroItem'] as List<dynamic>? ?? [])
-            .map((n) => (n as num).toInt())
-            .toSet();
-      }
       final fornecedores = LicitacaoResultado.fornecedoresVencedores(
         jsonDecode(licitacao.documentoJson) as Map<String, dynamic>,
         jsonDecode(edital.documentoJson) as Map<String, dynamic>,
-        limitarItens: limitarItens,
       );
       if (fornecedores.isEmpty) {
         _showError(
@@ -1188,7 +1116,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (!mounted ||
           fornecedor == null ||
           editalId != _editalId ||
-          ataId != _ataId ||
           !_podePreencherPelaLicitacao) {
         return;
       }
@@ -1212,7 +1139,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           aceitos == null ||
           aceitos.isEmpty ||
           editalId != _editalId ||
-          ataId != _ataId ||
           !_podePreencherPelaLicitacao) {
         return;
       }
@@ -1229,7 +1155,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         '${aceitos.length} campo(s) preenchido(s) pela licitação.',
       );
     } catch (e) {
-      if (mounted && editalId == _editalId && ataId == _ataId) {
+      if (mounted && editalId == _editalId) {
         _showError('Erro ao preencher pela licitação: $e');
       }
     } finally {
@@ -1615,68 +1541,39 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               SectionCard(
                 title: 'Vínculo com Edital',
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: AudespDropdown<int?>.items(
-                          label: _adesaoParticipacao
-                              ? 'Edital local (vínculo de cadastro)'
-                              : 'Edital *',
-                          value: _editais.any((e) => e.id == _editalId)
-                              ? _editalId
-                              : null,
-                          items: [
-                            if (_adesaoParticipacao)
-                              const DropdownMenuItem(child: Text('— Nenhum —')),
-                            for (final opcao in _opcoesVisiveis)
-                              DropdownMenuItem(
-                                value: opcao.processo.edital.id,
-                                enabled: opcao.liberado,
-                                child: Text(
-                                  '${opcao.processo.edital.dropdownLabel}${opcao.liberado ? '' : ' — bloqueado'}',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          readOnly: readOnly,
-                          onChanged: (v) async {
-                            setState(() {
-                              _editalId = v;
-                              _itensLicitacao = null;
-                              if (!_adesaoParticipacao &&
-                                  !_isSelectedAtaAvailable) {
-                                _aplicarAta(null);
-                              }
-                              _fillEditalDescriptor();
-                            });
-                            await _carregarItensLicitacao();
-                          },
-                          validator: _exigeEditalLocal
-                              ? (v) => v == null
-                                    ? 'Selecione o edital vinculado'
-                                    : null
-                              : null,
-                        ),
-                      ),
-                      if (!_adesaoParticipacao) ...[
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: AudespDropdown<int?>(
-                            label: 'Ata (somente para SRP)',
-                            value: _ataId,
-                            items: {
-                              null: '— Nenhuma —',
-                              for (final a in _atasDoEdital)
-                                a.id: a.dropdownLabel,
-                            },
-                            readOnly: readOnly,
-                            onChanged: (v) => setState(() => _aplicarAta(v)),
+                  AudespDropdown<int?>.items(
+                    label: _adesaoParticipacao
+                        ? 'Edital local (vínculo de cadastro)'
+                        : 'Edital *',
+                    value: _editais.any((e) => e.id == _editalId)
+                        ? _editalId
+                        : null,
+                    items: [
+                      if (_adesaoParticipacao)
+                        const DropdownMenuItem(child: Text('— Nenhum —')),
+                      for (final opcao in _opcoesVisiveis)
+                        DropdownMenuItem(
+                          value: opcao.processo.edital.id,
+                          enabled: opcao.liberado,
+                          child: Text(
+                            '${opcao.processo.edital.dropdownLabel}${opcao.liberado ? '' : ' — bloqueado'}',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
                     ],
+                    readOnly: readOnly,
+                    onChanged: (v) async {
+                      setState(() {
+                        _editalId = v;
+                        _itensLicitacao = null;
+                        _fillEditalDescriptor();
+                      });
+                      await _carregarItensLicitacao();
+                    },
+                    validator: _exigeEditalLocal
+                        ? (v) =>
+                              v == null ? 'Selecione o edital vinculado' : null
+                        : null,
                   ),
                   if (_motivoBloqueioEdital case final motivo? when !_isSent)
                     Padding(
@@ -1722,7 +1619,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Município: $municipio   |   Entidade: $entidade   |   Código do Edital: $codigoEdital   |   Código da Ata: $codigoAta',
+                          [
+                            'Município: $municipio',
+                            'Entidade: $entidade',
+                            'Código do Edital: $codigoEdital',
+                            if (_adesaoParticipacao)
+                              'Código da Ata: $codigoAta',
+                          ].join('   |   '),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       );
