@@ -406,6 +406,24 @@ void main() {
     },
   );
 
+  testWidgets('chips com ação mostram a mãozinha; sem ação, o cursor normal', (
+    tester,
+  ) async {
+    await _pumpPage(tester, processos: [processoFixture(status: 'draft')]);
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+
+    MouseCursor cursorDo(Finder chip) => tester
+        .widgetList<MouseRegion>(
+          find.descendant(of: chip, matching: find.byType(MouseRegion)),
+        )
+        .last
+        .cursor;
+
+    expect(cursorDo(_chip(1, 'edital')), SystemMouseCursors.click);
+    expect(cursorDo(_chip(1, 'licitacao')), SystemMouseCursors.basic);
+  });
+
   testWidgets(
     'vazio orienta a desligar o filtro e distingue a lista completa',
     (tester) async {

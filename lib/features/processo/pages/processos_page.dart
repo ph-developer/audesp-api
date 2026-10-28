@@ -299,6 +299,10 @@ class _EtapaChip extends StatelessWidget {
           ? chip
           : Tooltip(message: etapa.motivoBloqueio!, child: chip);
     }
+    final clicavel = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: content,
+    );
     if (etapa.acoes.length == 1) {
       final acao = etapa.acoes.single;
       return Tooltip(
@@ -306,7 +310,7 @@ class _EtapaChip extends StatelessWidget {
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: () => context.go(acao.route),
-          child: content,
+          child: clicavel,
         ),
       );
     }
@@ -317,7 +321,7 @@ class _EtapaChip extends StatelessWidget {
         for (final acao in etapa.acoes)
           PopupMenuItem(value: acao.route, child: Text(acao.label)),
       ],
-      child: content,
+      child: clicavel,
     );
   }
 }
