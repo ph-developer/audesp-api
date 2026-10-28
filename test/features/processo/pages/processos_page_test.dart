@@ -31,7 +31,7 @@ Future<GoRouter> _pumpPage(
   int permissions = _contratacao,
   Future<List<Processo>> Function()? carregar,
 }) async {
-  await tester.binding.setSurfaceSize(const Size(1200, 900));
+  await tester.binding.setSurfaceSize(const Size(1600, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final router = GoRouter(
     initialLocation: '/processos',
@@ -79,12 +79,20 @@ Future<GoRouter> _pumpPage(
           (ref) async => carregar == null ? processos : await carregar(),
         ),
       ],
-      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      child: MaterialApp.router(
+        // Densidade compacta, a mesma que o app usa no Windows.
+        theme: AppTheme.light.copyWith(visualDensity: VisualDensity.compact),
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();
   return router;
 }
+
+Set<bool> _filtroPendencias(WidgetTester tester) => tester
+    .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
+    .selected;
 
 Finder _chip(int editalId, String etapa) =>
     find.byKey(ValueKey('processo-$editalId-etapa-$etapa'));
@@ -155,24 +163,20 @@ void main() {
       ],
     );
 
-    expect(tester.widget<FilterChip>(find.byType(FilterChip)).selected, isTrue);
-    expect(find.text('Minhas pendências (1)'), findsOneWidget);
+    expect(_filtroPendencias(tester), {true});
+    expect(find.text('Pendências'), findsOneWidget);
     expect(find.text('Objeto do edital 1'), findsOneWidget);
     expect(find.text('Objeto do edital 2'), findsNothing);
     expect(find.text('Objeto do edital 3'), findsNothing);
     expect(find.text('Criar licitação'), findsOneWidget);
 
-    await tester.tap(find.byType(FilterChip));
+    await tester.tap(find.text('Todos'));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.widget<FilterChip>(find.byType(FilterChip)).selected,
-      isFalse,
-    );
+    expect(_filtroPendencias(tester), {false});
     for (final id in [1, 2, 3]) {
       expect(find.text('Objeto do edital $id'), findsOneWidget);
     }
-    expect(find.text('Minhas pendências (1)'), findsOneWidget);
   });
 
   testWidgets(
@@ -202,7 +206,6 @@ void main() {
         ],
       );
 
-      expect(find.text('Minhas pendências (2)'), findsOneWidget);
       expect(find.text('Criar ata'), findsOneWidget);
       expect(find.text('Criar ajuste'), findsOneWidget);
       expect(find.text('Objeto do edital 1'), findsNothing);
@@ -291,7 +294,7 @@ void main() {
         processoFixture(srp: true, licitacoes: [licitacaoFixture(1)]),
       ],
     );
-    await tester.tap(find.byType(FilterChip));
+    await tester.tap(find.text('Todos'));
     await tester.pumpAndSettle();
     final chip = _chip(1, 'ata');
     final tooltip = find.descendant(of: chip, matching: find.byType(Tooltip));
@@ -328,7 +331,7 @@ void main() {
       permissions: _contratos,
       processos: [processoFixture()],
     );
-    await tester.tap(find.byType(FilterChip));
+    await tester.tap(find.text('Todos'));
     await tester.pumpAndSettle();
 
     expect(find.text('Licitação'), findsOneWidget);
@@ -378,7 +381,7 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.byType(FilterChip));
+      await tester.tap(find.text('Todos'));
       await tester.pumpAndSettle();
 
       expect(
@@ -432,10 +435,10 @@ void main() {
       expect(find.byType(EmptyState), findsOneWidget);
       expect(find.text('Nenhuma pendência para você.'), findsOneWidget);
       expect(
-        find.text('Desligue "Minhas pendências" para ver todos os processos.'),
+        find.text('Selecione "Todos" para ver todos os processos.'),
         findsOneWidget,
       );
-      await tester.tap(find.byType(FilterChip));
+      await tester.tap(find.text('Todos'));
       await tester.pumpAndSettle();
       expect(find.text('Nenhum processo encontrado.'), findsOneWidget);
     },
@@ -462,7 +465,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(consultas, 2);
-    expect(find.text('Minhas pendências (0)'), findsOneWidget);
     expect(find.text('Nenhuma pendência para você.'), findsOneWidget);
   });
 
@@ -489,7 +491,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(consultas, 2);
-    expect(find.text('Minhas pendências (0)'), findsOneWidget);
     expect(find.text('Nenhuma pendência para você.'), findsOneWidget);
   });
 }

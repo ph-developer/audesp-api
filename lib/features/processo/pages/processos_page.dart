@@ -7,6 +7,7 @@ import '../../../core/database/models/user.dart';
 import '../../../core/navigation/app_modules.dart';
 import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/section_card.dart';
@@ -53,6 +54,36 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
       appBar: AppBar(
         title: const Text('Processos'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+            child: AudespSegmentedButton<bool>(
+              segments: {true: 'Pendências', false: 'Todos'},
+              icons: const {true: Icons.pending_actions, false: Icons.list_alt},
+              selected: {_minhasPendencias},
+              onSelectionChanged: (v) {
+                setState(() => _minhasPendencias = v.first);
+              },
+            ),
+          ),
+          SizedBox(
+            width: 200,
+            child: AudespTextField(
+              label: 'Filtrar',
+              controller: _searchCtrl,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchCtrl.text.isEmpty
+                  ? null
+                  : AudespIconButton(
+                      icon: Icons.close,
+                      tooltip: 'Limpar filtro',
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() {});
+                      },
+                    ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
           AudespIconButton(
             icon: Icons.refresh,
             tooltip: 'Atualizar',
@@ -64,41 +95,6 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: 360,
-                  child: AudespTextField(
-                    label: 'Filtrar',
-                    controller: _searchCtrl,
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchCtrl.text.isEmpty
-                        ? null
-                        : AudespIconButton(
-                            icon: Icons.close,
-                            tooltip: 'Limpar filtro',
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() {});
-                            },
-                          ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                FilterChip(
-                  label: Text('Minhas pendências (${pendencias.length})'),
-                  selected: _minhasPendencias,
-                  onSelected: (value) =>
-                      setState(() => _minhasPendencias = value),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: processosAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -127,7 +123,7 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                'Desligue "Minhas pendências" para ver todos os processos.',
+                                'Selecione "Todos" para ver todos os processos.',
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -140,7 +136,10 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemCount: filtered.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
