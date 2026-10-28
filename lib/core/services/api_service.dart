@@ -21,6 +21,12 @@ class ApiService {
           }
           handler.next(options);
         },
+        onError: (error, handler) {
+          if (error.response?.statusCode == 401) {
+            authService.clearToken();
+          }
+          handler.next(error);
+        },
       ),
     );
   }

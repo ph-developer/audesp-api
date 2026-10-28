@@ -9,16 +9,22 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
 
-Future<EstimativaModel?> showEstimativaImportDialog(BuildContext context) {
+Future<EstimativaModel?> showEstimativaImportDialog(
+  BuildContext context, {
+  bool somenteFinalizadas = false,
+}) {
   return showAudespDialog<EstimativaModel>(
     context: context,
     size: DialogSize.medium,
-    builder: (_) => const _EstimativaImportDialog(),
+    builder: (_) =>
+        _EstimativaImportDialog(somenteFinalizadas: somenteFinalizadas),
   );
 }
 
 class _EstimativaImportDialog extends ConsumerStatefulWidget {
-  const _EstimativaImportDialog();
+  final bool somenteFinalizadas;
+
+  const _EstimativaImportDialog({required this.somenteFinalizadas});
 
   @override
   ConsumerState<_EstimativaImportDialog> createState() =>
@@ -48,9 +54,16 @@ class _EstimativaImportDialogState
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Erro: $e')),
           data: (estimativas) {
-            if (estimativas.isEmpty) {
-              return const Center(
-                child: Text('Nenhuma estimativa encontrada.'),
+            final disponiveis = estimativas
+                .where((e) => !widget.somenteFinalizadas || e.finalizada)
+                .toList();
+            if (disponiveis.isEmpty) {
+              return Center(
+                child: Text(
+                  widget.somenteFinalizadas
+                      ? 'Nenhuma estimativa finalizada. Finalize a estimativa antes de importá-la.'
+                      : 'Nenhuma estimativa encontrada.',
+                ),
               );
             }
 
@@ -59,7 +72,7 @@ class _EstimativaImportDialogState
               locale: 'pt_BR',
               symbol: 'R\$',
             );
-            final filtered = estimativas.where((estimativa) {
+            final filtered = disponiveis.where((estimativa) {
               final searchable = [
                 'Estimativa ${estimativa.numero}/${estimativa.ano}',
                 estimativa.objeto,

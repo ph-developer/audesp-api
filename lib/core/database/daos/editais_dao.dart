@@ -41,6 +41,7 @@ class EditaisDao {
   }
 
   Future<int> insertEdital({
+    int? estimativaId,
     required String municipio,
     required String entidade,
     required String codigoEdital,
@@ -53,7 +54,7 @@ class EditaisDao {
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'INSERT INTO editais (municipio, entidade, codigo_edital, sem_pncp, retificacao, status, pdf_path, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO editais (municipio, entidade, codigo_edital, sem_pncp, retificacao, status, pdf_path, documento_json, updated_at, estimativa_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     final result = await stmt.execute([
       municipio,
@@ -65,12 +66,14 @@ class EditaisDao {
       pdfPath,
       documentoJson,
       now,
+      estimativaId,
     ]);
     return result.lastInsertID.toInt();
   }
 
   Future<bool> updateEdital({
     required int id,
+    int? estimativaId,
     required String municipio,
     required String entidade,
     required String codigoEdital,
@@ -83,7 +86,7 @@ class EditaisDao {
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     final stmt = await _db.pool.prepare(
-      'UPDATE editais SET municipio = ?, entidade = ?, codigo_edital = ?, sem_pncp = ?, retificacao = ?, status = ?, pdf_path = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      'UPDATE editais SET municipio = ?, entidade = ?, codigo_edital = ?, sem_pncp = ?, retificacao = ?, status = ?, pdf_path = ?, documento_json = ?, updated_at = ?, estimativa_id = ? WHERE id = ?',
     );
     final result = await stmt.execute([
       municipio,
@@ -95,9 +98,18 @@ class EditaisDao {
       pdfPath,
       documentoJson,
       now,
+      estimativaId,
       id,
     ]);
     return result.affectedRows.toInt() > 0;
+  }
+
+  Future<int> countByEstimativa(int estimativaId) async {
+    final stmt = await _db.pool.prepare(
+      'SELECT COUNT(*) AS c FROM editais WHERE estimativa_id = ?',
+    );
+    final result = await stmt.execute([estimativaId]);
+    return result.rows.first.typedAssoc()['c'] as int;
   }
 
   Future<void> markAsSent(int id) async {

@@ -16,16 +16,22 @@ import '../domain/edital_domain.dart';
 
 enum ImportSource { planilha, estimativa }
 
+class EditalImportResult {
+  final List<Map<String, dynamic>> itens;
+  final int? estimativaId;
+
+  const EditalImportResult({required this.itens, this.estimativaId});
+}
+
 /// Abre o diálogo de importação de itens do Edital via planilha CSV.
 ///
 /// [existingCount] número de itens já presentes no formulário.
-/// Retorna a lista de [Map<String,dynamic>] pronta para uso no estado
-/// de [EditalFormPage], ou null se o usuário cancelou.
-Future<List<Map<String, dynamic>>?> showEditalImportCsvDialog(
+/// Retorna os itens e a estimativa de origem, ou null se o usuário cancelou.
+Future<EditalImportResult?> showEditalImportCsvDialog(
   BuildContext context, {
   int existingCount = 0,
 }) {
-  return showAudespDialog<List<Map<String, dynamic>>>(
+  return showAudespDialog<EditalImportResult>(
     context: context,
     size: DialogSize.large,
     builder: (_) => _EditalImportCsvDialog(existingCount: existingCount),
@@ -136,11 +142,21 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
         )
         .toList();
 
-    Navigator.of(context).pop(maps);
+    Navigator.of(context).pop(
+      EditalImportResult(
+        itens: maps,
+        estimativaId: _source == ImportSource.estimativa
+            ? _estimativaSelecionada?.id
+            : null,
+      ),
+    );
   }
 
   Future<void> _pickEstimativa() async {
-    final est = await showEstimativaImportDialog(context);
+    final est = await showEstimativaImportDialog(
+      context,
+      somenteFinalizadas: true,
+    );
     if (est == null || !mounted) return;
 
     setState(() {

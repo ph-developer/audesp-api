@@ -11,6 +11,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
 
@@ -156,6 +157,9 @@ class _EstimativaList extends ConsumerWidget {
                 ],
               ),
               chips: [
+                StatusChip(
+                  label: estimativa.finalizada ? 'Finalizada' : 'Rascunho',
+                ),
                 Chip(
                   label: Text(valorTotalFmt),
                   backgroundColor: colorScheme.secondaryContainer,

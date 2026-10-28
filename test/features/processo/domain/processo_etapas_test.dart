@@ -2,6 +2,7 @@ import 'package:audesp_api/core/database/app_database.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/domain/processo_etapas.dart';
 import 'package:audesp_api/features/processo/domain/processo_rules.dart';
+import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../processo_fixtures.dart';
@@ -13,6 +14,23 @@ EtapaProcesso _etapa(Processo processo, EtapaTipo tipo, {User? user}) =>
     ).singleWhere((etapa) => etapa.tipo == tipo);
 
 void main() {
+  test(
+    'estimativa de origem não acrescenta etapas nem altera dependências',
+    () {
+      final processo = processoFixture(
+        estimativa: EstimativaModel(
+          id: 7,
+          numero: 3,
+          ano: 2026,
+          objeto: 'Material',
+        ),
+      );
+      final etapas = ProcessoEtapas.de(processo, usuarioFixture(isAdmin: true));
+      expect(etapas.map((e) => e.tipo), EtapaTipo.values);
+      expect(etapas[1].situacao, SituacaoEtapa.aCriar);
+    },
+  );
+
   test(
     'etapas seguem a ordem do fluxo e edital rascunho bloqueia licitação',
     () {

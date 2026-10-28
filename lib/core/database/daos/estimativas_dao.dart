@@ -31,8 +31,29 @@ class EstimativasDao {
         numero: numero,
         ano: ano,
         objeto: objeto,
+        status: map['status'] as String,
         createdAt: createdAt,
         updatedAt: updatedAt,
+      );
+    }).toList();
+  }
+
+  /// Só as colunas, sem o documento: itens, lotes e fornecedores vêm vazios.
+  Future<List<EstimativaModel>> listResumo() async {
+    final result = await _db.pool.execute(
+      'SELECT id, numero, ano, objeto, status, created_at, updated_at '
+      'FROM estimativas ORDER BY ano DESC, numero DESC',
+    );
+    return result.rows.map((r) {
+      final map = r.typedAssoc();
+      return EstimativaModel(
+        id: map['id'] as int,
+        numero: map['numero'] as int,
+        ano: map['ano'] as int,
+        objeto: map['objeto'] as String,
+        status: map['status'] as String,
+        createdAt: map['created_at'] as int,
+        updatedAt: map['updated_at'] as int,
       );
     }).toList();
   }
@@ -63,6 +84,7 @@ class EstimativasDao {
       numero: numero,
       ano: ano,
       objeto: objeto,
+      status: map['status'] as String,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -102,12 +124,13 @@ class EstimativasDao {
     final jsonStr = jsonEncode(estimativaToSave.toMap());
 
     final stmt = await _db.pool.prepare(
-      'INSERT INTO estimativas (numero, ano, objeto, documento_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO estimativas (numero, ano, objeto, status, documento_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
     );
     final result = await stmt.execute([
       numero,
       ano,
       estimativaToSave.objeto,
+      EstimativaStatus.rascunho,
       jsonStr,
       now,
       now,
@@ -132,6 +155,14 @@ class EstimativasDao {
       estimativa.id,
     ]);
     return result.affectedRows.toInt() > 0;
+  }
+
+  Future<void> setStatus(int id, String status) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final stmt = await _db.pool.prepare(
+      'UPDATE estimativas SET status = ?, updated_at = ? WHERE id = ?',
+    );
+    await stmt.execute([status, now, id]);
   }
 
   Future<int> deleteById(int id) async {

@@ -21,32 +21,36 @@ flutter analyze                    # lint (uses flutter_lints)
 ## Architecture
 
 - **State:** Riverpod (`flutter_riverpod`) — one provider file per feature, DAOs via `Provider`, services via `Provider`
-- **Router:** `go_router` with `ShellRoute` + `NavigationRail`. Shell wraps Edital/Licitação/Ata/Ajuste/Estimativa/Logs. Login, Profile, Admin are outside the shell.
+- **Router:** `go_router` with `ShellRoute` + custom rail (`shell/widgets/app_navigation_rail.dart`); modules, their order and access rules are defined once in `core/navigation/app_modules.dart`. Shell wraps Processos/Estimativa/Edital/Licitação/Ata/Ajuste/Logs. `/processos` is the home for sending profiles; Estimativa-only users start at `/estimativa`. Login, Profile, Admin are outside the shell.
 - **Pattern per feature:** `providers.dart`, `services/`, `pages/`, `widgets/`, optional `domain/` (domain logic) and `csv/` (import parsers)
-- **Auth:** local DB users (SHA-256 + pepper). Admin user is seeded on first DB initialization. AUDESP API token stored in memory only via `AuthService`.
+- **Auth:** local DB users (SHA-256 + pepper). Admin user is seeded on first DB initialization. `AuthService` keeps the AUDESP token in memory with user, environment and expiration; reuse requires a 60-second validity margin (unknown expiration: until 401). Logout, environment changes and HTTP 401 clear it. Sending still requires confirmation, with a password only when no valid token exists.
+- **Processes:** `processo/domain/processo_rules.dart` defines dependencies and profile pending actions; `processo_etapas.dart` computes stages, blocking reasons and permitted actions. `processosProvider` groups the editais, licitações, atas and ajustes by edital, plus a column-only summary of the source Estimativa (`EstimativasDao.listResumo`).
 - **Env switching:** Piloto (`https://audesp-piloto.tce.sp.gov.br`) / Oficial (`https://audesp.tce.sp.gov.br`), persisted in `app_settings` table
 - **Reports:** Uses the `pdf` package for generating exportable PDF reports (e.g., system logs).
 
 ## Database
 
-- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v12); migrations are the `if (version < N)` blocks in `database_service.dart`
+- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v13); migrations are the `if (version < N)` blocks in `database_service.dart`
 - Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`
 - Timestamps are **Unix epoch seconds** stored as `BIGINT`
 - `documento_json` stored as `LONGTEXT` (raw JSON string)
 - `app_settings` is a key-value store (`SettingsKeys` constants in `app_settings_dao.dart`)
 - Unique index on `users.email(255)`
+- `estimativas.status` stores the local state; nullable `editais.estimativa_id` has no FK (deleted source estimates are handled as absent).
 
 ## Notable Conventions
 
 - **Admin user:** seeded in `users` table automatically during DB initialization.
-- **Logs:** API logs in `api_logs` are read-only in the UI. Deletion is restricted for auditing purposes. Logs can be exported to PDF.
+- **Logs:** accessible only with a sending permission (Edital/Licitação/Ata/Ajuste). API logs in `api_logs` are read-only in the UI; deletion is restricted for auditing. Logs can be exported to PDF.
 - **Password hashing:** SHA-256 with email + pepper (`'audesp_api_sys_2026'`), done in `PasswordHasher`
 - **Document status:** `'draft'` (editing) vs `'sent'` (submitted to AUDESP). Status can also be consulted via the AUDESP Protocol Status Consultation feature.
+- **Estimativa:** `'rascunho'` (editable) vs `'finalizada'` (read-only; PDF/HTML remain available). Only finalized estimates can be imported into an Edital. Reopening warns about linked editais without changing their imported items. Migration v13 finalizes existing estimates.
 - **Gemini default model:** hardcoded as `'gemini-3.1-flash-lite'` in `GeminiService`; API key configured via Admin UI → stored in `app_settings`
 - **AUDESP API auth:** email:password → POST `/login` → returns `access_token`, attached as `Authorization: Bearer <token>` by Dio interceptor (`ApiService`)
 - **CSV parsers** support UTF-8 (with/without BOM) and Latin-1; use `CsvUtils` (`lib/core/utils/csv_utils.dart`)
 - **Edital "Sem PNCP"** (`Edital.semPncp`): the edital uses a local `codigoEdital` instead of the PNCP id. Contracts (Ajuste) and Atas derived from it are not on PNCP either, so their forms switch `codigoContrato` / `codigoAta` to free local codes (max 25 / 31 chars) instead of the masked PNCP field. Use `text.trim()` (not `PcnpInputFormatter.stripMask`) for local codes.
 - **SRP:** the Ata form only lists SRP editais. The Ajuste form lists all sent editais, shows only atas of the selected edital, and requires the ata when the edital is SRP and it is not an adesão/participação.
+- **Dependencies:** Ata requires a sent SRP edital and sent Licitação; Ajuste requires a sent edital and sent Licitação, except adesão/participação. Only sending is blocked: existing drafts remain editable.
 - **Ajuste de adesão/participação:** `ajustes.edital_id` is nullable (v12). With `adesaoParticipacao = true` the local edital link is optional and `codigoEdital`/`codigoAta` are typed PNCP ids of the managing entity; `Ajuste.editalId` is `int?`, so code reading it must handle null.
 - **Licitante `niPessoa`:** normalize with `normalizarNiPessoa` (`licitacao/domain/licitacao_pessoa.dart`) — digits only for PJ/PF, kept as typed for PE (foreign ids contain letters).
 

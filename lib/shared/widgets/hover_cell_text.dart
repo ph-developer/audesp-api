@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class HoverCellText extends StatefulWidget {
   final String text;
   final TextStyle? style;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String? tooltip;
   final int? maxLines;
   final TextOverflow? overflow;
@@ -39,7 +39,9 @@ class _HoverCellTextState extends State<HoverCellText> {
       overflow: widget.overflow,
       textAlign: widget.textAlign,
       style: (widget.style ?? const TextStyle()).copyWith(
-        decoration: _hovering ? TextDecoration.underline : TextDecoration.none,
+        decoration: _hovering && widget.onTap != null
+            ? TextDecoration.underline
+            : TextDecoration.none,
         decorationStyle: TextDecorationStyle.dotted,
       ),
     );
@@ -58,7 +60,9 @@ class _HoverCellTextState extends State<HoverCellText> {
     }
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor: widget.onTap == null
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(onTap: widget.onTap, child: child),

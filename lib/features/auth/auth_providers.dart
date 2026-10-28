@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/services/auth_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sessão local — usuário selecionado no login do app
@@ -17,7 +18,10 @@ class LocalSessionNotifier extends Notifier<User?> {
 
   void login(User user) => state = user;
 
-  void logout() => state = null;
+  void logout() {
+    ref.read(authServiceProvider).clearToken();
+    state = null;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

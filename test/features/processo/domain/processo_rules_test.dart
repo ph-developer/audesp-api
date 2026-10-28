@@ -1,12 +1,19 @@
 import 'dart:convert';
 
 import 'package:audesp_api/core/database/app_database.dart';
+import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/domain/processo_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Edital _edital(int id, {String status = 'sent', bool srp = false}) => Edital(
+Edital _edital(
+  int id, {
+  String status = 'sent',
+  bool srp = false,
+  int? estimativaId,
+}) => Edital(
   id: id,
+  estimativaId: estimativaId,
   municipio: '1',
   entidade: '2',
   codigoEdital: 'edital-$id',
@@ -78,11 +85,13 @@ User _user({int permissions = AppPermissions.none, bool isAdmin = false}) =>
 
 Processo _processo({
   Edital? edital,
+  EstimativaModel? estimativa,
   List<Licitacao> licitacoes = const [],
   List<Ata> atas = const [],
   List<Ajuste> ajustes = const [],
 }) => Processo(
   edital: edital ?? _edital(1),
+  estimativa: estimativa,
   licitacoes: licitacoes,
   atas: atas,
   ajustes: ajustes,
@@ -90,6 +99,38 @@ Processo _processo({
 
 void main() {
   group('Processo.agrupar', () {
+    test('liga a estimativa por id e ignora vínculos ausentes ou órfãos', () {
+      final estimativa = EstimativaModel(
+        id: 7,
+        numero: 3,
+        ano: 2026,
+        objeto: 'Material',
+      );
+      final processos = Processo.agrupar(
+        editais: [
+          _edital(1, estimativaId: 7),
+          _edital(2, estimativaId: 99),
+          _edital(3),
+          _edital(4, estimativaId: 7),
+        ],
+        licitacoes: [],
+        atas: [],
+        ajustes: [],
+        estimativas: [estimativa],
+      );
+      expect(processos[0].estimativa, same(estimativa));
+      expect(processos[1].estimativa, isNull);
+      expect(processos[2].estimativa, isNull);
+      expect(processos[3].estimativa, same(estimativa));
+      final semEstimativas = Processo.agrupar(
+        editais: [_edital(1, estimativaId: 7)],
+        licitacoes: [],
+        atas: [],
+        ajustes: [],
+      );
+      expect(semEstimativas.single.estimativa, isNull);
+    });
+
     test('vincula por edital e preserva a ordem de todas as listas', () {
       final editais = [_edital(2), _edital(1), _edital(3, status: 'draft')];
       final licitacoes = [

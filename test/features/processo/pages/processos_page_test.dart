@@ -1,6 +1,7 @@
 import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/theme/app_theme.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
+import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/pages/processos_page.dart';
 import 'package:audesp_api/features/processo/processo_providers.dart';
@@ -42,7 +43,13 @@ Future<GoRouter> _pumpPage(
             path: '/processos',
             builder: (context, state) => const ProcessosPage(),
           ),
-          for (final module in ['edital', 'licitacao', 'ata', 'ajuste'])
+          for (final module in [
+            'edital',
+            'licitacao',
+            'ata',
+            'ajuste',
+            'estimativa',
+          ])
             GoRoute(
               path: '/$module/:id',
               builder: (context, state) => Scaffold(
@@ -83,6 +90,56 @@ Finder _chip(int editalId, String etapa) =>
     find.byKey(ValueKey('processo-$editalId-etapa-$etapa'));
 
 void main() {
+  for (final podeAcessar in [true, false]) {
+    testWidgets(
+      'estimativa aparece antes das etapas e respeita acesso ($podeAcessar)',
+      (tester) async {
+        final estimativa = EstimativaModel(
+          id: 7,
+          numero: 3,
+          ano: 2026,
+          objeto: 'Material',
+        );
+        final router = await _pumpPage(
+          tester,
+          permissions:
+              _contratacao | (podeAcessar ? AppPermissions.estimativa : 0),
+          processos: [
+            processoFixture(estimativa: estimativa),
+            processoFixture(id: 2),
+          ],
+        );
+        final chip = find.byKey(const ValueKey('processo-1-estimativa'));
+        expect(find.text('Estimativa 3/2026'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('processo-2-estimativa')),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: chip,
+            matching: find.byIcon(Icons.calculate_outlined),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          tester.getTopLeft(chip).dx,
+          lessThan(tester.getTopLeft(_chip(1, 'edital')).dx),
+        );
+        expect(
+          tester.widget<ActionChip>(chip).onPressed,
+          podeAcessar ? isNotNull : isNull,
+        );
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          podeAcessar ? '/estimativa/7' : '/processos',
+        );
+      },
+    );
+  }
+
   testWidgets('filtro padrão mostra só processos com pendência do usuário', (
     tester,
   ) async {

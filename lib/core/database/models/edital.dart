@@ -4,6 +4,7 @@ import '../../../features/edital/domain/edital_domain.dart';
 
 class Edital {
   final int id;
+  final int? estimativaId;
   final String municipio;
   final String entidade;
   final String codigoEdital;
@@ -17,6 +18,7 @@ class Edital {
 
   const Edital({
     required this.id,
+    this.estimativaId,
     required this.municipio,
     required this.entidade,
     required this.codigoEdital,
@@ -31,6 +33,7 @@ class Edital {
 
   factory Edital.fromMap(Map<String, dynamic> row) => Edital(
     id: row['id'] as int,
+    estimativaId: row['estimativa_id'] as int?,
     municipio: row['municipio'] as String,
     entidade: row['entidade'] as String,
     codigoEdital: row['codigo_edital'] as String,
@@ -100,6 +103,7 @@ class Edital {
 
   Map<String, dynamic> toMap() => {
     'id': id,
+    'estimativa_id': estimativaId,
     'municipio': municipio,
     'entidade': entidade,
     'codigo_edital': codigoEdital,

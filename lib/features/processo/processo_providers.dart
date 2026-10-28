@@ -8,11 +8,12 @@ import 'domain/processo.dart';
 final processosProvider = FutureProvider.autoDispose<List<Processo>>((
   ref,
 ) async {
-  final (editais, licitacoes, atas, ajustes) = await (
+  final (editais, licitacoes, atas, ajustes, estimativas) = await (
     ref.watch(editaisDaoProvider).watchAll(),
     ref.watch(licitacoesDaoProvider).watchAll(),
     ref.watch(atasDaoProvider).watchAll(),
     ref.watch(ajustesDaoProvider).watchAll(),
+    ref.watch(estimativasDaoProvider).listResumo(),
   ).wait;
 
   return Processo.agrupar(
@@ -20,5 +21,6 @@ final processosProvider = FutureProvider.autoDispose<List<Processo>>((
     licitacoes: licitacoes,
     atas: atas,
     ajustes: ajustes,
+    estimativas: estimativas,
   );
 });

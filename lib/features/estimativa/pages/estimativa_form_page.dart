@@ -12,6 +12,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 import '../../../shared/widgets/audesp_ai_import_dialog.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
+import '../../../shared/widgets/audesp_warning_message.dart';
 import '../../../core/database/database_providers.dart';
 import '../estimativa_providers.dart';
 import '../models/estimativa_model.dart';
@@ -37,6 +38,7 @@ import 'package:intl/intl.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../edital/domain/edital_domain.dart';
+import '../../processo/processo_providers.dart';
 
 enum AiItensAction { replace, append }
 
@@ -87,6 +89,8 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   bool _loading = true;
   bool _saving = false;
   int? _loadedId;
+  String _status = EstimativaStatus.rascunho;
+  bool get _readOnly => _status == EstimativaStatus.finalizada;
   final _numeroCtrl = TextEditingController();
   final _anoCtrl = TextEditingController();
 
@@ -145,6 +149,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
     }
 
     _loadedId = est.id;
+    _status = est.status;
     _numeroCtrl.text = est.numero.toString();
     _anoCtrl.text = est.ano.toString();
 
@@ -199,11 +204,13 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   Future<EstimativaModel?> _saveEstimativa() async {
-    if (!_formKey.currentState!.validate()) return null;
+    if (!_readOnly && !_formKey.currentState!.validate()) return null;
 
     setState(() => _saving = true);
     try {
       final dao = ref.read(estimativasDaoProvider);
+      // Exportações de finalizadas usam o documento salvo, sem regravar ou validar.
+      if (_readOnly) return await dao.findById(_loadedId!);
       final numero = int.tryParse(_numeroCtrl.text) ?? 0;
       final ano = int.tryParse(_anoCtrl.text) ?? 0;
 
@@ -255,13 +262,15 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       }
 
       ref.invalidate(estimativasListProvider);
+      ref.invalidate(estimativaDetailProvider(_loadedId!));
+      ref.invalidate(processosProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Estimativa salva com sucesso!')),
         );
       }
-      return estimativa;
+      return estimativa.copyWith(id: _loadedId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -273,6 +282,71 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       if (mounted) {
         setState(() => _saving = false);
       }
+    }
+  }
+
+  Future<void> _alterarStatus() async {
+    final id = _loadedId;
+    if (id == null) return;
+    final reabrir = _readOnly;
+    setState(() => _saving = true);
+    try {
+      final quantidade = reabrir
+          ? await ref.read(editaisDaoProvider).countByEstimativa(id)
+          : 0;
+      if (!mounted) return;
+      setState(() => _saving = false);
+      final confirmado = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            reabrir ? 'Reabrir estimativa?' : 'Finalizar estimativa?',
+          ),
+          content: Text(
+            reabrir
+                ? 'A estimativa voltará para edição.${quantidade > 0 ? '\n\n$quantidade edital(is) importaram itens desta estimativa; eles não serão alterados.' : ''}'
+                : 'A estimativa será salva e ficará disponível para importação no edital.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(reabrir ? 'Reabrir' : 'Finalizar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmado != true || !mounted) return;
+      if (!reabrir && await _saveEstimativa() == null) return;
+      if (!mounted) return;
+      setState(() => _saving = true);
+      final status = reabrir
+          ? EstimativaStatus.rascunho
+          : EstimativaStatus.finalizada;
+      await ref.read(estimativasDaoProvider).setStatus(id, status);
+      if (!mounted) return;
+      ref.invalidate(estimativasListProvider);
+      ref.invalidate(estimativaDetailProvider(id));
+      ref.invalidate(processosProvider);
+      setState(() => _status = status);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            reabrir ? 'Estimativa reaberta.' : 'Estimativa finalizada.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -366,6 +440,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           children: [
             Expanded(
               child: AudespTextField(
+                readOnly: _readOnly,
                 label: 'Número *',
                 controller: _numeroCtrl,
                 keyboardType: TextInputType.number,
@@ -376,6 +451,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespTextField(
+                readOnly: _readOnly,
                 label: 'Ano *',
                 controller: _anoCtrl,
                 keyboardType: TextInputType.number,
@@ -387,6 +463,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         ),
         const SizedBox(height: 16),
         AudespTextField(
+          readOnly: _readOnly,
           label: 'Objeto da Licitação *',
           controller: _objetoCtrl,
           maxLines: 3,
@@ -398,6 +475,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           children: [
             Expanded(
               child: AudespDropdown<String>(
+                readOnly: _readOnly,
                 label: 'Tipo de Estimativa *',
                 value: _tipoEstimativa,
                 items: const {'item': 'Por Item', 'lote': 'Por Lote'},
@@ -464,6 +542,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespDropdown<String>(
+                readOnly: _readOnly,
                 label: 'Tipo de Cálculo *',
                 value:
                     _tipoEstimativa == 'item' && _calculoGlobal == 'min_global'
@@ -489,6 +568,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespDropdown<String>(
+                readOnly: _readOnly,
                 label: 'Exclusividade ME/EPP *',
                 value: _exclusividadeMeEpp,
                 items: const {
@@ -505,6 +585,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespDropdown<int>(
+                readOnly: _readOnly,
                 label: 'Casas Decimais',
                 value: _casasDecimais,
                 items: const {2: '2 casas decimais', 4: '4 casas decimais'},
@@ -521,6 +602,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           children: [
             Expanded(
               child: AudespDropdown<bool>(
+                readOnly: _readOnly,
                 label: 'Registro de Preços? *',
                 value: _registroPrecos,
                 items: const {true: 'Sim', false: 'Não'},
@@ -530,6 +612,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespTextField(
+                readOnly: _readOnly,
                 label: 'Prazo de Vigência',
                 controller: _prazoVigenciaCtrl,
                 hintText: 'Ex.: 12 meses',
@@ -538,6 +621,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespTextField(
+                readOnly: _readOnly,
                 label: 'Forma de Pagamento *',
                 controller: _formaPagamentoCtrl,
                 hintText: 'Ex.: 30 dias após emissão da NF',
@@ -548,6 +632,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
             const SizedBox(width: 16),
             Expanded(
               child: AudespDropdown<bool>(
+                readOnly: _readOnly,
                 label: 'Exige Garantia? *',
                 value: _temGarantia,
                 items: const {true: 'Sim', false: 'Não'},
@@ -599,51 +684,54 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           'Ficha: ${_fontesRecurso[i]['ficha']}',
                       ].join(' | '),
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          tooltip: 'Editar fonte',
-                          onPressed: () async {
-                            final result =
-                                await showEstimativaFonteRecursoDialog(
-                                  context,
-                                  initial: _fontesRecurso[i],
-                                );
-                            if (result != null) {
-                              setState(() => _fontesRecurso[i] = result);
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 20),
-                          tooltip: 'Excluir fonte',
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () {
-                            setState(() => _fontesRecurso.removeAt(i));
-                          },
-                        ),
-                      ],
-                    ),
+                    trailing: _readOnly
+                        ? null
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 20),
+                                tooltip: 'Editar fonte',
+                                onPressed: () async {
+                                  final result =
+                                      await showEstimativaFonteRecursoDialog(
+                                        context,
+                                        initial: _fontesRecurso[i],
+                                      );
+                                  if (result != null) {
+                                    setState(() => _fontesRecurso[i] = result);
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, size: 20),
+                                tooltip: 'Excluir fonte',
+                                color: Theme.of(context).colorScheme.error,
+                                onPressed: () {
+                                  setState(() => _fontesRecurso.removeAt(i));
+                                },
+                              ),
+                            ],
+                          ),
                   ),
                 ),
             ],
           ),
         const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () async {
-              final result = await showEstimativaFonteRecursoDialog(context);
-              if (result != null) {
-                setState(() => _fontesRecurso.add(result));
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Adicionar Fonte de Recurso'),
+        if (!_readOnly)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () async {
+                final result = await showEstimativaFonteRecursoDialog(context);
+                if (result != null) {
+                  setState(() => _fontesRecurso.add(result));
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar Fonte de Recurso'),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -668,10 +756,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
@@ -684,55 +771,58 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             )
           : null,
-      titleActions: [
-        if (isLote) ...[
-          TextButton.icon(
-            onPressed: _importarItensIa,
-            icon: const Icon(Icons.document_scanner),
-            label: const Text('Importar Itens via IA'),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: _addLote,
-            icon: const Icon(Icons.add_to_photos),
-            label: const Text('Incluir Lote'),
-          ),
-        ] else ...[
-          TextButton.icon(
-            onPressed: _importarItensIa,
-            icon: const Icon(Icons.document_scanner),
-            label: const Text('Importar Itens via IA'),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: _addItem,
-            icon: const Icon(Icons.add),
-            label: const Text('Incluir Item'),
-          ),
-        ],
-        const SizedBox(width: 8),
-        TextButton.icon(
-          onPressed: _showFornecedorDialog,
-          icon: const Icon(Icons.person_add),
-          label: const Text('Incluir Fornecedor'),
-        ),
-        const SizedBox(width: 8),
-        if (_itens.isNotEmpty || _lotes.any((l) => l.itens.isNotEmpty)) ...[
-          TextButton.icon(
-            onPressed: _importarOrcamentoIa,
-            icon: const Icon(Icons.auto_fix_high),
-            label: const Text('Importar Orçamento via IA'),
-          ),
-          const SizedBox(width: 8),
-        ],
-        if (_exclusividadeMeEpp == 'reservada') ...[
-          TextButton.icon(
-            onPressed: _showExclusividadeDialog,
-            icon: const Icon(Icons.checklist),
-            label: const Text('Selecionar Exclusivos'),
-          ),
-        ],
-      ],
+      titleActions: _readOnly
+          ? []
+          : [
+              if (isLote) ...[
+                TextButton.icon(
+                  onPressed: _importarItensIa,
+                  icon: const Icon(Icons.document_scanner),
+                  label: const Text('Importar Itens via IA'),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _addLote,
+                  icon: const Icon(Icons.add_to_photos),
+                  label: const Text('Incluir Lote'),
+                ),
+              ] else ...[
+                TextButton.icon(
+                  onPressed: _importarItensIa,
+                  icon: const Icon(Icons.document_scanner),
+                  label: const Text('Importar Itens via IA'),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _addItem,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Incluir Item'),
+                ),
+              ],
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: _showFornecedorDialog,
+                icon: const Icon(Icons.person_add),
+                label: const Text('Incluir Fornecedor'),
+              ),
+              const SizedBox(width: 8),
+              if (_itens.isNotEmpty ||
+                  _lotes.any((l) => l.itens.isNotEmpty)) ...[
+                TextButton.icon(
+                  onPressed: _importarOrcamentoIa,
+                  icon: const Icon(Icons.auto_fix_high),
+                  label: const Text('Importar Orçamento via IA'),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (_exclusividadeMeEpp == 'reservada') ...[
+                TextButton.icon(
+                  onPressed: _showExclusividadeDialog,
+                  icon: const Icon(Icons.checklist),
+                  label: const Text('Selecionar Exclusivos'),
+                ),
+              ],
+            ],
       children: [
         if ((isLote && _lotes.isEmpty) || (!isLote && _itens.isEmpty))
           const Center(
@@ -916,6 +1006,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   void _reorderItens(int oldIndex, int newIndex) {
+    if (_readOnly) return;
     setState(() {
       if (oldIndex < newIndex) newIndex -= 1;
       final item = _itens.removeAt(oldIndex);
@@ -925,6 +1016,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   void _reorderLotes(int oldIndex, int newIndex) {
+    if (_readOnly) return;
     setState(() {
       if (oldIndex < newIndex) newIndex -= 1;
       final lote = _lotes.removeAt(oldIndex);
@@ -934,6 +1026,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
   }
 
   void _reorderLoteItens(int loteIndex, int oldIndex, int newIndex) {
+    if (_readOnly) return;
     setState(() {
       if (oldIndex < newIndex) newIndex -= 1;
       final lote = _lotes[loteIndex];
@@ -1004,7 +1097,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                 text: f.razaoSocial.isNotEmpty
                     ? f.razaoSocial
                     : 'Novo Fornecedor',
-                onTap: () => _showFornecedorDialog(f),
+                onTap: _readOnly ? null : () => _showFornecedorDialog(f),
                 tooltip: tooltipText,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1097,6 +1190,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                   children: [
                     ReorderableDragStartListener(
                       index: loteIndex,
+                      enabled: !_readOnly,
                       child: const MouseRegion(
                         cursor: SystemMouseCursors.move,
                         child: Padding(
@@ -1120,7 +1214,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                                 text: 'Lote ${lote.numero} - ${lote.descricao}',
                                 style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.bold),
-                                onTap: () => _editLote(loteIndex),
+                                onTap: _readOnly
+                                    ? null
+                                    : () => _editLote(loteIndex),
                               ),
                               if (_exclusividadeMeEpp == 'reservada' &&
                                   _tipoEstimativa == 'lote' &&
@@ -1154,14 +1250,18 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     ),
                     const SizedBox(width: 4),
                     TextButton.icon(
-                      onPressed: () => _addLoteItem(loteIndex),
+                      onPressed: _readOnly
+                          ? null
+                          : () => _addLoteItem(loteIndex),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('Incluir Item'),
                     ),
                     const SizedBox(width: 4),
                     if (lote.itens.isNotEmpty && _lotes.length > 1) ...[
                       TextButton.icon(
-                        onPressed: () => _transferirItensMassa(loteIndex),
+                        onPressed: _readOnly
+                            ? null
+                            : () => _transferirItensMassa(loteIndex),
                         icon: const Icon(
                           Icons.drive_file_move_outline,
                           size: 18,
@@ -1174,7 +1274,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                       icon: Icons.delete,
                       tooltip: 'Excluir Lote',
                       color: Colors.red,
-                      onPressed: () => _confirmDeleteLote(loteIndex),
+                      onPressed: _readOnly
+                          ? null
+                          : () => _confirmDeleteLote(loteIndex),
                     ),
                   ],
                 ),
@@ -1274,10 +1376,10 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
 
     final fornecedorVencedorId =
         (loteIndex != null && _calculoGlobal == 'min_global')
-            ? _lotes[loteIndex].getFornecedorMenorPrecoGlobalId(
-                desclassificadosIds: _desclassificadosIds,
-              )
-            : null;
+        ? _lotes[loteIndex].getFornecedorMenorPrecoGlobalId(
+            desclassificadosIds: _desclassificadosIds,
+          )
+        : null;
 
     return Container(
       key: key,
@@ -1295,6 +1397,7 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
         children: [
           ReorderableDragStartListener(
             index: itemIndex,
+            enabled: !_readOnly,
             child: const MouseRegion(
               cursor: SystemMouseCursors.move,
               child: SizedBox(
@@ -1310,9 +1413,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               children: [
                 HoverCellText(
                   text: '${item.numero}',
-                  onTap: () => loteIndex != null
-                      ? _editLoteItem(loteIndex, itemIndex)
-                      : _editItem(itemIndex),
+                  onTap: _readOnly
+                      ? null
+                      : () => loteIndex != null
+                            ? _editLoteItem(loteIndex, itemIndex)
+                            : _editItem(itemIndex),
                   textAlign: TextAlign.center,
                   alignment: Alignment.center,
                 ),
@@ -1338,9 +1443,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               constraints: const BoxConstraints(minWidth: _minLarguraDesc),
               child: HoverCellText(
                 text: item.descricao,
-                onTap: () => loteIndex != null
-                    ? _editLoteItem(loteIndex, itemIndex)
-                    : _editItem(itemIndex),
+                onTap: _readOnly
+                    ? null
+                    : () => loteIndex != null
+                          ? _editLoteItem(loteIndex, itemIndex)
+                          : _editItem(itemIndex),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.justify,
@@ -1379,12 +1486,14 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               child: Center(
                 child: HoverCellText(
                   text: orc != null ? formatBRL(orc.valorUnitario) : '-',
-                  onTap: () => _showValorDialog(
-                    loteIndex: loteIndex,
-                    itemIndex: itemIndex,
-                    fornecedor: f,
-                    atual: orc,
-                  ),
+                  onTap: _readOnly
+                      ? null
+                      : () => _showValorDialog(
+                          loteIndex: loteIndex,
+                          itemIndex: itemIndex,
+                          fornecedor: f,
+                          atual: orc,
+                        ),
                   textAlign: TextAlign.center,
                   alignment: Alignment.center,
                 ),
@@ -1467,7 +1576,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     AudespIconButton(
                       icon: Icons.drive_file_move_outline,
                       tooltip: 'Transferir Item',
-                      onPressed: () => _transferirItem(loteIndex, itemIndex),
+                      onPressed: _readOnly
+                          ? null
+                          : () => _transferirItem(loteIndex, itemIndex),
                     ),
                     const SizedBox(width: 4),
                   ],
@@ -1475,7 +1586,9 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                     icon: Icons.delete,
                     tooltip: 'Excluir Item',
                     color: Colors.red,
-                    onPressed: () => _confirmDeleteItem(loteIndex, itemIndex),
+                    onPressed: _readOnly
+                        ? null
+                        : () => _confirmDeleteItem(loteIndex, itemIndex),
                   ),
                 ],
               ),
@@ -2072,7 +2185,11 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       appBar: AppBar(
         leading: BackButton(onPressed: () => context.go('/estimativa')),
         title: Text(
-          _loadedId == null ? 'Nova Estimativa' : 'Editar Estimativa',
+          _loadedId == null
+              ? 'Nova Estimativa'
+              : _readOnly
+              ? 'Estimativa'
+              : 'Editar Estimativa',
         ),
         actions: [
           if (_saving)
@@ -2085,11 +2202,20 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
               ),
             )
           else ...[
-            TextButton.icon(
-              onPressed: _saveEstimativa,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Salvar Estimativa'),
-            ),
+            if (!_readOnly)
+              TextButton.icon(
+                onPressed: _saveEstimativa,
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('Salvar Estimativa'),
+              ),
+            if (_loadedId != null)
+              TextButton.icon(
+                onPressed: _alterarStatus,
+                icon: Icon(
+                  _readOnly ? Icons.edit_note : Icons.check_circle_outline,
+                ),
+                label: Text(_readOnly ? 'Reabrir' : 'Finalizar'),
+              ),
             const SizedBox(width: 8),
             FilledButton.icon(
               onPressed: _gerarPdf,
@@ -2113,6 +2239,12 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_readOnly) ...[
+                const AudespWarningMessage(
+                  message: 'Estimativa finalizada. Reabra para editar.',
+                ),
+                const SizedBox(height: 16),
+              ],
               _buildCabecalho(),
               const SizedBox(height: 16),
               _buildFontesRecursoSection(),

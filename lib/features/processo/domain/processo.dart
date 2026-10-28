@@ -1,14 +1,18 @@
 import '../../../core/database/app_database.dart';
+import '../../estimativa/models/estimativa_model.dart';
 
 /// Documentos vinculados a um edital.
 class Processo {
   final Edital edital;
+  // Resumo da estimativa de origem (sem itens), para identificação.
+  final EstimativaModel? estimativa;
   final List<Licitacao> licitacoes;
   final List<Ata> atas;
   final List<Ajuste> ajustes;
 
   Processo({
     required this.edital,
+    this.estimativa,
     required List<Licitacao> licitacoes,
     required List<Ata> atas,
     required List<Ajuste> ajustes,
@@ -22,7 +26,9 @@ class Processo {
     required Iterable<Licitacao> licitacoes,
     required Iterable<Ata> atas,
     required Iterable<Ajuste> ajustes,
+    Iterable<EstimativaModel> estimativas = const [],
   }) {
+    final estimativasPorId = {for (final e in estimativas) e.id: e};
     final licitacoesPorEdital = <int, List<Licitacao>>{};
     final atasPorEdital = <int, List<Ata>>{};
     final ajustesPorEdital = <int, List<Ajuste>>{};
@@ -44,6 +50,7 @@ class Processo {
       for (final edital in editais)
         Processo(
           edital: edital,
+          estimativa: estimativasPorId[edital.estimativaId],
           licitacoes: licitacoesPorEdital[edital.id] ?? [],
           atas: atasPorEdital[edital.id] ?? [],
           ajustes: ajustesPorEdital[edital.id] ?? [],

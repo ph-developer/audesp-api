@@ -6,6 +6,7 @@ void main() {
     test('fromMap e toMap preservam semPncp', () {
       final map = {
         'id': 1,
+        'estimativa_id': 42,
         'municipio': '1234',
         'entidade': '5678',
         'codigo_edital': 'PE-0001/2026',
@@ -20,10 +21,12 @@ void main() {
 
       final edital = Edital.fromMap(map);
       expect(edital.semPncp, isTrue);
+      expect(edital.estimativaId, 42);
       expect(edital.codigoEdital, 'PE-0001/2026');
 
       final serialized = edital.toMap();
       expect(serialized['sem_pncp'], 1);
+      expect(serialized['estimativa_id'], 42);
       expect(serialized['codigo_edital'], 'PE-0001/2026');
     });
 
@@ -43,6 +46,8 @@ void main() {
 
       final edital = Edital.fromMap(map);
       expect(edital.semPncp, isFalse);
+      expect(edital.estimativaId, isNull);
+      expect(edital.toMap()['estimativa_id'], isNull);
       expect(edital.toMap()['sem_pncp'], 0);
     });
   });

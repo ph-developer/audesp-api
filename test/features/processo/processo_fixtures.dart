@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:audesp_api/core/database/app_database.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
+import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
 
 User usuarioFixture({int permissions = 0, bool isAdmin = false}) => User(
   id: 1,
@@ -19,12 +20,14 @@ Processo processoFixture({
   bool semPncp = true,
   String? codigo,
   String? objeto,
+  EstimativaModel? estimativa,
   List<Licitacao> licitacoes = const [],
   List<Ata> atas = const [],
   List<Ajuste> ajustes = const [],
 }) => Processo(
   edital: Edital(
     id: id,
+    estimativaId: estimativa?.id,
     municipio: '1',
     entidade: '2',
     codigoEdital: codigo ?? 'edital-$id',
@@ -42,6 +45,7 @@ Processo processoFixture({
     updatedAt: DateTime(2026, 10, 28),
   ),
   licitacoes: licitacoes,
+  estimativa: estimativa,
   atas: atas,
   ajustes: ajustes,
 );

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/database_providers.dart';
 import '../database/daos/app_settings_dao.dart';
+import '../services/auth_service.dart';
 
 /// Ambientes disponíveis para comunicação com a API AUDESP.
 enum Environment { piloto, oficial }
@@ -44,6 +45,7 @@ class EnvironmentNotifier extends Notifier<Environment> {
 
   Future<void> setEnvironment(Environment env) async {
     await _dao.set(SettingsKeys.environment, env.name);
+    ref.read(authServiceProvider).clearToken();
     state = env;
   }
 }

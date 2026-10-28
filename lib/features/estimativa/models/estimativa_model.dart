@@ -2,11 +2,20 @@ import 'estimativa_item_model.dart';
 import 'estimativa_lote_model.dart';
 import 'estimativa_fornecedor_model.dart';
 
+abstract final class EstimativaStatus {
+  static const rascunho = 'rascunho';
+  static const finalizada = 'finalizada';
+}
+
 class EstimativaModel {
   final int id;
   final int numero;
   final int ano;
   final String objeto;
+  // Estado local persistido na coluna, fora do documento JSON.
+  final String status;
+
+  bool get finalizada => status == EstimativaStatus.finalizada;
 
   // Configurações Globais
   final String tipoEstimativa; // 'item' ou 'lote'
@@ -39,6 +48,7 @@ class EstimativaModel {
     required this.numero,
     required this.ano,
     required this.objeto,
+    this.status = EstimativaStatus.rascunho,
     this.tipoEstimativa = 'item',
     this.calculoGlobal = 'min',
     this.casasDecimais = 2,
@@ -132,6 +142,7 @@ class EstimativaModel {
     int? numero,
     int? ano,
     String? objeto,
+    String? status,
     String? tipoEstimativa,
     String? calculoGlobal,
     int? casasDecimais,
@@ -153,6 +164,7 @@ class EstimativaModel {
       numero: numero ?? this.numero,
       ano: ano ?? this.ano,
       objeto: objeto ?? this.objeto,
+      status: status ?? this.status,
       tipoEstimativa: tipoEstimativa ?? this.tipoEstimativa,
       calculoGlobal: calculoGlobal ?? this.calculoGlobal,
       casasDecimais: casasDecimais ?? this.casasDecimais,

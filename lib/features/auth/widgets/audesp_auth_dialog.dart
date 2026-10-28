@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/environments.dart';
 import '../../../core/services/auth_service.dart';
@@ -10,11 +11,11 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../auth_providers.dart';
 
 /// Exibido antes do envio de qualquer módulo ao AUDESP.
-/// Autentica via API (Bearer token) e chama [onConfirm] mediante sucesso.
+/// Confirma o envio, reutilizando a sessão válida ou autenticando via API.
 ///
 /// Uso:
 /// ```dart
-/// final ok = await showAudespAuthDialog(context, ref, onConfirm: () async {
+/// final ok = await showAudespAuthDialog(context, ref, onConfirm: (token) async {
 ///   await enviarDocumento();
 /// });
 /// ```
@@ -62,26 +63,44 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
 
     if (user == null) return;
 
+    final tokenAtivo = authService.tokenValido(
+      userId: user.id,
+      baseUrl: env.baseUrl,
+    );
     final password = _passwordCtrl.text;
-    if (password.isEmpty) {
+    if (tokenAtivo == null && password.isEmpty) {
       setState(() => _error = 'Informe a senha do AUDESP.');
       return;
     }
 
     setState(() => _error = null);
 
+    String? tokenEnvio;
     try {
-      final token = await authService.loginAudesp(
-        email: user.email,
-        password: password,
-        baseUrl: env.baseUrl,
-      );
+      final token =
+          tokenAtivo ??
+          await authService.loginAudesp(
+            userId: user.id,
+            email: user.email,
+            password: password,
+            baseUrl: env.baseUrl,
+          );
 
+      tokenEnvio = token;
       await widget.onConfirm(token);
 
       if (mounted) Navigator.of(context).pop(true);
     } on Exception catch (e) {
-      if (mounted) setState(() => _error = _parseError(e));
+      if (mounted) {
+        setState(() {
+          if (tokenEnvio != null && authService.bearerToken == null) {
+            _passwordCtrl.clear();
+            _error = 'A sessão AUDESP expirou. Informe a senha novamente.';
+          } else {
+            _error = _parseError(e);
+          }
+        });
+      }
     }
   }
 
@@ -99,9 +118,24 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
   Widget build(BuildContext context) {
     final user = ref.watch(localSessionProvider);
     final env = ref.watch(environmentProvider);
+    final authService = ref.watch(authServiceProvider);
+    final sessaoAtiva =
+        user != null &&
+        authService.tokenValido(userId: user.id, baseUrl: env.baseUrl) != null;
+    final expiraEm = authService.expiraEm;
+    final actionLabel = sessaoAtiva
+        ? widget.actionLabel == 'Autenticar e enviar'
+              ? 'Enviar'
+              : widget.actionLabel.replaceFirst(
+                  RegExp(r'^Autenticar e\s+', caseSensitive: false),
+                  '',
+                )
+        : widget.actionLabel;
 
     return AlertDialog(
-      title: const Text('Autenticar no AUDESP'),
+      title: Text(
+        sessaoAtiva ? 'Confirmar envio ao AUDESP' : 'Autenticar no AUDESP',
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,21 +158,28 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 12),
-          AudespTextField(
-            label: 'Senha AUDESP',
-            controller: _passwordCtrl,
-            obscureText: _obscure,
-            prefixIcon: const Icon(Icons.lock_outline),
-            suffixIcon: AudespIconButton(
-              icon: _obscure ? Icons.visibility_off : Icons.visibility,
-              tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
-              onPressed: () => setState(() => _obscure = !_obscure),
+          if (sessaoAtiva) ...[
+            const Text('Sessão AUDESP ativa'),
+            if (expiraEm != null)
+              Text(
+                'Expira às ${DateFormat('HH:mm').format(expiraEm.toLocal())}',
+              ),
+          ] else
+            AudespTextField(
+              label: 'Senha AUDESP',
+              controller: _passwordCtrl,
+              obscureText: _obscure,
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: AudespIconButton(
+                icon: _obscure ? Icons.visibility_off : Icons.visibility,
+                tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+              validator: (v) => null,
             ),
-            onChanged: (_) {
-              if (_error != null) setState(() => _error = null);
-            },
-            validator: (v) => null,
-          ),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -156,7 +197,7 @@ class _AudespAuthDialogState extends ConsumerState<_AudespAuthDialog> {
         AudespAsyncButton.icon(
           onPressed: _authenticate,
           icon: Icons.send_outlined,
-          label: widget.actionLabel,
+          label: actionLabel,
         ),
       ],
     );

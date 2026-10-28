@@ -32,7 +32,7 @@ A divisão por documento é mantida: ela corresponde aos envios do AUDESP e às 
 | 4 | Preencher Ata e Ajuste com dados da Licitação | Concluída |
 | 5 | Menu lateral reorganizado | Concluída |
 | 6 | Tela de Processos e Pendências | Concluída |
-| 7 | Pontos menores (estado da Estimativa, token AUDESP, Logs) | Pendente |
+| 7 | Pontos menores (estado da Estimativa, token AUDESP, Logs) | Concluída |
 | 8 | Divisão dos formulários grandes (incremental) | Pendente |
 
 Ordem: 1 → 2 → 3 → 4 → 5 → 6 → 7, com a 8 feita ao mexer em cada formulário. A Fase 5 não depende das demais e pode ser antecipada.

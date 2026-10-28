@@ -332,6 +332,34 @@ class DatabaseService {
       }
       await setSchemaVersion(12);
     }
+
+    if (version < 13) {
+      final statusFound = await pool.execute(
+        "SELECT COUNT(*) AS c FROM information_schema.columns "
+        "WHERE table_schema = (SELECT DATABASE()) "
+        "AND table_name = 'estimativas' AND column_name = 'status'",
+      );
+      if (statusFound.rows.first.typedAssoc()['c'] == 0) {
+        await pool.execute(
+          "ALTER TABLE estimativas ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'rascunho'",
+        );
+        // Preserva a importação das estimativas anteriores à introdução do estado.
+        await pool.execute("UPDATE estimativas SET status = 'finalizada'");
+      }
+
+      final estimativaFound = await pool.execute(
+        "SELECT COUNT(*) AS c FROM information_schema.columns "
+        "WHERE table_schema = (SELECT DATABASE()) "
+        "AND table_name = 'editais' AND column_name = 'estimativa_id'",
+      );
+      if (estimativaFound.rows.first.typedAssoc()['c'] == 0) {
+        // Sem FK: a origem pode ser excluída sem alterar os itens importados.
+        await pool.execute(
+          'ALTER TABLE editais ADD COLUMN estimativa_id BIGINT NULL',
+        );
+      }
+      await setSchemaVersion(13);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

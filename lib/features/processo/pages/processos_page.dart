@@ -175,6 +175,7 @@ class _ProcessoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final edital = processo.edital;
+    final estimativa = processo.estimativa;
     final etapas = ProcessoEtapas.de(processo, user);
     final theme = Theme.of(context);
 
@@ -204,6 +205,23 @@ class _ProcessoCard extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
+              if (estimativa != null) ...[
+                ActionChip(
+                  key: ValueKey('processo-${edital.id}-estimativa'),
+                  avatar: const Icon(Icons.calculate_outlined, size: 18),
+                  label: Text(
+                    'Estimativa ${estimativa.numero}/${estimativa.ano}',
+                  ),
+                  onPressed:
+                      canAccessLocation(user, '/estimativa/${estimativa.id}')
+                      ? () => context.go('/estimativa/${estimativa.id}')
+                      : null,
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
               for (var i = 0; i < etapas.length; i++) ...[
                 if (i > 0)
                   Icon(

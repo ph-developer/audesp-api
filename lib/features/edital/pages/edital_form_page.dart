@@ -29,6 +29,7 @@ import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../estimativa/estimativa_providers.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
@@ -95,6 +96,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   // ── Itens de Compra ──────────────────────────────────────────────────────
   List<Map<String, dynamic>> _itens = [];
+  int? _estimativaId;
 
   // ── PDF ──────────────────────────────────────────────────────────────────
   String? _pdfPath;
@@ -136,6 +138,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _loadedId = edital.id;
     _isSent = edital.status == 'sent';
     _pdfPath = edital.pdfPath;
+    _estimativaId = edital.estimativaId;
 
     // Parse JSON
     Map<String, dynamic> doc = {};
@@ -298,6 +301,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
       if (_loadedId == null) {
         final id = await dao.insertEdital(
+          estimativaId: _estimativaId,
           municipio: municipio,
           entidade: entidade,
           codigoEdital: codigoSalvar,
@@ -312,6 +316,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       } else {
         await dao.updateEdital(
           id: _loadedId!,
+          estimativaId: _estimativaId,
           municipio: municipio,
           entidade: entidade,
           codigoEdital: codigoSalvar,
@@ -1370,12 +1375,15 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       context,
       existingCount: _itens.length,
     );
-    if (imported == null || imported.isEmpty) return;
-    setState(() => _itens = imported);
+    if (imported == null || imported.itens.isEmpty || !mounted) return;
+    setState(() {
+      _itens = imported.itens;
+      _estimativaId = imported.estimativaId;
+    });
     if (mounted) {
       AudespSnackBar.success(
         context,
-        '${imported.length} item(s) importado(s) com sucesso.',
+        '${imported.itens.length} item(s) importado(s) com sucesso.',
       );
     }
   }
@@ -1383,6 +1391,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   // ── Seção: Itens de Compra ────────────────────────────────────────────────
 
   Widget _buildItensSection(bool readOnly) {
+    final estimativa = _estimativaId == null
+        ? null
+        : ref.watch(estimativaDetailProvider(_estimativaId!)).value;
     return SectionCard(
       title: 'Itens de Compra',
       titleActions: [
@@ -1401,6 +1412,13 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ],
       ],
       children: [
+        if (estimativa != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Itens importados da Estimativa ${estimativa.numero}/${estimativa.ano}',
+            ),
+          ),
         if (_itens.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
