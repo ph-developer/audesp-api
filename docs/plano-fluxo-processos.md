@@ -30,7 +30,7 @@ A divisão por documento é mantida: ela corresponde aos envios do AUDESP e às 
 | 2 | Exigir Licitação enviada para Ata e Ajuste | Concluída |
 | 3 | Novo Ajuste a partir da Ata | Concluída |
 | 4 | Preencher Ata e Ajuste com dados da Licitação | Concluída |
-| 5 | Menu lateral reorganizado | Pendente |
+| 5 | Menu lateral reorganizado | Concluída |
 | 6 | Tela de Processos e Pendências | Pendente |
 | 7 | Pontos menores (estado da Estimativa, token AUDESP, Logs) | Pendente |
 | 8 | Divisão dos formulários grandes (incremental) | Pendente |

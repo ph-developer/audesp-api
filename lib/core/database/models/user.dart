@@ -31,6 +31,11 @@ class User {
     return (permissions & permission) == permission;
   }
 
+  bool hasAnyPermission(int mask) {
+    if (isAdmin) return true;
+    return (permissions & mask) != 0;
+  }
+
   factory User.fromMap(Map<String, dynamic> row) => User(
     id: row['id'] as int,
     nome: row['nome'] as String,

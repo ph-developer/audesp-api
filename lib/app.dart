@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'core/database/models/user.dart';
+import 'core/navigation/app_modules.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
@@ -42,11 +42,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
       if (!loggedIn && !isAuthRoute) return '/login';
 
       // Logado e na tela de login → módulo inicial
-      if (loggedIn && loc == '/login') return _homeLocationFor(user);
+      if (loggedIn && loc == '/login') return homeLocationFor(user);
 
       // Não-admin tentando acessar a área de admin → redireciona
       if (loggedIn && loc.startsWith('/admin') && !user.isAdmin) {
-        return _homeLocationFor(user);
+        return homeLocationFor(user);
       }
 
       // Admin tentando acessar o perfil de usuário → redireciona para admin
@@ -54,8 +54,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
         return '/admin';
       }
 
-      if (loggedIn && !_canAccessLocation(user, loc)) {
-        return _homeLocationFor(user);
+      if (loggedIn && !canAccessLocation(user, loc)) {
+        return homeLocationFor(user);
       }
 
       return null;
@@ -70,7 +70,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
       // Painel de administração (sem shell, admin only — guard no redirect)
       GoRoute(path: '/admin', builder: (context, _) => const AdminPage()),
 
-      // Shell com NavigationRail envolvendo os módulos principais
+      // Shell com menu lateral envolvendo os módulos principais
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
         routes: [
@@ -186,30 +186,6 @@ final _routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-const _moduleRoutes = [
-  (route: '/edital', permission: AppPermissions.edital),
-  (route: '/licitacao', permission: AppPermissions.licitacao),
-  (route: '/ata', permission: AppPermissions.ata),
-  (route: '/ajuste', permission: AppPermissions.ajuste),
-  (route: '/estimativa', permission: AppPermissions.estimativa),
-  (route: '/logs', permission: AppPermissions.none),
-];
-
-String _homeLocationFor(User user) {
-  return _moduleRoutes
-      .firstWhere((module) => user.hasPermission(module.permission))
-      .route;
-}
-
-bool _canAccessLocation(User user, String location) {
-  for (final module in _moduleRoutes) {
-    if (location == module.route || location.startsWith('${module.route}/')) {
-      return user.hasPermission(module.permission);
-    }
-  }
-  return true;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App

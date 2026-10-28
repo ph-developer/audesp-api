@@ -4,176 +4,87 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/environments.dart';
 import '../../core/database/database_providers.dart';
-import '../../core/database/models/user.dart';
+import '../../core/navigation/app_modules.dart';
 import '../../features/auth/auth_providers.dart';
+import 'widgets/app_navigation_rail.dart';
 import 'widgets/environment_dialog.dart';
 
-/// Notifier para controlar o índice da aba selecionada.
-class SelectedShellIndex extends Notifier<int> {
-  @override
-  int build() => 0; // Estado inicial
-
-  void setIndex(int index) {
-    state = index;
-  }
-}
-
-/// Provider da aba selecionada.
-final selectedShellIndexProvider = NotifierProvider<SelectedShellIndex, int>(
-  SelectedShellIndex.new,
-);
-
-/// Shell com NavigationRail lateral — envolve todos os módulos principais.
+/// Shell com menu lateral — envolve todos os módulos principais.
 class ShellPage extends ConsumerWidget {
   final Widget child;
 
   const ShellPage({super.key, required this.child});
 
-  static const _allNavItems = [
-    (
-      icon: Icons.description_outlined,
-      activeIcon: Icons.description,
-      label: 'Edital',
-      route: '/edital',
-      perm: AppPermissions.edital,
-    ),
-    (
-      icon: Icons.gavel_outlined,
-      activeIcon: Icons.gavel,
-      label: 'Licitação',
-      route: '/licitacao',
-      perm: AppPermissions.licitacao,
-    ),
-    (
-      icon: Icons.assignment_outlined,
-      activeIcon: Icons.assignment,
-      label: 'Ata',
-      route: '/ata',
-      perm: AppPermissions.ata,
-    ),
-    (
-      icon: Icons.handshake_outlined,
-      activeIcon: Icons.handshake,
-      label: 'Ajuste',
-      route: '/ajuste',
-      perm: AppPermissions.ajuste,
-    ),
-    (
-      icon: Icons.calculate_outlined,
-      activeIcon: Icons.calculate,
-      label: 'Estimativa',
-      route: '/estimativa',
-      perm: AppPermissions.estimativa,
-    ),
-    (
-      icon: Icons.history_outlined,
-      activeIcon: Icons.history,
-      label: 'Logs',
-      route: '/logs',
-      perm: AppPermissions.none,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedIndex = ref.watch(selectedShellIndexProvider);
     final user = ref.watch(localSessionProvider);
     final env = ref.watch(environmentProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final currentPath = GoRouterState.of(context).uri.path;
 
-    final allowedItems = _allNavItems
-        .where((d) => user?.hasPermission(d.perm) ?? false)
-        .toList();
-    final routeSelectedIndex = allowedItems.indexWhere(
-      (d) => currentPath == d.route || currentPath.startsWith('${d.route}/'),
-    );
-    final validSelectedIndex = routeSelectedIndex >= 0
-        ? routeSelectedIndex
-        : selectedIndex < allowedItems.length
-        ? selectedIndex
-        : 0;
-    final navSelectedIndex = allowedItems.isEmpty ? null : validSelectedIndex;
+    final modules = user == null ? <AppModule>[] : modulosPara(user);
+    final logsSelected = kLogsModule.matchesLocation(currentPath);
 
     return Scaffold(
       body: Row(
         children: [
-          // ── NavigationRail ──────────────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                right: BorderSide(color: colorScheme.outlineVariant),
+          AppNavigationRail(
+            modules: modules,
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Image.asset(
+                'assets/logo_audesp2.png',
+                height: 40,
+                fit: BoxFit.contain,
               ),
             ),
-            child: NavigationRail(
-              extended: false,
-              selectedIndex: navSelectedIndex,
-              onDestinationSelected: (i) {
-                ref.read(selectedShellIndexProvider.notifier).setIndex(i);
-                context.go(allowedItems[i].route);
-              },
-              leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  children: [
-                    // Logo compacto
-                    Image.asset(
-                      'assets/logo_audesp2.png',
-                      height: 40,
-                      fit: BoxFit.contain,
+            trailing: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Chip de ambiente (somente admin pode alterar)
+                  if (user?.isAdmin == true)
+                    GestureDetector(
+                      onTap: () => showEnvironmentDialog(context, ref),
+                      child: _EnvironmentChip(env: env),
+                    )
+                  else
+                    _EnvironmentChip(env: env),
+                  const SizedBox(height: 8),
+                  if (user != null && kLogsModule.podeAcessar(user))
+                    IconButton(
+                      icon: Icon(kLogsModule.icon),
+                      selectedIcon: Icon(kLogsModule.activeIcon),
+                      isSelected: logsSelected,
+                      tooltip: kLogsModule.label,
+                      style: IconButton.styleFrom(
+                        backgroundColor: logsSelected
+                            ? colorScheme.secondaryContainer
+                            : Colors.transparent,
+                        foregroundColor: logsSelected
+                            ? colorScheme.onSecondaryContainer
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () => context.go(kLogsModule.route),
                     ),
-                  ],
-                ),
-              ),
-              destinations: allowedItems
-                  .map(
-                    (d) => NavigationRailDestination(
-                      icon: Icon(d.icon),
-                      selectedIcon: Icon(d.activeIcon),
-                      label: Text(d.label),
+                  // Botão de admin ou perfil, conforme papel
+                  if (user?.isAdmin == true)
+                    IconButton(
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      tooltip: 'Administração',
+                      onPressed: () => context.go('/admin'),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.manage_accounts_outlined),
+                      tooltip: 'Meu perfil',
+                      onPressed: () => context.go('/profile'),
                     ),
-                  )
-                  .toList(),
-              trailing: Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Chip de ambiente (somente admin pode alterar)
-                        if (user?.isAdmin == true)
-                          GestureDetector(
-                            onTap: () => showEnvironmentDialog(context, ref),
-                            child: _EnvironmentChip(env: env),
-                          )
-                        else
-                          _EnvironmentChip(env: env),
-                        const SizedBox(height: 8),
-                        // Botão de admin ou perfil, conforme papel
-                        if (user?.isAdmin == true) ...[
-                          IconButton(
-                            icon: const Icon(
-                              Icons.admin_panel_settings_outlined,
-                            ),
-                            tooltip: 'Administração',
-                            onPressed: () => context.go('/admin'),
-                          ),
-                        ] else ...[
-                          IconButton(
-                            icon: const Icon(Icons.manage_accounts_outlined),
-                            tooltip: 'Meu perfil',
-                            onPressed: () => context.go('/profile'),
-                          ),
-                        ],
-                        const Divider(height: 16),
-                        // Avatar do usuário com tooltip e logout
-                        _UserAvatar(user: user, ref: ref),
-                      ],
-                    ),
-                  ),
-                ),
+                  const Divider(height: 16),
+                  // Avatar do usuário com tooltip e logout
+                  _UserAvatar(user: user, ref: ref),
+                ],
               ),
             ),
           ),
