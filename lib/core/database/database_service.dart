@@ -360,6 +360,34 @@ class DatabaseService {
       }
       await setSchemaVersion(13);
     }
+
+    if (version < 14) {
+      // Compras publicadas no PNCP pelo CNPJ configurado, para cobrar as
+      // que ainda não têm edital no sistema.
+      await pool.execute('''
+        CREATE TABLE IF NOT EXISTS pncp_compras (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          cnpj VARCHAR(14) NOT NULL,
+          ano INT NOT NULL,
+          sequencial INT NOT NULL,
+          numero_controle VARCHAR(25) NOT NULL,
+          modalidade_id INT NULL,
+          numero_compra VARCHAR(50) NULL,
+          objeto TEXT NULL,
+          valor_total_estimado DECIMAL(18,4) NULL,
+          data_publicacao BIGINT NULL,
+          dados_json LONGTEXT NOT NULL,
+          dispensada_em BIGINT NULL,
+          dispensada_por BIGINT NULL,
+          motivo_dispensa VARCHAR(500) NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          UNIQUE KEY uk_pncp_compras_sequencia (cnpj, ano, sequencial),
+          UNIQUE KEY uk_pncp_compras_controle (numero_controle)
+        )
+      ''');
+      await setSchemaVersion(14);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

@@ -30,8 +30,8 @@ flutter analyze                    # lint (uses flutter_lints)
 
 ## Database
 
-- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v13); migrations are the `if (version < N)` blocks in `database_service.dart`
-- Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`
+- Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v14); migrations are the `if (version < N)` blocks in `database_service.dart`
+- Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`, `pncp_compras`
 - Timestamps are **Unix epoch seconds** stored as `BIGINT`
 - `documento_json` stored as `LONGTEXT` (raw JSON string)
 - `app_settings` is a key-value store (`SettingsKeys` constants in `app_settings_dao.dart`)
@@ -52,6 +52,8 @@ flutter analyze                    # lint (uses flutter_lints)
 - **SRP:** following the prefeitura's practice, an SRP edital generates only Ata, and a non-SRP edital generates only Ajuste. Although TCE-SP allows Ajuste from Ata, the system does not offer that flow. The Ata form only lists sent SRP editais; the Ajuste form only lists sent non-SRP editais. Adesão/participação follows its separate flow.
 - **Dependencies:** Ata requires a sent SRP edital and sent Licitação; Ajuste requires a sent non-SRP edital and sent Licitação, except adesão/participação. Legacy ajustes linked to an Ata or SRP edital remain visible and editable, preserving their stored ata_id; only sending is blocked.
 - **Ajuste de adesão/participação:** `ajustes.edital_id` is nullable (v12). With `adesaoParticipacao = true` the local edital link is optional and `codigoEdital`/`codigoAta` are typed PNCP ids of the managing entity; `Ajuste.editalId` is `int?`, so code reading it must handle null.
+- **PNCP:** `features/pncp/` consults the public PNCP API (`/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}`, 404 = no compra) for the CNPJ set in Admin → PNCP / UFESP. `PncpVarredura` walks sequences from the last one found (per-year `app_settings` key `pncp_sequencia_<cnpj>_<ano>`), stops after 3 consecutive 404s or 50 requests, and the previous year is only checked if it was consulted before. 410 (compra excluída) is skipped without counting as a miss; 429 waits `Retry-After` (≤ 60 s, default 10 s) and retries once; any other error stops the scan keeping progress and shows on the Processos button. Found compras go to `pncp_compras`; those whose `numero_controle` matches no edital (`codigoEdital` or PNCP publication, digits only) show in Processos as pendências for users who can create editais, and can be dismissed/restored. "Iniciar edital" opens `/edital/new?pncpCompraId=` with the header from `PncpEditalMapper` — never the PNCP items. The automatic check ticks every minute in the shell (`pncpMonitorProvider`) but only runs when `pncp_ultima_consulta_em` is older than the configured interval, shared across machines.
+- **UFESP:** `UfespConfig` (`processo/domain/ufesp_rules.dart`, settings `ufesp_valor` / `ufesp_quantidade_minima`, default 2.500 × R$ 38,42). Processos and PNCP compras below the limit show an informative "Envio não obrigatório" chip; pendências are unchanged. `Edital.valorTotalEstimado` sums `itensCompra[].valorTotal`.
 - **Licitante `niPessoa`:** normalize with `normalizarNiPessoa` (`licitacao/domain/licitacao_pessoa.dart`) — digits only for PJ/PF, kept as typed for PE (foreign ids contain letters).
 
 ## AUDESP documentation

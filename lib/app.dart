@@ -85,7 +85,11 @@ final _routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'new',
-                builder: (context, _) => const EditalFormPage(),
+                builder: (context, state) => EditalFormPage(
+                  pncpCompraId: int.tryParse(
+                    state.uri.queryParameters['pncpCompraId'] ?? '',
+                  ),
+                ),
               ),
               GoRoute(
                 path: ':id',

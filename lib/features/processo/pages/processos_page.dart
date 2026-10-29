@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/database/models/edital.dart';
+import '../../../core/database/models/pncp_compra.dart';
 import '../../../core/database/models/user.dart';
 import '../../../core/navigation/app_modules.dart';
 import '../../../core/utils/search_matcher.dart';
 import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_segmented_button.dart';
+import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../../shared/widgets/section_card.dart';
 import '../../auth/auth_providers.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../pncp/domain/pncp_pendencias.dart';
+import '../../pncp/pncp_providers.dart';
+import '../../pncp/widgets/pncp_compra_card.dart';
 import '../domain/processo.dart';
 import '../domain/processo_etapas.dart';
 import '../domain/processo_rules.dart';
+import '../domain/ufesp_rules.dart';
 import '../processo_providers.dart';
+import '../widgets/ufesp_indicador.dart';
 
 class ProcessosPage extends ConsumerStatefulWidget {
   const ProcessosPage({super.key});
@@ -35,6 +43,21 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
     super.dispose();
   }
 
+  Future<void> _consultarPncp() async {
+    try {
+      final novas = await ref.read(pncpConsultaProvider.notifier).consultar();
+      if (!mounted || novas == null) return;
+      AudespSnackBar.success(
+        context,
+        novas == 0
+            ? 'Consulta ao PNCP concluída. Nenhuma compra nova.'
+            : 'Consulta ao PNCP concluída. $novas compra(s) nova(s).',
+      );
+    } catch (e) {
+      if (mounted) AudespSnackBar.error(context, '$e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(localSessionProvider);
@@ -48,6 +71,15 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
     final editaisComPendencia = {
       for (final pendencia in pendencias) pendencia.processo.edital.id,
     };
+    // Compras do PNCP sem edital só interessam a quem pode criar o edital.
+    final podeEdital = canAccessLocation(user, '/edital/new');
+    final ufesp = ref.watch(ufespConfigProvider).value ?? const UfespConfig();
+    final pncpConfig = ref.watch(pncpConfigProvider).value;
+    final consultaPncp = ref.watch(pncpConsultaProvider);
+    final pncpOculto = ref.watch(pncpSecaoOcultaProvider);
+    final comprasPncp = podeEdital
+        ? ref.watch(pncpComprasProvider).value ?? const <PncpCompra>[]
+        : const <PncpCompra>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -83,10 +115,40 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
               onChanged: (_) => setState(() {}),
             ),
           ),
+          if (podeEdital && pncpConfig?.configurado == true)
+            consultaPncp.executando
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : consultaPncp.erro != null
+                ? AudespIconButton(
+                    icon: Icons.sync_problem,
+                    color: Theme.of(context).colorScheme.error,
+                    tooltip:
+                        'A última consulta ao PNCP falhou: ${consultaPncp.erro}\n'
+                        'Clique para tentar de novo.',
+                    onPressed: _consultarPncp,
+                  )
+                : AudespIconButton(
+                    icon: Icons.travel_explore,
+                    tooltip: pncpConfig!.ultimaConsultaEm == null
+                        ? 'Consultar PNCP'
+                        : 'Consultar PNCP (última consulta: '
+                              '${DateFormat('dd/MM/yyyy HH:mm').format(pncpConfig.ultimaConsultaEm!)})',
+                    onPressed: _consultarPncp,
+                  ),
           AudespIconButton(
             icon: Icons.refresh,
             tooltip: 'Atualizar',
-            onPressed: () => ref.invalidate(processosProvider),
+            onPressed: () {
+              ref.invalidate(processosProvider);
+              ref.invalidate(pncpComprasProvider);
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -99,6 +161,25 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(child: Text('Erro: $error')),
               data: (processos) {
+                final editais = processos.map((p) => p.edital).toList();
+                bool buscaCompra(PncpCompra compra) => matchesLikeSearch(
+                  [
+                    tituloPncpCompra(compra),
+                    compra.numeroControle,
+                    compra.objeto,
+                  ].join(' '),
+                  _searchCtrl.text,
+                );
+                final pncpPendentes = PncpPendencias.semEdital(
+                  comprasPncp,
+                  editais,
+                ).where(buscaCompra).toList();
+                final pncpDispensadas = _minhasPendencias
+                    ? const <PncpCompra>[]
+                    : PncpPendencias.dispensadas(
+                        comprasPncp,
+                        editais,
+                      ).where(buscaCompra).toList();
                 final filtered = processos.where((processo) {
                   return (!_minhasPendencias ||
                           editaisComPendencia.contains(processo.edital.id)) &&
@@ -108,7 +189,9 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                       );
                 }).toList();
 
-                if (filtered.isEmpty) {
+                if (filtered.isEmpty &&
+                    pncpPendentes.isEmpty &&
+                    pncpDispensadas.isEmpty) {
                   return _minhasPendencias
                       ? const Center(
                           child: Column(
@@ -132,17 +215,50 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                         );
                 }
 
-                return ListView.separated(
+                final itens = <Widget>[
+                  if (pncpPendentes.isNotEmpty) ...[
+                    _TituloGrupo(
+                      icon: Icons.travel_explore,
+                      texto:
+                          'No PNCP, sem edital no sistema (${pncpPendentes.length})',
+                      expandido: !pncpOculto,
+                      onToggle: () =>
+                          ref.read(pncpSecaoOcultaProvider.notifier).alternar(),
+                    ),
+                    if (!pncpOculto)
+                      for (final compra in pncpPendentes)
+                        PncpCompraCard(compra: compra, ufesp: ufesp),
+                  ],
+                  if (pncpDispensadas.isNotEmpty)
+                    ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: const Icon(Icons.block),
+                      title: Text(
+                        'Compras do PNCP dispensadas (${pncpDispensadas.length})',
+                      ),
+                      children: [
+                        for (final compra in pncpDispensadas)
+                          PncpCompraCard(compra: compra, ufesp: ufesp),
+                      ],
+                    ),
+                  if (filtered.isNotEmpty &&
+                      (pncpPendentes.isNotEmpty || pncpDispensadas.isNotEmpty))
+                    const _TituloGrupo(
+                      icon: Icons.account_tree_outlined,
+                      texto: 'Processos',
+                    ),
+                  for (final processo in filtered)
+                    _ProcessoCard(processo: processo, user: user, ufesp: ufesp),
+                ];
+
+                // Os cards já trazem o espaçamento inferior.
+                return ListView.builder(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final processo = filtered[index];
-                    return _ProcessoCard(processo: processo, user: user);
-                  },
+                  itemCount: itens.length,
+                  itemBuilder: (context, index) => itens[index],
                 );
               },
             ),
@@ -153,11 +269,71 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
   }
 }
 
+class _TituloGrupo extends StatelessWidget {
+  final IconData icon;
+  final String texto;
+
+  /// Com [onToggle], o título vira um botão para ocultar ou mostrar o grupo.
+  final bool expandido;
+  final VoidCallback? onToggle;
+
+  const _TituloGrupo({
+    required this.icon,
+    required this.texto,
+    this.expandido = true,
+    this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    final conteudo = Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            texto,
+            style: theme.textTheme.titleSmall?.copyWith(color: color),
+          ),
+          if (onToggle != null) ...[
+            const SizedBox(width: 4),
+            Icon(
+              expandido ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+              color: color,
+            ),
+          ],
+        ],
+      ),
+    );
+    if (onToggle == null) return conteudo;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: expandido ? 'Ocultar' : 'Mostrar',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onToggle,
+          child: conteudo,
+        ),
+      ),
+    );
+  }
+}
+
 class _ProcessoCard extends StatelessWidget {
   final Processo processo;
   final User user;
+  final UfespConfig ufesp;
 
-  const _ProcessoCard({required this.processo, required this.user});
+  const _ProcessoCard({
+    required this.processo,
+    required this.user,
+    required this.ufesp,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -165,67 +341,71 @@ class _ProcessoCard extends StatelessWidget {
     final estimativa = processo.estimativa;
     final etapas = ProcessoEtapas.de(processo, user);
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    return SectionCard(
+    return DocumentCard(
+      icon: Icons.account_tree_outlined,
+      iconBackgroundColor: colors.surfaceContainerHighest,
+      iconColor: colors.onSurfaceVariant,
       title: _tituloEdital(edital),
-      titleWidget: Text(
-        _tituloEdital(edital),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
-      ),
-      children: [
-        if (edital.objetoCompra.isNotEmpty) ...[
-          Text(
-            edital.objetoCompra,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+      chips: [
+        UfespIndicador(valorEstimado: edital.valorTotalEstimado, config: ufesp),
+      ],
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (edital.objetoCompra.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              edital.objetoCompra,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurface.withAlpha(140),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                if (estimativa != null) ...[
+                  ActionChip(
+                    key: ValueKey('processo-${edital.id}-estimativa'),
+                    avatar: const Icon(Icons.calculate_outlined, size: 16),
+                    label: Text(
+                      'Estimativa ${estimativa.numero}/${estimativa.ano}',
+                    ),
+                    labelStyle: theme.textTheme.labelLarge,
+                    shape: const StadiumBorder(),
+                    visualDensity: const VisualDensity(
+                      horizontal: -2,
+                      vertical: -4,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onPressed:
+                        canAccessLocation(user, '/estimativa/${estimativa.id}')
+                        ? () => context.go('/estimativa/${estimativa.id}')
+                        : null,
+                  ),
+                  Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+                ],
+                for (var i = 0; i < etapas.length; i++) ...[
+                  if (i > 0)
+                    Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+                  _EtapaChip(
+                    key: ValueKey(
+                      'processo-${edital.id}-etapa-${etapas[i].tipo.name}',
+                    ),
+                    etapa: etapas[i],
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 12),
         ],
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              if (estimativa != null) ...[
-                ActionChip(
-                  key: ValueKey('processo-${edital.id}-estimativa'),
-                  avatar: const Icon(Icons.calculate_outlined, size: 18),
-                  label: Text(
-                    'Estimativa ${estimativa.numero}/${estimativa.ano}',
-                  ),
-                  onPressed:
-                      canAccessLocation(user, '/estimativa/${estimativa.id}')
-                      ? () => context.go('/estimativa/${estimativa.id}')
-                      : null,
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
-              for (var i = 0; i < etapas.length; i++) ...[
-                if (i > 0)
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                _EtapaChip(
-                  key: ValueKey(
-                    'processo-${edital.id}-etapa-${etapas[i].tipo.name}',
-                  ),
-                  etapa: etapas[i],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -255,7 +435,7 @@ class _EtapaChip extends StatelessWidget {
       SituacaoEtapa.bloqueada => 'Bloqueado',
     };
     final content = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: ShapeDecoration(
         color: color.withAlpha(20),
         shape: StadiumBorder(
@@ -269,22 +449,18 @@ class _EtapaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(module.icon, color: color, size: 20),
+          Icon(module.icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            module.label,
+            style: theme.textTheme.labelLarge?.copyWith(color: color),
+          ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                module.label,
-                style: theme.textTheme.labelLarge?.copyWith(color: color),
-              ),
-              Text(
-                etapa.quantidade > 1
-                    ? '$situacao · ${etapa.quantidade}'
-                    : situacao,
-                style: theme.textTheme.labelSmall?.copyWith(color: color),
-              ),
-            ],
+          Text(
+            etapa.quantidade > 1 ? '$situacao · ${etapa.quantidade}' : situacao,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color.withAlpha(200),
+            ),
           ),
         ],
       ),

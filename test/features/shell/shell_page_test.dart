@@ -2,6 +2,7 @@ import 'package:audesp_api/core/constants/environments.dart';
 import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/navigation/app_modules.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
+import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/shell/shell_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,11 @@ Future<GoRouter> _pumpShell(
   bool isAdmin = false,
 }) async {
   final container = ProviderContainer(
-    overrides: [environmentProvider.overrideWith(_TestEnvironmentNotifier.new)],
+    overrides: [
+      environmentProvider.overrideWith(_TestEnvironmentNotifier.new),
+      // Sem banco nem PNCP nos testes do shell.
+      pncpMonitorProvider.overrideWith((ref) {}),
+    ],
   );
   addTearDown(container.dispose);
   container

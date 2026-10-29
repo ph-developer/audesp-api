@@ -20,6 +20,7 @@ Processo processoFixture({
   bool semPncp = true,
   String? codigo,
   String? objeto,
+  double? valorTotal,
   EstimativaModel? estimativa,
   List<Licitacao> licitacoes = const [],
   List<Ata> atas = const [],
@@ -40,6 +41,10 @@ Processo processoFixture({
       'numeroCompra': '$id',
       'anoCompra': 2026,
       'objetoCompra': objeto ?? 'Objeto do edital $id',
+      if (valorTotal != null)
+        'itensCompra': [
+          {'valorTotal': valorTotal},
+        ],
     }),
     createdAt: DateTime(2026),
     updatedAt: DateTime(2026, 10, 28),

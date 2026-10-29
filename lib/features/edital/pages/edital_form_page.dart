@@ -35,6 +35,9 @@ import '../../processo/processo_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
 import '../domain/edital_rules.dart';
+import '../../pncp/domain/pncp_edital_mapper.dart';
+import '../../pncp/domain/pncp_varredura.dart';
+import '../../pncp/services/pncp_service.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
@@ -47,9 +50,11 @@ import '../widgets/sem_pncp_dialog.dart';
 /// Formulário de criação/edição de Edital (Fase 4 – Módulo 1).
 ///
 /// [editalId] null → criar novo; não-null → editar existente.
+/// [pncpCompraId] cria um novo edital com o cabeçalho de uma compra do PNCP.
 class EditalFormPage extends ConsumerStatefulWidget {
   final int? editalId;
-  const EditalFormPage({super.key, this.editalId});
+  final int? pncpCompraId;
+  const EditalFormPage({super.key, this.editalId, this.pncpCompraId});
 
   @override
   ConsumerState<EditalFormPage> createState() => _EditalFormPageState();
@@ -127,7 +132,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
   Future<void> _loadIfEditing() async {
     if (widget.editalId == null) {
-      setState(() => _loading = false);
+      if (widget.pncpCompraId != null) await _loadFromPncp();
+      if (mounted) setState(() => _loading = false);
       return;
     }
     final dao = ref.read(editaisDaoProvider);
@@ -147,17 +153,64 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       doc = jsonDecode(edital.documentoJson) as Map<String, dynamic>;
     } catch (_) {}
 
+    _semPncp = edital.semPncp;
+    _aplicarDocumento(
+      doc,
+      codigoEdital: edital.codigoEdital,
+      retificacao: edital.retificacao,
+    );
+
+    if (_isSent) {
+      _lastSendLog = await ref
+          .read(apiLogsDaoProvider)
+          .findLatestEditalSendLog(
+            municipio: edital.municipio,
+            entidade: edital.entidade,
+            codigoEdital: edital.codigoEdital,
+            retificacao: edital.retificacao,
+          );
+    }
+
+    if (mounted) setState(() => _loading = false);
+  }
+
+  /// Novo edital com o cabeçalho da compra do PNCP, sem itens. Reconsulta o
+  /// PNCP para pegar os dados atuais e usa os salvos se a consulta falhar.
+  Future<void> _loadFromPncp() async {
+    final compra = await ref
+        .read(pncpComprasDaoProvider)
+        .findById(widget.pncpCompraId!);
+    if (compra == null) return;
+    var dados = compra.dados;
+    try {
+      final atual = await ref
+          .read(pncpServiceProvider)
+          .consultarCompra(compra.cnpj, compra.ano, compra.sequencial);
+      if (atual is CompraEncontrada) dados = atual.dados;
+    } catch (_) {}
+    _semPncp = false;
+    _aplicarDocumento(
+      PncpEditalMapper.documento(dados),
+      codigoEdital: compra.numeroControle,
+      retificacao: false,
+    );
+  }
+
+  void _aplicarDocumento(
+    Map<String, dynamic> doc, {
+    required String codigoEdital,
+    required bool retificacao,
+  }) {
     final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     final publicidade = doc['publicidade'] as Map<String, dynamic>? ?? {};
 
-    _semPncp = edital.semPncp;
     final codigoCarregado =
-        descritor['codigoEdital'] as String? ?? edital.codigoEdital;
+        descritor['codigoEdital'] as String? ?? codigoEdital;
     _codigoEditalCtrl.text = _semPncp
         ? codigoCarregado
         : PcnpInputFormatter.applyMask(codigoCarregado);
     _dataDoc = DateTime.tryParse(descritor['dataDocumento'] as String? ?? '');
-    _retificacao = descritor['retificacao'] as bool? ?? edital.retificacao;
+    _retificacao = descritor['retificacao'] as bool? ?? retificacao;
 
     _houvePublicacao = publicidade['houvePublicacao'] as bool? ?? false;
     _publicacoes = (publicidade['publicacoes'] as List<dynamic>? ?? [])
@@ -192,19 +245,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     _itens = (doc['itensCompra'] as List<dynamic>? ?? [])
         .whereType<Map<String, dynamic>>()
         .toList();
-
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestEditalSendLog(
-            municipio: edital.municipio,
-            entidade: edital.entidade,
-            codigoEdital: edital.codigoEdital,
-            retificacao: edital.retificacao,
-          );
-    }
-
-    if (mounted) setState(() => _loading = false);
   }
 
   // ── Build JSON ────────────────────────────────────────────────────────────

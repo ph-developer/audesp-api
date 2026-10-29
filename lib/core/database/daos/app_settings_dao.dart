@@ -7,6 +7,16 @@ abstract class SettingsKeys {
   static const codigoEntidade = 'codigo_entidade';
   static const codigoTipoOrgao = 'codigo_tipo_orgao';
   static const environment = 'environment';
+  static const pncpCnpj = 'pncp_cnpj';
+  static const pncpConsultaAutomatica = 'pncp_consulta_automatica';
+  static const pncpIntervaloMinutos = 'pncp_intervalo_minutos';
+  static const pncpUltimaConsultaEm = 'pncp_ultima_consulta_em';
+  static const ufespValor = 'ufesp_valor';
+  static const ufespQuantidadeMinima = 'ufesp_quantidade_minima';
+
+  /// Última sequência encontrada no PNCP para o CNPJ e o ano.
+  static String pncpSequencia(String cnpj, int ano) =>
+      'pncp_sequencia_${cnpj}_$ano';
 }
 
 class AppSettingsDao {

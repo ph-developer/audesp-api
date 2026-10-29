@@ -1,8 +1,11 @@
+import 'package:audesp_api/core/database/models/pncp_compra.dart';
 import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/theme/app_theme.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
 import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
+import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
+import 'package:audesp_api/features/processo/domain/ufesp_rules.dart';
 import 'package:audesp_api/features/processo/pages/processos_page.dart';
 import 'package:audesp_api/features/processo/processo_providers.dart';
 import 'package:audesp_api/shared/widgets/empty_state.dart';
@@ -11,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../pncp/pncp_fixtures.dart';
 import '../processo_fixtures.dart';
 
 class _TestSessionNotifier extends LocalSessionNotifier {
@@ -30,6 +34,7 @@ Future<GoRouter> _pumpPage(
   List<Processo> processos = const [],
   int permissions = _contratacao,
   Future<List<Processo>> Function()? carregar,
+  List<PncpCompra> comprasPncp = const [],
 }) async {
   await tester.binding.setSurfaceSize(const Size(1600, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -42,6 +47,11 @@ Future<GoRouter> _pumpPage(
           GoRoute(
             path: '/processos',
             builder: (context, state) => const ProcessosPage(),
+          ),
+          GoRoute(
+            path: '/edital/new',
+            builder: (context, state) =>
+                Scaffold(body: Text('Novo edital ${state.uri}')),
           ),
           for (final module in [
             'edital',
@@ -78,6 +88,12 @@ Future<GoRouter> _pumpPage(
         processosProvider.overrideWith(
           (ref) async => carregar == null ? processos : await carregar(),
         ),
+        // Sem banco nos testes da tela.
+        pncpConfigProvider.overrideWith(
+          (ref) async => const PncpConfig(cnpj: '46395000000139'),
+        ),
+        ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
+        pncpComprasProvider.overrideWith((ref) async => comprasPncp),
       ],
       child: MaterialApp.router(
         // Densidade compacta, a mesma que o app usa no Windows.
@@ -489,5 +505,95 @@ void main() {
 
     expect(consultas, 2);
     expect(find.text('Nenhuma pendência para você.'), findsOneWidget);
+  });
+
+  testWidgets('compra do PNCP sem edital vira pendência e inicia o edital', (
+    tester,
+  ) async {
+    final semEdital = PncpCompra.fromApi(compraPncpJson(sequencial: 3));
+    final comEdital = PncpCompra.fromApi(compraPncpJson(sequencial: 4));
+    final router = await _pumpPage(
+      tester,
+      processos: [processoFixture(codigo: comEdital.numeroControle)],
+      comprasPncp: [
+        PncpCompra(
+          id: 9,
+          cnpj: semEdital.cnpj,
+          ano: semEdital.ano,
+          sequencial: semEdital.sequencial,
+          numeroControle: semEdital.numeroControle,
+          valorTotalEstimado: 50000,
+          dadosJson: semEdital.dadosJson,
+        ),
+        comEdital,
+      ],
+    );
+
+    // A seção começa oculta.
+    final titulo = find.text('No PNCP, sem edital no sistema (1)');
+    expect(titulo, findsOneWidget);
+    expect(find.textContaining('000003/2026'), findsNothing);
+    await tester.tap(titulo);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('000003/2026'), findsOneWidget);
+    expect(find.textContaining('000004/2026'), findsNothing);
+    expect(find.text('Envio não obrigatório'), findsOneWidget);
+    expect(find.byTooltip('Consultar PNCP'), findsOneWidget);
+
+    await tester.tap(find.text('Iniciar edital'));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      '/edital/new?pncpCompraId=9',
+    );
+  });
+
+  testWidgets('processo abaixo do mínimo de UFESP mostra o indicador', (
+    tester,
+  ) async {
+    await _pumpPage(
+      tester,
+      processos: [
+        processoFixture(id: 1, valorTotal: 50000),
+        processoFixture(id: 2, valorTotal: 150000),
+        processoFixture(id: 3),
+      ],
+    );
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Envio não obrigatório'), findsOneWidget);
+  });
+
+  testWidgets('compras do PNCP só aparecem para quem cria edital', (
+    tester,
+  ) async {
+    await _pumpPage(
+      tester,
+      permissions: _contratos,
+      comprasPncp: [PncpCompra.fromApi(compraPncpJson())],
+    );
+    expect(find.textContaining('No PNCP'), findsNothing);
+    expect(find.byTooltip('Consultar PNCP'), findsNothing);
+  });
+
+  testWidgets('seção do PNCP começa oculta e pode ser mostrada', (
+    tester,
+  ) async {
+    await _pumpPage(
+      tester,
+      comprasPncp: [PncpCompra.fromApi(compraPncpJson(sequencial: 3))],
+    );
+    final titulo = find.text('No PNCP, sem edital no sistema (1)');
+    expect(titulo, findsOneWidget);
+    expect(find.text('Iniciar edital'), findsNothing);
+
+    await tester.tap(titulo);
+    await tester.pumpAndSettle();
+    expect(find.text('Iniciar edital'), findsOneWidget);
+
+    await tester.tap(titulo);
+    await tester.pumpAndSettle();
+    expect(titulo, findsOneWidget);
+    expect(find.text('Iniciar edital'), findsNothing);
   });
 }

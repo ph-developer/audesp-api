@@ -101,6 +101,17 @@ class Edital {
 
   String get objetoCompra => _doc['objetoCompra']?.toString() ?? '';
 
+  /// Soma do valor total dos itens de compra.
+  double get valorTotalEstimado =>
+      (_doc['itensCompra'] as List<dynamic>? ?? const []).fold(
+        0.0,
+        (soma, item) =>
+            soma +
+            (((item as Map<String, dynamic>)['valorTotal'] as num?)
+                    ?.toDouble() ??
+                0),
+      );
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'estimativa_id': estimativaId,

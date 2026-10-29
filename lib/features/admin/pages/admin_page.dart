@@ -15,6 +15,7 @@ import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
+import '../widgets/pncp_ufesp_tab.dart';
 
 /// Painel de administração: Usuários · Ambiente · Registros.
 /// Acessível apenas por usuários com [User.isAdmin == true].
@@ -32,7 +33,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -53,12 +54,18 @@ class _AdminPageState extends ConsumerState<AdminPage>
             Tab(icon: Icon(Icons.people_outlined), text: 'Usuários'),
             Tab(icon: Icon(Icons.cloud_outlined), text: 'Ambiente'),
             Tab(icon: Icon(Icons.auto_fix_high_outlined), text: 'IA / Gemini'),
+            Tab(icon: Icon(Icons.travel_explore), text: 'PNCP / UFESP'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tab,
-        children: const [_UsersTab(), _EnvironmentTab(), _GeminiTab()],
+        children: const [
+          _UsersTab(),
+          _EnvironmentTab(),
+          _GeminiTab(),
+          PncpUfespTab(),
+        ],
       ),
     );
   }

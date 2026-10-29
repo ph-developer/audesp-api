@@ -6,6 +6,7 @@ import '../../core/constants/environments.dart';
 import '../../core/database/database_providers.dart';
 import '../../core/navigation/app_modules.dart';
 import '../../features/auth/auth_providers.dart';
+import '../pncp/pncp_providers.dart';
 import 'widgets/app_navigation_rail.dart';
 import 'widgets/environment_dialog.dart';
 
@@ -21,6 +22,8 @@ class ShellPage extends ConsumerWidget {
     final env = ref.watch(environmentProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final currentPath = GoRouterState.of(context).uri.path;
+    // Mantém a consulta automática ao PNCP ativa enquanto há sessão aberta.
+    if (user != null) ref.watch(pncpMonitorProvider);
 
     final modules = user == null ? <AppModule>[] : modulosPara(user);
     final logsSelected = kLogsModule.matchesLocation(currentPath);

@@ -160,6 +160,7 @@ class _EstimativaList extends ConsumerWidget {
                 StatusChip(
                   label: estimativa.finalizada ? 'Finalizada' : 'Rascunho',
                 ),
+                const SizedBox(width: 8),
                 Chip(
                   label: Text(valorTotalFmt),
                   backgroundColor: colorScheme.secondaryContainer,
