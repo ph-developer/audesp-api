@@ -34,10 +34,12 @@ import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
+import '../domain/edital_itens_resumo.dart';
 import '../domain/edital_rules.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
+import '../widgets/item_categoria_dialog.dart';
 import '../widgets/item_compra_dialog.dart';
 import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../widgets/publicacao_dialog.dart';
@@ -238,7 +240,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       'objetoCompra': _objetoCompraCtrl.text.trim(),
       'srp': _srp,
       'amparoLegalId': int.tryParse(_amparoLegalCtrl.text.trim()),
-      'itensCompra': _itens.toList(),
+      'itensCompra': EditalRules.normalizarCategorias(
+        modalidadeId: _modalidade,
+        itens: _itens,
+      ),
     };
 
     if (_codigoUnidadeCtrl.text.trim().isNotEmpty) {
@@ -1394,10 +1399,44 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final estimativa = _estimativaId == null
         ? null
         : ref.watch(estimativaDetailProvider(_estimativaId!)).value;
+    final leilao = EditalRules.isLeilao(_modalidade);
+    final semCategoria = leilao
+        ? _itens.where((item) => _categoriaDoItem(item) == null).length
+        : 0;
+    final resumo = EditalItensResumo.calcular(_itens);
+    final colors = Theme.of(context).colorScheme;
     return SectionCard(
       title: 'Itens de Compra',
+      titleSuffix: _itens.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: colors.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                'Total: ${formatBRL(resumo.valorTotal)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: colors.onPrimaryContainer,
+                ),
+              ),
+            ),
       titleActions: [
         if (!readOnly) ...[
+          if (leilao && _itens.isNotEmpty) ...[
+            TextButton.icon(
+              onPressed: _editarCategorias,
+              icon: const Icon(Icons.category_outlined),
+              label: const Text('Categorias'),
+            ),
+            const SizedBox(width: 8),
+          ],
           TextButton.icon(
             onPressed: _importItemsFromCsv,
             icon: const Icon(Icons.download),
@@ -1419,6 +1458,16 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               'Itens importados da Estimativa ${estimativa.numero}/${estimativa.ano}',
             ),
           ),
+        if (_itens.isNotEmpty) _ItensResumoCard(resumo: resumo),
+        if (semCategoria > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Leilão: $semCategoria item(ns) sem categoria. '
+              'Use "Categorias" para definir Bens Imóveis ou Bens Móveis.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
         if (_itens.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1436,6 +1485,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final item = _itens[index];
     final beneficio =
         kTipoBeneficio[item['tipoBeneficioId'] as int? ?? 1] ?? '';
+    final categoria = EditalRules.isLeilao(_modalidade)
+        ? '${kItemCategoria[_categoriaDoItem(item)] ?? 'Sem categoria'}  |  '
+        : '';
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1453,7 +1505,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         subtitle: Text(
           '${item['materialOuServico'] == 'M' ? 'Material' : 'Serviço'}  |  '
           '$beneficio  |  '
-          'Qtd: ${formatNumberBR((item['quantidade'] as num?)?.toDouble())}  |  '
+          '$categoria'
+          'Qtd:${formatNumberBR((item['quantidade'] as num?)?.toDouble())}  |  '
           'VU: ${formatBRL((item['valorUnitarioEstimado'] as num?)?.toDouble())}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -1504,6 +1557,25 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       initial: _itens[index],
     );
     if (result != null) setState(() => _itens[index] = result);
+  }
+
+  int? _categoriaDoItem(Map<String, dynamic> item) => EditalRules.categoriaItem(
+    modalidadeId: _modalidade,
+    atual: item['itemCategoriaId'],
+  );
+
+  Future<void> _editarCategorias() async {
+    final categorias = await showItemCategoriaDialog(
+      context,
+      modalidadeId: _modalidade,
+      itens: _itens,
+    );
+    if (categorias == null) return;
+    setState(() {
+      for (int i = 0; i < _itens.length; i++) {
+        _itens[i] = {..._itens[i], 'itemCategoriaId': categorias[i]};
+      }
+    });
   }
 
   // ── Seção: PDF ────────────────────────────────────────────────────────────
@@ -1557,6 +1629,99 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 }
 
 // ── Widgets auxiliares ─────────────────────────────────────────────────────
+
+/// Resumo dos itens de compra: quantidades, total e valor por benefício.
+class _ItensResumoCard extends StatelessWidget {
+  final EditalItensResumo resumo;
+  const _ItensResumoCard({required this.resumo});
+
+  String _comPercentual(double valor) =>
+      '${formatBRL(valor)} (${resumo.percentual(valor).toStringAsFixed(2)}%)';
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final avisos = [
+      if (resumo.semValor > 0) '${resumo.semValor} item(ns) sem valor',
+      if (resumo.sigilosos > 0)
+        '${resumo.sigilosos} item(ns) com orçamento sigiloso',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.summarize_outlined, size: 20, color: colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${resumo.quantidadeItens} item(ns): '
+                    '${resumo.materiais} material(is), '
+                    '${resumo.servicos} serviço(s)',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+                if (resumo.valorMeEpp > 0) ...[
+                  Text(
+                    'ME/EPP: ${_comPercentual(resumo.valorMeEpp)}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                Text(
+                  'Total: ${formatBRL(resumo.valorTotal)}',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
+            if (resumo.porBeneficio.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final e in resumo.porBeneficio.entries)
+                Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          kTipoBeneficio[e.key] ?? 'Benefício ${e.key}',
+                          style: textTheme.bodySmall,
+                        ),
+                      ),
+                      Text(
+                        '${e.value.itens} item(ns)  |  '
+                        '${_comPercentual(e.value.valor)}',
+                        style: textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+            if (avisos.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 28),
+                child: Text(
+                  avisos.join('  |  '),
+                  style: textTheme.bodySmall?.copyWith(color: colors.tertiary),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// Campo de seleção para Amparo Legal.
 class _AmparoLegalField extends StatelessWidget {

@@ -82,17 +82,15 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
     _qtdCtrl.addListener(_recalcularTotal);
     _valorUnitCtrl.addListener(_recalcularTotal);
     final ini = widget.initial;
-    if (ini == null &&
-        widget.modalidadeId != null &&
-        !EditalRules.isLeilao(widget.modalidadeId)) {
-      _itemCategoria = 3;
-    }
+    _itemCategoria = EditalRules.categoriaItem(
+      modalidadeId: widget.modalidadeId,
+      atual: ini?['itemCategoriaId'],
+    );
     if (ini != null) {
       _materialOuServico = ini['materialOuServico'] as String? ?? 'M';
       _tipoBeneficio = ini['tipoBeneficioId'] as int?;
       _incentivoBasico = ini['incentivoProdutivoBasico'] as bool? ?? false;
       _orcamentoSigiloso = ini['orcamentoSigiloso'] as bool? ?? false;
-      _itemCategoria = ini['itemCategoriaId'] as int?;
       _descCtrl.text = ini['descricao'] as String? ?? '';
       _qtdCtrl.text = doubleToBrString(ini['quantidade']);
       _unidadeCtrl.text = ini['unidadeMedida'] as String? ?? '';
@@ -273,15 +271,17 @@ class _ItemCompraDialogState extends State<_ItemCompraDialog> {
                 ],
               ),
               AudespSpacing.verticalMd,
-              // Categoria do Item
-              AudespDropdown<int>(
-                label: 'Categoria do Item *',
-                value: _itemCategoria,
-                items: kItemCategoria,
-                onChanged: (v) => setState(() => _itemCategoria = v),
-                validator: (v) => v == null ? 'Obrigatório' : null,
-              ),
-              AudespSpacing.verticalMd,
+              // Categoria do Item: fora de leilão é sempre 3, sem pergunta.
+              if (EditalRules.isLeilao(widget.modalidadeId)) ...[
+                AudespDropdown<int>(
+                  label: 'Categoria do Item *',
+                  value: _itemCategoria,
+                  items: kItemCategoriaLeilao,
+                  onChanged: (v) => setState(() => _itemCategoria = v),
+                  validator: (v) => v == null ? 'Obrigatório' : null,
+                ),
+                AudespSpacing.verticalMd,
+              ],
               // Patrimônio (opcional)
               AudespFieldRow(
                 children: [

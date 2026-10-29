@@ -6,7 +6,6 @@ class EstimativaLote {
   final double quantidade;
   final String unidade;
   final String materialOuServico;
-  final int? itemCategoriaId;
   final bool exclusivoMeEpp;
   final List<EstimativaItem> itens;
 
@@ -16,7 +15,6 @@ class EstimativaLote {
     this.quantidade = 1.0,
     this.unidade = 'UN',
     this.materialOuServico = 'M',
-    this.itemCategoriaId,
     this.exclusivoMeEpp = false,
     this.itens = const [],
   });
@@ -28,7 +26,6 @@ class EstimativaLote {
       'quantidade': quantidade,
       'unidade': unidade,
       'materialOuServico': materialOuServico,
-      'itemCategoriaId': itemCategoriaId,
       'exclusivoMeEpp': exclusivoMeEpp,
       'itens': itens.map((x) => x.toMap()).toList(),
     };
@@ -41,7 +38,6 @@ class EstimativaLote {
       quantidade: (map['quantidade'] as num?)?.toDouble() ?? 1.0,
       unidade: map['unidade'] ?? 'UN',
       materialOuServico: map['materialOuServico'] ?? 'M',
-      itemCategoriaId: map['itemCategoriaId']?.toInt(),
       exclusivoMeEpp: map['exclusivoMeEpp'] ?? false,
       itens: List<EstimativaItem>.from(
         (map['itens'] as List<dynamic>? ?? []).map(
@@ -57,7 +53,6 @@ class EstimativaLote {
     double? quantidade,
     String? unidade,
     String? materialOuServico,
-    int? itemCategoriaId,
     bool? exclusivoMeEpp,
     List<EstimativaItem>? itens,
   }) {
@@ -67,7 +62,6 @@ class EstimativaLote {
       quantidade: quantidade ?? this.quantidade,
       unidade: unidade ?? this.unidade,
       materialOuServico: materialOuServico ?? this.materialOuServico,
-      itemCategoriaId: itemCategoriaId ?? this.itemCategoriaId,
       exclusivoMeEpp: exclusivoMeEpp ?? this.exclusivoMeEpp,
       itens: itens ?? this.itens,
     );

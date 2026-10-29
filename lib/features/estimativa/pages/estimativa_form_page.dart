@@ -37,7 +37,6 @@ import '../../../core/utils/html_clipboard.dart';
 import 'package:intl/intl.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../edital/domain/edital_domain.dart';
 import '../../processo/processo_providers.dart';
 
 enum AiItensAction { replace, append }
@@ -426,7 +425,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
       quantidade: 1,
       unidade: 'LOTE',
       materialOuServico: primeiroItem.materialOuServico,
-      itemCategoriaId: primeiroItem.itemCategoriaId,
       exclusivoMeEpp: itens.any((i) => i.exclusivoMeEpp),
       itens: _renumerarItens(itens),
     );
@@ -1240,7 +1238,6 @@ class _EstimativaFormPageState extends ConsumerState<EstimativaFormPage> {
                           const SizedBox(height: 4),
                           Text(
                             '${lote.materialOuServico == 'M' ? 'Material' : 'Serviço'} | '
-                            '${lote.itemCategoriaId != null ? kItemCategoria[lote.itemCategoriaId] ?? '' : ''} | '
                             '${formatNumberBR(lote.quantidade)} ${lote.unidade} | '
                             'Subtotal: ${fmt.format(loteTotal)}',
                             style: Theme.of(context).textTheme.bodySmall,

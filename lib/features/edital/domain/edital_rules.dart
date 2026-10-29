@@ -85,6 +85,39 @@ abstract final class EditalRules {
   static bool isLeilao(int? modalidadeId) =>
       modalidadeId == 1 || modalidadeId == 13;
 
+  /// Fora de leilão a categoria é sempre "Não se aplica" (3) e não é
+  /// perguntada ao usuário. Em leilão só valem 1 ou 2; outro valor volta a
+  /// ficar sem categoria para ser escolhido.
+  static int? categoriaItem({required int? modalidadeId, Object? atual}) {
+    if (!isLeilao(modalidadeId)) return 3;
+    return atual == 1 || atual == 2 ? atual as int : null;
+  }
+
+  static List<Map<String, dynamic>> normalizarCategorias({
+    required int? modalidadeId,
+    required List<Map<String, dynamic>> itens,
+  }) {
+    return [
+      for (final item in itens)
+        _comCategoria(
+          item,
+          categoriaItem(
+            modalidadeId: modalidadeId,
+            atual: item['itemCategoriaId'],
+          ),
+        ),
+    ];
+  }
+
+  static Map<String, dynamic> _comCategoria(
+    Map<String, dynamic> item,
+    int? categoria,
+  ) {
+    final novo = {...item}..remove('itemCategoriaId');
+    if (categoria != null) novo['itemCategoriaId'] = categoria;
+    return novo;
+  }
+
   static String? validarItem({
     required int? modalidadeId,
     required Map<String, dynamic> item,

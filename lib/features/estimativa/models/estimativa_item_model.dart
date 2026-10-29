@@ -15,7 +15,6 @@ class EstimativaItem {
   // Configurações e Dados
   // Configurações e Dados
   final String materialOuServico; // 'M' ou 'S'
-  final int? itemCategoriaId;
   final bool
   exclusivoMeEpp; // Aplicável apenas quando a estimativa é "Por Item"
   final List<EstimativaOrcamento> orcamentos;
@@ -29,7 +28,6 @@ class EstimativaItem {
     this.quantidadeMeses = 1,
 
     this.materialOuServico = 'M',
-    this.itemCategoriaId,
     this.exclusivoMeEpp = false,
     this.orcamentos = const [],
   });
@@ -43,7 +41,6 @@ class EstimativaItem {
       'tipoFornecimento': tipoFornecimento,
       'quantidadeMeses': quantidadeMeses,
       'materialOuServico': materialOuServico,
-      'itemCategoriaId': itemCategoriaId,
       'exclusivoMeEpp': exclusivoMeEpp,
       'orcamentos': orcamentos.map((x) => x.toMap()).toList(),
     };
@@ -58,7 +55,6 @@ class EstimativaItem {
       tipoFornecimento: map['tipoFornecimento'] ?? 'unica',
       quantidadeMeses: map['quantidadeMeses']?.toInt() ?? 1,
       materialOuServico: map['materialOuServico'] ?? 'M',
-      itemCategoriaId: map['itemCategoriaId']?.toInt(),
       exclusivoMeEpp: map['exclusivoMeEpp'] ?? false,
       orcamentos: List<EstimativaOrcamento>.from(
         (map['orcamentos'] as List<dynamic>? ?? []).map(
@@ -76,7 +72,6 @@ class EstimativaItem {
     String? tipoFornecimento,
     int? quantidadeMeses,
     String? materialOuServico,
-    int? itemCategoriaId,
     bool? exclusivoMeEpp,
     List<EstimativaOrcamento>? orcamentos,
   }) {
@@ -88,7 +83,6 @@ class EstimativaItem {
       tipoFornecimento: tipoFornecimento ?? this.tipoFornecimento,
       quantidadeMeses: quantidadeMeses ?? this.quantidadeMeses,
       materialOuServico: materialOuServico ?? this.materialOuServico,
-      itemCategoriaId: itemCategoriaId ?? this.itemCategoriaId,
       exclusivoMeEpp: exclusivoMeEpp ?? this.exclusivoMeEpp,
       orcamentos: orcamentos ?? this.orcamentos,
     );

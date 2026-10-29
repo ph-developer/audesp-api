@@ -207,6 +207,40 @@ void main() {
       expect(EditalRules.validarItem(modalidadeId: null, item: {}), isNull);
     });
 
+    test('categoria é 3 fora de leilão e só 1 ou 2 em leilão', () {
+      for (final atual in [1, 2, 3, null]) {
+        expect(EditalRules.categoriaItem(modalidadeId: 6, atual: atual), 3);
+        expect(EditalRules.categoriaItem(modalidadeId: null, atual: atual), 3);
+        expect(
+          EditalRules.categoriaItem(modalidadeId: 1, atual: atual),
+          atual == 3 ? isNull : atual,
+        );
+      }
+    });
+
+    test('normalização ajusta todos os itens sem alterar a lista original', () {
+      final itens = [
+        {'numeroItem': 1, 'itemCategoriaId': 2},
+        {'numeroItem': 2, 'itemCategoriaId': 3},
+        {'numeroItem': 3},
+      ];
+      expect(
+        EditalRules.normalizarCategorias(
+          modalidadeId: 6,
+          itens: itens,
+        ).map((i) => i['itemCategoriaId']),
+        [3, 3, 3],
+      );
+      final leilao = EditalRules.normalizarCategorias(
+        modalidadeId: 13,
+        itens: itens,
+      );
+      expect(leilao[0]['itemCategoriaId'], 2);
+      expect(leilao[1].containsKey('itemCategoriaId'), isFalse);
+      expect(leilao[2].containsKey('itemCategoriaId'), isFalse);
+      expect(itens[1]['itemCategoriaId'], 3);
+    });
+
     test('envio confere todos os itens importados e as datas', () {
       final documento = <String, dynamic>{
         'modalidadeId': 6,

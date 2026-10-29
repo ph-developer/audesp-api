@@ -5,7 +5,6 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 
-import '../../edital/domain/edital_domain.dart';
 import '../models/estimativa_lote_model.dart';
 import '../models/estimativa_item_model.dart';
 
@@ -44,7 +43,6 @@ class _LoteDialogState extends State<_LoteDialog> {
   final _quantidadeCtrl = TextEditingController(text: '1.0');
   final _unidadeCtrl = TextEditingController(text: 'UN');
   String _materialOuServico = 'M';
-  int? _itemCategoriaId;
   bool _exclusivoMeEpp = false;
 
   List<EstimativaItem> _itens = [];
@@ -59,7 +57,6 @@ class _LoteDialogState extends State<_LoteDialog> {
       _quantidadeCtrl.text = doubleToBrString(l.quantidade);
       _unidadeCtrl.text = l.unidade;
       _materialOuServico = l.materialOuServico;
-      _itemCategoriaId = l.itemCategoriaId;
       _exclusivoMeEpp = l.exclusivoMeEpp;
       _itens = List.from(l.itens);
     } else if (widget.nextNumero != null) {
@@ -87,7 +84,6 @@ class _LoteDialogState extends State<_LoteDialog> {
           1.0,
       unidade: _unidadeCtrl.text.trim().toUpperCase(),
       materialOuServico: _materialOuServico,
-      itemCategoriaId: _itemCategoriaId,
       exclusivoMeEpp: _exclusivoMeEpp,
       itens: _itens,
     );
@@ -163,18 +159,6 @@ class _LoteDialogState extends State<_LoteDialog> {
                         items: const {'M': 'Material', 'S': 'Serviço'},
                         onChanged: (v) =>
                             setState(() => _materialOuServico = v!),
-                        validator: (v) => v == null ? 'Obrigatório' : null,
-                      ),
-                      const SizedBox(height: 12),
-                      AudespDropdown<int>(
-                        label: 'Categoria do Lote *',
-                        value: _itemCategoriaId,
-                        items: kItemCategoria,
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() => _itemCategoriaId = v);
-                          }
-                        },
                         validator: (v) => v == null ? 'Obrigatório' : null,
                       ),
                     ],

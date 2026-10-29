@@ -5,7 +5,6 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_dropdown.dart';
 
-import '../../edital/domain/edital_domain.dart';
 
 import '../models/estimativa_item_model.dart';
 import '../models/estimativa_orcamento_model.dart';
@@ -56,7 +55,6 @@ class _ItemDialogState extends State<_ItemDialog> {
 
   String _tipoFornecimento = 'unica';
   String _materialOuServico = 'M';
-  int? _itemCategoriaId;
   bool _exclusivoMeEpp = false;
 
   List<EstimativaOrcamento> _orcamentos = [];
@@ -72,7 +70,6 @@ class _ItemDialogState extends State<_ItemDialog> {
       _quantidadeCtrl.text = doubleToBrString(i.quantidade);
       _tipoFornecimento = i.tipoFornecimento;
       _materialOuServico = i.materialOuServico;
-      _itemCategoriaId = i.itemCategoriaId;
       _quantidadeMesesCtrl.text = i.quantidadeMeses.toString();
       _exclusivoMeEpp = i.exclusivoMeEpp;
       _orcamentos = List.from(i.orcamentos);
@@ -106,7 +103,6 @@ class _ItemDialogState extends State<_ItemDialog> {
           ? (int.tryParse(_quantidadeMesesCtrl.text.trim()) ?? 12)
           : 1,
       materialOuServico: _materialOuServico,
-      itemCategoriaId: _itemCategoriaId,
       exclusivoMeEpp: _exclusivoMeEpp,
       orcamentos: _orcamentos,
     );
@@ -174,21 +170,6 @@ class _ItemDialogState extends State<_ItemDialog> {
                                   setState(() => _materialOuServico = v);
                                 }
                               },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: AudespDropdown<int>(
-                              label: 'Categoria do Item *',
-                              value: _itemCategoriaId,
-                              items: kItemCategoria,
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setState(() => _itemCategoriaId = v);
-                                }
-                              },
-                              validator: (v) =>
-                                  v == null ? 'Obrigatório' : null,
                             ),
                           ),
                         ],

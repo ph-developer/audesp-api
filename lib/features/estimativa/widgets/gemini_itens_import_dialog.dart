@@ -204,7 +204,6 @@ class _GeminiItensReviewDialogState extends State<_GeminiItensReviewDialog> {
             quantidade: item.quantidade,
             unidade: item.unidade,
             materialOuServico: item.materialOuServico,
-            itemCategoriaId: item.itemCategoriaId,
             tipoFornecimento: _tipoFornecimento,
             quantidadeMeses: meses,
           ),
@@ -302,8 +301,7 @@ class _GeminiItensReviewDialogState extends State<_GeminiItensReviewDialog> {
                     1: FlexColumnWidth(1),
                     2: FlexColumnWidth(1),
                     3: FixedColumnWidth(70),
-                    4: FixedColumnWidth(80),
-                    5: FixedColumnWidth(48),
+                    4: FixedColumnWidth(48),
                   },
                   children: [
                     TableRow(
@@ -315,7 +313,6 @@ class _GeminiItensReviewDialogState extends State<_GeminiItensReviewDialog> {
                         _tableHeader('Quant.'),
                         _tableHeader('Unid.'),
                         _tableHeader('Tipo'),
-                        _tableHeader('Categoria'),
                         _tableHeader(''),
                       ],
                     ),
@@ -361,13 +358,6 @@ class _GeminiItensReviewDialogState extends State<_GeminiItensReviewDialog> {
     final isAccepted = _selected[index];
     final tipoStr = item.materialOuServico == 'M' ? 'Material' : 'Serviço';
 
-    String catStr = 'Não se aplica';
-    if (item.itemCategoriaId == 1) {
-      catStr = 'Bens Imóveis';
-    } else if (item.itemCategoriaId == 2) {
-      catStr = 'Bens Móveis';
-    }
-
     return TableRow(
       decoration: BoxDecoration(
         color: isAccepted ? colorScheme.primaryContainer.withAlpha(80) : null,
@@ -391,10 +381,6 @@ class _GeminiItensReviewDialogState extends State<_GeminiItensReviewDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Text(tipoStr, style: const TextStyle(fontSize: 11)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Text(catStr, style: const TextStyle(fontSize: 11)),
         ),
         Checkbox(
           value: isAccepted,

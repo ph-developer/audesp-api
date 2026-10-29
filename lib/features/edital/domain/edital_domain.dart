@@ -104,6 +104,12 @@ const kItemCategoria = <int, String>{
   3: '3 - Não se aplica',
 };
 
+/// Categorias aceitas em leilão; nas demais modalidades o item é sempre 3.
+const kItemCategoriaLeilao = <int, String>{
+  1: '1 - Bens Imóveis',
+  2: '2 - Bens Móveis',
+};
+
 const kAmparosLegais = <int, String>{
   1: '1 - Lei 14.133/2021, Art. 28, I - Pregão',
   2: '2 - Lei 14.133/2021, Art. 28, II - Concorrência',

@@ -454,10 +454,6 @@ Para cada item identificado, retorne um objeto com os seguintes campos:
 2. "quantidade": Número (int ou float) com a quantidade total.
 3. "unidade": String com a unidade de medida (ex: "UN", "Mês", "Serviço", "KG").
 4. "materialOuServico": String sendo obrigatoriamente "M" (para material/produto) ou "S" (para serviço).
-5. "itemCategoriaId": Inteiro representando a categoria do item, devendo ser APENAS um dos seguintes valores (deduza o mais adequado):
-   - 1 para "Bens Imóveis"
-   - 2 para "Bens Móveis" (materiais, produtos em geral)
-   - 3 para "Não se aplica" (serviços em geral)
 
 Retorne APENAS um objeto JSON válido, sem markdown, com a seguinte estrutura:
 {
@@ -466,15 +462,13 @@ Retorne APENAS um objeto JSON válido, sem markdown, com a seguinte estrutura:
       "descricao": "Caneta esferográfica azul...",
       "quantidade": 1000,
       "unidade": "UN",
-      "materialOuServico": "M",
-      "itemCategoriaId": 2
+      "materialOuServico": "M"
     },
     {
       "descricao": "Serviço de limpeza...",
       "quantidade": 12,
       "unidade": "Mês",
-      "materialOuServico": "S",
-      "itemCategoriaId": 3
+      "materialOuServico": "S"
     }
   ]
 }
@@ -540,7 +534,6 @@ Se nenhum item for encontrado, retorne {"itens": []}.
       final quantRaw = rawItem['quantidade'];
       final unid = rawItem['unidade']?.toString();
       final ms = rawItem['materialOuServico']?.toString().toUpperCase();
-      final catId = rawItem['itemCategoriaId'];
 
       if (desc != null && quantRaw != null && unid != null) {
         final doubleQuant = quantRaw is num
@@ -548,17 +541,12 @@ Se nenhum item for encontrado, retorne {"itens": []}.
             : double.tryParse(quantRaw.toString()) ?? 0.0;
 
         final finalMs = (ms == 'M' || ms == 'S') ? ms! : 'M';
-        final finalCatId = catId is int
-            ? catId
-            : int.tryParse(catId.toString()) ?? 2;
-
         results.add(
           GeminiEstimativaItemResult(
             descricao: desc,
             quantidade: doubleQuant,
             unidade: unid,
             materialOuServico: finalMs,
-            itemCategoriaId: finalCatId,
           ),
         );
       }
@@ -597,14 +585,12 @@ class GeminiEstimativaItemResult {
   final double quantidade;
   final String unidade;
   final String materialOuServico;
-  final int itemCategoriaId;
 
   const GeminiEstimativaItemResult({
     required this.descricao,
     required this.quantidade,
     required this.unidade,
     required this.materialOuServico,
-    required this.itemCategoriaId,
   });
 }
 

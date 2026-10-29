@@ -201,7 +201,6 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
               lote.exclusivoMeEpp,
               est.exclusividadeMeEpp,
             ),
-            itemCategoriaId: lote.itemCategoriaId,
           ),
         );
       }
@@ -227,7 +226,6 @@ class _EditalImportCsvDialogState extends State<_EditalImportCsvDialog> {
               item.exclusivoMeEpp,
               est.exclusividadeMeEpp,
             ),
-            itemCategoriaId: item.itemCategoriaId,
           ),
         );
       }
