@@ -34,7 +34,6 @@ import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
-import '../domain/edital_itens_resumo.dart';
 import '../domain/edital_rules.dart';
 import '../services/edital_service.dart';
 import '../widgets/edital_import_csv_dialog.dart';
@@ -1403,7 +1402,10 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     final semCategoria = leilao
         ? _itens.where((item) => _categoriaDoItem(item) == null).length
         : 0;
-    final resumo = EditalItensResumo.calcular(_itens);
+    final valorTotal = _itens.fold(
+      0.0,
+      (soma, item) => soma + ((item['valorTotal'] as num?)?.toDouble() ?? 0),
+    );
     final colors = Theme.of(context).colorScheme;
     return SectionCard(
       title: 'Itens de Compra',
@@ -1419,7 +1421,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 ),
               ),
               child: Text(
-                'Total: ${formatBRL(resumo.valorTotal)}',
+                'Total: ${formatBRL(valorTotal)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -1458,7 +1460,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               'Itens importados da Estimativa ${estimativa.numero}/${estimativa.ano}',
             ),
           ),
-        if (_itens.isNotEmpty) _ItensResumoCard(resumo: resumo),
         if (semCategoria > 0)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -1629,99 +1630,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 }
 
 // ── Widgets auxiliares ─────────────────────────────────────────────────────
-
-/// Resumo dos itens de compra: quantidades, total e valor por benefício.
-class _ItensResumoCard extends StatelessWidget {
-  final EditalItensResumo resumo;
-  const _ItensResumoCard({required this.resumo});
-
-  String _comPercentual(double valor) =>
-      '${formatBRL(valor)} (${resumo.percentual(valor).toStringAsFixed(2)}%)';
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final avisos = [
-      if (resumo.semValor > 0) '${resumo.semValor} item(ns) sem valor',
-      if (resumo.sigilosos > 0)
-        '${resumo.sigilosos} item(ns) com orçamento sigiloso',
-    ];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colors.outlineVariant),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.summarize_outlined, size: 20, color: colors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${resumo.quantidadeItens} item(ns): '
-                    '${resumo.materiais} material(is), '
-                    '${resumo.servicos} serviço(s)',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ),
-                if (resumo.valorMeEpp > 0) ...[
-                  Text(
-                    'ME/EPP: ${_comPercentual(resumo.valorMeEpp)}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-                Text(
-                  'Total: ${formatBRL(resumo.valorTotal)}',
-                  style: TextStyle(color: colors.onSurfaceVariant),
-                ),
-              ],
-            ),
-            if (resumo.porBeneficio.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              for (final e in resumo.porBeneficio.entries)
-                Padding(
-                  padding: const EdgeInsets.only(left: 28, top: 2),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          kTipoBeneficio[e.key] ?? 'Benefício ${e.key}',
-                          style: textTheme.bodySmall,
-                        ),
-                      ),
-                      Text(
-                        '${e.value.itens} item(ns)  |  '
-                        '${_comPercentual(e.value.valor)}',
-                        style: textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-            if (avisos.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 28),
-                child: Text(
-                  avisos.join('  |  '),
-                  style: textTheme.bodySmall?.copyWith(color: colors.tertiary),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// Campo de seleção para Amparo Legal.
 class _AmparoLegalField extends StatelessWidget {
