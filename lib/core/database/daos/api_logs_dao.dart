@@ -8,33 +8,33 @@ class ApiLogsDao {
   ApiLogsDao(this._db);
 
   Future<List<ApiLog>> watchAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.timestamp DESC',
     );
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<ApiLog>> watchByEndpoint(String endpoint) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id WHERE a.endpoint = (?) ORDER BY a.timestamp DESC',
+      [endpoint],
     );
-    final result = await stmt.execute([endpoint]);
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<ApiLog>> watchByUser(int userId) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT a.*, u.nome AS user_name FROM api_logs a LEFT JOIN users u ON a.user_id = u.id WHERE a.user_id = (?) ORDER BY a.timestamp DESC',
+      [userId],
     );
-    final result = await stmt.execute([userId]);
     return result.rows.map((r) => ApiLog.fromMap(r.typedAssoc())).toList();
   }
 
   Future<ApiLog?> findById(int id) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM api_logs WHERE id = (?)',
+      [id],
     );
-    final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : ApiLog.fromMap(rows.first.typedAssoc());
   }
@@ -117,10 +117,10 @@ class ApiLogsDao {
     required String endpointContains,
     required Map<String, Object?> expected,
   }) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       "SELECT * FROM api_logs WHERE endpoint LIKE ? ORDER BY timestamp DESC, id DESC",
+      ['%$endpointContains%'],
     );
-    final result = await stmt.execute(['%$endpointContains%']);
 
     for (final row in result.rows) {
       final log = ApiLog.fromMap(row.typedAssoc());
@@ -153,19 +153,19 @@ class ApiLogsDao {
     String? statusProtocolo,
   }) async {
     final ts = (timestamp ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO api_logs (endpoint, request, response, status_code, user_id, timestamp, protocolo, status_protocolo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        endpoint,
+        request,
+        response,
+        statusCode,
+        userId,
+        ts,
+        protocolo,
+        statusProtocolo,
+      ],
     );
-    final result = await stmt.execute([
-      endpoint,
-      request,
-      response,
-      statusCode,
-      userId,
-      ts,
-      protocolo,
-      statusProtocolo,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -174,20 +174,22 @@ class ApiLogsDao {
     String statusProtocolo,
     String retornoStatus,
   ) async {
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE api_logs SET status_protocolo = ?, retorno_status = ? WHERE id = ?',
+      [statusProtocolo, retornoStatus, id],
     );
-    await stmt.execute([statusProtocolo, retornoStatus, id]);
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM api_logs WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'DELETE FROM api_logs WHERE id = ?',
+      [id],
+    );
     return result.affectedRows.toInt();
   }
 
   Future<int> clearAll() async {
-    final result = await _db.pool.execute('DELETE FROM api_logs');
+    final result = await _db.execute('DELETE FROM api_logs');
     return result.affectedRows.toInt();
   }
 }

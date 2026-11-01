@@ -1,6 +1,7 @@
 import 'package:mysql_client/mysql_client.dart';
 
 import 'db_config_helper.dart';
+import 'db_pool.dart';
 import 'database_service.dart';
 
 export 'models/user.dart';
@@ -21,13 +22,20 @@ DatabaseService openConnection() {
   final user = config?.get('MariaDB', 'User') ?? 'root';
   final password = config?.get('MariaDB', 'Password') ?? '';
 
-  final pool = MySQLConnectionPool(
-    host: host,
-    port: port,
-    userName: user,
-    password: password,
-    databaseName: dbName,
+  final pool = DbPool(
     maxConnections: 5,
+    connect: () async {
+      final conn = await MySQLConnection.createConnection(
+        host: host,
+        port: port,
+        userName: user,
+        password: password,
+        databaseName: dbName,
+        collation: 'utf8_general_ci',
+      );
+      await conn.connect(timeoutMs: 10000);
+      return conn;
+    },
   );
 
   return DatabaseService(pool);

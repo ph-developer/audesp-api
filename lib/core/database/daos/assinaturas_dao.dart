@@ -14,7 +14,7 @@ class AssinaturasDao {
   AssinaturasDao(this.db);
 
   Future<List<AssinaturaModel>> getAll() async {
-    final result = await db.pool.execute(
+    final result = await db.execute(
       'SELECT * FROM assinaturas_predefinidas ORDER BY nome ASC',
     );
     return result.rows.map((row) {
@@ -24,7 +24,7 @@ class AssinaturasDao {
   }
 
   Future<AssinaturaModel> insert(String nome, String cargo) async {
-    final result = await db.pool.execute(
+    final result = await db.execute(
       'INSERT INTO assinaturas_predefinidas (nome, cargo) VALUES (:nome, :cargo)',
       {'nome': nome, 'cargo': cargo},
     );
@@ -33,9 +33,8 @@ class AssinaturasDao {
   }
 
   Future<void> delete(int id) async {
-    await db.pool.execute(
-      'DELETE FROM assinaturas_predefinidas WHERE id = :id',
-      {'id': id},
-    );
+    await db.execute('DELETE FROM assinaturas_predefinidas WHERE id = :id', {
+      'id': id,
+    });
   }
 }

@@ -6,31 +6,33 @@ class AjustesDao {
   AjustesDao(this._db);
 
   Future<List<Ajuste>> watchAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM ajustes ORDER BY updated_at DESC',
     );
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Ajuste>> watchByEdital(int editalId) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM ajustes WHERE edital_id = (?) ORDER BY updated_at DESC',
+      [editalId],
     );
-    final result = await stmt.execute([editalId]);
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Ajuste>> watchByAta(int ataId) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM ajustes WHERE ata_id = (?) ORDER BY updated_at DESC',
+      [ataId],
     );
-    final result = await stmt.execute([ataId]);
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
   Future<Ajuste?> findById(int id) async {
-    final stmt = await _db.pool.prepare('SELECT * FROM ajustes WHERE id = (?)');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'SELECT * FROM ajustes WHERE id = (?)',
+      [id],
+    );
     final rows = result.rows;
     return rows.isEmpty ? null : Ajuste.fromMap(rows.first.typedAssoc());
   }
@@ -49,22 +51,22 @@ class AjustesDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO ajustes (edital_id, ata_id, municipio, entidade, codigo_edital, codigo_ata, codigo_contrato, retificacao, status, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        editalId,
+        ataId,
+        municipio,
+        entidade,
+        codigoEdital,
+        codigoAta,
+        codigoContrato,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      ataId,
-      municipio,
-      entidade,
-      codigoEdital,
-      codigoAta,
-      codigoContrato,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -83,36 +85,36 @@ class AjustesDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'UPDATE ajustes SET edital_id = ?, ata_id = ?, municipio = ?, entidade = ?, codigo_edital = ?, codigo_ata = ?, codigo_contrato = ?, retificacao = ?, status = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      [
+        editalId,
+        ataId,
+        municipio,
+        entidade,
+        codigoEdital,
+        codigoAta,
+        codigoContrato,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+        id,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      ataId,
-      municipio,
-      entidade,
-      codigoEdital,
-      codigoAta,
-      codigoContrato,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-      id,
-    ]);
     return result.affectedRows.toInt() > 0;
   }
 
   Future<List<Ajuste>> watchByStatus(String status) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM ajustes WHERE status = (?) ORDER BY updated_at DESC',
+      [status],
     );
-    final result = await stmt.execute([status]);
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Ajuste>> getAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM ajustes ORDER BY updated_at DESC',
     );
     return result.rows.map((r) => Ajuste.fromMap(r.typedAssoc())).toList();
@@ -120,23 +122,25 @@ class AjustesDao {
 
   Future<void> markAsSent(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE ajustes SET status = ?, updated_at = ? WHERE id = ?',
+      ['sent', now, id],
     );
-    await stmt.execute(['sent', now, id]);
   }
 
   Future<void> markAsDraft(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE ajustes SET status = ?, updated_at = ? WHERE id = ?',
+      ['draft', now, id],
     );
-    await stmt.execute(['draft', now, id]);
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM ajustes WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'DELETE FROM ajustes WHERE id = ?',
+      [id],
+    );
     return result.affectedRows.toInt();
   }
 }

@@ -1,10 +1,34 @@
 import 'dart:convert';
 import 'package:mysql_client/mysql_client.dart';
 
-class DatabaseService {
-  final MySQLConnectionPool pool;
+import 'db_pool.dart';
 
-  DatabaseService(this.pool);
+class DatabaseService {
+  final DbPool _pool;
+
+  DatabaseService(this._pool);
+
+  Future<IResultSet> execute(String sql, [Map<String, dynamic>? params]) =>
+      _pool.use((conn) => conn.execute(sql, params));
+
+  /// Prepara, executa e sempre libera o statement. O servidor só descarta
+  /// statements abertos com a conexão, e o limite deles é global na instância.
+  Future<IResultSet> executePrepared(String sql, List<Object?> params) {
+    // O driver não conclui o prepare de um comando sem parâmetros nem colunas.
+    if (params.isEmpty) return execute(sql);
+    return _pool.use((conn) async {
+      final stmt = await conn.prepare(sql);
+      try {
+        return await stmt.execute(params);
+      } finally {
+        try {
+          await stmt.deallocate();
+        } catch (_) {
+          // Sem conexão, o servidor já descartou o statement.
+        }
+      }
+    });
+  }
 
   Future<void> initialize() async {
     await _createSchemaTable();
@@ -13,24 +37,23 @@ class DatabaseService {
   }
 
   Future<int> get schemaVersion async {
-    final result = await pool.execute('SELECT version FROM __schema');
+    final result = await execute('SELECT version FROM __schema');
     return result.rows.first.typedAssoc()['version'] as int;
   }
 
   Future<void> setSchemaVersion(int version) async {
-    final stmt = await pool.prepare('UPDATE __schema SET version = (?)');
-    await stmt.execute([version]);
+    await executePrepared('UPDATE __schema SET version = (?)', [version]);
   }
 
   Future<void> _createSchemaTable() async {
-    await pool.execute(
+    await execute(
       'CREATE TABLE IF NOT EXISTS __schema ('
       'version INTEGER NOT NULL DEFAULT 0'
       ')',
     );
-    final count = await pool.execute('SELECT COUNT(*) FROM __schema');
+    final count = await execute('SELECT COUNT(*) FROM __schema');
     if (count.rows.first.typedAssoc()['COUNT(*)'] as int == 0) {
-      await pool.execute('INSERT INTO __schema (version) VALUES (0)');
+      await execute('INSERT INTO __schema (version) VALUES (0)');
     }
   }
 
@@ -38,7 +61,7 @@ class DatabaseService {
     final version = await schemaVersion;
 
     if (version < 1) {
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS users (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           nome TEXT NOT NULL,
@@ -50,7 +73,7 @@ class DatabaseService {
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS editais (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           municipio TEXT NOT NULL,
@@ -66,7 +89,7 @@ class DatabaseService {
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS licitacoes (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           edital_id BIGINT NOT NULL,
@@ -82,7 +105,7 @@ class DatabaseService {
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS atas (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           edital_id BIGINT NOT NULL,
@@ -99,7 +122,7 @@ class DatabaseService {
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS ajustes (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           edital_id BIGINT NULL,
@@ -119,14 +142,14 @@ class DatabaseService {
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS app_settings (
           `key` VARCHAR(255) NOT NULL PRIMARY KEY,
           `value` TEXT NOT NULL
         )
       ''');
 
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS api_logs (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           endpoint TEXT NOT NULL,
@@ -148,13 +171,13 @@ class DatabaseService {
 
     if (version < 3) {
       try {
-        await pool.execute(
+        await execute(
           'ALTER TABLE api_logs ADD COLUMN protocolo VARCHAR(255) NULL',
         );
-        await pool.execute(
+        await execute(
           'ALTER TABLE api_logs ADD COLUMN status_protocolo VARCHAR(255) NULL',
         );
-        await pool.execute(
+        await execute(
           'ALTER TABLE api_logs ADD COLUMN retorno_status LONGTEXT NULL',
         );
       } catch (_) {}
@@ -162,7 +185,7 @@ class DatabaseService {
     }
 
     if (version < 4) {
-      final result = await pool.execute(
+      final result = await execute(
         'SELECT id, response FROM api_logs WHERE response IS NOT NULL AND status_code >= 200 AND status_code < 300 AND protocolo IS NULL',
       );
       for (final row in result.rows) {
@@ -174,10 +197,10 @@ class DatabaseService {
           if (json is Map<String, dynamic> && json.containsKey('protocolo')) {
             final protocolo = json['protocolo']?.toString();
             if (protocolo != null && protocolo.isNotEmpty) {
-              final stmt = await pool.prepare(
+              await executePrepared(
                 'UPDATE api_logs SET protocolo = ?, status_protocolo = ? WHERE id = ?',
+                [protocolo, 'Pendente', id],
               );
-              await stmt.execute([protocolo, 'Pendente', id]);
             }
           }
         } catch (_) {}
@@ -187,17 +210,17 @@ class DatabaseService {
 
     if (version < 5) {
       try {
-        await pool.execute(
+        await execute(
           'ALTER TABLE users ADD COLUMN is_admin TINYINT NOT NULL DEFAULT 0',
         );
-        await pool.execute(
+        await execute(
           'ALTER TABLE users ADD COLUMN permissions INT NOT NULL DEFAULT 0',
         );
 
-        final countResult = await pool.execute('SELECT COUNT(*) FROM users');
+        final countResult = await execute('SELECT COUNT(*) FROM users');
         if ((countResult.rows.first.typedAssoc()['COUNT(*)'] as int) == 0) {
           final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-          await pool.execute(
+          await execute(
             'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) '
             'VALUES (:nome, :email, NULL, 1, 0, :created_at)',
             {
@@ -212,7 +235,7 @@ class DatabaseService {
     }
 
     if (version < 6) {
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS estimativas (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           numero INT NOT NULL,
@@ -227,7 +250,7 @@ class DatabaseService {
     }
 
     if (version < 7) {
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS assinaturas_predefinidas (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           nome TEXT NOT NULL,
@@ -239,7 +262,7 @@ class DatabaseService {
     }
 
     if (version < 8) {
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS xsd_comissao (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           cpf TEXT NOT NULL,
@@ -250,7 +273,7 @@ class DatabaseService {
           created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
         )
       ''');
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS xsd_licitacao_logs (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           licitacao_id BIGINT NOT NULL,
@@ -262,7 +285,7 @@ class DatabaseService {
     }
 
     if (version < 9) {
-      await pool.execute('''
+      await execute('''
         CREATE TABLE IF NOT EXISTS xsd_licitacao_profiles (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           licitacao_id BIGINT NOT NULL,
@@ -285,14 +308,14 @@ class DatabaseService {
         'validation_success': 'TINYINT NOT NULL DEFAULT 0',
       };
       for (final entry in columns.entries) {
-        final found = await pool.execute(
+        final found = await execute(
           "SELECT COUNT(*) AS c FROM information_schema.columns "
           "WHERE table_schema = (SELECT DATABASE()) "
           "AND table_name = 'xsd_licitacao_logs' AND column_name = :column",
           {'column': entry.key},
         );
         if (found.rows.first.typedAssoc()['c'] == 0) {
-          await pool.execute(
+          await execute(
             'ALTER TABLE xsd_licitacao_logs ADD COLUMN `${entry.key}` ${entry.value}',
           );
         }
@@ -301,20 +324,20 @@ class DatabaseService {
     }
 
     if (version < 10) {
-      await pool.execute('DROP TABLE IF EXISTS xsd_licitacao_profiles');
-      await pool.execute('DROP TABLE IF EXISTS xsd_licitacao_logs');
-      await pool.execute('DROP TABLE IF EXISTS xsd_comissao');
+      await execute('DROP TABLE IF EXISTS xsd_licitacao_profiles');
+      await execute('DROP TABLE IF EXISTS xsd_licitacao_logs');
+      await execute('DROP TABLE IF EXISTS xsd_comissao');
       await setSchemaVersion(10);
     }
 
     if (version < 11) {
-      final found = await pool.execute(
+      final found = await execute(
         "SELECT COUNT(*) AS c FROM information_schema.columns "
         "WHERE table_schema = (SELECT DATABASE()) "
         "AND table_name = 'editais' AND column_name = 'sem_pncp'",
       );
       if (found.rows.first.typedAssoc()['c'] == 0) {
-        await pool.execute(
+        await execute(
           'ALTER TABLE editais ADD COLUMN sem_pncp TINYINT NOT NULL DEFAULT 0',
         );
       }
@@ -322,39 +345,39 @@ class DatabaseService {
     }
 
     if (version < 12) {
-      final found = await pool.execute(
+      final found = await execute(
         "SELECT IS_NULLABLE FROM information_schema.columns "
         "WHERE table_schema = (SELECT DATABASE()) "
         "AND table_name = 'ajustes' AND column_name = 'edital_id'",
       );
       if (found.rows.first.typedAssoc()['IS_NULLABLE'] == 'NO') {
-        await pool.execute('ALTER TABLE ajustes MODIFY edital_id BIGINT NULL');
+        await execute('ALTER TABLE ajustes MODIFY edital_id BIGINT NULL');
       }
       await setSchemaVersion(12);
     }
 
     if (version < 13) {
-      final statusFound = await pool.execute(
+      final statusFound = await execute(
         "SELECT COUNT(*) AS c FROM information_schema.columns "
         "WHERE table_schema = (SELECT DATABASE()) "
         "AND table_name = 'estimativas' AND column_name = 'status'",
       );
       if (statusFound.rows.first.typedAssoc()['c'] == 0) {
-        await pool.execute(
+        await execute(
           "ALTER TABLE estimativas ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'rascunho'",
         );
-        // Preserva a importação das estimativas anteriores à introdução do estado.
-        await pool.execute("UPDATE estimativas SET status = 'finalizada'");
+        // Preserva a importaÃ§Ã£o das estimativas anteriores Ã  introduÃ§Ã£o do estado.
+        await execute("UPDATE estimativas SET status = 'finalizada'");
       }
 
-      final estimativaFound = await pool.execute(
+      final estimativaFound = await execute(
         "SELECT COUNT(*) AS c FROM information_schema.columns "
         "WHERE table_schema = (SELECT DATABASE()) "
         "AND table_name = 'editais' AND column_name = 'estimativa_id'",
       );
       if (estimativaFound.rows.first.typedAssoc()['c'] == 0) {
-        // Sem FK: a origem pode ser excluída sem alterar os itens importados.
-        await pool.execute(
+        // Sem FK: a origem pode ser excluÃ­da sem alterar os itens importados.
+        await execute(
           'ALTER TABLE editais ADD COLUMN estimativa_id BIGINT NULL',
         );
       }
@@ -363,8 +386,8 @@ class DatabaseService {
 
     if (version < 14) {
       // Compras publicadas no PNCP pelo CNPJ configurado, para cobrar as
-      // que ainda não têm edital no sistema.
-      await pool.execute('''
+      // que ainda nÃ£o tÃªm edital no sistema.
+      await execute('''
         CREATE TABLE IF NOT EXISTS pncp_compras (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
           cnpj VARCHAR(14) NOT NULL,
@@ -391,19 +414,17 @@ class DatabaseService {
   }
 
   Future<void> _ensureUniqueIndexes() async {
-    final result = await pool.execute(
+    final result = await execute(
       "SELECT COUNT(*) AS c FROM information_schema.statistics "
       "WHERE table_schema = (SELECT DATABASE()) "
       "AND table_name = 'users' AND index_name = 'idx_users_email'",
     );
     if (result.rows.first.typedAssoc()['c'] == 0) {
-      await pool.execute(
-        'CREATE UNIQUE INDEX idx_users_email ON users(email(255))',
-      );
+      await execute('CREATE UNIQUE INDEX idx_users_email ON users(email(255))');
     }
   }
 
   Future<void> close() async {
-    await pool.close();
+    await _pool.close();
   }
 }

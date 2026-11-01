@@ -6,19 +6,21 @@ class UsersDao {
   UsersDao(this._db);
 
   Future<List<User>> watchAll() async {
-    final result = await _db.pool.execute('SELECT * FROM users');
+    final result = await _db.execute('SELECT * FROM users');
     return result.rows.map((r) => User.fromMap(r.typedAssoc())).toList();
   }
 
   Future<User?> findById(int id) async {
-    final stmt = await _db.pool.prepare('SELECT * FROM users WHERE id = (?)');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'SELECT * FROM users WHERE id = (?)',
+      [id],
+    );
     final rows = result.rows;
     return rows.isEmpty ? null : User.fromMap(rows.first.typedAssoc());
   }
 
   Future<User?> findByEmail(String email) async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM users WHERE email = :email',
       {'email': email},
     );
@@ -27,7 +29,7 @@ class UsersDao {
   }
 
   Future<int> countUsers() async {
-    final result = await _db.pool.execute('SELECT COUNT(*) FROM users');
+    final result = await _db.execute('SELECT COUNT(*) FROM users');
     return result.rows.first.typedAssoc()['COUNT(*)'] as int;
   }
 
@@ -40,17 +42,10 @@ class UsersDao {
     DateTime? createdAt,
   }) async {
     final now = (createdAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO users (nome, email, password_hash, is_admin, permissions, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [nome, email, passwordHash, isAdmin ? 1 : 0, permissions, now],
     );
-    final result = await stmt.execute([
-      nome,
-      email,
-      passwordHash,
-      isAdmin ? 1 : 0,
-      permissions,
-      now,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -61,29 +56,24 @@ class UsersDao {
     required bool isAdmin,
     required int permissions,
   }) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'UPDATE users SET nome = ?, email = ?, is_admin = ?, permissions = ? WHERE id = ?',
+      [nome, email, isAdmin ? 1 : 0, permissions, id],
     );
-    final result = await stmt.execute([
-      nome,
-      email,
-      isAdmin ? 1 : 0,
-      permissions,
-      id,
-    ]);
     return result.affectedRows.toInt() > 0;
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM users WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared('DELETE FROM users WHERE id = ?', [
+      id,
+    ]);
     return result.affectedRows.toInt();
   }
 
   Future<void> setPasswordHash(int userId, String hash) async {
-    await _db.pool.execute(
-      'UPDATE users SET password_hash = :hash WHERE id = :id',
-      {'hash': hash, 'id': userId},
-    );
+    await _db.execute('UPDATE users SET password_hash = :hash WHERE id = :id', {
+      'hash': hash,
+      'id': userId,
+    });
   }
 }

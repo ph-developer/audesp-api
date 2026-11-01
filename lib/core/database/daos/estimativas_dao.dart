@@ -7,7 +7,7 @@ class EstimativasDao {
   EstimativasDao(this._db);
 
   Future<List<EstimativaModel>> watchAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM estimativas ORDER BY ano DESC, numero DESC',
     );
     return result.rows.map((r) {
@@ -40,7 +40,7 @@ class EstimativasDao {
 
   /// Só as colunas, sem o documento: itens, lotes e fornecedores vêm vazios.
   Future<List<EstimativaModel>> listResumo() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT id, numero, ano, objeto, status, created_at, updated_at '
       'FROM estimativas ORDER BY ano DESC, numero DESC',
     );
@@ -59,10 +59,10 @@ class EstimativasDao {
   }
 
   Future<EstimativaModel?> findById(int id) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM estimativas WHERE id = (?)',
+      [id],
     );
-    final result = await stmt.execute([id]);
     final rows = result.rows;
     if (rows.isEmpty) return null;
 
@@ -91,10 +91,10 @@ class EstimativasDao {
   }
 
   Future<int> getNextNumero(int ano) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT MAX(numero) as max_num FROM estimativas WHERE ano = ?',
+      [ano],
     );
-    final result = await stmt.execute([ano]);
     final rows = result.rows;
     if (rows.isEmpty || rows.first.typedAssoc()['max_num'] == null) {
       return 1;
@@ -123,18 +123,18 @@ class EstimativasDao {
     );
     final jsonStr = jsonEncode(estimativaToSave.toMap());
 
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO estimativas (numero, ano, objeto, status, documento_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [
+        numero,
+        ano,
+        estimativaToSave.objeto,
+        EstimativaStatus.rascunho,
+        jsonStr,
+        now,
+        now,
+      ],
     );
-    final result = await stmt.execute([
-      numero,
-      ano,
-      estimativaToSave.objeto,
-      EstimativaStatus.rascunho,
-      jsonStr,
-      now,
-      now,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -143,46 +143,48 @@ class EstimativasDao {
     final estimativaToSave = estimativa.copyWith(updatedAt: now);
     final jsonStr = jsonEncode(estimativaToSave.toMap());
 
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'UPDATE estimativas SET numero = ?, ano = ?, objeto = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      [
+        estimativaToSave.numero,
+        estimativaToSave.ano,
+        estimativaToSave.objeto,
+        jsonStr,
+        now,
+        estimativa.id,
+      ],
     );
-    final result = await stmt.execute([
-      estimativaToSave.numero,
-      estimativaToSave.ano,
-      estimativaToSave.objeto,
-      jsonStr,
-      now,
-      estimativa.id,
-    ]);
     return result.affectedRows.toInt() > 0;
   }
 
   Future<void> setStatus(int id, String status) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE estimativas SET status = ?, updated_at = ? WHERE id = ?',
+      [status, now, id],
     );
-    await stmt.execute([status, now, id]);
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM estimativas WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'DELETE FROM estimativas WHERE id = ?',
+      [id],
+    );
     return result.affectedRows.toInt();
   }
 
   Future<bool> checkNumeroExists(int numero, int ano, {int? excludeId}) async {
     if (excludeId != null && excludeId > 0) {
-      final stmt = await _db.pool.prepare(
+      final result = await _db.executePrepared(
         'SELECT 1 FROM estimativas WHERE numero = ? AND ano = ? AND id != ? LIMIT 1',
+        [numero, ano, excludeId],
       );
-      final result = await stmt.execute([numero, ano, excludeId]);
       return result.rows.isNotEmpty;
     } else {
-      final stmt = await _db.pool.prepare(
+      final result = await _db.executePrepared(
         'SELECT 1 FROM estimativas WHERE numero = ? AND ano = ? LIMIT 1',
+        [numero, ano],
       );
-      final result = await stmt.execute([numero, ano]);
       return result.rows.isNotEmpty;
     }
   }

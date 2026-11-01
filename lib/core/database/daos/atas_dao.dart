@@ -6,31 +6,33 @@ class AtasDao {
   AtasDao(this._db);
 
   Future<List<Ata>> watchAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM atas ORDER BY updated_at DESC',
     );
     return result.rows.map((r) => Ata.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Ata>> watchByStatus(String status) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM atas WHERE status = (?) ORDER BY updated_at DESC',
+      [status],
     );
-    final result = await stmt.execute([status]);
     return result.rows.map((r) => Ata.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Ata>> watchByEdital(int editalId) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM atas WHERE edital_id = (?) ORDER BY updated_at DESC',
+      [editalId],
     );
-    final result = await stmt.execute([editalId]);
     return result.rows.map((r) => Ata.fromMap(r.typedAssoc())).toList();
   }
 
   Future<Ata?> findById(int id) async {
-    final stmt = await _db.pool.prepare('SELECT * FROM atas WHERE id = (?)');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'SELECT * FROM atas WHERE id = (?)',
+      [id],
+    );
     final rows = result.rows;
     return rows.isEmpty ? null : Ata.fromMap(rows.first.typedAssoc());
   }
@@ -40,10 +42,10 @@ class AtasDao {
     String entidade,
     String codigoAta,
   ) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM atas WHERE municipio = (?) AND entidade = (?) AND codigo_ata = (?)',
+      [municipio, entidade, codigoAta],
     );
-    final result = await stmt.execute([municipio, entidade, codigoAta]);
     final rows = result.rows;
     return rows.isEmpty ? null : Ata.fromMap(rows.first.typedAssoc());
   }
@@ -60,20 +62,20 @@ class AtasDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO atas (edital_id, municipio, entidade, codigo_edital, codigo_ata, retificacao, status, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        editalId,
+        municipio,
+        entidade,
+        codigoEdital,
+        codigoAta,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      municipio,
-      entidade,
-      codigoEdital,
-      codigoAta,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -90,43 +92,44 @@ class AtasDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'UPDATE atas SET edital_id = ?, municipio = ?, entidade = ?, codigo_edital = ?, codigo_ata = ?, retificacao = ?, status = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      [
+        editalId,
+        municipio,
+        entidade,
+        codigoEdital,
+        codigoAta,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+        id,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      municipio,
-      entidade,
-      codigoEdital,
-      codigoAta,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-      id,
-    ]);
     return result.affectedRows.toInt() > 0;
   }
 
   Future<void> markAsSent(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE atas SET status = ?, updated_at = ? WHERE id = ?',
+      ['sent', now, id],
     );
-    await stmt.execute(['sent', now, id]);
   }
 
   Future<void> markAsDraft(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE atas SET status = ?, updated_at = ? WHERE id = ?',
+      ['draft', now, id],
     );
-    await stmt.execute(['draft', now, id]);
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM atas WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared('DELETE FROM atas WHERE id = ?', [
+      id,
+    ]);
     return result.affectedRows.toInt();
   }
 }

@@ -32,6 +32,8 @@ flutter analyze                    # lint (uses flutter_lints)
 
 - Schema **auto-creates** on first `DatabaseService.initialize()` with versioning via `__schema` table (current: v14); migrations are the `if (version < N)` blocks in `database_service.dart`
 - Tables: `users`, `editais`, `licitacoes`, `atas`, `ajustes`, `app_settings`, `api_logs`, `estimativas`, `assinaturas_predefinidas`, `xsd_comissao`, `xsd_licitacao_logs`, `xsd_licitacao_profiles`, `pncp_compras`
+- **Access:** DAOs use `DatabaseService.execute` (no parameters, or client-side named parameters) and `DatabaseService.executePrepared` (server-side binding; always deallocates). Never prepare a statement elsewhere: open statements only die with the connection, `max_prepared_stmt_count` is global to the MySQL instance, and a leak here takes down the other systems on that server.
+- **Pool:** `DbPool` (`db_pool.dart`) replaces the driver's `MySQLConnectionPool`, which exceeds `maxConnections` in bursts, freezes the isolate when no connection is idle (`pool.dart` `Future.doWhile`) and loses the connection when a `withConnection` callback throws. `DbPool.use` holds a connection exclusively, so a callback must not call `DatabaseService` again.
 - Timestamps are **Unix epoch seconds** stored as `BIGINT`
 - `documento_json` stored as `LONGTEXT` (raw JSON string)
 - `app_settings` is a key-value store (`SettingsKeys` constants in `app_settings_dao.dart`)
@@ -68,6 +70,7 @@ flutter analyze                    # lint (uses flutter_lints)
 
 - Tests under `test/` mirror `lib/` (domain rules, CSV parsers/mappers, services, models, some shared widgets).
 - CSV tests use `flutter_test` with inline byte fixtures (`utf8.encode`, `latin1.encode`); `CsvParseException` from `csv_utils.dart` is expected in error cases.
+- Database tests run the real driver against `test/support/fake_mysql_server.dart`, a local socket server that counts statements and connections; no MySQL is needed.
 - Prefer extracting business rules into pure functions in `domain/` and testing them there; widget tests are only used for shared widgets and import dialogs.
 
 ## Gotchas

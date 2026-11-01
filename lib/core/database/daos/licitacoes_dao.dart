@@ -6,33 +6,33 @@ class LicitacoesDao {
   LicitacoesDao(this._db);
 
   Future<List<Licitacao>> watchAll() async {
-    final result = await _db.pool.execute(
+    final result = await _db.execute(
       'SELECT * FROM licitacoes ORDER BY updated_at DESC',
     );
     return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Licitacao>> watchByStatus(String status) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM licitacoes WHERE status = (?) ORDER BY updated_at DESC',
+      [status],
     );
-    final result = await stmt.execute([status]);
     return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
   Future<List<Licitacao>> watchByEdital(int editalId) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM licitacoes WHERE edital_id = (?) ORDER BY updated_at DESC',
+      [editalId],
     );
-    final result = await stmt.execute([editalId]);
     return result.rows.map((r) => Licitacao.fromMap(r.typedAssoc())).toList();
   }
 
   Future<Licitacao?> findById(int id) async {
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'SELECT * FROM licitacoes WHERE id = (?)',
+      [id],
     );
-    final result = await stmt.execute([id]);
     final rows = result.rows;
     return rows.isEmpty ? null : Licitacao.fromMap(rows.first.typedAssoc());
   }
@@ -48,19 +48,19 @@ class LicitacoesDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'INSERT INTO licitacoes (edital_id, municipio, entidade, codigo_edital, retificacao, status, documento_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        editalId,
+        municipio,
+        entidade,
+        codigoEdital,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      municipio,
-      entidade,
-      codigoEdital,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-    ]);
     return result.lastInsertID.toInt();
   }
 
@@ -76,50 +76,52 @@ class LicitacoesDao {
     DateTime? updatedAt,
   }) async {
     final now = (updatedAt ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    final result = await _db.executePrepared(
       'UPDATE licitacoes SET edital_id = ?, municipio = ?, entidade = ?, codigo_edital = ?, retificacao = ?, status = ?, documento_json = ?, updated_at = ? WHERE id = ?',
+      [
+        editalId,
+        municipio,
+        entidade,
+        codigoEdital,
+        retificacao ? 1 : 0,
+        status,
+        documentoJson,
+        now,
+        id,
+      ],
     );
-    final result = await stmt.execute([
-      editalId,
-      municipio,
-      entidade,
-      codigoEdital,
-      retificacao ? 1 : 0,
-      status,
-      documentoJson,
-      now,
-      id,
-    ]);
     return result.affectedRows.toInt() > 0;
   }
 
   Future<void> markAsSent(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE licitacoes SET status = ?, updated_at = ? WHERE id = ?',
+      ['sent', now, id],
     );
-    await stmt.execute(['sent', now, id]);
   }
 
   Future<void> markAsDraft(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE licitacoes SET status = ?, updated_at = ? WHERE id = ?',
+      ['draft', now, id],
     );
-    await stmt.execute(['draft', now, id]);
   }
 
   Future<void> updateJson(int id, String json) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final stmt = await _db.pool.prepare(
+    await _db.executePrepared(
       'UPDATE licitacoes SET documento_json = ?, updated_at = ? WHERE id = ?',
+      [json, now, id],
     );
-    await stmt.execute([json, now, id]);
   }
 
   Future<int> deleteById(int id) async {
-    final stmt = await _db.pool.prepare('DELETE FROM licitacoes WHERE id = ?');
-    final result = await stmt.execute([id]);
+    final result = await _db.executePrepared(
+      'DELETE FROM licitacoes WHERE id = ?',
+      [id],
+    );
     return result.affectedRows.toInt();
   }
 }
