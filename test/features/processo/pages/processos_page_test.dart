@@ -596,4 +596,37 @@ void main() {
     expect(titulo, findsOneWidget);
     expect(find.text('Iniciar edital'), findsNothing);
   });
+
+  testWidgets('edital oculto sai da lista e ainda casa com o PNCP', (
+    tester,
+  ) async {
+    final compra = PncpCompra.fromApi(compraPncpJson(sequencial: 5));
+    await _pumpPage(
+      tester,
+      processos: [
+        processoFixture(id: 1),
+        processoFixture(id: 2, oculto: true, codigo: compra.numeroControle),
+      ],
+      comprasPncp: [compra],
+    );
+    // Sem pendência: nem o processo oculto nem a compra do PNCP dele.
+    expect(_chip(2, 'licitacao'), findsNothing);
+    expect(find.textContaining('No PNCP'), findsNothing);
+    expect(find.byKey(const ValueKey('processo-1-ocultar')), findsOneWidget);
+
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+    final grupo = find.text('Editais ocultos (1)');
+    expect(grupo, findsOneWidget);
+    expect(_chip(2, 'licitacao'), findsNothing);
+
+    await tester.tap(grupo);
+    await tester.pumpAndSettle();
+    expect(_chip(2, 'licitacao'), findsOneWidget);
+    expect(
+      find.textContaining('Oculto em 29/10/2026: Lançado pelo sistema antigo'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('processo-2-reexibir')), findsOneWidget);
+  });
 }

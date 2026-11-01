@@ -411,6 +411,29 @@ class DatabaseService {
       ''');
       await setSchemaVersion(14);
     }
+
+    if (version < 15) {
+      // Editais ocultos em Processos (ex.: já lançados por outro sistema).
+      const columns = {
+        'oculto_em': 'BIGINT NULL',
+        'oculto_por': 'BIGINT NULL',
+        'motivo_ocultacao': 'VARCHAR(500) NULL',
+      };
+      for (final entry in columns.entries) {
+        final found = await execute(
+          "SELECT COUNT(*) AS c FROM information_schema.columns "
+          "WHERE table_schema = (SELECT DATABASE()) "
+          "AND table_name = 'editais' AND column_name = :column",
+          {'column': entry.key},
+        );
+        if (found.rows.first.typedAssoc()['c'] == 0) {
+          await execute(
+            'ALTER TABLE editais ADD COLUMN `${entry.key}` ${entry.value}',
+          );
+        }
+      }
+      await setSchemaVersion(15);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

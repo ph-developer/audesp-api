@@ -15,6 +15,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../auth/auth_providers.dart';
+import '../../edital/widgets/edital_ocultacao.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../pncp/domain/pncp_pendencias.dart';
 import '../../pncp/pncp_providers.dart';
@@ -180,16 +181,25 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                         comprasPncp,
                         editais,
                       ).where(buscaCompra).toList();
+                bool busca(Processo processo) => matchesLikeSearch(
+                  _searchableEditalText(processo.edital),
+                  _searchCtrl.text,
+                );
                 final filtered = processos.where((processo) {
-                  return (!_minhasPendencias ||
+                  return !processo.edital.oculto &&
+                      (!_minhasPendencias ||
                           editaisComPendencia.contains(processo.edital.id)) &&
-                      matchesLikeSearch(
-                        _searchableEditalText(processo.edital),
-                        _searchCtrl.text,
-                      );
+                      busca(processo);
                 }).toList();
+                // Os ocultos continuam em [editais] para casar com o PNCP.
+                final ocultos = _minhasPendencias
+                    ? const <Processo>[]
+                    : processos
+                          .where((p) => p.edital.oculto && busca(p))
+                          .toList();
 
                 if (filtered.isEmpty &&
+                    ocultos.isEmpty &&
                     pncpPendentes.isEmpty &&
                     pncpDispensadas.isEmpty) {
                   return _minhasPendencias
@@ -248,7 +258,27 @@ class _ProcessosPageState extends ConsumerState<ProcessosPage> {
                       texto: 'Processos',
                     ),
                   for (final processo in filtered)
-                    _ProcessoCard(processo: processo, user: user, ufesp: ufesp),
+                    _ProcessoCard(
+                      processo: processo,
+                      user: user,
+                      ufesp: ufesp,
+                      podeOcultar: podeEdital,
+                    ),
+                  if (ocultos.isNotEmpty)
+                    ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: const Icon(Icons.visibility_off_outlined),
+                      title: Text('Editais ocultos (${ocultos.length})'),
+                      children: [
+                        for (final processo in ocultos)
+                          _ProcessoCard(
+                            processo: processo,
+                            user: user,
+                            ufesp: ufesp,
+                            podeOcultar: podeEdital,
+                          ),
+                      ],
+                    ),
                 ];
 
                 // Os cards já trazem o espaçamento inferior.
@@ -324,19 +354,21 @@ class _TituloGrupo extends StatelessWidget {
   }
 }
 
-class _ProcessoCard extends StatelessWidget {
+class _ProcessoCard extends ConsumerWidget {
   final Processo processo;
   final User user;
   final UfespConfig ufesp;
+  final bool podeOcultar;
 
   const _ProcessoCard({
     required this.processo,
     required this.user,
     required this.ufesp,
+    this.podeOcultar = false,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final edital = processo.edital;
     final estimativa = processo.estimativa;
     final etapas = ProcessoEtapas.de(processo, user);
@@ -344,10 +376,28 @@ class _ProcessoCard extends StatelessWidget {
     final colors = theme.colorScheme;
 
     return DocumentCard(
-      icon: Icons.account_tree_outlined,
+      icon: edital.oculto
+          ? Icons.visibility_off_outlined
+          : Icons.account_tree_outlined,
       iconBackgroundColor: colors.surfaceContainerHighest,
       iconColor: colors.onSurfaceVariant,
       title: _tituloEdital(edital),
+      actions: [
+        if (podeOcultar)
+          edital.oculto
+              ? TextButton.icon(
+                  key: ValueKey('processo-${edital.id}-reexibir'),
+                  onPressed: () => reexibirEdital(context, ref, edital),
+                  icon: const Icon(Icons.visibility_outlined),
+                  label: const Text('Reexibir'),
+                )
+              : AudespIconButton(
+                  key: ValueKey('processo-${edital.id}-ocultar'),
+                  icon: Icons.visibility_off_outlined,
+                  tooltip: 'Ocultar edital',
+                  onPressed: () => ocultarEdital(context, ref, edital),
+                ),
+      ],
       chips: [
         UfespIndicador(valorEstimado: edital.valorTotalEstimado, config: ufesp),
       ],
@@ -363,6 +413,14 @@ class _ProcessoCard extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurface.withAlpha(140),
               ),
+            ),
+          ],
+          if (edital.oculto) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Oculto em ${DateFormat('dd/MM/yyyy').format(edital.ocultoEm!)}'
+              '${edital.motivoOcultacao == null ? '' : ': ${edital.motivoOcultacao}'}',
+              style: theme.textTheme.bodySmall,
             ),
           ],
           const SizedBox(height: 8),

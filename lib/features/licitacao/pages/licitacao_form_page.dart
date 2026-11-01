@@ -133,9 +133,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   }
 
   Future<void> _init() async {
-    // Carrega editais disponíveis
+    // Carrega editais disponíveis; os ocultos só entram quando já vinculados.
     final editaisDao = ref.read(editaisDaoProvider);
-    _editais = await editaisDao.watchAll();
+    _editais = (await editaisDao.watchAll()).where((e) => !e.oculto).toList();
 
     await _selectPreselectedEdital(widget.preselectedEditalId);
 
@@ -193,7 +193,16 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _loadedId = licitacao.id;
     _isSent = licitacao.status == 'sent';
     _editalId = licitacao.editalId;
-    if (!_isSelectedEditalAvailable) _editalId = null;
+    if (!_isSelectedEditalAvailable) {
+      final vinculado = await ref
+          .read(editaisDaoProvider)
+          .findById(licitacao.editalId);
+      if (vinculado != null) {
+        _editais = [..._editais, vinculado];
+      } else {
+        _editalId = null;
+      }
+    }
 
     Map<String, dynamic> doc = {};
     try {

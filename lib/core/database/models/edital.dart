@@ -16,6 +16,11 @@ class Edital {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Oculto em Processos (ex.: já lançado na AUDESP por outro sistema).
+  final DateTime? ocultoEm;
+  final int? ocultoPor;
+  final String? motivoOcultacao;
+
   const Edital({
     required this.id,
     this.estimativaId,
@@ -29,6 +34,9 @@ class Edital {
     required this.documentoJson,
     required this.createdAt,
     required this.updatedAt,
+    this.ocultoEm,
+    this.ocultoPor,
+    this.motivoOcultacao,
   });
 
   factory Edital.fromMap(Map<String, dynamic> row) => Edital(
@@ -48,7 +56,14 @@ class Edital {
     updatedAt: DateTime.fromMillisecondsSinceEpoch(
       (row['updated_at'] as int) * 1000,
     ),
+    ocultoEm: row['oculto_em'] == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch((row['oculto_em'] as int) * 1000),
+    ocultoPor: row['oculto_por'] as int?,
+    motivoOcultacao: row['motivo_ocultacao'] as String?,
   );
+
+  bool get oculto => ocultoEm != null;
 
   String get dropdownLabel {
     try {
@@ -125,5 +140,10 @@ class Edital {
     'documento_json': documentoJson,
     'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
     'updated_at': updatedAt.millisecondsSinceEpoch ~/ 1000,
+    'oculto_em': ocultoEm == null
+        ? null
+        : ocultoEm!.millisecondsSinceEpoch ~/ 1000,
+    'oculto_por': ocultoPor,
+    'motivo_ocultacao': motivoOcultacao,
   };
 }

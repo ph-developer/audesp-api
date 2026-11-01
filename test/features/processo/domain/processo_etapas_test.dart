@@ -18,6 +18,16 @@ List<EtapaTipo> _tipos(Processo processo) => ProcessoEtapas.de(
 ).map((etapa) => etapa.tipo).toList();
 
 void main() {
+  test('edital oculto bloqueia a criação da licitação', () {
+    final licitacao = _etapa(
+      processoFixture(oculto: true),
+      EtapaTipo.licitacao,
+    );
+    expect(licitacao.situacao, SituacaoEtapa.bloqueada);
+    expect(licitacao.motivoBloqueio, 'O edital está oculto em Processos.');
+    expect(licitacao.acoes, isEmpty);
+  });
+
   test(
     'estimativa de origem não acrescenta etapas nem altera dependências',
     () {

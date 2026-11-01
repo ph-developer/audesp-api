@@ -10,3 +10,7 @@ final editaisDraftProvider = FutureProvider<List<Edital>>((ref) {
 final editaisEnviadosProvider = FutureProvider<List<Edital>>((ref) {
   return ref.watch(editaisDaoProvider).watchByStatus('sent');
 });
+
+final editaisOcultosProvider = FutureProvider<List<Edital>>((ref) {
+  return ref.watch(editaisDaoProvider).watchOcultos();
+});

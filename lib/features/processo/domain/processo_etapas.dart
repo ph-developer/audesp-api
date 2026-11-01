@@ -37,6 +37,7 @@ abstract final class ProcessoEtapas {
   static List<EtapaProcesso> de(Processo processo, User user) {
     final edital = processo.edital;
     final editalEnviado = edital.status == 'sent';
+    final podeNovaLicitacao = editalEnviado && !edital.oculto;
     final situacaoLicitacao = ProcessoRules.situacaoLicitacao(
       processo.licitacoes,
     );
@@ -78,10 +79,12 @@ abstract final class ProcessoEtapas {
           SituacaoLicitacao.enviada => SituacaoEtapa.enviada,
           SituacaoLicitacao.rascunho => SituacaoEtapa.rascunho,
           SituacaoLicitacao.inexistente =>
-            editalEnviado ? SituacaoEtapa.aCriar : SituacaoEtapa.bloqueada,
+            podeNovaLicitacao ? SituacaoEtapa.aCriar : SituacaoEtapa.bloqueada,
         },
         quantidade: processo.licitacoes.length,
-        motivoBloqueio: 'O edital ainda não foi enviado ao AUDESP.',
+        motivoBloqueio: edital.oculto
+            ? ProcessoRules.motivoEditalOculto
+            : 'O edital ainda não foi enviado ao AUDESP.',
         acoes: [
           for (final licitacao in processo.licitacoes)
             AcaoEtapa(
@@ -90,7 +93,7 @@ abstract final class ProcessoEtapas {
                   : 'Abrir licitação ${licitacao.status == 'sent' ? 'enviada' : 'rascunho'} #${licitacao.id}',
               route: '/licitacao/${licitacao.id}',
             ),
-          if (processo.licitacoes.isEmpty && editalEnviado)
+          if (processo.licitacoes.isEmpty && podeNovaLicitacao)
             AcaoEtapa(
               label: 'Nova licitação',
               route: '/licitacao/new?editalId=${edital.id}',

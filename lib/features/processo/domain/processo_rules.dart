@@ -59,8 +59,11 @@ abstract final class ProcessoRules {
         : SituacaoLicitacao.inexistente;
   }
 
+  static const motivoEditalOculto = 'O edital está oculto em Processos.';
+
   /// null indica que a criação está liberada.
   static String? motivoBloqueioAta(Processo processo) {
+    if (processo.edital.oculto) return motivoEditalOculto;
     if (processo.edital.status != 'sent') {
       return 'O edital ainda não foi enviado ao AUDESP.';
     }
@@ -77,6 +80,7 @@ abstract final class ProcessoRules {
     Processo processo, {
     bool adesaoParticipacao = false,
   }) {
+    if (processo.edital.oculto) return motivoEditalOculto;
     if (adesaoParticipacao) return null;
     if (processo.edital.status != 'sent') {
       return 'O edital ainda não foi enviado ao AUDESP.';
@@ -115,6 +119,8 @@ abstract final class ProcessoRules {
     final podeAjuste = user.hasPermission(AppPermissions.ajuste);
 
     for (final processo in processos) {
+      // Edital oculto não cobra as próximas etapas.
+      if (processo.edital.oculto) continue;
       final situacao = situacaoLicitacao(processo.licitacoes);
       final isSrp = processo.edital.isSrp;
 

@@ -49,6 +49,29 @@ void main() {
       expect(edital.estimativaId, isNull);
       expect(edital.toMap()['estimativa_id'], isNull);
       expect(edital.toMap()['sem_pncp'], 0);
+      expect(edital.oculto, isFalse);
+    });
+
+    test('fromMap e toMap preservam a ocultação', () {
+      final edital = Edital.fromMap({
+        'id': 3,
+        'municipio': '1234',
+        'entidade': '5678',
+        'codigo_edital': '1234567800019510000012026',
+        'retificacao': 0,
+        'status': 'sent',
+        'documento_json': '{}',
+        'created_at': 1700000000,
+        'updated_at': 1700000000,
+        'oculto_em': 1800000000,
+        'oculto_por': 1,
+        'motivo_ocultacao': 'Lançado pelo sistema antigo',
+      });
+      expect(edital.oculto, isTrue);
+      expect(edital.ocultoEm!.millisecondsSinceEpoch, 1800000000 * 1000);
+      expect(edital.ocultoPor, 1);
+      expect(edital.motivoOcultacao, 'Lançado pelo sistema antigo');
+      expect(edital.toMap()['oculto_em'], 1800000000);
     });
   });
 }

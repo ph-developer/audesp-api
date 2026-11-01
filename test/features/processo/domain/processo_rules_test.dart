@@ -11,6 +11,7 @@ Edital _edital(
   String status = 'sent',
   bool srp = false,
   int? estimativaId,
+  bool oculto = false,
 }) => Edital(
   id: id,
   estimativaId: estimativaId,
@@ -22,6 +23,7 @@ Edital _edital(
   documentoJson: jsonEncode({'srp': srp}),
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026, 10, 27),
+  ocultoEm: oculto ? DateTime(2026, 10, 29) : null,
 );
 
 Licitacao _licitacao(int id, {int editalId = 1, String status = 'draft'}) =>
@@ -98,6 +100,51 @@ Processo _processo({
 );
 
 void main() {
+  group('edital oculto', () {
+    test('não gera pendências', () {
+      expect(
+        ProcessoRules.pendenciasPara(_user(isAdmin: true), [
+          _processo(edital: _edital(1, oculto: true)),
+          _processo(
+            edital: _edital(2, oculto: true),
+            licitacoes: [_licitacao(2, editalId: 2)],
+          ),
+          _processo(
+            edital: _edital(3, srp: true, oculto: true),
+            licitacoes: [_licitacao(3, editalId: 3, status: 'sent')],
+          ),
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('bloqueia ata e ajuste, inclusive na adesão', () {
+      final srp = _processo(
+        edital: _edital(1, srp: true, oculto: true),
+        licitacoes: [_licitacao(1, status: 'sent')],
+      );
+      final comum = _processo(
+        edital: _edital(2, oculto: true),
+        licitacoes: [_licitacao(2, editalId: 2, status: 'sent')],
+      );
+      expect(
+        ProcessoRules.motivoBloqueioAta(srp),
+        ProcessoRules.motivoEditalOculto,
+      );
+      expect(
+        ProcessoRules.motivoBloqueioAjuste(comum),
+        ProcessoRules.motivoEditalOculto,
+      );
+      expect(
+        ProcessoRules.opcoesAjuste([
+          comum,
+        ], adesaoParticipacao: true).single.liberado,
+        isFalse,
+      );
+      expect(ProcessoRules.opcoesAta([srp]).single.liberado, isFalse);
+    });
+  });
+
   group('Processo.agrupar', () {
     test('liga a estimativa por id e ignora vínculos ausentes ou órfãos', () {
       final estimativa = EstimativaModel(

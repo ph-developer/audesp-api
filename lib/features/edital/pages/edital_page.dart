@@ -16,7 +16,8 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../edital_providers.dart'
-    show editaisDraftProvider, editaisEnviadosProvider;
+    show editaisDraftProvider, editaisEnviadosProvider, editaisOcultosProvider;
+import '../widgets/edital_ocultacao.dart';
 import '../widgets/pcnp_input_formatter.dart';
 
 class EditalPage extends ConsumerStatefulWidget {
@@ -45,11 +46,16 @@ class _EditalPageState extends ConsumerState<EditalPage> {
           Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 8.0),
             child: AudespSegmentedButton<String>(
-              width: 260,
-              segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
+              width: 380,
+              segments: const {
+                'draft': 'Rascunhos',
+                'sent': 'Enviados',
+                'oculto': 'Ocultos',
+              },
               icons: const {
                 'draft': Icons.edit_note,
                 'sent': Icons.check_circle_outline,
+                'oculto': Icons.visibility_off_outlined,
               },
               selected: {_statusFilter},
               onSelectionChanged: (v) {
@@ -82,6 +88,7 @@ class _EditalPageState extends ConsumerState<EditalPage> {
             onPressed: () {
               ref.invalidate(editaisDraftProvider);
               ref.invalidate(editaisEnviadosProvider);
+              ref.invalidate(editaisOcultosProvider);
             },
           ),
           const SizedBox(width: 8),
@@ -105,9 +112,11 @@ class _EditalList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stream = status == 'draft'
-        ? ref.watch(editaisDraftProvider)
-        : ref.watch(editaisEnviadosProvider);
+    final stream = switch (status) {
+      'draft' => ref.watch(editaisDraftProvider),
+      'oculto' => ref.watch(editaisOcultosProvider),
+      _ => ref.watch(editaisEnviadosProvider),
+    };
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -127,14 +136,18 @@ class _EditalList extends ConsumerWidget {
 
         if (filtered.isEmpty) {
           return EmptyState(
-            icon: status == 'draft'
-                ? Icons.article_outlined
-                : Icons.check_circle_outline,
+            icon: switch (status) {
+              'draft' => Icons.article_outlined,
+              'oculto' => Icons.visibility_off_outlined,
+              _ => Icons.check_circle_outline,
+            },
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
-                : status == 'draft'
-                ? 'Nenhum rascunho de edital'
-                : 'Nenhum edital enviado',
+                : switch (status) {
+                    'draft' => 'Nenhum rascunho de edital',
+                    'oculto' => 'Nenhum edital oculto',
+                    _ => 'Nenhum edital enviado',
+                  },
           );
         }
         return ListView.builder(
@@ -175,6 +188,14 @@ class _EditalList extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  if (edital.oculto) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Oculto em ${DateFormat('dd/MM/yyyy').format(edital.ocultoEm!)}'
+                      '${edital.motivoOcultacao == null ? '' : ': ${edital.motivoOcultacao}'}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -191,6 +212,14 @@ class _EditalList extends ConsumerWidget {
               chips: [
                 if (edital.semPncp) StatusChip.semPncp(),
                 if (edital.retificacao) StatusChip.retificacao(),
+              ],
+              actions: [
+                if (edital.oculto)
+                  TextButton.icon(
+                    onPressed: () => reexibirEdital(context, ref, edital),
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: const Text('Reexibir'),
+                  ),
               ],
               onDelete: isSent
                   ? null
@@ -221,6 +250,7 @@ Future<void> _confirmDelete(
       await ref.read(editaisDaoProvider).deleteById(edital.id);
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
+      ref.invalidate(editaisOcultosProvider);
     } catch (e) {
       if (!context.mounted) return;
       AudespSnackBar.error(context, 'Erro ao excluir: $e');
