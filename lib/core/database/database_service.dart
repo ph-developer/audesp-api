@@ -366,7 +366,7 @@ class DatabaseService {
         await execute(
           "ALTER TABLE estimativas ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'rascunho'",
         );
-        // Preserva a importaÃ§Ã£o das estimativas anteriores Ã  introduÃ§Ã£o do estado.
+        // Preserva a importação das estimativas anteriores à introdução do estado.
         await execute("UPDATE estimativas SET status = 'finalizada'");
       }
 
@@ -376,7 +376,7 @@ class DatabaseService {
         "AND table_name = 'editais' AND column_name = 'estimativa_id'",
       );
       if (estimativaFound.rows.first.typedAssoc()['c'] == 0) {
-        // Sem FK: a origem pode ser excluÃ­da sem alterar os itens importados.
+        // Sem FK: a origem pode ser excluída sem alterar os itens importados.
         await execute(
           'ALTER TABLE editais ADD COLUMN estimativa_id BIGINT NULL',
         );
@@ -386,7 +386,7 @@ class DatabaseService {
 
     if (version < 14) {
       // Compras publicadas no PNCP pelo CNPJ configurado, para cobrar as
-      // que ainda nÃ£o tÃªm edital no sistema.
+      // que ainda não têm edital no sistema.
       await execute('''
         CREATE TABLE IF NOT EXISTS pncp_compras (
           id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
