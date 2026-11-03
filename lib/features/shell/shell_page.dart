@@ -6,6 +6,8 @@ import '../../core/constants/environments.dart';
 import '../../core/database/database_providers.dart';
 import '../../core/navigation/app_modules.dart';
 import '../../features/auth/auth_providers.dart';
+import '../documentacao/documentacao_providers.dart';
+import '../documentacao/widgets/documentacao_alerta_button.dart';
 import '../pncp/pncp_providers.dart';
 import 'widgets/app_navigation_rail.dart';
 import 'widgets/environment_dialog.dart';
@@ -24,6 +26,8 @@ class ShellPage extends ConsumerWidget {
     final currentPath = GoRouterState.of(context).uri.path;
     // Mantém a consulta automática ao PNCP ativa enquanto há sessão aberta.
     if (user != null) ref.watch(pncpMonitorProvider);
+    // Verifica a documentação do AUDESP uma vez por manhã e por tarde.
+    if (user != null) ref.watch(documentacaoMonitorProvider);
 
     final modules = user == null ? <AppModule>[] : modulosPara(user);
     final logsSelected = kLogsModule.matchesLocation(currentPath);
@@ -46,6 +50,7 @@ class ShellPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (user != null) const DocumentacaoAlertaButton(),
                   // Chip de ambiente (somente admin pode alterar)
                   if (user?.isAdmin == true)
                     GestureDetector(

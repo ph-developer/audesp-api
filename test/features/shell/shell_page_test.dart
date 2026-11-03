@@ -2,6 +2,7 @@ import 'package:audesp_api/core/constants/environments.dart';
 import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/navigation/app_modules.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
+import 'package:audesp_api/features/documentacao/documentacao_providers.dart';
 import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/shell/shell_page.dart';
 import 'package:flutter/material.dart';
@@ -18,12 +19,15 @@ Future<GoRouter> _pumpShell(
   WidgetTester tester, {
   int permissions = 0,
   bool isAdmin = false,
+  DocumentacaoAlerta? alertaDocumentacao,
 }) async {
   final container = ProviderContainer(
     overrides: [
       environmentProvider.overrideWith(_TestEnvironmentNotifier.new),
       // Sem banco nem PNCP nos testes do shell.
       pncpMonitorProvider.overrideWith((ref) {}),
+      documentacaoMonitorProvider.overrideWith((ref) {}),
+      documentacaoAlertaProvider.overrideWith((ref) => alertaDocumentacao),
     ],
   );
   addTearDown(container.dispose);
@@ -133,4 +137,33 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  const dica = 'A documentação do AUDESP foi alterada.\nInforme o TI.';
+
+  testWidgets('alerta da documentação aparece só quando houve alteração', (
+    tester,
+  ) async {
+    await _pumpShell(tester, permissions: 1);
+    expect(find.byTooltip(dica), findsNothing);
+  });
+
+  testWidgets('alerta da documentação lista as alterações sem botão de admin', (
+    tester,
+  ) async {
+    await _pumpShell(
+      tester,
+      permissions: 1,
+      alertaDocumentacao: const DocumentacaoAlerta(
+        alteracoes: ['Anexo alterado: edital-20261015.zip'],
+      ),
+    );
+    expect(find.byTooltip(dica), findsOneWidget);
+
+    await tester.tap(find.byTooltip(dica));
+    await tester.pumpAndSettle();
+
+    expect(find.text('• Anexo alterado: edital-20261015.zip'), findsOneWidget);
+    expect(find.text('Marcar como verificada'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -14,6 +14,14 @@ abstract class SettingsKeys {
   static const ufespValor = 'ufesp_valor';
   static const ufespQuantidadeMinima = 'ufesp_quantidade_minima';
 
+  /// Monitor da documentação do AUDESP: último período verificado
+  /// (`periodoVerificacao`), snapshot conferido pelo TI, último snapshot
+  /// lido e quando a diferença entre os dois apareceu.
+  static const documentacaoPeriodo = 'documentacao_periodo_verificado';
+  static const documentacaoReferencia = 'documentacao_referencia';
+  static const documentacaoAtual = 'documentacao_atual';
+  static const documentacaoAlteradaEm = 'documentacao_alterada_em';
+
   /// Última sequência encontrada no PNCP para o CNPJ e o ano.
   static String pncpSequencia(String cnpj, int ano) =>
       'pncp_sequencia_${cnpj}_$ano';
