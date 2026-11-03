@@ -179,6 +179,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return edital != null && edital.status == 'sent';
   }
 
+  bool get _isSelectedEditalSrp {
+    final id = _editalId;
+    if (id == null) return false;
+    return _editais.where((e) => e.id == id).firstOrNull?.isSrp ?? false;
+  }
+
   bool get _isSelectedEditalAvailable {
     final id = _editalId;
     return id != null && _editais.any((e) => e.id == id);
@@ -358,7 +364,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     map['exigenciaVistoCREA'] = _exigenciaVistoCREA;
     map['declaracaoRecursosContratacao'] = _declaracaoRecursos;
 
-    if (_declaracaoRecursos && _fontesRecurso.isNotEmpty) {
+    // A fonte só é obrigatória com a declaração; em registro de preços ela é
+    // informada sem a declaração (Modelo da Fase IV, aba "Licitação").
+    if (_fontesRecurso.isNotEmpty) {
       map['fonteRecursosContratacao'] = _fontesRecurso.toList()..sort();
     }
 
@@ -984,8 +992,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           final validas = parsed.where(kFonteRecurso.containsKey).toSet();
           if (validas.isNotEmpty) {
             _fontesRecurso = validas;
-            // As fontes só são enviadas com a declaração de recursos marcada.
-            _declaracaoRecursos = true;
+            // Em registro de preços a declaração não é emitida na licitação.
+            if (!_isSelectedEditalSrp) _declaracaoRecursos = true;
           }
         }
         if (finalAccepted.containsKey('exigenciaIndicesEconomicos')) {
@@ -1567,13 +1575,12 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     return SectionCard(
       title: 'Fontes de Recurso',
       children: [
-        if (!_declaracaoRecursos) ...[
-          const Text(
-            'As fontes de recurso só se aplicam quando há declaração de recursos.',
-            style: TextStyle(fontSize: 12),
-          ),
-          AudespSpacing.verticalSm,
-        ],
+        const Text(
+          'Obrigatório ao menos uma fonte quando há declaração de recursos. '
+          'Em registro de preços, informe as fontes sem marcar a declaração.',
+          style: TextStyle(fontSize: 12),
+        ),
+        AudespSpacing.verticalSm,
         Wrap(
           spacing: 8,
           runSpacing: 4,
@@ -1582,7 +1589,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             return FilterChip(
               label: Text(e.value, style: const TextStyle(fontSize: 11)),
               selected: selected,
-              onSelected: readOnly || !_declaracaoRecursos
+              onSelected: readOnly
                   ? null
                   : (v) => setState(() {
                       if (v) {
