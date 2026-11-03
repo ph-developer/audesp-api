@@ -28,6 +28,7 @@ import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_domain.dart';
+import '../domain/licitacao_itens_faltantes.dart';
 import '../domain/licitacao_itens_resumo.dart';
 import '../domain/licitacao_pessoa.dart';
 import '../domain/licitacao_rules.dart';
@@ -2115,11 +2116,15 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       } catch (_) {}
     }
 
+    final faltantes = LicitacaoItensFaltantes.numeros(itensEdital, _itens);
+
     if (itensEdital.length != _itens.length) {
       return _buildItensResumoAlerta(
         'Não foi possível exibir o resumo: o edital vinculado possui '
         '${itensEdital.length} item(ns)/lote(s), enquanto a licitação possui '
         '${_itens.length}. Revise os itens antes de continuar.',
+        itensEdital: itensEdital,
+        faltantes: faltantes,
       );
     }
 
@@ -2150,6 +2155,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return _buildItensResumoAlerta(
         'Não foi possível exibir o resumo porque a numeração ou os '
         'quantitativos dos itens/lotes divergem do edital vinculado.',
+        itensEdital: itensEdital,
+        faltantes: faltantes,
       );
     }
 
@@ -2161,9 +2168,60 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
-  Widget _buildItensResumoAlerta(String mensagem) {
+  Future<void> _cadastrarFaltantesComoDesertos(
+    List<Map<String, dynamic>> itensEdital,
+    List<int> faltantes,
+  ) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cadastrar itens faltantes como desertos?'),
+        content: Text(
+          '${faltantes.length == 1 ? 'O item/lote' : 'Os itens/lotes'} '
+          '${faltantes.join(', ')} do edital '
+          '${faltantes.length == 1 ? 'será incluído' : 'serão incluídos'} '
+          'na licitação com a situação "Deserto" e sem licitantes. '
+          'Tipo de orçamento, proposta e datas seguem os itens já informados; '
+          'revise-os depois em "Ajustar Situação" se necessário.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Cadastrar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+
+    final novos = LicitacaoItensFaltantes.desertos(
+      itensEdital,
+      _itens,
+      hoje: DateTime.now(),
+    );
+    if (novos.isEmpty) return;
+    setState(() {
+      _itens.addAll(novos);
+      _ordenarItens();
+    });
+    AudespSnackBar.success(
+      context,
+      '${novos.length} item(ns)/lote(s) incluído(s) como deserto(s).',
+    );
+  }
+
+  Widget _buildItensResumoAlerta(
+    String mensagem, {
+    List<Map<String, dynamic>> itensEdital = const [],
+    List<int> faltantes = const [],
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final borderColor = Colors.orange.shade400;
+    final podeCadastrarFaltantes = !_isSent && faltantes.isNotEmpty;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -2177,11 +2235,24 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         border: Border.all(color: borderColor),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: podeCadastrarFaltantes
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
         children: [
           Icon(Icons.warning_amber_rounded, color: borderColor),
           const SizedBox(width: 10),
           Expanded(child: Text(mensagem)),
+          if (podeCadastrarFaltantes) ...[
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  _cadastrarFaltantesComoDesertos(itensEdital, faltantes),
+              icon: const Icon(Icons.playlist_add_outlined, size: 18),
+              label: Text(
+                'Cadastrar ${faltantes.length} faltante(s) como deserto(s)',
+              ),
+            ),
+          ],
         ],
       ),
     );
