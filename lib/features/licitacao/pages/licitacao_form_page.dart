@@ -982,7 +982,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 .toSet();
           }
           final validas = parsed.where(kFonteRecurso.containsKey).toSet();
-          if (validas.isNotEmpty) _fontesRecurso = validas;
+          if (validas.isNotEmpty) {
+            _fontesRecurso = validas;
+            // As fontes só são enviadas com a declaração de recursos marcada.
+            _declaracaoRecursos = true;
+          }
         }
         if (finalAccepted.containsKey('exigenciaIndicesEconomicos')) {
           _exigenciaIndicesEconomicos = int.tryParse(
