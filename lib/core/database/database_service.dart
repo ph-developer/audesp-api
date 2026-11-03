@@ -434,6 +434,20 @@ class DatabaseService {
       }
       await setSchemaVersion(15);
     }
+
+    if (version < 16) {
+      // Cadastro dos condutores da contratação (cpfsCondutores da Licitação).
+      await execute('''
+        CREATE TABLE IF NOT EXISTS condutores (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          nome VARCHAR(255) NOT NULL,
+          cpf CHAR(11) NOT NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          UNIQUE KEY uq_condutores_cpf (cpf)
+        )
+      ''');
+      await setSchemaVersion(16);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

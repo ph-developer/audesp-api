@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,7 +12,6 @@ import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/audesp_checkbox.dart';
-import '../../../shared/widgets/audesp_chip_input.dart';
 import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_ai_import_dialog.dart';
@@ -27,18 +25,21 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
 import '../csv/csv.dart';
+import '../domain/licitacao_condutor.dart';
 import '../domain/licitacao_domain.dart';
 import '../domain/licitacao_itens_faltantes.dart';
 import '../domain/licitacao_itens_resumo.dart';
 import '../domain/licitacao_pessoa.dart';
 import '../domain/licitacao_rules.dart';
 import '../licitacao_providers.dart';
+import '../models/condutor.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../services/licitacao_service.dart';
 import '../widgets/item_licitacao_dialog.dart';
 import '../widgets/portal_import_dialog.dart';
 import '../widgets/ajuste_me_epp_dialog.dart';
 import '../widgets/ajuste_situacao_dialog.dart';
+import '../widgets/condutores_dialog.dart';
 import '../widgets/gemini_import_dialog.dart';
 
 /// Formulário de criação/edição de Licitação (Fase 5 – Módulo 2).
@@ -1605,7 +1606,18 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     );
   }
 
+  Future<void> _selecionarCondutores() async {
+    final cpfs = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => CondutoresDialog(cpfsAtuais: _cpfsCondutores),
+    );
+    if (cpfs == null || !mounted) return;
+    setState(() => _cpfsCondutores = cpfs);
+  }
+
   Widget _buildContratacaoConduzidaSection(bool readOnly) {
+    final condutores =
+        ref.watch(condutoresProvider).value ?? const <Condutor>[];
     return SectionCard(
       title: 'Contratação Conduzida',
       children: [
@@ -1617,24 +1629,42 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         ),
         if (_contratacaoConduzida) ...[
           const SizedBox(height: 12),
-          AudespChipInput<String>(
-            label: 'CPF do Condutor (11 dígitos)',
-            chips: _cpfsCondutores,
-            onAdd: (cpf) => setState(() => _cpfsCondutores.add(cpf)),
-            onRemove: (cpf) => setState(() => _cpfsCondutores.remove(cpf)),
-            maxLength: 11,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            keyboardType: TextInputType.number,
-            validateInput: (cpf) {
-              if (cpf == null || cpf.length != 11) {
-                return 'CPF deve conter 11 dígitos';
-              }
-              if (_cpfsCondutores.contains(cpf)) return 'CPF já adicionado';
-              return null;
-            },
-            formatChip: (cpf) => cpf,
-            readOnly: readOnly,
-          ),
+          if (!readOnly)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _selecionarCondutores,
+                icon: const Icon(Icons.groups, size: 18),
+                label: const Text('Selecionar condutores'),
+              ),
+            ),
+          const SizedBox(height: 8),
+          if (_cpfsCondutores.isEmpty)
+            const Text(
+              'Nenhum condutor selecionado.',
+              style: TextStyle(fontSize: 12),
+            )
+          else
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: _cpfsCondutores.map((cpf) {
+                final nome = condutores
+                    .where((c) => c.cpf == cpf)
+                    .firstOrNull
+                    ?.nome;
+                final cpfFormatado = CondutorRules.formatarCpf(cpf);
+                return Chip(
+                  avatar: const Icon(Icons.person, size: 16),
+                  label: Text(
+                    nome == null ? cpfFormatado : '$nome — $cpfFormatado',
+                  ),
+                  onDeleted: readOnly
+                      ? null
+                      : () => setState(() => _cpfsCondutores.remove(cpf)),
+                );
+              }).toList(),
+            ),
         ],
       ],
     );
