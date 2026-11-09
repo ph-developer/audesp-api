@@ -15,6 +15,10 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../logs/domain/ultimo_envio.dart';
+import '../../logs/envios_providers.dart';
+import '../../logs/widgets/filtro_envio_dropdown.dart';
+import '../../logs/widgets/ultimo_envio_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
@@ -29,6 +33,7 @@ class AjustePage extends ConsumerStatefulWidget {
 
 class _AjustePageState extends ConsumerState<AjustePage> {
   String _statusFilter = 'draft';
+  FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -58,6 +63,11 @@ class _AjustePageState extends ConsumerState<AjustePage> {
               },
             ),
           ),
+          FiltroEnvioDropdown(
+            value: _filtroEnvio,
+            onChanged: (v) => setState(() => _filtroEnvio = v),
+          ),
+          const SizedBox(width: 8),
           SizedBox(
             width: 200,
             child: AudespTextField(
@@ -83,6 +93,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
             onPressed: () {
               ref.invalidate(ajustesDraftProvider);
               ref.invalidate(ajustesEnviadosProvider);
+              ref.invalidate(enviosProvider(EnviosEndpoint.ajuste));
               ref.invalidate(processosProvider);
               ref.invalidate(
                 unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
@@ -111,7 +122,11 @@ class _AjustePageState extends ConsumerState<AjustePage> {
           ),
         ],
       ),
-      body: _AjusteList(status: _statusFilter, search: _searchCtrl.text),
+      body: _AjusteList(
+        status: _statusFilter,
+        search: _searchCtrl.text,
+        filtroEnvio: _filtroEnvio,
+      ),
     );
   }
 }
@@ -119,7 +134,12 @@ class _AjustePageState extends ConsumerState<AjustePage> {
 class _AjusteList extends ConsumerWidget {
   final String status;
   final String search;
-  const _AjusteList({required this.status, this.search = ''});
+  final FiltroEnvio filtroEnvio;
+  const _AjusteList({
+    required this.status,
+    this.search = '',
+    this.filtroEnvio = FiltroEnvio.todos,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -129,12 +149,29 @@ class _AjusteList extends ConsumerWidget {
 
     final editaisAsync = ref.watch(_editaisMapProvider);
     final atasAsync = ref.watch(_atasMapProvider);
+    final enviosAsync = ref.watch(enviosProvider(EnviosEndpoint.ajuste));
+    final envios = enviosAsync.value ?? EnviosIndex.vazio;
+    EnvioResumo? envioDe(Ajuste ajuste) => envios.ultimo(
+      DescritorEnvio.ajuste(
+        municipio: ajuste.municipio,
+        entidade: ajuste.entidade,
+        codigoEdital: ajuste.codigoEdital,
+        codigoAta: ajuste.codigoAta,
+        codigoContrato: ajuste.codigoContrato,
+        retificacao: ajuste.retificacao,
+      ),
+    );
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (ajustes) {
-        final filtered = search.isEmpty
+        if (filtroEnvio != FiltroEnvio.todos && !enviosAsync.hasValue) {
+          return enviosAsync.hasError
+              ? Center(child: Text('Erro: ${enviosAsync.error}'))
+              : const Center(child: CircularProgressIndicator());
+        }
+        final buscados = search.isEmpty
             ? ajustes
             : ajustes.where((a) {
                 final edital = a.editalId == null
@@ -157,6 +194,9 @@ class _AjusteList extends ConsumerWidget {
                 ].join(' ');
                 return matchesLikeSearch(searchable, search);
               }).toList();
+        final filtered = buscados
+            .where((x) => filtroEnvio.aceita(envioDe(x)))
+            .toList();
 
         if (filtered.isEmpty) {
           return EmptyState(
@@ -165,6 +205,8 @@ class _AjusteList extends ConsumerWidget {
                 : Icons.check_circle_outline,
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
+                : filtroEnvio != FiltroEnvio.todos
+                ? 'Nenhum resultado com status de envio "${filtroEnvio.rotulo}"'
                 : status == 'draft'
                 ? 'Nenhum rascunho de ajuste'
                 : 'Nenhum ajuste enviado',
@@ -195,6 +237,7 @@ class _AjusteList extends ConsumerWidget {
                     final isSent = ajuste.status == 'sent';
                     final colorScheme = Theme.of(context).colorScheme;
                     final fmt = DateFormat('dd/MM/yyyy HH:mm');
+                    final ultimoEnvio = envioDe(ajuste);
 
                     return DocumentCard(
                       icon: isSent ? Icons.check : Icons.edit_outlined,
@@ -271,7 +314,10 @@ class _AjusteList extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      chips: [if (ajuste.retificacao) StatusChip.retificacao()],
+                      chips: [
+                        if (ajuste.retificacao) StatusChip.retificacao(),
+                        if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
+                      ],
                       onDelete: isSent
                           ? null
                           : () => _confirmDelete(context, ref, ajuste),

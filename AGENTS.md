@@ -44,6 +44,7 @@ flutter analyze                    # lint (uses flutter_lints)
 
 - **Admin user:** seeded in `users` table automatically during DB initialization.
 - **Logs:** accessible only with a sending permission (Edital/Licitação/Ata/Ajuste). API logs in `api_logs` are read-only in the UI; deletion is restricted for auditing. Logs can be exported to PDF.
+- **Último envio:** `api_logs` has no document id; a send is matched to its document by the `descritor` fields (`DescritorEnvio` in `logs/domain/ultimo_envio.dart`, also used by the forms' `findLatest*SendLog`). The list pages load `ApiLogsDao.listEnvios`, which extracts only the descritor in MySQL (`JSON_EXTRACT`), and show `UltimoEnvioChip` on each card, drafts included (failed attempts, rejected protocols).
 - **Password hashing:** SHA-256 with email + pepper (`'audesp_api_sys_2026'`), done in `PasswordHasher`
 - **Document status:** `'draft'` (editing) vs `'sent'` (submitted to AUDESP). Status can also be consulted via the AUDESP Protocol Status Consultation feature.
 - **Estimativa:** `'rascunho'` (editable) vs `'finalizada'` (read-only; PDF/HTML remain available). Only finalized estimates can be imported into an Edital. Reopening warns about linked editais without changing their imported items. Migration v13 finalizes existing estimates.

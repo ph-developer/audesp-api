@@ -15,6 +15,10 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../logs/domain/ultimo_envio.dart';
+import '../../logs/envios_providers.dart';
+import '../../logs/widgets/filtro_envio_dropdown.dart';
+import '../../logs/widgets/ultimo_envio_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
@@ -29,6 +33,7 @@ class AtaPage extends ConsumerStatefulWidget {
 
 class _AtaPageState extends ConsumerState<AtaPage> {
   String _statusFilter = 'draft';
+  FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -58,6 +63,11 @@ class _AtaPageState extends ConsumerState<AtaPage> {
               },
             ),
           ),
+          FiltroEnvioDropdown(
+            value: _filtroEnvio,
+            onChanged: (v) => setState(() => _filtroEnvio = v),
+          ),
+          const SizedBox(width: 8),
           SizedBox(
             width: 200,
             child: AudespTextField(
@@ -83,6 +93,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             onPressed: () {
               ref.invalidate(atasDraftProvider);
               ref.invalidate(atasEnviadasProvider);
+              ref.invalidate(enviosProvider(EnviosEndpoint.ata));
               ref.invalidate(processosProvider);
               ref.invalidate(
                 unlinkedEditaisProvider(UnlinkedEditaisTarget.ata),
@@ -111,7 +122,11 @@ class _AtaPageState extends ConsumerState<AtaPage> {
           ),
         ],
       ),
-      body: _AtaList(status: _statusFilter, search: _searchCtrl.text),
+      body: _AtaList(
+        status: _statusFilter,
+        search: _searchCtrl.text,
+        filtroEnvio: _filtroEnvio,
+      ),
     );
   }
 }
@@ -119,7 +134,12 @@ class _AtaPageState extends ConsumerState<AtaPage> {
 class _AtaList extends ConsumerWidget {
   final String status;
   final String search;
-  const _AtaList({required this.status, this.search = ''});
+  final FiltroEnvio filtroEnvio;
+  const _AtaList({
+    required this.status,
+    this.search = '',
+    this.filtroEnvio = FiltroEnvio.todos,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -128,12 +148,28 @@ class _AtaList extends ConsumerWidget {
         : ref.watch(atasEnviadasProvider);
 
     final editaisAsync = ref.watch(_editaisMapProvider);
+    final enviosAsync = ref.watch(enviosProvider(EnviosEndpoint.ata));
+    final envios = enviosAsync.value ?? EnviosIndex.vazio;
+    EnvioResumo? envioDe(Ata ata) => envios.ultimo(
+      DescritorEnvio.ata(
+        municipio: ata.municipio,
+        entidade: ata.entidade,
+        codigoEdital: ata.codigoEdital,
+        codigoAta: ata.codigoAta,
+        retificacao: ata.retificacao,
+      ),
+    );
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (atas) {
-        final filtered = search.isEmpty
+        if (filtroEnvio != FiltroEnvio.todos && !enviosAsync.hasValue) {
+          return enviosAsync.hasError
+              ? Center(child: Text('Erro: ${enviosAsync.error}'))
+              : const Center(child: CircularProgressIndicator());
+        }
+        final buscados = search.isEmpty
             ? atas
             : atas.where((a) {
                 final edital = editaisAsync.value?[a.editalId];
@@ -146,6 +182,9 @@ class _AtaList extends ConsumerWidget {
                 ].join(' ');
                 return matchesLikeSearch(searchable, search);
               }).toList();
+        final filtered = buscados
+            .where((x) => filtroEnvio.aceita(envioDe(x)))
+            .toList();
 
         if (filtered.isEmpty) {
           return EmptyState(
@@ -154,6 +193,8 @@ class _AtaList extends ConsumerWidget {
                 : Icons.check_circle_outline,
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
+                : filtroEnvio != FiltroEnvio.todos
+                ? 'Nenhum resultado com status de envio "${filtroEnvio.rotulo}"'
                 : status == 'draft'
                 ? 'Nenhum rascunho de ata'
                 : 'Nenhuma ata enviada',
@@ -172,6 +213,7 @@ class _AtaList extends ConsumerWidget {
                 final isSent = ata.status == 'sent';
                 final colorScheme = Theme.of(context).colorScheme;
                 final fmt = DateFormat('dd/MM/yyyy HH:mm');
+                final ultimoEnvio = envioDe(ata);
 
                 return DocumentCard(
                   icon: isSent ? Icons.check : Icons.edit_outlined,
@@ -230,7 +272,10 @@ class _AtaList extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  chips: [if (ata.retificacao) StatusChip.retificacao()],
+                  chips: [
+                    if (ata.retificacao) StatusChip.retificacao(),
+                    if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
+                  ],
                   onDelete: isSent
                       ? null
                       : () => _confirmDelete(context, ref, ata),

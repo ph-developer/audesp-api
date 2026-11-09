@@ -15,6 +15,10 @@ import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../logs/domain/ultimo_envio.dart';
+import '../../logs/envios_providers.dart';
+import '../../logs/widgets/filtro_envio_dropdown.dart';
+import '../../logs/widgets/ultimo_envio_chip.dart';
 import '../edital_providers.dart'
     show editaisDraftProvider, editaisEnviadosProvider, editaisOcultosProvider;
 import '../widgets/edital_ocultacao.dart';
@@ -29,6 +33,7 @@ class EditalPage extends ConsumerStatefulWidget {
 
 class _EditalPageState extends ConsumerState<EditalPage> {
   String _statusFilter = 'draft';
+  FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -63,6 +68,11 @@ class _EditalPageState extends ConsumerState<EditalPage> {
               },
             ),
           ),
+          FiltroEnvioDropdown(
+            value: _filtroEnvio,
+            onChanged: (v) => setState(() => _filtroEnvio = v),
+          ),
+          const SizedBox(width: 8),
           SizedBox(
             width: 200,
             child: AudespTextField(
@@ -89,6 +99,7 @@ class _EditalPageState extends ConsumerState<EditalPage> {
               ref.invalidate(editaisDraftProvider);
               ref.invalidate(editaisEnviadosProvider);
               ref.invalidate(editaisOcultosProvider);
+              ref.invalidate(enviosProvider(EnviosEndpoint.edital));
             },
           ),
           const SizedBox(width: 8),
@@ -100,7 +111,11 @@ class _EditalPageState extends ConsumerState<EditalPage> {
         icon: Icons.add,
         tooltip: 'Novo Edital',
       ),
-      body: _EditalList(status: _statusFilter, search: _searchCtrl.text),
+      body: _EditalList(
+        status: _statusFilter,
+        search: _searchCtrl.text,
+        filtroEnvio: _filtroEnvio,
+      ),
     );
   }
 }
@@ -108,7 +123,12 @@ class _EditalPageState extends ConsumerState<EditalPage> {
 class _EditalList extends ConsumerWidget {
   final String status;
   final String search;
-  const _EditalList({required this.status, this.search = ''});
+  final FiltroEnvio filtroEnvio;
+  const _EditalList({
+    required this.status,
+    this.search = '',
+    this.filtroEnvio = FiltroEnvio.todos,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -117,12 +137,27 @@ class _EditalList extends ConsumerWidget {
       'oculto' => ref.watch(editaisOcultosProvider),
       _ => ref.watch(editaisEnviadosProvider),
     };
+    final enviosAsync = ref.watch(enviosProvider(EnviosEndpoint.edital));
+    final envios = enviosAsync.value ?? EnviosIndex.vazio;
+    EnvioResumo? envioDe(Edital edital) => envios.ultimo(
+      DescritorEnvio.edital(
+        municipio: edital.municipio,
+        entidade: edital.entidade,
+        codigoEdital: edital.codigoEdital,
+        retificacao: edital.retificacao,
+      ),
+    );
 
     return stream.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erro: $e')),
       data: (editais) {
-        final filtered = search.isEmpty
+        if (filtroEnvio != FiltroEnvio.todos && !enviosAsync.hasValue) {
+          return enviosAsync.hasError
+              ? Center(child: Text('Erro: ${enviosAsync.error}'))
+              : const Center(child: CircularProgressIndicator());
+        }
+        final buscados = search.isEmpty
             ? editais
             : editais.where((e) {
                 final searchable = [
@@ -133,6 +168,9 @@ class _EditalList extends ConsumerWidget {
                 ].join(' ');
                 return matchesLikeSearch(searchable, search);
               }).toList();
+        final filtered = buscados
+            .where((x) => filtroEnvio.aceita(envioDe(x)))
+            .toList();
 
         if (filtered.isEmpty) {
           return EmptyState(
@@ -143,6 +181,8 @@ class _EditalList extends ConsumerWidget {
             },
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
+                : filtroEnvio != FiltroEnvio.todos
+                ? 'Nenhum resultado com status de envio "${filtroEnvio.rotulo}"'
                 : switch (status) {
                     'draft' => 'Nenhum rascunho de edital',
                     'oculto' => 'Nenhum edital oculto',
@@ -158,6 +198,7 @@ class _EditalList extends ConsumerWidget {
             final isSent = edital.status == 'sent';
             final colorScheme = Theme.of(context).colorScheme;
             final fmt = DateFormat('dd/MM/yyyy HH:mm');
+            final ultimoEnvio = envioDe(edital);
 
             return DocumentCard(
               icon: isSent ? Icons.check : Icons.edit_outlined,
@@ -212,6 +253,7 @@ class _EditalList extends ConsumerWidget {
               chips: [
                 if (edital.semPncp) StatusChip.semPncp(),
                 if (edital.retificacao) StatusChip.retificacao(),
+                if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
               ],
               actions: [
                 if (edital.oculto)

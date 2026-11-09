@@ -56,7 +56,10 @@ class DocumentCard extends StatelessWidget {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ...chips,
+                  for (final (i, chip) in chips.indexed) ...[
+                    if (i > 0) const SizedBox(width: 6),
+                    chip,
+                  ],
                   if (chips.isNotEmpty) const SizedBox(width: 4),
                   ...actions,
                   if (onDelete != null)

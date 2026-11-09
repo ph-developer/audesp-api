@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../app_database.dart';
+import '../../../features/logs/domain/ultimo_envio.dart';
 import '../database_service.dart';
 
 class ApiLogsDao {
@@ -46,13 +47,13 @@ class ApiLogsDao {
     required bool retificacao,
   }) async {
     return _findLatestSendLogByDescritor(
-      endpointContains: 'enviar-edital',
-      expected: {
-        'municipio': municipio,
-        'entidade': entidade,
-        'codigoEdital': codigoEdital,
-        'retificacao': retificacao,
-      },
+      endpointContains: EnviosEndpoint.edital,
+      expected: DescritorEnvio.edital(
+        municipio: municipio,
+        entidade: entidade,
+        codigoEdital: codigoEdital,
+        retificacao: retificacao,
+      ),
     );
   }
 
@@ -63,13 +64,13 @@ class ApiLogsDao {
     required bool retificacao,
   }) async {
     return _findLatestSendLogByDescritor(
-      endpointContains: 'enviar-licitacao',
-      expected: {
-        'municipio': municipio,
-        'entidade': entidade,
-        'codigoEdital': codigoEdital,
-        'retificacao': retificacao,
-      },
+      endpointContains: EnviosEndpoint.licitacao,
+      expected: DescritorEnvio.licitacao(
+        municipio: municipio,
+        entidade: entidade,
+        codigoEdital: codigoEdital,
+        retificacao: retificacao,
+      ),
     );
   }
 
@@ -81,14 +82,14 @@ class ApiLogsDao {
     required bool retificacao,
   }) async {
     return _findLatestSendLogByDescritor(
-      endpointContains: 'enviar-ata',
-      expected: {
-        'municipio': municipio,
-        'entidade': entidade,
-        'codigoEdital': codigoEdital,
-        'codigoAta': codigoAta,
-        'retificacao': retificacao,
-      },
+      endpointContains: EnviosEndpoint.ata,
+      expected: DescritorEnvio.ata(
+        municipio: municipio,
+        entidade: entidade,
+        codigoEdital: codigoEdital,
+        codigoAta: codigoAta,
+        retificacao: retificacao,
+      ),
     );
   }
 
@@ -101,15 +102,15 @@ class ApiLogsDao {
     required bool retificacao,
   }) async {
     return _findLatestSendLogByDescritor(
-      endpointContains: 'enviar-ajuste',
-      expected: {
-        'municipio': municipio,
-        'entidade': entidade,
-        'codigoEdital': codigoEdital,
-        if (codigoAta != null && codigoAta.isNotEmpty) 'codigoAta': codigoAta,
-        'codigoContrato': codigoContrato,
-        'retificacao': retificacao,
-      },
+      endpointContains: EnviosEndpoint.ajuste,
+      expected: DescritorEnvio.ajuste(
+        municipio: municipio,
+        entidade: entidade,
+        codigoEdital: codigoEdital,
+        codigoAta: codigoAta,
+        codigoContrato: codigoContrato,
+        retificacao: retificacao,
+      ),
     );
   }
 
@@ -127,19 +128,25 @@ class ApiLogsDao {
       try {
         final doc = jsonDecode(log.request) as Map<String, dynamic>;
         final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
-        final matches = expected.entries.every((entry) {
-          final actual = descritor[entry.key];
-          final expectedValue = entry.value;
-          if (expectedValue is bool) return actual == expectedValue;
-          return actual?.toString() == expectedValue?.toString();
-        });
-        if (matches) {
-          return log;
-        }
+        if (DescritorEnvio.corresponde(descritor, expected)) return log;
       } catch (_) {}
     }
 
     return null;
+  }
+
+  /// Envios de um endpoint com só o descritor do documento, extraído pelo
+  /// MySQL para não trazer os JSONs completos às listagens.
+  Future<EnviosIndex> listEnvios(String endpointContains) async {
+    final result = await _db.executePrepared(
+      'SELECT id, status_code, protocolo, status_protocolo, timestamp, '
+      "CASE WHEN JSON_VALID(request) THEN CAST(JSON_EXTRACT(request, '\$.descritor') AS CHAR) END AS descritor "
+      'FROM api_logs WHERE endpoint LIKE ?',
+      ['%$endpointContains%'],
+    );
+    return EnviosIndex(
+      result.rows.map((r) => EnvioResumo.fromMap(r.typedAssoc())),
+    );
   }
 
   Future<int> insertLog({
