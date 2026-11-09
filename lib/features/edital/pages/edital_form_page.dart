@@ -32,6 +32,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../estimativa/estimativa_providers.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/envios_providers.dart';
 import '../csv/mappers/edital_complemento_csv_mapper.dart';
 import '../domain/edital_domain.dart';
 import '../domain/edital_rules.dart';
@@ -375,6 +376,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -491,6 +493,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
         if (!mounted) return;
         ref.invalidate(processosProvider);
+        ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -795,6 +798,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           await ref
               .read(apiLogsDaoProvider)
               .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          ref.invalidate(enviosProvider);
           await _reloadLatestSendLog();
 
           if (mounted) {
@@ -817,6 +821,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
 
     String avisoDependentes;
     try {
+      // Envios recarregados: o protocolo pode ter sido armazenado.
+      ref.invalidate(enviosProvider);
       final processos = await ref.refresh(processosProvider.future);
       if (!mounted) return;
       final processo = processos
@@ -866,6 +872,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;

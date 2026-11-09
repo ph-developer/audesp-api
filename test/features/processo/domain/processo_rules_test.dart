@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:audesp_api/core/database/app_database.dart';
 import 'package:audesp_api/features/estimativa/models/estimativa_model.dart';
+import 'package:audesp_api/features/logs/domain/ultimo_envio.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/domain/processo_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,12 +92,33 @@ Processo _processo({
   List<Licitacao> licitacoes = const [],
   List<Ata> atas = const [],
   List<Ajuste> ajustes = const [],
+  EnviosProcesso? envios,
 }) => Processo(
   edital: edital ?? _edital(1),
   estimativa: estimativa,
   licitacoes: licitacoes,
   atas: atas,
   ajustes: ajustes,
+  envios: envios,
+);
+
+const _oficial = 'https://audesp.tce.sp.gov.br';
+const _piloto = 'https://audesp-piloto.tce.sp.gov.br';
+
+EnvioResumo _envio(
+  int id,
+  Map<String, Object?> descritor, {
+  String? statusProtocolo,
+  int timestamp = 100,
+  String baseUrl = _oficial,
+}) => EnvioResumo(
+  id: id,
+  statusCode: 200,
+  protocolo: 'P$id',
+  statusProtocolo: statusProtocolo,
+  timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
+  descritor: descritor,
+  endpoint: '$baseUrl/recepcao-fase-4/f4/enviar',
 );
 
 void main() {
@@ -260,34 +282,194 @@ void main() {
   group('situacaoLicitacao', () {
     test('sem licitação é inexistente', () {
       expect(
-        ProcessoRules.situacaoLicitacao([]),
+        ProcessoRules.situacaoLicitacao(_processo()),
         SituacaoLicitacao.inexistente,
       );
     });
 
-    test('com licitações não enviadas é rascunho', () {
+    test('com licitações não enviadas é pendente', () {
       expect(
-        ProcessoRules.situacaoLicitacao([_licitacao(1), _licitacao(2)]),
-        SituacaoLicitacao.rascunho,
+        ProcessoRules.situacaoLicitacao(
+          _processo(licitacoes: [_licitacao(1), _licitacao(2)]),
+        ),
+        SituacaoLicitacao.pendente,
       );
     });
 
-    test('com uma enviada é enviada', () {
+    test('enviada sem log de envio (legado) é concluída', () {
       expect(
-        ProcessoRules.situacaoLicitacao([_licitacao(1, status: 'sent')]),
-        SituacaoLicitacao.enviada,
+        ProcessoRules.situacaoLicitacao(
+          _processo(licitacoes: [_licitacao(1, status: 'sent')]),
+        ),
+        SituacaoLicitacao.concluida,
       );
     });
 
-    test('enviada prevalece sobre rascunhos em qualquer ordem', () {
+    test('concluída prevalece sobre rascunhos em qualquer ordem', () {
       final licitacoes = [_licitacao(1), _licitacao(2, status: 'sent')];
       expect(
-        ProcessoRules.situacaoLicitacao(licitacoes),
-        SituacaoLicitacao.enviada,
+        ProcessoRules.situacaoLicitacao(_processo(licitacoes: licitacoes)),
+        SituacaoLicitacao.concluida,
       );
       expect(
-        ProcessoRules.situacaoLicitacao(licitacoes.reversed),
-        SituacaoLicitacao.enviada,
+        ProcessoRules.situacaoLicitacao(
+          _processo(licitacoes: licitacoes.reversed.toList()),
+        ),
+        SituacaoLicitacao.concluida,
+      );
+    });
+  });
+
+  group('protocolo armazenado conclui a fase', () {
+    final edital = DescritorEnvio.edital(
+      municipio: '1',
+      entidade: '2',
+      codigoEdital: 'edital-1',
+      retificacao: false,
+    );
+    final licitacao = DescritorEnvio.licitacao(
+      municipio: '1',
+      entidade: '2',
+      codigoEdital: 'edital-1',
+      retificacao: false,
+    );
+    final user = _user(isAdmin: true);
+
+    EnviosProcesso envios({
+      List<EnvioResumo> editais = const [],
+      List<EnvioResumo> licitacoes = const [],
+    }) => EnviosProcesso(
+      editais: EnviosIndex(editais),
+      licitacoes: EnviosIndex(licitacoes),
+      baseUrl: _oficial,
+    );
+
+    test('edital em análise bloqueia licitação e não cobra pendência', () {
+      final processo = _processo(
+        envios: envios(
+          editais: [_envio(1, edital, statusProtocolo: 'Recebido')],
+        ),
+      );
+
+      expect(
+        ProcessoRules.motivoBloqueioLicitacao(processo),
+        'O protocolo do edital ainda não foi armazenado pelo AUDESP '
+        '(situação: Recebido).',
+      );
+      expect(
+        ProcessoRules.motivoBloqueioAjuste(processo),
+        ProcessoRules.motivoBloqueioLicitacao(processo),
+      );
+      expect(ProcessoRules.pendenciasPara(user, [processo]), isEmpty);
+    });
+
+    test('edital armazenado libera a licitação', () {
+      final processo = _processo(
+        envios: envios(
+          editais: [_envio(1, edital, statusProtocolo: 'Armazenado')],
+        ),
+      );
+
+      expect(ProcessoRules.motivoBloqueioLicitacao(processo), isNull);
+      expect(
+        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
+        TipoPendencia.criarLicitacao,
+      );
+    });
+
+    test('armazenado no Piloto não conclui no Oficial', () {
+      final processo = _processo(
+        envios: envios(
+          editais: [
+            _envio(1, edital, statusProtocolo: 'Armazenado', baseUrl: _piloto),
+          ],
+        ),
+      );
+
+      expect(
+        ProcessoRules.motivoBloqueioLicitacao(processo),
+        'O edital ainda não foi enviado ao AUDESP.',
+      );
+    });
+
+    test('edital em retificação continua concluído', () {
+      final processo = _processo(
+        edital: _edital(1, status: 'draft'),
+        envios: envios(
+          editais: [
+            _envio(2, {...edital, 'retificacao': true}, timestamp: 200),
+            _envio(1, edital, statusProtocolo: 'Armazenado'),
+          ],
+        ),
+      );
+
+      expect(processo.conclusaoEdital.concluida, isTrue);
+      expect(ProcessoRules.motivoBloqueioLicitacao(processo), isNull);
+    });
+
+    test('licitação rejeitada bloqueia o ajuste e pede reenvio', () {
+      final processo = _processo(
+        licitacoes: [_licitacao(1, status: 'sent')],
+        envios: envios(
+          licitacoes: [_envio(1, licitacao, statusProtocolo: 'Rejeitado')],
+        ),
+      );
+
+      expect(
+        ProcessoRules.motivoBloqueioAjuste(processo),
+        'O protocolo da licitação do edital foi rejeitado pelo AUDESP. '
+        'Corrija e reenvie.',
+      );
+      expect(
+        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
+        TipoPendencia.enviarLicitacao,
+      );
+    });
+
+    test('licitação em análise bloqueia o ajuste sem pendência', () {
+      final processo = _processo(
+        licitacoes: [_licitacao(1, status: 'sent')],
+        envios: envios(
+          licitacoes: [_envio(1, licitacao, statusProtocolo: 'Pendente')],
+        ),
+      );
+
+      expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
+      expect(ProcessoRules.pendenciasPara(user, [processo]), isEmpty);
+    });
+
+    test('licitação armazenada libera o ajuste', () {
+      final processo = _processo(
+        licitacoes: [_licitacao(1, status: 'sent')],
+        envios: envios(
+          licitacoes: [_envio(1, licitacao, statusProtocolo: 'Armazenado')],
+        ),
+      );
+
+      expect(ProcessoRules.podeCriarAjuste(processo), isTrue);
+      expect(
+        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
+        TipoPendencia.criarAjuste,
+      );
+    });
+
+    test('uma licitação armazenada basta entre várias', () {
+      final processo = _processo(
+        licitacoes: [
+          _licitacao(1, status: 'sent'),
+          _licitacao(2),
+        ],
+        envios: envios(
+          licitacoes: [
+            _envio(2, licitacao, statusProtocolo: 'Rejeitado', timestamp: 200),
+            _envio(1, licitacao, statusProtocolo: 'Armazenado'),
+          ],
+        ),
+      );
+
+      expect(
+        ProcessoRules.situacaoLicitacao(processo),
+        SituacaoLicitacao.concluida,
       );
     });
   });

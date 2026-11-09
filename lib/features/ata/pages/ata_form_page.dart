@@ -33,6 +33,7 @@ import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/envios_providers.dart';
 import '../ata_providers.dart';
 import '../domain/ata_rules.dart';
 import '../services/ata_service.dart';
@@ -137,6 +138,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   }
 
   Future<List<Processo>> _carregarOpcoesEdital() async {
+    // Envios recarregados: o protocolo pode ter sido armazenado.
+    ref.invalidate(enviosProvider);
     final processos = await ref.refresh(processosProvider.future);
     if (!mounted) return processos;
     final opcoes = ProcessoRules.opcoesAta(processos);
@@ -407,6 +410,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -492,6 +496,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
         if (!mounted) return;
         ref.invalidate(processosProvider);
+        ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -669,6 +674,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           await ref
               .read(apiLogsDaoProvider)
               .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          ref.invalidate(enviosProvider);
           await _reloadLatestSendLog();
 
           if (mounted) {
@@ -718,6 +724,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;

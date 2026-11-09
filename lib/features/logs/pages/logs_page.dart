@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../envios_providers.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../features/auth/auth_providers.dart';
@@ -252,6 +253,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
 
           final dao = ref.read(apiLogsDaoProvider);
           await dao.updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          ref.invalidate(enviosProvider);
 
           if (mounted) {
             Navigator.of(context, rootNavigator: true).pop(); // fecha o loader
@@ -326,6 +328,7 @@ class _LogsPageState extends ConsumerState<LogsPage> {
               final json = jsonDecode(jsonRetorno);
               final novoStatus = json['status']?.toString() ?? 'Desconhecido';
               await dao.updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+              ref.invalidate(enviosProvider);
               successCount++;
             } catch (_) {}
           }

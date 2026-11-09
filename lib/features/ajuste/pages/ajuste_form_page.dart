@@ -35,6 +35,7 @@ import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/envios_providers.dart';
 import '../domain/ajuste_domain.dart';
 import '../domain/ajuste_rules.dart';
 import '../ajuste_providers.dart';
@@ -296,6 +297,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   Future<List<Processo>> _carregarOpcoesEdital() async {
     final adesao = _adesaoParticipacao;
+    // Envios recarregados: o protocolo pode ter sido armazenado.
+    ref.invalidate(enviosProvider);
     final processos = await ref.refresh(processosProvider.future);
     if (!mounted || adesao != _adesaoParticipacao) return processos;
     final opcoes = ProcessoRules.opcoesAjuste(
@@ -721,6 +724,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       ref.invalidate(ajustesDraftProvider);
       ref.invalidate(ajustesEnviadosProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
 
       if (mounted) {
         setState(() {});
@@ -848,6 +852,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
         );
         if (!mounted) return;
         ref.invalidate(processosProvider);
+        ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -916,6 +921,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           await ref
               .read(apiLogsDaoProvider)
               .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          ref.invalidate(enviosProvider);
           await _reloadLatestSendLog();
 
           if (mounted) {
@@ -965,6 +971,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       ref.invalidate(ajustesDraftProvider);
       ref.invalidate(ajustesEnviadosProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;

@@ -11,6 +11,9 @@ class EnvioResumo {
   final DateTime timestamp;
   final Map<String, dynamic> descritor;
 
+  /// URL completa do envio; começa pela base do ambiente (Piloto/Oficial).
+  final String endpoint;
+
   const EnvioResumo({
     required this.id,
     required this.statusCode,
@@ -18,6 +21,7 @@ class EnvioResumo {
     required this.statusProtocolo,
     required this.timestamp,
     required this.descritor,
+    this.endpoint = '',
   });
 
   /// `row['descritor']` é o texto de `request.descritor`; nulo ou inválido
@@ -40,6 +44,7 @@ class EnvioResumo {
         (row['timestamp'] as int) * 1000,
       ),
       descritor: descritor,
+      endpoint: row['endpoint'] as String? ?? '',
     );
   }
 
@@ -58,6 +63,16 @@ class EnvioResumo {
     }
     return SituacaoEnvio.emAndamento;
   }
+
+  /// O AUDESP armazenou o documento. Substituído também conta: o protocolo
+  /// foi armazenado antes de ser trocado pela retificação.
+  bool get armazenou {
+    if (!sucesso) return false;
+    final s = (statusProtocolo ?? '').toLowerCase();
+    return s.contains('armazenado') || s.contains('substitu');
+  }
+
+  bool doAmbiente(String baseUrl) => endpoint.startsWith('$baseUrl/');
 
   /// Texto da badge: o status do protocolo AUDESP ou, sem ele, o resultado
   /// da requisição.
@@ -213,12 +228,28 @@ class EnviosIndex {
   }
 
   /// Envio mais recente cujo descritor tem os campos de [esperado].
-  EnvioResumo? ultimo(Map<String, Object?> esperado) {
+  EnvioResumo? ultimo(Map<String, Object?> esperado) =>
+      todos(esperado).firstOrNull;
+
+  /// Envios cujo descritor tem os campos de [esperado], do mais recente ao
+  /// mais antigo.
+  Iterable<EnvioResumo> todos(Map<String, Object?> esperado) {
     final candidatos =
         _porEdital[esperado['codigoEdital']?.toString()] ?? const [];
-    for (final envio in candidatos) {
-      if (DescritorEnvio.corresponde(envio.descritor, esperado)) return envio;
-    }
-    return null;
+    return candidatos.where(
+      (envio) => DescritorEnvio.corresponde(envio.descritor, esperado),
+    );
   }
+}
+
+/// O protocolo ainda pode mudar de situação no AUDESP (pendente, recebido,
+/// em validação). Situações finais não precisam ser consultadas de novo.
+bool protocoloEmAndamento(String? status) {
+  if (status == null) return false;
+  final s = status.toLowerCase();
+  return !(s.contains('rejeitado') ||
+      s.contains('arquivado') ||
+      s.contains('exclu') ||
+      s.contains('armazenado') ||
+      s.contains('substitu'));
 }

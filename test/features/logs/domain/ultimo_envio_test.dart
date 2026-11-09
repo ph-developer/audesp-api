@@ -99,6 +99,23 @@ void main() {
     });
   });
 
+  group('EnviosIndex.todos', () {
+    test('traz original e retificações sem filtrar a retificação', () {
+      final index = EnviosIndex([
+        _envio(id: 1, timestamp: 100, descritor: {...edital}),
+        _envio(
+          id: 2,
+          timestamp: 200,
+          descritor: {...edital, 'retificacao': true},
+        ),
+        _envio(id: 3, descritor: {...edital, 'codigoEdital': 'E2'}),
+      ]);
+
+      final semRetificacao = Map.of(edital)..remove('retificacao');
+      expect(index.todos(semRetificacao).map((e) => e.id), [2, 1]);
+    });
+  });
+
   group('EnvioResumo', () {
     test('falha HTTP prevalece sobre o status do protocolo', () {
       final envio = _envio(id: 1, statusCode: 400);

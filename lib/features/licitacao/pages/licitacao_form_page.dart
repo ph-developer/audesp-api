@@ -22,8 +22,10 @@ import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/envios_providers.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_condutor.dart';
 import '../domain/licitacao_domain.dart';
@@ -173,11 +175,20 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     _retificacao = edital.retificacao;
   }
 
-  bool get _isSelectedEditalSent {
+  /// Por que a licitação ainda não pode ser enviada: o edital precisa estar
+  /// com o protocolo armazenado no AUDESP. null libera o envio.
+  String? _motivoBloqueioEnvio(AsyncValue<List<Processo>> processos) {
     final id = _editalId;
-    if (id == null) return false;
-    final edital = _editais.where((e) => e.id == id).firstOrNull;
-    return edital != null && edital.status == 'sent';
+    if (id == null) return 'Selecione o edital vinculado.';
+    final lista = processos.value;
+    if (lista == null) {
+      return processos.hasError
+          ? 'Não foi possível verificar o edital: ${processos.error}'
+          : 'Verificando a situação do edital…';
+    }
+    final processo = lista.where((p) => p.edital.id == id).firstOrNull;
+    if (processo == null) return 'Edital não encontrado.';
+    return processo.conclusaoEdital.motivo('edital');
   }
 
   bool get _isSelectedEditalSrp {
@@ -441,6 +452,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
 
       if (mounted) {
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
@@ -514,6 +526,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
         if (!mounted) return;
         ref.invalidate(processosProvider);
+        ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
           AudespSnackBar.success(context, msg);
@@ -584,6 +597,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           await ref
               .read(apiLogsDaoProvider)
               .updateProtocoloInfo(log.id, novoStatus, jsonRetorno);
+          ref.invalidate(enviosProvider);
           await _reloadLatestSendLog();
 
           if (mounted) {
@@ -606,6 +620,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     String avisoDependentes;
     try {
+      // Envios recarregados: o protocolo pode ter sido armazenado.
+      ref.invalidate(enviosProvider);
       final processos = await ref.refresh(processosProvider.future);
       if (!mounted) return;
       final processo = processos
@@ -655,6 +671,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
       ref.invalidate(processosProvider);
+      ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {
           _isSent = false;
@@ -1138,6 +1155,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
 
     final readOnly = _isSent;
+    final motivoEnvio = _motivoBloqueioEnvio(ref.watch(processosProvider));
 
     return Scaffold(
       appBar: AppBar(
@@ -1183,11 +1201,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ),
               const SizedBox(width: 8),
               Tooltip(
-                message: _editalId != null && !_isSelectedEditalSent
-                    ? 'Edital ainda não enviado à AUDESP'
-                    : 'Enviar à AUDESP',
+                message: motivoEnvio ?? 'Enviar à AUDESP',
                 child: FilledButton.icon(
-                  onPressed: (!_isSelectedEditalSent) ? null : _enviar,
+                  onPressed: motivoEnvio != null ? null : _enviar,
                   icon: const Icon(Icons.send),
                   label: const Text('Enviar à AUDESP'),
                 ),

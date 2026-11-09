@@ -1,7 +1,9 @@
 import '../../../core/database/app_database.dart';
+import '../../logs/domain/conclusao_envio.dart';
 import 'processo.dart';
 
-enum SituacaoLicitacao { inexistente, rascunho, enviada }
+/// [pendente]: há licitação, mas nenhuma com protocolo armazenado.
+enum SituacaoLicitacao { inexistente, pendente, concluida }
 
 enum TipoPendencia { criarLicitacao, enviarLicitacao, criarAta, criarAjuste }
 
@@ -25,7 +27,7 @@ class OpcaoEdital {
 abstract final class ProcessoRules {
   static List<OpcaoEdital> opcoesAta(Iterable<Processo> processos) => [
     for (final processo in processos)
-      if (processo.edital.status == 'sent' && processo.edital.isSrp)
+      if (_editalEnviado(processo) && processo.edital.isSrp)
         OpcaoEdital(
           processo: processo,
           motivoBloqueio: motivoBloqueioAta(processo),
@@ -37,7 +39,7 @@ abstract final class ProcessoRules {
     bool adesaoParticipacao = false,
   }) => [
     for (final processo in processos)
-      if (processo.edital.status == 'sent' &&
+      if (_editalEnviado(processo) &&
           (adesaoParticipacao || !processo.edital.isSrp))
         OpcaoEdital(
           processo: processo,
@@ -48,25 +50,58 @@ abstract final class ProcessoRules {
         ),
   ];
 
-  static SituacaoLicitacao situacaoLicitacao(Iterable<Licitacao> licitacoes) {
-    var temLicitacao = false;
-    for (final licitacao in licitacoes) {
-      if (licitacao.status == 'sent') return SituacaoLicitacao.enviada;
-      temLicitacao = true;
-    }
-    return temLicitacao
-        ? SituacaoLicitacao.rascunho
-        : SituacaoLicitacao.inexistente;
+  // Editais oferecidos nos formulários de Ata e Ajuste: os enviados, mesmo
+  // ainda sem armazenamento (o motivo do bloqueio explica), e os já
+  // armazenados que voltaram a rascunho para retificação.
+  static bool _editalEnviado(Processo processo) =>
+      processo.edital.status == 'sent' || processo.conclusaoEdital.concluida;
+
+  static SituacaoLicitacao situacaoLicitacao(Processo processo) {
+    if (processo.licitacoes.isEmpty) return SituacaoLicitacao.inexistente;
+    return conclusaoLicitacao(processo)!.concluida
+        ? SituacaoLicitacao.concluida
+        : SituacaoLicitacao.pendente;
   }
 
+  /// A licitação concluída ou, sem nenhuma, a mais adiantada (em análise,
+  /// depois rejeitada, excluída e não enviada). null sem licitação.
+  static ConclusaoEnvio? conclusaoLicitacao(Processo processo) {
+    ConclusaoEnvio? melhor;
+    for (final licitacao in processo.licitacoes) {
+      final conclusao = processo.envios.licitacao(licitacao);
+      if (conclusao.concluida) return conclusao;
+      if (melhor == null ||
+          _prioridade(conclusao.situacao) > _prioridade(melhor.situacao)) {
+        melhor = conclusao;
+      }
+    }
+    return melhor;
+  }
+
+  static int _prioridade(SituacaoConclusao situacao) => switch (situacao) {
+    SituacaoConclusao.concluida => 4,
+    SituacaoConclusao.emAnalise => 3,
+    SituacaoConclusao.rejeitado => 2,
+    SituacaoConclusao.excluido => 1,
+    SituacaoConclusao.naoEnviado => 0,
+  };
+
   static const motivoEditalOculto = 'O edital está oculto em Processos.';
+
+  static String? _motivoEdital(Processo processo) =>
+      processo.conclusaoEdital.motivo('edital');
+
+  /// null indica que a licitação do edital pode ser enviada.
+  static String? motivoBloqueioLicitacao(Processo processo) {
+    if (processo.edital.oculto) return motivoEditalOculto;
+    return _motivoEdital(processo);
+  }
 
   /// null indica que a criação está liberada.
   static String? motivoBloqueioAta(Processo processo) {
     if (processo.edital.oculto) return motivoEditalOculto;
-    if (processo.edital.status != 'sent') {
-      return 'O edital ainda não foi enviado ao AUDESP.';
-    }
+    final motivoEdital = _motivoEdital(processo);
+    if (motivoEdital != null) return motivoEdital;
     if (!processo.edital.isSrp) {
       return 'Ata de registro de preços exige edital SRP.';
     }
@@ -82,9 +117,8 @@ abstract final class ProcessoRules {
   }) {
     if (processo.edital.oculto) return motivoEditalOculto;
     if (adesaoParticipacao) return null;
-    if (processo.edital.status != 'sent') {
-      return 'O edital ainda não foi enviado ao AUDESP.';
-    }
+    final motivoEdital = _motivoEdital(processo);
+    if (motivoEdital != null) return motivoEdital;
     if (processo.edital.isSrp) {
       return 'Edital com registro de preços gera ata, não ajuste.';
     }
@@ -98,13 +132,11 @@ abstract final class ProcessoRules {
       motivoBloqueioAjuste(processo, adesaoParticipacao: adesaoParticipacao) ==
       null;
 
-  static String? _motivoBloqueioLicitacao(Processo processo) =>
-      switch (situacaoLicitacao(processo.licitacoes)) {
-        SituacaoLicitacao.inexistente => 'O edital ainda não tem licitação.',
-        SituacaoLicitacao.rascunho =>
-          'A licitação do edital ainda não foi enviada ao AUDESP.',
-        SituacaoLicitacao.enviada => null,
-      };
+  static String? _motivoBloqueioLicitacao(Processo processo) {
+    final conclusao = conclusaoLicitacao(processo);
+    if (conclusao == null) return 'O edital ainda não tem licitação.';
+    return conclusao.motivo('licitação do edital', feminino: true);
+  }
 
   static ({int atas, int ajustes}) dependentesDe(Processo processo) =>
       (atas: processo.atas.length, ajustes: processo.ajustes.length);
@@ -121,15 +153,18 @@ abstract final class ProcessoRules {
     for (final processo in processos) {
       // Edital oculto não cobra as próximas etapas.
       if (processo.edital.oculto) continue;
-      final situacao = situacaoLicitacao(processo.licitacoes);
+      final situacao = situacaoLicitacao(processo);
       final isSrp = processo.edital.isSrp;
 
-      if (podeLicitacao && processo.edital.status == 'sent') {
+      if (podeLicitacao && processo.conclusaoEdital.concluida) {
         if (situacao == SituacaoLicitacao.inexistente) {
           pendencias.add(
             Pendencia(processo: processo, tipo: TipoPendencia.criarLicitacao),
           );
-        } else if (situacao == SituacaoLicitacao.rascunho) {
+        } else if (situacao == SituacaoLicitacao.pendente &&
+            // Em análise só depende do AUDESP; não há o que fazer.
+            conclusaoLicitacao(processo)!.situacao !=
+                SituacaoConclusao.emAnalise) {
           pendencias.add(
             Pendencia(processo: processo, tipo: TipoPendencia.enviarLicitacao),
           );
@@ -137,7 +172,7 @@ abstract final class ProcessoRules {
       }
 
       if (podeAta &&
-          situacao == SituacaoLicitacao.enviada &&
+          situacao == SituacaoLicitacao.concluida &&
           isSrp &&
           processo.atas.isEmpty) {
         pendencias.add(
@@ -147,7 +182,7 @@ abstract final class ProcessoRules {
 
       if (podeAjuste &&
           !isSrp &&
-          situacao == SituacaoLicitacao.enviada &&
+          situacao == SituacaoLicitacao.concluida &&
           processo.ajustes.isEmpty) {
         pendencias.add(
           Pendencia(processo: processo, tipo: TipoPendencia.criarAjuste),

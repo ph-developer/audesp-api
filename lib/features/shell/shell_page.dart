@@ -8,6 +8,7 @@ import '../../core/navigation/app_modules.dart';
 import '../../features/auth/auth_providers.dart';
 import '../documentacao/documentacao_providers.dart';
 import '../documentacao/widgets/documentacao_alerta_button.dart';
+import '../logs/envios_providers.dart';
 import '../pncp/pncp_providers.dart';
 import 'widgets/app_navigation_rail.dart';
 import 'widgets/environment_dialog.dart';
@@ -28,6 +29,10 @@ class ShellPage extends ConsumerWidget {
     if (user != null) ref.watch(pncpMonitorProvider);
     // Verifica a documentação do AUDESP uma vez por manhã e por tarde.
     if (user != null) ref.watch(documentacaoMonitorProvider);
+    // Atualiza os protocolos em andamento enquanto houver token AUDESP.
+    if (user != null && kLogsModule.podeAcessar(user)) {
+      ref.watch(protocolosMonitorProvider);
+    }
 
     final modules = user == null ? <AppModule>[] : modulosPara(user);
     final logsSelected = kLogsModule.matchesLocation(currentPath);

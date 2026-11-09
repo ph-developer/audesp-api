@@ -37,10 +37,9 @@ abstract final class ProcessoEtapas {
   static List<EtapaProcesso> de(Processo processo, User user) {
     final edital = processo.edital;
     final editalEnviado = edital.status == 'sent';
-    final podeNovaLicitacao = editalEnviado && !edital.oculto;
-    final situacaoLicitacao = ProcessoRules.situacaoLicitacao(
-      processo.licitacoes,
-    );
+    final motivoLicitacao = ProcessoRules.motivoBloqueioLicitacao(processo);
+    final podeNovaLicitacao = motivoLicitacao == null;
+    final situacaoLicitacao = ProcessoRules.situacaoLicitacao(processo);
     final motivoAta = ProcessoRules.motivoBloqueioAta(processo);
     final motivoAjuste = ProcessoRules.motivoBloqueioAjuste(processo);
 
@@ -76,15 +75,13 @@ abstract final class ProcessoEtapas {
       etapa(
         tipo: EtapaTipo.licitacao,
         situacao: switch (situacaoLicitacao) {
-          SituacaoLicitacao.enviada => SituacaoEtapa.enviada,
-          SituacaoLicitacao.rascunho => SituacaoEtapa.rascunho,
+          SituacaoLicitacao.concluida => SituacaoEtapa.enviada,
+          SituacaoLicitacao.pendente => SituacaoEtapa.rascunho,
           SituacaoLicitacao.inexistente =>
             podeNovaLicitacao ? SituacaoEtapa.aCriar : SituacaoEtapa.bloqueada,
         },
         quantidade: processo.licitacoes.length,
-        motivoBloqueio: edital.oculto
-            ? ProcessoRules.motivoEditalOculto
-            : 'O edital ainda não foi enviado ao AUDESP.',
+        motivoBloqueio: motivoLicitacao,
         acoes: [
           for (final licitacao in processo.licitacoes)
             AcaoEtapa(

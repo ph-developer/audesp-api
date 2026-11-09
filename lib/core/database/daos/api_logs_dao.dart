@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../app_database.dart';
+import '../../../features/logs/domain/atualizacao_protocolos.dart';
 import '../../../features/logs/domain/ultimo_envio.dart';
 import '../database_service.dart';
 
@@ -139,7 +140,7 @@ class ApiLogsDao {
   /// MySQL para não trazer os JSONs completos às listagens.
   Future<EnviosIndex> listEnvios(String endpointContains) async {
     final result = await _db.executePrepared(
-      'SELECT id, status_code, protocolo, status_protocolo, timestamp, '
+      'SELECT id, endpoint, status_code, protocolo, status_protocolo, timestamp, '
       "CASE WHEN JSON_VALID(request) THEN CAST(JSON_EXTRACT(request, '\$.descritor') AS CHAR) END AS descritor "
       'FROM api_logs WHERE endpoint LIKE ?',
       ['%$endpointContains%'],
@@ -147,6 +148,35 @@ class ApiLogsDao {
     return EnviosIndex(
       result.rows.map((r) => EnvioResumo.fromMap(r.typedAssoc())),
     );
+  }
+
+  /// Envios aceitos do ambiente de [baseUrl] cujo protocolo ainda pode
+  /// mudar de situação, dos mais recentes aos mais antigos.
+  Future<List<ProtocoloEmAndamento>> listProtocolosEmAndamento(
+    String baseUrl, {
+    int limite = 20,
+  }) async {
+    final result = await _db.executePrepared(
+      'SELECT id, protocolo, status_protocolo FROM api_logs '
+      "WHERE protocolo IS NOT NULL AND protocolo <> '' "
+      'AND status_code BETWEEN 200 AND 299 AND endpoint LIKE ? '
+      'AND (status_protocolo IS NULL OR ('
+      "LOWER(status_protocolo) NOT LIKE '%armazenado%' "
+      "AND LOWER(status_protocolo) NOT LIKE '%rejeitado%' "
+      "AND LOWER(status_protocolo) NOT LIKE '%arquivado%' "
+      "AND LOWER(status_protocolo) NOT LIKE '%exclu%' "
+      "AND LOWER(status_protocolo) NOT LIKE '%substitu%')) "
+      'ORDER BY timestamp DESC, id DESC LIMIT ${limite.clamp(1, 200)}',
+      ['$baseUrl/%'],
+    );
+    return result.rows.map((row) {
+      final r = row.typedAssoc();
+      return ProtocoloEmAndamento(
+        logId: r['id'] as int,
+        protocolo: r['protocolo'] as String,
+        statusAtual: r['status_protocolo'] as String?,
+      );
+    }).toList();
   }
 
   Future<int> insertLog({

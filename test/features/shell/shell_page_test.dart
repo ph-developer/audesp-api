@@ -3,6 +3,7 @@ import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/navigation/app_modules.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
 import 'package:audesp_api/features/documentacao/documentacao_providers.dart';
+import 'package:audesp_api/features/logs/envios_providers.dart';
 import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/shell/shell_page.dart';
 import 'package:flutter/material.dart';
@@ -24,9 +25,10 @@ Future<GoRouter> _pumpShell(
   final container = ProviderContainer(
     overrides: [
       environmentProvider.overrideWith(_TestEnvironmentNotifier.new),
-      // Sem banco nem PNCP nos testes do shell.
+      // Sem banco, PNCP nem AUDESP nos testes do shell.
       pncpMonitorProvider.overrideWith((ref) {}),
       documentacaoMonitorProvider.overrideWith((ref) {}),
+      protocolosMonitorProvider.overrideWith((ref) {}),
       documentacaoAlertaProvider.overrideWith((ref) => alertaDocumentacao),
     ],
   );
