@@ -22,13 +22,6 @@ class EditaisDao {
     return result.rows.map((r) => Edital.fromMap(r.typedAssoc())).toList();
   }
 
-  Future<List<Edital>> watchOcultos() async {
-    final result = await _db.execute(
-      'SELECT * FROM editais WHERE oculto_em IS NOT NULL ORDER BY oculto_em DESC',
-    );
-    return result.rows.map((r) => Edital.fromMap(r.typedAssoc())).toList();
-  }
-
   Future<Edital?> findById(int id) async {
     final result = await _db.executePrepared(
       'SELECT * FROM editais WHERE id = (?)',
@@ -144,27 +137,6 @@ class EditaisDao {
     await _db.executePrepared(
       'UPDATE editais SET documento_json = ?, updated_at = ? WHERE id = ?',
       [json, now, id],
-    );
-  }
-
-  Future<void> ocultar(int id, {required int? userId, String? motivo}) async {
-    await _db.executePrepared(
-      'UPDATE editais SET oculto_em = (?), oculto_por = (?), '
-      'motivo_ocultacao = (?) WHERE id = (?)',
-      [
-        DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        userId,
-        motivo == null || motivo.trim().isEmpty ? null : motivo.trim(),
-        id,
-      ],
-    );
-  }
-
-  Future<void> reexibir(int id) async {
-    await _db.executePrepared(
-      'UPDATE editais SET oculto_em = NULL, oculto_por = NULL, '
-      'motivo_ocultacao = NULL WHERE id = (?)',
-      [id],
     );
   }
 

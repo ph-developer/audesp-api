@@ -108,8 +108,9 @@ class _SemPncpDialogState extends State<_SemPncpDialog> {
         final numAno = parts[1].split('/');
         if (numAno.length == 2) {
           final cleanNum = numAno[0].replaceFirst(RegExp(r'^0+'), '');
-          initialNumero =
-              cleanNum.isEmpty && numAno[0].isNotEmpty ? '0' : cleanNum;
+          initialNumero = cleanNum.isEmpty && numAno[0].isNotEmpty
+              ? '0'
+              : cleanNum;
           if (numAno[1].trim().isNotEmpty) {
             initialAno = numAno[1].trim();
           }
@@ -117,8 +118,8 @@ class _SemPncpDialogState extends State<_SemPncpDialog> {
       }
     }
 
-    final sigla = (_modalidadeId != null &&
-            kModalidadesSiglas.containsKey(_modalidadeId))
+    final sigla =
+        (_modalidadeId != null && kModalidadesSiglas.containsKey(_modalidadeId))
         ? kModalidadesSiglas[_modalidadeId]!
         : 'PE';
 
