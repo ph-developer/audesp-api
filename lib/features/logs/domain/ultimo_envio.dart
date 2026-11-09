@@ -89,11 +89,11 @@ enum SituacaoEnvio {
 enum FiltroEnvio {
   todos('Todos'),
   semEnvio('Sem envio'),
-  falha('Falha no envio'),
+  falha('Falha'),
   rejeitado('Rejeitado'),
-  emAndamento('Em andamento'),
+  emAndamento('Em análise'),
   armazenado('Armazenado'),
-  encerrado('Substituído/excluído');
+  encerrado('Encerrado');
 
   final String rotulo;
   const FiltroEnvio(this.rotulo);

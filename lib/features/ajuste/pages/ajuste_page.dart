@@ -11,10 +11,14 @@ import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/barra_filtros.dart';
+import '../../../core/utils/ordenacao_documentos.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
+import '../../../shared/widgets/ordenacao_selector.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../edital/widgets/filtro_modalidade_dropdown.dart';
 import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
 import '../../logs/widgets/filtro_envio_dropdown.dart';
@@ -34,6 +38,9 @@ class AjustePage extends ConsumerStatefulWidget {
 class _AjustePageState extends ConsumerState<AjustePage> {
   String _statusFilter = 'draft';
   FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
+  int? _modalidadeId;
+  OrdenarPor _ordenarPor = OrdenarPor.data;
+  bool _decrescente = true;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -46,62 +53,77 @@ class _AjustePageState extends ConsumerState<AjustePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ajustes (Contratos)'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-            child: AudespSegmentedButton<String>(
-              width: 260,
-              segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
-              icons: const {
-                'draft': Icons.edit_note,
-                'sent': Icons.check_circle_outline,
-              },
-              selected: {_statusFilter},
-              onSelectionChanged: (v) {
-                setState(() => _statusFilter = v.first);
-              },
-            ),
-          ),
-          FiltroEnvioDropdown(
-            value: _filtroEnvio,
-            onChanged: (v) => setState(() => _filtroEnvio = v),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 200,
-            child: AudespTextField(
-              label: 'Filtrar',
-              controller: _searchCtrl,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchCtrl.text.isEmpty
-                  ? null
-                  : AudespIconButton(
-                      tooltip: 'Limpar filtro',
-                      icon: Icons.close,
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() {});
-                      },
+        title: Row(
+          children: [
+            Text('Ajustes (Contratos)'),
+            const SizedBox(width: 16),
+            Expanded(
+              child: BarraFiltros(
+                children: [
+                  AudespSegmentedButton<String>(
+                    width: 260,
+                    segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
+                    icons: const {
+                      'draft': Icons.edit_note,
+                      'sent': Icons.check_circle_outline,
+                    },
+                    selected: {_statusFilter},
+                    onSelectionChanged: (v) {
+                      setState(() => _statusFilter = v.first);
+                    },
+                  ),
+                  SizedBox(
+                    width: 200,
+                    child: AudespTextField(
+                      label: 'Filtrar',
+                      controller: _searchCtrl,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchCtrl.text.isEmpty
+                          ? null
+                          : AudespIconButton(
+                              tooltip: 'Limpar filtro',
+                              icon: Icons.close,
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() {});
+                              },
+                            ),
+                      onChanged: (_) => setState(() {}),
                     ),
-              onChanged: (_) => setState(() {}),
+                  ),
+                  FiltroModalidadeDropdown(
+                    value: _modalidadeId,
+                    onChanged: (v) => setState(() => _modalidadeId = v),
+                  ),
+                  FiltroEnvioDropdown(
+                    value: _filtroEnvio,
+                    onChanged: (v) => setState(() => _filtroEnvio = v),
+                  ),
+                  OrdenacaoSelector(
+                    value: _ordenarPor,
+                    decrescente: _decrescente,
+                    onChanged: (v) => setState(() => _ordenarPor = v),
+                    onSentidoChanged: (v) => setState(() => _decrescente = v),
+                  ),
+                  AudespIconButton(
+                    icon: Icons.refresh,
+                    tooltip: 'Atualizar',
+                    onPressed: () {
+                      ref.invalidate(ajustesDraftProvider);
+                      ref.invalidate(ajustesEnviadosProvider);
+                      ref.invalidate(enviosProvider(EnviosEndpoint.ajuste));
+                      ref.invalidate(processosProvider);
+                      ref.invalidate(
+                        unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          AudespIconButton(
-            icon: Icons.refresh,
-            tooltip: 'Atualizar',
-            onPressed: () {
-              ref.invalidate(ajustesDraftProvider);
-              ref.invalidate(ajustesEnviadosProvider);
-              ref.invalidate(enviosProvider(EnviosEndpoint.ajuste));
-              ref.invalidate(processosProvider);
-              ref.invalidate(
-                unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
+          ],
+        ),
+        actions: const [SizedBox(width: 8)],
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -126,6 +148,9 @@ class _AjustePageState extends ConsumerState<AjustePage> {
         status: _statusFilter,
         search: _searchCtrl.text,
         filtroEnvio: _filtroEnvio,
+        modalidadeId: _modalidadeId,
+        ordenarPor: _ordenarPor,
+        decrescente: _decrescente,
       ),
     );
   }
@@ -135,10 +160,16 @@ class _AjusteList extends ConsumerWidget {
   final String status;
   final String search;
   final FiltroEnvio filtroEnvio;
+  final int? modalidadeId;
+  final OrdenarPor ordenarPor;
+  final bool decrescente;
   const _AjusteList({
     required this.status,
     this.search = '',
     this.filtroEnvio = FiltroEnvio.todos,
+    this.modalidadeId,
+    this.ordenarPor = OrdenarPor.data,
+    this.decrescente = true,
   });
 
   @override
@@ -171,6 +202,11 @@ class _AjusteList extends ConsumerWidget {
               ? Center(child: Text('Erro: ${enviosAsync.error}'))
               : const Center(child: CircularProgressIndicator());
         }
+        if (modalidadeId != null && !editaisAsync.hasValue) {
+          return editaisAsync.hasError
+              ? Center(child: Text('Erro: ${editaisAsync.error}'))
+              : const Center(child: CircularProgressIndicator());
+        }
         final buscados = search.isEmpty
             ? ajustes
             : ajustes.where((a) {
@@ -195,7 +231,17 @@ class _AjusteList extends ConsumerWidget {
                 return matchesLikeSearch(searchable, search);
               }).toList();
         final filtered = buscados
-            .where((x) => filtroEnvio.aceita(envioDe(x)))
+            .where(
+              (x) =>
+                  filtroEnvio.aceita(envioDe(x)) &&
+                  (modalidadeId == null ||
+                      (x.editalId == null
+                              ? null
+                              : editaisAsync
+                                    .value?[x.editalId]
+                                    ?.modalidadeId) ==
+                          modalidadeId),
+            )
             .toList();
 
         if (filtered.isEmpty) {
@@ -205,8 +251,8 @@ class _AjusteList extends ConsumerWidget {
                 : Icons.check_circle_outline,
             message: search.isNotEmpty
                 ? 'Nenhum resultado para "$search"'
-                : filtroEnvio != FiltroEnvio.todos
-                ? 'Nenhum resultado com status de envio "${filtroEnvio.rotulo}"'
+                : filtroEnvio != FiltroEnvio.todos || modalidadeId != null
+                ? 'Nenhum resultado para os filtros selecionados'
                 : status == 'draft'
                 ? 'Nenhum rascunho de ajuste'
                 : 'Nenhum ajuste enviado',
@@ -220,14 +266,31 @@ class _AjusteList extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Erro: $e')),
               data: (atasMap) {
+                final ordenados = ordenarDocumentos(
+                  filtered,
+                  por: ordenarPor,
+                  decrescente: decrescente,
+                  chave: (x) {
+                    final edital = x.editalId == null
+                        ? null
+                        : editaisMap[x.editalId];
+                    return ChaveOrdenacao(
+                      data: x.updatedAt,
+                      codigo: x.codigoContrato,
+                      modalidade: edital?.modalidadeLabel ?? '',
+                      numero: edital?.numeroCompra ?? '',
+                      ano: edital?.anoCompra ?? 0,
+                    );
+                  },
+                );
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
-                  itemCount: filtered.length,
+                  itemCount: ordenados.length,
                   itemBuilder: (context, i) {
-                    final ajuste = filtered[i];
+                    final ajuste = ordenados[i];
                     final edital = ajuste.editalId != null
                         ? editaisMap[ajuste.editalId]
                         : null;

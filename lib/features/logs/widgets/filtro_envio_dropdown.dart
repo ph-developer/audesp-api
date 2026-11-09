@@ -17,7 +17,7 @@ class FiltroEnvioDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 190,
+      width: 140,
       child: AudespDropdown<FiltroEnvio>(
         label: 'Status do envio',
         value: value,
