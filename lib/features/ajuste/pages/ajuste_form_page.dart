@@ -32,6 +32,9 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
 import '../../licitacao/domain/licitacao_resultado.dart';
+import '../../pncp/domain/pncp_ajuste_mapper.dart';
+import '../../pncp/domain/pncp_contratos_pendencias.dart';
+import '../../pncp/pncp_providers.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
@@ -45,11 +48,18 @@ import '../widgets/gemini_ajuste_import_dialog.dart';
 /// Formulário de criação/edição de Ajuste (Fase 7 – Módulo 4).
 ///
 /// [ajusteId] null → criar novo; não-null → editar existente.
+/// [pncpContratoId] preenche um novo Ajuste com um contrato pendente do PNCP.
 class AjusteFormPage extends ConsumerStatefulWidget {
   final int? ajusteId;
   final int? preselectedEditalId;
+  final int? pncpContratoId;
 
-  const AjusteFormPage({super.key, this.ajusteId, this.preselectedEditalId});
+  const AjusteFormPage({
+    super.key,
+    this.ajusteId,
+    this.preselectedEditalId,
+    this.pncpContratoId,
+  });
 
   @override
   ConsumerState<AjusteFormPage> createState() => _AjusteFormPageState();
@@ -285,6 +295,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Future<void> _init() async {
     if (widget.ajusteId != null) {
       await _loadExisting(widget.ajusteId!);
+    } else if (widget.pncpContratoId != null) {
+      await _loadFromPncp();
     } else {
       await _carregarOpcoesEdital();
       if (!mounted) return;
@@ -293,6 +305,63 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (!mounted) return;
     await _carregarItensLicitacao();
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _loadFromPncp() async {
+    try {
+      final contrato = await ref
+          .read(pncpContratosDaoProvider)
+          .findById(widget.pncpContratoId!);
+      if (!mounted) return;
+      if (contrato == null) {
+        _showError('O contrato do PNCP não foi encontrado.');
+        return;
+      }
+      final config = await ref.read(pncpConfigProvider.future);
+      if (!mounted) return;
+      if (!config.configurado || config.cnpj != contrato.cnpj) {
+        _showError('O contrato não pertence ao CNPJ configurado no PNCP.');
+        return;
+      }
+      final processos = await _carregarOpcoesEdital();
+      if (!mounted) return;
+      final documentos = await ref.read(documentosProcessoProvider.future);
+      if (!mounted) return;
+      final pendencia = PncpContratosPendencias.classificar(
+        contratos: [contrato],
+        processos: processos,
+        ajustes: documentos.ajustes,
+        cnpj: config.cnpj,
+      ).firstOrNull;
+      if (pendencia == null || contrato.dispensado) {
+        _showError(
+          'Este contrato já foi lançado ou não está nas pendências de Ajuste.',
+        );
+        return;
+      }
+      if (!pendencia.liberado) {
+        _showError(pendencia.motivoBloqueio!);
+        return;
+      }
+      _adesaoParticipacao = pendencia.adesaoParticipacao;
+      _editalId = pendencia.edital?.id;
+      // Recalcula as opções no modo de adesão e preserva o vínculo opcional,
+      // inclusive quando o edital ainda está em rascunho.
+      await _carregarOpcoesEdital();
+      if (!mounted) return;
+      final doc = PncpAjusteMapper.documento(
+        contrato.dados,
+        adesaoParticipacao: pendencia.adesaoParticipacao,
+        codigoEdital: pendencia.edital?.codigoEdital,
+      );
+      _aplicarDocumento(
+        doc,
+        codigoEdital: contrato.numeroControleCompra ?? '',
+        codigoContrato: contrato.numeroControle,
+      );
+    } catch (e) {
+      if (mounted) _showError('Erro ao carregar contrato do PNCP: $e');
+    }
   }
 
   Future<List<Processo>> _carregarOpcoesEdital() async {
@@ -453,24 +522,51 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _adesaoParticipacao = descritor['adesaoParticipacao'] as bool? ?? false;
     await _carregarOpcoesEdital();
     if (!mounted) return;
+    _aplicarDocumento(
+      doc,
+      codigoEdital: ajuste.codigoEdital,
+      codigoAta: ajuste.codigoAta,
+      codigoContrato: ajuste.codigoContrato,
+      retificacao: ajuste.retificacao,
+    );
+    if (_isSent) {
+      _lastSendLog = await ref
+          .read(apiLogsDaoProvider)
+          .findLatestAjusteSendLog(
+            municipio: ajuste.municipio,
+            entidade: ajuste.entidade,
+            codigoEdital: ajuste.codigoEdital,
+            codigoAta: ajuste.codigoAta,
+            codigoContrato: ajuste.codigoContrato,
+            retificacao: ajuste.retificacao,
+          );
+    }
+  }
+
+  void _aplicarDocumento(
+    Map<String, dynamic> doc, {
+    required String codigoEdital,
+    String? codigoAta,
+    required String codigoContrato,
+    bool retificacao = false,
+  }) {
+    final descritor = doc['descritor'] as Map<String, dynamic>? ?? {};
     _codigoEditalCtrl.text =
-        descritor['codigoEdital'] as String? ?? ajuste.codigoEdital;
+        descritor['codigoEdital'] as String? ?? codigoEdital;
     if (_adesaoParticipacao) {
       _codigoEditalCtrl.text = PcnpInputFormatter.applyMask(
         _codigoEditalCtrl.text,
       );
     }
-    final codigoAta =
-        descritor['codigoAta'] as String? ?? ajuste.codigoAta ?? '';
+    final ata = descritor['codigoAta'] as String? ?? codigoAta ?? '';
     _codigoAtaCtrl.text = _referenciasSemPncp
-        ? codigoAta
-        : PcnpInputFormatter.applyMask(codigoAta);
-    final codigoContrato =
-        descritor['codigoContrato'] as String? ?? ajuste.codigoContrato;
+        ? ata
+        : PcnpInputFormatter.applyMask(ata);
+    final contrato = descritor['codigoContrato'] as String? ?? codigoContrato;
     _codigoContratoCtrl.text = _editalSemPncp
-        ? codigoContrato
-        : PcnpInputFormatter.applyMask(codigoContrato);
-    _retificacao = descritor['retificacao'] as bool? ?? ajuste.retificacao;
+        ? contrato
+        : PcnpInputFormatter.applyMask(contrato);
+    _retificacao = descritor['retificacao'] as bool? ?? retificacao;
     _gerenciadoraJurisdicionada =
         descritor['gerenciadoraJurisdicionada'] as bool? ?? false;
     _cnpjGerenciadoraCtrl.text = descritor['cnpjGerenciadora'] as String? ?? '';
@@ -529,19 +625,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     _vigenciaMesesCtrl.text = (doc['vigenciaMeses'] as num?)?.toString() ?? '';
 
     _tipoObjetoContrato = doc['tipoObjetoContrato'] as int?;
-
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestAjusteSendLog(
-            municipio: ajuste.municipio,
-            entidade: ajuste.entidade,
-            codigoEdital: ajuste.codigoEdital,
-            codigoAta: ajuste.codigoAta,
-            codigoContrato: ajuste.codigoContrato,
-            retificacao: ajuste.retificacao,
-          );
-    }
   }
 
   // ── JSON builder ──────────────────────────────────────────────────────

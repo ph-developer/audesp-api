@@ -39,11 +39,43 @@ class PncpService {
     int ano,
     int sequencial, {
     bool novaTentativa = true,
+  }) => _consultar(
+    cnpj,
+    ano,
+    sequencial,
+    contrato: false,
+    novaTentativa: novaTentativa,
+  );
+
+  /// Contratos usam /api/pncp; /api/consulta não atende esta rota.
+  /// Aplica o mesmo tratamento de 404, 410 e 429 das compras.
+  Future<SequenciaPncp> consultarContrato(
+    String cnpj,
+    int ano,
+    int sequencial, {
+    bool novaTentativa = true,
+  }) => _consultar(
+    cnpj,
+    ano,
+    sequencial,
+    contrato: true,
+    novaTentativa: novaTentativa,
+  );
+
+  Future<SequenciaPncp> _consultar(
+    String cnpj,
+    int ano,
+    int sequencial, {
+    required bool contrato,
+    required bool novaTentativa,
   }) async {
-    final sequencia = 'sequência $sequencial/$ano';
+    final sequencia =
+        'sequência ${contrato ? 'de contrato ' : ''}$sequencial/$ano';
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/v1/orgaos/$cnpj/compras/$ano/$sequencial',
+        contrato
+            ? 'https://pncp.gov.br/api/pncp/v1/orgaos/$cnpj/contratos/$ano/$sequencial'
+            : '/v1/orgaos/$cnpj/compras/$ano/$sequencial',
       );
       final dados = response.data;
       if (dados == null) {
@@ -51,19 +83,25 @@ class PncpService {
           'O PNCP retornou uma resposta vazia na $sequencia.',
         );
       }
-      return CompraEncontrada(dados);
+      return contrato ? ContratoEncontrado(dados) : CompraEncontrada(dados);
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       switch (status) {
         case 404:
           return const SequenciaInexistente();
         case 410:
-          return const CompraExcluida();
+          return contrato ? const ContratoExcluido() : const CompraExcluida();
         case 429:
           final espera = _retryAfter(e.response!) ?? esperaPadrao;
           if (novaTentativa && espera <= esperaMaxima) {
             await _esperar(espera);
-            return consultarCompra(cnpj, ano, sequencial, novaTentativa: false);
+            return _consultar(
+              cnpj,
+              ano,
+              sequencial,
+              contrato: contrato,
+              novaTentativa: false,
+            );
           }
           throw PncpException(
             'O PNCP limitou as consultas (erro 429) na $sequencia. '

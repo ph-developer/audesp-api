@@ -12,6 +12,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../../shared/widgets/ufesp_indicador.dart';
 import '../../pncp/pncp_providers.dart';
 import '../../pncp/widgets/pncp_compra_card.dart';
+import '../../pncp/widgets/pncp_contrato_card.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../domain/pendencias_modulos.dart';
 import '../pendencias_providers.dart';
@@ -180,6 +181,36 @@ class PendenciasModuloList extends ConsumerWidget {
                   ],
                 ),
               );
+            }
+            if (modulo == '/ajuste') {
+              for (final pendencia in [
+                ...pendencias.contratosAjuste,
+                ...pendencias.contratosBloqueados,
+                if (mostrarDispensadas) ...pendencias.contratosDispensados,
+              ]) {
+                final contrato = pendencia.contrato;
+                if (!busca(
+                  [
+                    tituloPncpContrato(contrato),
+                    contrato.numeroControle,
+                    contrato.numeroControleCompra ?? '',
+                    contrato.niFornecedor,
+                    contrato.objeto,
+                    contrato.motivoDispensa ?? '',
+                    pendencia.motivoBloqueio ?? '',
+                    if (pendencia.edital != null)
+                      _buscaEdital(pendencia.edital!),
+                  ].join(' '),
+                )) {
+                  continue;
+                }
+                itens.add(
+                  PncpContratoCard(
+                    key: ValueKey('pncpContrato-${contrato.id}'),
+                    pendencia: pendencia,
+                  ),
+                );
+              }
             }
             if (itens.isEmpty) {
               return EmptyState(

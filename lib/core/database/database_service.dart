@@ -448,6 +448,41 @@ class DatabaseService {
       ''');
       await setSchemaVersion(16);
     }
+
+    if (version < 17) {
+      // Contratos do PNCP que podem originar pendências de lançamento de Ajuste.
+      await execute('''
+        CREATE TABLE IF NOT EXISTS pncp_contratos (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          cnpj VARCHAR(14) NOT NULL,
+          ano INT NOT NULL,
+          sequencial INT NOT NULL,
+          numero_controle VARCHAR(25) NOT NULL,
+          numero_controle_compra VARCHAR(25) NULL,
+          numero_controle_ata VARCHAR(31) NULL,
+          fruto_adesao TINYINT NOT NULL DEFAULT 0,
+          numero_contrato VARCHAR(50) NULL,
+          tipo_contrato_id INT NULL,
+          ni_fornecedor VARCHAR(50) NULL,
+          nome_fornecedor VARCHAR(255) NULL,
+          objeto TEXT NULL,
+          valor_global DECIMAL(18,4) NULL,
+          data_assinatura BIGINT NULL,
+          vigencia_inicio BIGINT NULL,
+          vigencia_fim BIGINT NULL,
+          data_publicacao BIGINT NULL,
+          dados_json LONGTEXT NOT NULL,
+          dispensada_em BIGINT NULL,
+          dispensada_por BIGINT NULL,
+          motivo_dispensa VARCHAR(500) NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          UNIQUE KEY uk_pncp_contratos_sequencia (cnpj, ano, sequencial),
+          UNIQUE KEY uk_pncp_contratos_controle (numero_controle)
+        )
+      ''');
+      await setSchemaVersion(17);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

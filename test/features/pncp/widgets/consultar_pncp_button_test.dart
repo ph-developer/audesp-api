@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../processo/processo_fixtures.dart';
 
 class _ConsultaTeste extends PncpConsultaNotifier {
-  Completer<int?>? resultado;
+  Completer<PncpConsultaResultado?>? resultado;
   int chamadas = 0;
 
   @override
@@ -19,7 +19,7 @@ class _ConsultaTeste extends PncpConsultaNotifier {
   void falhar() => state = const PncpConsultaState(erro: 'Sem conexão');
 
   @override
-  Future<int?> consultar({bool automatica = false}) async {
+  Future<PncpConsultaResultado?> consultar({bool automatica = false}) async {
     chamadas++;
     state = const PncpConsultaState(executando: true);
     final novas = await resultado!.future;
@@ -70,16 +70,18 @@ void main() {
         ),
         findsOneWidget,
       );
-      consulta.resultado = Completer<int?>();
+      consulta.resultado = Completer<PncpConsultaResultado?>();
       await tester.tap(find.byIcon(Icons.sync_problem));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(consulta.chamadas, 1);
-      consulta.resultado!.complete(2);
+      consulta.resultado!.complete((compras: 2, contratos: 3));
       await tester.pumpAndSettle();
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(
-        find.text('Consulta ao PNCP concluída. 2 compra(s) nova(s).'),
+        find.text(
+          'Consulta ao PNCP concluída. 2 compra(s) nova(s) e 3 contrato(s) novo(s).',
+        ),
         findsOneWidget,
       );
     },

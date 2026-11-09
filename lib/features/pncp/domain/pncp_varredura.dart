@@ -1,4 +1,5 @@
 import '../../../core/database/models/pncp_compra.dart';
+import '../../../core/database/models/pncp_contrato.dart';
 
 /// Resposta do PNCP para uma sequência.
 sealed class SequenciaPncp {
@@ -10,6 +11,11 @@ class CompraEncontrada extends SequenciaPncp {
   const CompraEncontrada(this.dados);
 }
 
+class ContratoEncontrado extends SequenciaPncp {
+  final Map<String, dynamic> dados;
+  const ContratoEncontrado(this.dados);
+}
+
 /// 404: a numeração ainda não chegou nesta sequência (ou é um buraco).
 class SequenciaInexistente extends SequenciaPncp {
   const SequenciaInexistente();
@@ -18,6 +24,11 @@ class SequenciaInexistente extends SequenciaPncp {
 /// 410: a compra existiu e foi excluída do PNCP.
 class CompraExcluida extends SequenciaPncp {
   const CompraExcluida();
+}
+
+/// 410: o contrato existiu e foi excluído do PNCP.
+class ContratoExcluido extends SequenciaPncp {
+  const ContratoExcluido();
 }
 
 typedef ConsultarCompraPncp =
@@ -54,6 +65,43 @@ abstract final class PncpVarredura {
     required SalvarCompraPncp salvar,
     required RegistrarSequenciaPncp registrarSequencia,
     int maxConsultas = maxConsultasPorExecucao,
+  }) => _executar(
+    cnpj: cnpj,
+    anoAtual: anoAtual,
+    ultimaSequencia: ultimaSequencia,
+    consultar: consultar,
+    salvar: (dados) => salvar(PncpCompra.fromApi(dados)),
+    registrarSequencia: registrarSequencia,
+    maxConsultas: maxConsultas,
+  );
+
+  /// Mesmas regras das compras, com cursor e orçamento próprios por execução.
+  static Future<({int consultas, int novas})> executarContratos({
+    required String cnpj,
+    required int anoAtual,
+    required Map<int, int> ultimaSequencia,
+    required ConsultarCompraPncp consultar,
+    required Future<bool> Function(PncpContrato contrato) salvar,
+    required RegistrarSequenciaPncp registrarSequencia,
+    int maxConsultas = maxConsultasPorExecucao,
+  }) => _executar(
+    cnpj: cnpj,
+    anoAtual: anoAtual,
+    ultimaSequencia: ultimaSequencia,
+    consultar: consultar,
+    salvar: (dados) => salvar(PncpContrato.fromApi(dados)),
+    registrarSequencia: registrarSequencia,
+    maxConsultas: maxConsultas,
+  );
+
+  static Future<({int consultas, int novas})> _executar({
+    required String cnpj,
+    required int anoAtual,
+    required Map<int, int> ultimaSequencia,
+    required ConsultarCompraPncp consultar,
+    required Future<bool> Function(Map<String, dynamic> dados) salvar,
+    required RegistrarSequenciaPncp registrarSequencia,
+    required int maxConsultas,
   }) async {
     var consultas = 0;
     var novas = 0;
@@ -71,10 +119,11 @@ abstract final class PncpVarredura {
           case SequenciaInexistente():
             faltas++;
             continue;
-          case CompraExcluida():
+          case CompraExcluida() || ContratoExcluido():
             break;
-          case CompraEncontrada(:final dados):
-            if (await salvar(PncpCompra.fromApi(dados))) novas++;
+          case CompraEncontrada(:final dados) ||
+              ContratoEncontrado(:final dados):
+            if (await salvar(dados)) novas++;
         }
         faltas = 0;
         await registrarSequencia(ano, sequencial);

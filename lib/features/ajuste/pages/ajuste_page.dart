@@ -21,6 +21,8 @@ import '../../../shared/widgets/ordenacao_selector.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/filtro_modalidade_dropdown.dart';
 import '../../pendencias/widgets/pendencias_modulo_list.dart';
+import '../../pncp/pncp_providers.dart';
+import '../../pncp/widgets/consultar_pncp_button.dart';
 import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
 import '../../logs/widgets/filtro_envio_dropdown.dart';
@@ -43,6 +45,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
   bool _decrescente = true;
+  bool _mostrarDispensados = false;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -115,6 +118,19 @@ class _AjustePageState extends ConsumerState<AjustePage> {
                       onChanged: (v) => setState(() => _ordenarPor = v),
                       onSentidoChanged: (v) => setState(() => _decrescente = v),
                     ),
+                  if (_statusFilter == 'pendencias')
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Switch(
+                          value: _mostrarDispensados,
+                          onChanged: (v) =>
+                              setState(() => _mostrarDispensados = v),
+                        ),
+                        const Text('Mostrar dispensados'),
+                      ],
+                    ),
+                  const ConsultarPncpButton(modulo: '/ajuste'),
                   AudespIconButton(
                     icon: Icons.refresh,
                     tooltip: 'Atualizar',
@@ -123,6 +139,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
                       ref.invalidate(ajustesEnviadosProvider);
                       ref.invalidate(enviosProvider(EnviosEndpoint.ajuste));
                       ref.invalidate(documentosProcessoProvider);
+                      ref.invalidate(pncpContratosProvider);
                       ref.invalidate(
                         unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
                       );
@@ -155,7 +172,11 @@ class _AjustePageState extends ConsumerState<AjustePage> {
         ],
       ),
       body: _statusFilter == 'pendencias'
-          ? PendenciasModuloList(modulo: '/ajuste', search: _searchCtrl.text)
+          ? PendenciasModuloList(
+              modulo: '/ajuste',
+              search: _searchCtrl.text,
+              mostrarDispensadas: _mostrarDispensados,
+            )
           : _AjusteList(
               status: _statusFilter,
               search: _searchCtrl.text,

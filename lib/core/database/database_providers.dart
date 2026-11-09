@@ -13,6 +13,7 @@ import '../database/daos/api_logs_dao.dart';
 import '../database/daos/app_settings_dao.dart';
 import '../database/daos/estimativas_dao.dart';
 import '../database/daos/pncp_compras_dao.dart';
+import '../database/daos/pncp_contratos_dao.dart';
 import '../services/gemini_service.dart';
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
@@ -56,6 +57,10 @@ final estimativasDaoProvider = Provider<EstimativasDao>(
 
 final pncpComprasDaoProvider = Provider<PncpComprasDao>(
   (ref) => PncpComprasDao(ref.watch(databaseServiceProvider)),
+);
+
+final pncpContratosDaoProvider = Provider<PncpContratosDao>(
+  (ref) => PncpContratosDao(ref.watch(databaseServiceProvider)),
 );
 
 final geminiServiceProvider = Provider<GeminiService>(

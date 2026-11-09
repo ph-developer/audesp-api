@@ -72,6 +72,18 @@ final pncpComprasProvider = FutureProvider.autoDispose<List<PncpCompra>>((
   return compras.where((c) => c.cnpj == config.cnpj).toList();
 });
 
+/// Contratos do CNPJ configurado, sem misturar configurações anteriores.
+final pncpContratosProvider = FutureProvider.autoDispose<List<PncpContrato>>((
+  ref,
+) async {
+  final config = await ref.watch(pncpConfigProvider.future);
+  if (!ref.mounted || !config.configurado) return const [];
+  final contratos = await ref.watch(pncpContratosDaoProvider).listAll();
+  return contratos.where((c) => c.cnpj == config.cnpj).toList();
+});
+
+typedef PncpConsultaResultado = ({int compras, int contratos});
+
 class PncpConsultaState {
   final bool executando;
   final String? erro;
@@ -84,13 +96,14 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
   @override
   PncpConsultaState build() => const PncpConsultaState();
 
-  /// Retorna quantas compras novas foram registradas, ou null quando a
+  /// Retorna quantas compras e contratos novos foram registrados, ou null quando a
   /// consulta automática foi pulada (desligada ou feita há pouco, inclusive
   /// por outra máquina).
-  Future<int?> consultar({bool automatica = false}) async {
+  Future<PncpConsultaResultado?> consultar({bool automatica = false}) async {
     if (state.executando) return null;
     final settings = ref.read(appSettingsDaoProvider);
     final config = await lerPncpConfig(settings);
+    if (state.executando) return null;
     if (!config.configurado) {
       if (automatica) return null;
       throw const PncpException(
@@ -115,20 +128,23 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
         '${agora.millisecondsSinceEpoch ~/ 1000}',
       );
       final anoAtual = agora.year;
-      final ultimaSequencia = <int, int>{};
-      for (final ano in [anoAtual - 1, anoAtual]) {
-        final valor = await settings.get(
-          SettingsKeys.pncpSequencia(config.cnpj, ano),
-        );
-        final sequencia = int.tryParse(valor ?? '');
-        if (sequencia != null) ultimaSequencia[ano] = sequencia;
+      Future<Map<int, int>> lerSequencias(
+        String Function(String, int) chave,
+      ) async {
+        final sequencias = <int, int>{};
+        for (final ano in [anoAtual - 1, anoAtual]) {
+          final valor = await settings.get(chave(config.cnpj, ano));
+          final sequencia = int.tryParse(valor ?? '');
+          if (sequencia != null) sequencias[ano] = sequencia;
+        }
+        return sequencias;
       }
 
       final dao = ref.read(pncpComprasDaoProvider);
       final resultado = await PncpVarredura.executar(
         cnpj: config.cnpj,
         anoAtual: anoAtual,
-        ultimaSequencia: ultimaSequencia,
+        ultimaSequencia: await lerSequencias(SettingsKeys.pncpSequencia),
         consultar: ref.read(pncpServiceProvider).consultarCompra,
         salvar: dao.upsert,
         registrarSequencia: (ano, sequencial) => settings.set(
@@ -136,14 +152,30 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
           '$sequencial',
         ),
       );
+      // Cada upsert e cursor já foi persistido. Falha nos contratos não
+      // desfaz as compras nem o progresso desta varredura.
+      final contratos = await PncpVarredura.executarContratos(
+        cnpj: config.cnpj,
+        anoAtual: anoAtual,
+        ultimaSequencia: await lerSequencias(
+          SettingsKeys.pncpContratoSequencia,
+        ),
+        consultar: ref.read(pncpServiceProvider).consultarContrato,
+        salvar: ref.read(pncpContratosDaoProvider).upsert,
+        registrarSequencia: (ano, sequencial) => settings.set(
+          SettingsKeys.pncpContratoSequencia(config.cnpj, ano),
+          '$sequencial',
+        ),
+      );
       state = const PncpConsultaState();
-      return resultado.novas;
+      return (compras: resultado.novas, contratos: contratos.novas);
     } catch (e) {
       state = PncpConsultaState(erro: e.toString());
       rethrow;
     } finally {
       ref.invalidate(pncpConfigProvider);
       ref.invalidate(pncpComprasProvider);
+      ref.invalidate(pncpContratosProvider);
     }
   }
 }

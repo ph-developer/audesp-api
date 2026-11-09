@@ -7,6 +7,14 @@ import 'package:audesp_api/core/database/database_service.dart';
 import 'package:audesp_api/core/database/db_pool.dart';
 import 'package:mysql_client/mysql_client.dart';
 
+/// Resposta opcional para exercitar leituras e linhas afetadas pelo driver real.
+class FakeMySqlResult {
+  final List<Map<String, Object?>> rows;
+  final int affectedRows;
+
+  const FakeMySqlResult({this.rows = const [], this.affectedRows = 0});
+}
+
 /// Servidor local que fala só o necessário do protocolo MySQL, para exercitar
 /// o driver real e contar o que chega pelo socket, como o `SHOW GLOBAL STATUS`.
 ///
@@ -20,6 +28,10 @@ class FakeMySqlServer {
   int comStmtExecute = 0;
   int comStmtClose = 0;
   int comQuery = 0;
+
+  final consultas = <({String sql, List<String?> params})>[];
+  FutureOr<FakeMySqlResult?> Function(String sql, List<String?> params)?
+  responder;
 
   /// Maior número de conexões abertas ao mesmo tempo.
   int peakConnections = 0;
@@ -124,7 +136,12 @@ class FakeMySqlServer {
       case 0x17:
         comStmtExecute++;
         final id = ByteData.sublistView(payload).getUint32(1, Endian.little);
-        await _respond(connection, connection.statements[id]!);
+        final sql = connection.statements[id]!;
+        await _respond(
+          connection,
+          sql,
+          params: _params(payload, '?'.allMatches(sql).length),
+        );
       case 0x19:
         comStmtClose++;
         final id = ByteData.sublistView(payload).getUint32(1, Endian.little);
@@ -148,7 +165,12 @@ class FakeMySqlServer {
     connection.send(sequence, const [0xfe, 0, 0, 2, 0]);
   }
 
-  Future<void> _respond(_FakeConnection connection, String sql) async {
+  Future<void> _respond(
+    _FakeConnection connection,
+    String sql, {
+    List<String?>? params,
+  }) async {
+    consultas.add((sql: sql, params: params ?? const []));
     final sleep = RegExp(r'/\*sleep:(\d+)\*/').firstMatch(sql);
     if (sleep != null) {
       await Future.delayed(Duration(milliseconds: int.parse(sleep[1]!)));
@@ -164,8 +186,129 @@ class FakeMySqlServer {
         ...ascii.encode('23000Duplicate entry'),
       ]);
     } else {
-      connection.send(1, _ok);
+      final resultado = await responder?.call(sql, params ?? const []);
+      if (resultado == null) {
+        connection.send(1, _ok);
+      } else if (resultado.rows.isEmpty) {
+        connection.send(1, [
+          0,
+          ..._tamanho(resultado.affectedRows),
+          0,
+          2,
+          0,
+          0,
+          0,
+        ]);
+      } else {
+        _rows(connection, resultado.rows, binario: params != null);
+      }
     }
+  }
+
+  // O mysql_client envia parâmetros como strings com tamanho codificado.
+  static List<String?> _params(Uint8List payload, int quantidade) {
+    final bitmap = payload.sublist(10, 10 + (quantidade + 7) ~/ 8);
+    var offset = 10 + bitmap.length + 1 + quantidade * 2;
+    return List.generate(quantidade, (i) {
+      if (bitmap[i ~/ 8] & (1 << (i % 8)) != 0) return null;
+      var tamanho = payload[offset++];
+      if (tamanho == 0xfc) {
+        tamanho = ByteData.sublistView(
+          payload,
+        ).getUint16(offset, Endian.little);
+        offset += 2;
+      } else if (tamanho == 0xfd) {
+        tamanho =
+            payload[offset] |
+            payload[offset + 1] << 8 |
+            payload[offset + 2] << 16;
+        offset += 3;
+      } else if (tamanho == 0xfe) {
+        tamanho = ByteData.sublistView(
+          payload,
+        ).getUint64(offset, Endian.little);
+        offset += 8;
+      }
+      final valor = utf8.decode(payload.sublist(offset, offset + tamanho));
+      offset += tamanho;
+      return valor;
+    });
+  }
+
+  static List<int> _tamanho(int valor) {
+    if (valor < 251) return [valor];
+    if (valor <= 0xffff) return [0xfc, valor & 0xff, valor >> 8];
+    return [0xfd, valor & 0xff, (valor >> 8) & 0xff, valor >> 16];
+  }
+
+  static List<int> _texto(String valor) {
+    final bytes = utf8.encode(valor);
+    return [..._tamanho(bytes.length), ...bytes];
+  }
+
+  static void _rows(
+    _FakeConnection connection,
+    List<Map<String, Object?>> rows, {
+    required bool binario,
+  }) {
+    final colunas = rows.first.keys.toList();
+    final inteiros = [
+      for (final coluna in colunas) rows.any((r) => r[coluna] is int),
+    ];
+    var sequencia = 1;
+    connection.send(sequencia++, _tamanho(colunas.length));
+    for (final (i, coluna) in colunas.indexed) {
+      connection.send(sequencia++, [
+        ..._texto('def'),
+        ..._texto('teste'),
+        ..._texto(''),
+        ..._texto(''),
+        ..._texto(coluna),
+        ..._texto(''),
+        0x0c,
+        45,
+        0,
+        0xff,
+        0xff,
+        0,
+        0,
+        inteiros[i] ? 0x08 : 0xfd,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ]);
+    }
+    const eof = [0xfe, 0, 0, 2, 0];
+    connection.send(sequencia++, eof);
+    for (final row in rows) {
+      final valores = <int>[];
+      final bitmap = List.filled((colunas.length + 9) ~/ 8, 0);
+      for (final (i, coluna) in colunas.indexed) {
+        final valor = row[coluna];
+        if (valor == null) {
+          if (binario) {
+            bitmap[(i + 2) ~/ 8] |= 1 << ((i + 2) % 8);
+          } else {
+            valores.add(0xfb);
+          }
+        } else if (binario && inteiros[i]) {
+          valores.addAll(
+            (ByteData(
+              8,
+            )..setInt64(0, valor as int, Endian.little)).buffer.asUint8List(),
+          );
+        } else {
+          valores.addAll(_texto(valor.toString()));
+        }
+      }
+      connection.send(sequencia++, [
+        if (binario) ...[0, ...bitmap],
+        ...valores,
+      ]);
+    }
+    connection.send(sequencia, eof);
   }
 
   static const _ok = [0, 0, 0, 2, 0, 0, 0];

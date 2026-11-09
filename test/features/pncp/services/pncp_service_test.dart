@@ -46,6 +46,87 @@ void main() {
     esperar: (d) async => esperas.add(d),
   );
 
+  group('contratos', () {
+    test(
+      '200 usa /api/pncp mesmo quando o cliente tem a base das compras',
+      () async {
+        final adapter = JsonHttpAdapter(contratoPncpJson());
+        final dio = Dio(
+          BaseOptions(baseUrl: 'https://pncp.gov.br/api/consulta'),
+        )..httpClientAdapter = adapter;
+        final r = await PncpService(
+          dio: dio,
+        ).consultarContrato('46395000000139', 2026, 2);
+        expect(r, isA<ContratoEncontrado>());
+        expect((r as ContratoEncontrado).dados['sequencialContrato'], 2);
+        expect(
+          adapter.requests.single.uri.toString(),
+          'https://pncp.gov.br/api/pncp/v1/orgaos/46395000000139/contratos/2026/2',
+        );
+      },
+    );
+
+    test('404 inexistente e 410 excluído', () async {
+      final adapter = JsonHttpAdapter({}, statusCode: 404);
+      expect(
+        await servico(adapter).consultarContrato('1', 2026, 1),
+        isA<SequenciaInexistente>(),
+      );
+      adapter.statusCode = 410;
+      expect(
+        await servico(adapter).consultarContrato('1', 2026, 1),
+        isA<ContratoExcluido>(),
+      );
+    });
+
+    test('429 aguarda Retry-After e repete a consulta do contrato', () async {
+      final adapter = _RespostasEmSequencia([
+        (429, {}, '5'),
+        (200, contratoPncpJson(), null),
+      ]);
+      expect(
+        await servico(adapter).consultarContrato('1', 2026, 2),
+        isA<ContratoEncontrado>(),
+      );
+      expect(esperas, [const Duration(seconds: 5)]);
+      expect(adapter.chamadas, 2);
+    });
+
+    test('429 sem cabeçalho espera o padrão e só tenta uma vez', () async {
+      final adapter = _RespostasEmSequencia([(429, {}, null), (429, {}, null)]);
+      await expectLater(
+        servico(adapter).consultarContrato('1', 2026, 2),
+        throwsA(isA<PncpException>()),
+      );
+      expect(esperas, [PncpService.esperaPadrao]);
+      expect(adapter.chamadas, 2);
+    });
+
+    test(
+      'Retry-After longo e demais erros interrompem com PncpException',
+      () async {
+        final longo = _RespostasEmSequencia([(429, {}, '61')]);
+        await expectLater(
+          servico(longo).consultarContrato('1', 2026, 2),
+          throwsA(isA<PncpException>()),
+        );
+        expect(esperas, isEmpty);
+        await expectLater(
+          servico(
+            JsonHttpAdapter({}, statusCode: 500),
+          ).consultarContrato('1', 2026, 2),
+          throwsA(
+            isA<PncpException>().having(
+              (e) => e.message,
+              'message',
+              contains('de contrato 2/2026'),
+            ),
+          ),
+        );
+      },
+    );
+  });
+
   test('200 devolve a compra e consulta a rota do órgão', () async {
     final adapter = JsonHttpAdapter(compraPncpJson());
     final r = await servico(adapter).consultarCompra('46395000000139', 2026, 2);

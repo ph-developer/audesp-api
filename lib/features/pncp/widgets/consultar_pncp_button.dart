@@ -9,7 +9,9 @@ import '../../auth/auth_providers.dart';
 import '../pncp_providers.dart';
 
 class ConsultarPncpButton extends ConsumerWidget {
-  const ConsultarPncpButton({super.key});
+  final String modulo;
+
+  const ConsultarPncpButton({super.key, this.modulo = '/edital'});
 
   Future<void> _consultar(BuildContext context, WidgetRef ref) async {
     try {
@@ -17,9 +19,8 @@ class ConsultarPncpButton extends ConsumerWidget {
       if (!context.mounted || novas == null) return;
       AudespSnackBar.success(
         context,
-        novas == 0
-            ? 'Consulta ao PNCP concluída. Nenhuma compra nova.'
-            : 'Consulta ao PNCP concluída. $novas compra(s) nova(s).',
+        'Consulta ao PNCP concluída. ${novas.compras} compra(s) nova(s) e '
+        '${novas.contratos} contrato(s) novo(s).',
       );
     } catch (e) {
       if (context.mounted) AudespSnackBar.error(context, '$e');
@@ -29,7 +30,7 @@ class ConsultarPncpButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(localSessionProvider);
-    if (user == null || !canAccessLocation(user, '/edital/new')) {
+    if (user == null || !canAccessLocation(user, '$modulo/new')) {
       return const SizedBox.shrink();
     }
     final config = ref.watch(pncpConfigProvider).value;

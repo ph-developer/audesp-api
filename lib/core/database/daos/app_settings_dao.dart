@@ -25,6 +25,10 @@ abstract class SettingsKeys {
   /// Última sequência encontrada no PNCP para o CNPJ e o ano.
   static String pncpSequencia(String cnpj, int ano) =>
       'pncp_sequencia_${cnpj}_$ano';
+
+  /// Cursor dos contratos, independente da numeração das compras.
+  static String pncpContratoSequencia(String cnpj, int ano) =>
+      'pncp_contrato_sequencia_${cnpj}_$ano';
 }
 
 class AppSettingsDao {
