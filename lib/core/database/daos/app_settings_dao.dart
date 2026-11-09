@@ -11,6 +11,9 @@ abstract class SettingsKeys {
   static const pncpConsultaAutomatica = 'pncp_consulta_automatica';
   static const pncpIntervaloMinutos = 'pncp_intervalo_minutos';
   static const pncpUltimaConsultaEm = 'pncp_ultima_consulta_em';
+  static const pncpAtasAtualizadasAte = 'pncp_atas_atualizadas_ate';
+  // O marcador de data só vale para o CNPJ que foi consultado.
+  static const pncpAtasAtualizadasCnpj = 'pncp_atas_atualizadas_cnpj';
   static const ufespValor = 'ufesp_valor';
   static const ufespQuantidadeMinima = 'ufesp_quantidade_minima';
 
@@ -29,6 +32,14 @@ abstract class SettingsKeys {
   /// Cursor dos contratos, independente da numeração das compras.
   static String pncpContratoSequencia(String cnpj, int ano) =>
       'pncp_contrato_sequencia_${cnpj}_$ano';
+
+  /// Última compra inteiramente consultada em busca de atas.
+  static String pncpAtaCompraSequencia(String cnpj, int ano) =>
+      'pncp_ata_compra_sequencia_${cnpj}_$ano';
+
+  /// Próxima página da compra em andamento (valor "sequencial:pagina").
+  static String pncpAtaCompraPagina(String cnpj, int ano) =>
+      'pncp_ata_compra_pagina_${cnpj}_$ano';
 }
 
 class AppSettingsDao {

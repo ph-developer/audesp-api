@@ -1,6 +1,7 @@
 import 'package:audesp_api/core/constants/environments.dart';
 import 'package:audesp_api/core/database/models/user.dart';
 import 'package:audesp_api/core/database/models/ajuste.dart';
+import 'package:audesp_api/core/database/models/ata.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
 import 'package:audesp_api/features/logs/domain/ultimo_envio.dart';
 import 'package:audesp_api/features/logs/envios_providers.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../processo/processo_fixtures.dart';
 import '../pncp/pncp_fixtures.dart';
+import '../pncp/pncp_ata_fixtures.dart';
 import 'pendencias_fixtures.dart';
 
 class _AmbienteTeste extends EnvironmentNotifier {
@@ -24,6 +26,97 @@ class _AmbienteTeste extends EnvironmentNotifier {
 }
 
 void main() {
+  test(
+    'ata liberada reage ao ambiente, à dispensa, ao cancelamento e ao rascunho salvo',
+    () async {
+      final processo = processoFixture(
+        codigo: '49576416000141-1-000001/2026',
+        semPncp: false,
+        srp: true,
+        licitacoes: [licitacaoFixture(1, status: 'sent')],
+      );
+      final atas = <Ata>[];
+      var ata = ataPncpFixture();
+      final container = ProviderContainer(
+        overrides: [
+          environmentProvider.overrideWith(_AmbienteTeste.new),
+          documentosProcessoProvider.overrideWith(
+            (ref) async => DocumentosProcesso(
+              editais: [processo.edital],
+              licitacoes: processo.licitacoes,
+              atas: atas,
+            ),
+          ),
+          enviosProvider.overrideWith(
+            (ref, endpoint) async => EnviosIndex([
+              if (endpoint == EnviosEndpoint.edital)
+                envioFixture(processo.edital, situacao: 'Armazenado'),
+              if (endpoint == EnviosEndpoint.licitacao)
+                envioFixture(
+                  processo.licitacoes.single,
+                  situacao: 'Armazenado',
+                ),
+            ]),
+          ),
+          pncpAtasProvider.overrideWith((ref) async => [ata]),
+          pncpComprasProvider.overrideWith(
+            (ref) => throw StateError('Sem permissão de Edital'),
+          ),
+          pncpContratosProvider.overrideWith(
+            (ref) => throw StateError('Sem permissão de Ajuste'),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+          .read(localSessionProvider.notifier)
+          .login(usuarioFixture(permissions: AppPermissions.ata));
+      final sub = container.listen(pendenciasContagemProvider, (_, _) {});
+      addTearDown(sub.close);
+      Future<int> contagem() async =>
+          (await container.read(pendenciasContagemProvider.future))['/ata']!;
+      expect(await contagem(), 1);
+      await container
+          .read(environmentProvider.notifier)
+          .setEnvironment(Environment.oficial);
+      expect(await contagem(), 0);
+      expect(
+        (await container.read(pendenciasModulosProvider.future)).atasBloqueadas,
+        hasLength(1),
+      );
+      await container
+          .read(environmentProvider.notifier)
+          .setEnvironment(Environment.piloto);
+      expect(await contagem(), 1);
+      ata = ataPncpFixture(dispensada: true);
+      container.invalidate(pncpAtasProvider);
+      expect(await contagem(), 0);
+      expect(
+        (await container.read(
+          pendenciasModulosProvider.future,
+        )).atasDispensadas,
+        hasLength(1),
+      );
+      ata = ataPncpFixture(alteracoes: {'cancelado': true});
+      container.invalidate(pncpAtasProvider);
+      expect(await contagem(), 0);
+      expect(
+        (await container.read(pendenciasModulosProvider.future)).atasBloqueadas,
+        isEmpty,
+      );
+      ata = ataPncpFixture();
+      container.invalidate(pncpAtasProvider);
+      expect(await contagem(), 1);
+      atas.add(ataFixture(4, codigo: ata.numeroControle));
+      container.invalidate(documentosProcessoProvider);
+      expect(await contagem(), 0);
+      expect(
+        (await container.read(pendenciasModulosProvider.future)).atasPncp,
+        isEmpty,
+      );
+    },
+  );
+
   test(
     'contrato liberado reage ao ambiente, à dispensa e ao ajuste salvo',
     () async {

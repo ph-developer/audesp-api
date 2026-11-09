@@ -19,8 +19,8 @@ class ConsultarPncpButton extends ConsumerWidget {
       if (!context.mounted || novas == null) return;
       AudespSnackBar.success(
         context,
-        'Consulta ao PNCP concluída. ${novas.compras} compra(s) nova(s) e '
-        '${novas.contratos} contrato(s) novo(s).',
+        'Consulta ao PNCP concluída. ${novas.compras} compra(s) nova(s), '
+        '${novas.contratos} contrato(s) novo(s) e ${novas.atas} ata(s) nova(s).',
       );
     } catch (e) {
       if (context.mounted) AudespSnackBar.error(context, '$e');

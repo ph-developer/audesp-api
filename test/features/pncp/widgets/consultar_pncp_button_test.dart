@@ -75,12 +75,12 @@ void main() {
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(consulta.chamadas, 1);
-      consulta.resultado!.complete((compras: 2, contratos: 3));
+      consulta.resultado!.complete((compras: 2, contratos: 3, atas: 4));
       await tester.pumpAndSettle();
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(
         find.text(
-          'Consulta ao PNCP concluída. 2 compra(s) nova(s) e 3 contrato(s) novo(s).',
+          'Consulta ao PNCP concluída. 2 compra(s) nova(s), 3 contrato(s) novo(s) e 4 ata(s) nova(s).',
         ),
         findsOneWidget,
       );

@@ -13,6 +13,7 @@ export 'models/api_log.dart';
 export 'models/app_setting.dart';
 export 'models/pncp_compra.dart';
 export 'models/pncp_contrato.dart';
+export 'models/pncp_ata.dart';
 
 DatabaseService openConnection() {
   final config = DbConfigHelper.loadConfigSync();

@@ -13,6 +13,7 @@ import '../../../shared/widgets/ufesp_indicador.dart';
 import '../../pncp/pncp_providers.dart';
 import '../../pncp/widgets/pncp_compra_card.dart';
 import '../../pncp/widgets/pncp_contrato_card.dart';
+import '../../pncp/widgets/pncp_ata_card.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../domain/pendencias_modulos.dart';
 import '../pendencias_providers.dart';
@@ -181,6 +182,37 @@ class PendenciasModuloList extends ConsumerWidget {
                   ],
                 ),
               );
+            }
+            if (modulo == '/ata') {
+              for (final pendencia in [
+                ...pendencias.atasPncp,
+                ...pendencias.atasBloqueadas,
+                if (mostrarDispensadas) ...pendencias.atasDispensadas,
+              ]) {
+                final ata = pendencia.ata;
+                if (!busca(
+                  [
+                    tituloPncpAta(ata),
+                    ata.numeroControle,
+                    ata.numeroControleCompra,
+                    PcnpInputFormatter.applyMask(ata.numeroControle),
+                    PcnpInputFormatter.applyMask(ata.numeroControleCompra),
+                    ata.objeto,
+                    ata.motivoDispensa ?? '',
+                    pendencia.motivoBloqueio ?? '',
+                    if (pendencia.edital != null)
+                      _buscaEdital(pendencia.edital!),
+                  ].join(' '),
+                )) {
+                  continue;
+                }
+                itens.add(
+                  PncpAtaCard(
+                    key: ValueKey('pncpAta-${ata.id}'),
+                    pendencia: pendencia,
+                  ),
+                );
+              }
             }
             if (modulo == '/ajuste') {
               for (final pendencia in [

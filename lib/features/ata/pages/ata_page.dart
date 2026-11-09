@@ -28,6 +28,8 @@ import '../../logs/widgets/ultimo_envio_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
+import '../../pncp/pncp_providers.dart';
+import '../../pncp/widgets/consultar_pncp_button.dart';
 import '../ata_providers.dart';
 
 class AtaPage extends ConsumerStatefulWidget {
@@ -43,6 +45,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
   bool _decrescente = true;
+  bool _mostrarDispensadas = false;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -98,6 +101,18 @@ class _AtaPageState extends ConsumerState<AtaPage> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
+                  if (_statusFilter == 'pendencias')
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: _mostrarDispensadas,
+                          onChanged: (v) =>
+                              setState(() => _mostrarDispensadas = v ?? false),
+                        ),
+                        const Text('Mostrar dispensadas'),
+                      ],
+                    ),
                   if (_statusFilter != 'pendencias')
                     FiltroModalidadeDropdown(
                       value: _modalidadeId,
@@ -123,6 +138,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
                       ref.invalidate(atasEnviadasProvider);
                       ref.invalidate(enviosProvider(EnviosEndpoint.ata));
                       ref.invalidate(documentosProcessoProvider);
+                      ref.invalidate(pncpAtasProvider);
                       ref.invalidate(
                         unlinkedEditaisProvider(UnlinkedEditaisTarget.ata),
                       );
@@ -133,7 +149,10 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             ),
           ],
         ),
-        actions: const [SizedBox(width: 8)],
+        actions: const [
+          ConsultarPncpButton(modulo: '/ata'),
+          SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -155,7 +174,11 @@ class _AtaPageState extends ConsumerState<AtaPage> {
         ],
       ),
       body: _statusFilter == 'pendencias'
-          ? PendenciasModuloList(modulo: '/ata', search: _searchCtrl.text)
+          ? PendenciasModuloList(
+              modulo: '/ata',
+              search: _searchCtrl.text,
+              mostrarDispensadas: _mostrarDispensadas,
+            )
           : _AtaList(
               status: _statusFilter,
               search: _searchCtrl.text,

@@ -2,6 +2,7 @@ import '../../../core/database/app_database.dart';
 import '../../logs/domain/conclusao_envio.dart';
 import '../../pncp/domain/pncp_pendencias.dart';
 import '../../pncp/domain/pncp_contratos_pendencias.dart';
+import '../../pncp/domain/pncp_atas_pendencias.dart';
 import '../../processo/domain/processo.dart';
 
 class PendenciaProtocolo<T> {
@@ -20,6 +21,9 @@ class PendenciasModulos {
   final List<Edital> criarLicitacao;
   final List<PendenciaProtocolo<Licitacao>> licitacoes;
   final List<PendenciaProtocolo<Ata>> atas;
+  final List<PendenciaAtaPncp> atasPncp;
+  final List<PendenciaAtaPncp> atasBloqueadas;
+  final List<PendenciaAtaPncp> atasDispensadas;
   final List<PendenciaProtocolo<Ajuste>> ajustes;
   final List<PendenciaContratoPncp> contratosAjuste;
   final List<PendenciaContratoPncp> contratosBloqueados;
@@ -32,6 +36,9 @@ class PendenciasModulos {
     this.criarLicitacao = const [],
     this.licitacoes = const [],
     this.atas = const [],
+    this.atasPncp = const [],
+    this.atasBloqueadas = const [],
+    this.atasDispensadas = const [],
     this.ajustes = const [],
     this.contratosAjuste = const [],
     this.contratosBloqueados = const [],
@@ -41,7 +48,7 @@ class PendenciasModulos {
   Map<String, int> get contagens => {
     '/edital': comprasEdital.length + editais.length,
     '/licitacao': criarLicitacao.length + licitacoes.length,
-    '/ata': atas.length,
+    '/ata': atas.length + atasPncp.length,
     '/ajuste': ajustes.length + contratosAjuste.length,
   };
 }
@@ -77,27 +84,44 @@ abstract final class PendenciasRules {
     required EnviosProcesso envios,
     Iterable<PncpCompra> compras = const [],
     Iterable<PncpContrato> contratos = const [],
+    Iterable<PncpAta> atasPncp = const [],
     String cnpj = '',
   }) {
     final editaisPorId = {for (final e in documentos.editais) e.id: e};
     bool visivel(int? editalId) => editaisPorId[editalId]?.oculto != true;
     final podeEdital = user.hasPermission(AppPermissions.edital);
     final podeAjuste = user.hasPermission(AppPermissions.ajuste);
+    final podeAta = user.hasPermission(AppPermissions.ata);
+    final processos = Processo.agrupar(
+      editais: documentos.editais,
+      licitacoes: documentos.licitacoes,
+      atas: documentos.atas,
+      ajustes: documentos.ajustes,
+      envios: envios,
+    );
+    final atasPendentes = podeAta
+        ? PncpAtasPendencias.classificar(
+            atasPncp: atasPncp,
+            processos: processos,
+            atas: documentos.atas,
+          )
+        : const <PendenciaAtaPncp>[];
     final contratosPendentes = podeAjuste
         ? PncpContratosPendencias.classificar(
             contratos: contratos,
-            processos: Processo.agrupar(
-              editais: documentos.editais,
-              licitacoes: documentos.licitacoes,
-              atas: documentos.atas,
-              ajustes: documentos.ajustes,
-              envios: envios,
-            ),
+            processos: processos,
             ajustes: documentos.ajustes,
             cnpj: cnpj,
           )
         : const <PendenciaContratoPncp>[];
     return PendenciasModulos(
+      atasPncp: atasPendentes
+          .where((p) => !p.ata.dispensada && p.liberada)
+          .toList(),
+      atasBloqueadas: atasPendentes
+          .where((p) => !p.ata.dispensada && !p.liberada)
+          .toList(),
+      atasDispensadas: atasPendentes.where((p) => p.ata.dispensada).toList(),
       contratosAjuste: contratosPendentes
           .where((p) => !p.contrato.dispensado && p.liberado)
           .toList(),
@@ -130,7 +154,7 @@ abstract final class PendenciasRules {
               (l) => editaisPorId[l.editalId],
             )
           : const [],
-      atas: user.hasPermission(AppPermissions.ata)
+      atas: podeAta
           ? _protocolos(
               documentos.atas.where((a) => visivel(a.editalId)),
               envios.ata,

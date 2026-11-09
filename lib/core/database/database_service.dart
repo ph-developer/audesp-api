@@ -483,6 +483,39 @@ class DatabaseService {
       ''');
       await setSchemaVersion(17);
     }
+
+    if (version < 18) {
+      // Atas do PNCP são numeradas dentro de cada compra.
+      await execute('''
+        CREATE TABLE IF NOT EXISTS pncp_atas (
+          id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          cnpj VARCHAR(14) NOT NULL,
+          ano_compra INT NOT NULL,
+          sequencial_compra INT NOT NULL,
+          sequencial_ata INT NOT NULL,
+          numero_controle VARCHAR(31) NOT NULL,
+          numero_controle_compra VARCHAR(25) NOT NULL,
+          numero_ata VARCHAR(50) NULL,
+          ano_ata INT NULL,
+          cancelada TINYINT NOT NULL DEFAULT 0,
+          data_cancelamento BIGINT NULL,
+          data_assinatura BIGINT NULL,
+          vigencia_inicio BIGINT NULL,
+          vigencia_fim BIGINT NULL,
+          data_publicacao BIGINT NULL,
+          objeto TEXT NULL,
+          dados_json LONGTEXT NOT NULL,
+          dispensada_em BIGINT NULL,
+          dispensada_por BIGINT NULL,
+          motivo_dispensa VARCHAR(500) NULL,
+          created_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          updated_at BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+          UNIQUE KEY uk_pncp_atas_sequencia (cnpj, ano_compra, sequencial_compra, sequencial_ata),
+          UNIQUE KEY uk_pncp_atas_controle (numero_controle)
+        )
+      ''');
+      await setSchemaVersion(18);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

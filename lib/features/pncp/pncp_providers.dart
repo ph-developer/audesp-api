@@ -7,6 +7,7 @@ import '../../core/database/daos/app_settings_dao.dart';
 import '../../core/database/database_providers.dart';
 import '../processo/domain/ufesp_rules.dart';
 import 'domain/pncp_varredura.dart';
+import 'domain/pncp_atas_varredura.dart';
 import 'services/pncp_service.dart';
 
 /// Configuração da consulta ao PNCP, mantida pelo admin.
@@ -82,7 +83,14 @@ final pncpContratosProvider = FutureProvider.autoDispose<List<PncpContrato>>((
   return contratos.where((c) => c.cnpj == config.cnpj).toList();
 });
 
-typedef PncpConsultaResultado = ({int compras, int contratos});
+final pncpAtasProvider = FutureProvider.autoDispose<List<PncpAta>>((ref) async {
+  final config = await ref.watch(pncpConfigProvider.future);
+  if (!ref.mounted || !config.configurado) return const [];
+  final atas = await ref.watch(pncpAtasDaoProvider).listAll();
+  return atas.where((a) => a.cnpj == config.cnpj).toList();
+});
+
+typedef PncpConsultaResultado = ({int compras, int contratos, int atas});
 
 class PncpConsultaState {
   final bool executando;
@@ -96,7 +104,7 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
   @override
   PncpConsultaState build() => const PncpConsultaState();
 
-  /// Retorna quantas compras e contratos novos foram registrados, ou null quando a
+  /// Retorna quantas compras, contratos e atas novos foram registrados, ou null quando a
   /// consulta automática foi pulada (desligada ou feita há pouco, inclusive
   /// por outra máquina).
   Future<PncpConsultaResultado?> consultar({bool automatica = false}) async {
@@ -167,8 +175,69 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
           '$sequencial',
         ),
       );
+      // O limite das atas é o cursor das compras já persistido nesta rodada.
+      // Uma falha daqui em diante preserva compras, contratos e seus cursores.
+      final atasDao = ref.read(pncpAtasDaoProvider);
+      final service = ref.read(pncpServiceProvider);
+      final paginas = <int, ProgressoPaginaAta>{};
+      for (final ano in [anoAtual - 1, anoAtual]) {
+        final valor = await settings.get(
+          SettingsKeys.pncpAtaCompraPagina(config.cnpj, ano),
+        );
+        final partes = valor?.split(':') ?? const <String>[];
+        if (partes.length == 2) {
+          final sequencia = int.tryParse(partes[0]);
+          final pagina = int.tryParse(partes[1]);
+          if (sequencia != null && pagina != null && pagina > 0) {
+            paginas[ano] = (sequencialCompra: sequencia, pagina: pagina);
+          }
+        }
+      }
+      final atas = await PncpAtasVarredura.executar(
+        cnpj: config.cnpj,
+        anoAtual: anoAtual,
+        ultimaSequenciaCompra: await lerSequencias(SettingsKeys.pncpSequencia),
+        ultimaCompraConsultada: await lerSequencias(
+          SettingsKeys.pncpAtaCompraSequencia,
+        ),
+        paginas: paginas,
+        consultar: service.consultarAtasCompra,
+        salvar: atasDao.upsert,
+        registrarSequencia: (ano, sequencia) => settings.set(
+          SettingsKeys.pncpAtaCompraSequencia(config.cnpj, ano),
+          '$sequencia',
+        ),
+        registrarPagina: (ano, progresso) => settings.set(
+          SettingsKeys.pncpAtaCompraPagina(config.cnpj, ano),
+          '${progresso.sequencialCompra}:${progresso.pagina}',
+        ),
+      );
+      final donoMarcador = await settings.get(
+        SettingsKeys.pncpAtasAtualizadasCnpj,
+      );
+      final marcador = await settings.get(SettingsKeys.pncpAtasAtualizadasAte);
+      final atualizadas = await PncpAtasVarredura.atualizar(
+        cnpj: config.cnpj,
+        hoje: agora,
+        atualizadasAte: donoMarcador == null || donoMarcador == config.cnpj
+            ? DateTime.tryParse(marcador ?? '')
+            : null,
+        consultar: service.consultarAtasAtualizadas,
+        salvar: atasDao.upsert,
+        registrarData: (data) async {
+          await settings.set(
+            SettingsKeys.pncpAtasAtualizadasAte,
+            '${data.year}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}',
+          );
+          await settings.set(SettingsKeys.pncpAtasAtualizadasCnpj, config.cnpj);
+        },
+      );
       state = const PncpConsultaState();
-      return (compras: resultado.novas, contratos: contratos.novas);
+      return (
+        compras: resultado.novas,
+        contratos: contratos.novas,
+        atas: atas.novas + atualizadas,
+      );
     } catch (e) {
       state = PncpConsultaState(erro: e.toString());
       rethrow;
@@ -176,6 +245,7 @@ class PncpConsultaNotifier extends Notifier<PncpConsultaState> {
       ref.invalidate(pncpConfigProvider);
       ref.invalidate(pncpComprasProvider);
       ref.invalidate(pncpContratosProvider);
+      ref.invalidate(pncpAtasProvider);
     }
   }
 }

@@ -33,6 +33,10 @@ import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../pncp/domain/pncp_ata_mapper.dart';
+import '../../pncp/domain/pncp_atas_pendencias.dart';
+import '../../pncp/pncp_providers.dart';
+import '../../pncp/services/pncp_service.dart';
 import '../../logs/envios_providers.dart';
 import '../ata_providers.dart';
 import '../domain/ata_rules.dart';
@@ -44,7 +48,13 @@ import '../services/ata_service.dart';
 class AtaFormPage extends ConsumerStatefulWidget {
   final int? ataId;
   final int? preselectedEditalId;
-  const AtaFormPage({super.key, this.ataId, this.preselectedEditalId});
+  final int? pncpAtaId;
+  const AtaFormPage({
+    super.key,
+    this.ataId,
+    this.preselectedEditalId,
+    this.pncpAtaId,
+  });
 
   @override
   ConsumerState<AtaFormPage> createState() => _AtaFormPageState();
@@ -127,6 +137,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   Future<void> _init() async {
     if (widget.ataId != null) {
       await _loadExisting(widget.ataId!);
+    } else if (widget.pncpAtaId != null) {
+      await _loadFromPncp();
     } else {
       await _carregarOpcoesEdital();
       if (!mounted) return;
@@ -135,6 +147,101 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     if (!mounted) return;
     await _carregarItensLicitacao();
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _loadFromPncp() async {
+    try {
+      final dao = ref.read(pncpAtasDaoProvider);
+      var ata = await dao.findById(widget.pncpAtaId!);
+      if (!mounted) return;
+      if (ata == null) {
+        _showError('A ata do PNCP não foi encontrada.');
+        return;
+      }
+      final config = await ref.read(pncpConfigProvider.future);
+      if (!mounted) return;
+      if (!config.configurado || config.cnpj != ata.cnpj) {
+        _showError('A ata não pertence ao CNPJ configurado no PNCP.');
+        return;
+      }
+      try {
+        final dados = await ref
+            .read(pncpServiceProvider)
+            .consultarAta(
+              ata.cnpj,
+              ata.anoCompra,
+              ata.sequencialCompra,
+              ata.sequencialAta,
+            );
+        final atualizada = PncpAta.fromApi(
+          dados,
+          cnpj: ata.cnpj,
+          anoCompra: ata.anoCompra,
+          sequencialCompra: ata.sequencialCompra,
+        );
+        if (atualizada.numeroControle != ata.numeroControle) {
+          throw const FormatException('O PNCP retornou outra ata.');
+        }
+        await dao.upsert(atualizada);
+      } catch (_) {
+        // Falha na atualização não impede usar a última leitura salva.
+      }
+      if (!mounted) return;
+      // O upsert preserva a dispensa; releitura também considera alterações
+      // feitas em outra máquina enquanto a consulta estava em andamento.
+      ata = await dao.findById(widget.pncpAtaId!);
+      if (!mounted) return;
+      ref.invalidate(pncpAtasProvider);
+      if (ata == null) {
+        _showError('A ata do PNCP não foi encontrada.');
+        return;
+      }
+      final processos = await _carregarOpcoesEdital();
+      if (!mounted) return;
+      final documentos = await ref.read(documentosProcessoProvider.future);
+      if (!mounted) return;
+      final pendencia = PncpAtasPendencias.classificar(
+        atasPncp: [ata],
+        processos: processos,
+        atas: documentos.atas,
+      ).firstOrNull;
+      if (ata.cancelada) {
+        _showError('A ata foi cancelada no PNCP.');
+        return;
+      }
+      if (pendencia == null || ata.dispensada) {
+        _showError(
+          'Esta ata já foi lançada, foi dispensada ou não está nas pendências de Ata.',
+        );
+        return;
+      }
+      if (!pendencia.liberada) {
+        _showError(pendencia.motivoBloqueio!);
+        return;
+      }
+      final edital = pendencia.edital!;
+      final doc = PncpAtaMapper.documento(ata, edital: edital);
+      _editalId = edital.id;
+      _codigoEditalCtrl.text = doc['descritor']['codigoEdital'] as String;
+      _codigoAtaCtrl.text = PcnpInputFormatter.applyMask(
+        doc['descritor']['codigoAta'] as String,
+      );
+      _anoCompra = doc['descritor']['anoCompra'] as int;
+      _retificacao = false;
+      _numeroAtaCtrl.text = doc['numeroAtaRegistroPreco'] as String? ?? '';
+      _anoAtaCtrl.text = doc['anoAta']?.toString() ?? '';
+      _dataAssinatura = DateTime.tryParse(
+        doc['dataAssinatura'] as String? ?? '',
+      );
+      _dataVigenciaInicio = DateTime.tryParse(
+        doc['dataVigenciaInicio'] as String? ?? '',
+      );
+      _dataVigenciaFim = DateTime.tryParse(
+        doc['dataVigenciaFim'] as String? ?? '',
+      );
+    } catch (e) {
+      if (mounted) _showError('Erro ao carregar ata do PNCP: $e');
+    }
   }
 
   Future<List<Processo>> _carregarOpcoesEdital() async {

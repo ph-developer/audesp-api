@@ -125,7 +125,7 @@ void main() {
   });
 
   test(
-    'migração v16 cria a tabela e avança para v17 sem recriar compras',
+    'migração v16 cria a tabela e avança para v18 sem recriar compras',
     () async {
       var versao = 16;
       server.responder = (sql, params) {
@@ -156,7 +156,7 @@ void main() {
         return const FakeMySqlResult();
       };
       await db.initialize();
-      expect(await db.schemaVersion, 17);
+      expect(await db.schemaVersion, 18);
       expect(
         server.consultas.where(
           (c) => c.sql.contains('CREATE TABLE IF NOT EXISTS pncp_contratos'),

@@ -87,6 +87,7 @@ Future<GoRouter> _pumpPage(
       enviosProcessoProvider.overrideWith((ref) async => EnviosProcesso.vazio),
       pncpComprasProvider.overrideWith((ref) async => dao?.compras ?? compras),
       pncpContratosProvider.overrideWith((ref) async => const []),
+      pncpAtasProvider.overrideWith((ref) async => const []),
       pncpConfigProvider.overrideWith((ref) async => config),
       ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
       editaisDraftProvider.overrideWith(

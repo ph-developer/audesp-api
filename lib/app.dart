@@ -135,7 +135,12 @@ final _routerProvider = Provider<GoRouter>((ref) {
                   final editalId = int.tryParse(
                     state.uri.queryParameters['editalId'] ?? '',
                   );
-                  return AtaFormPage(preselectedEditalId: editalId);
+                  return AtaFormPage(
+                    preselectedEditalId: editalId,
+                    pncpAtaId: int.tryParse(
+                      state.uri.queryParameters['pncpAtaId'] ?? '',
+                    ),
+                  );
                 },
               ),
               GoRoute(

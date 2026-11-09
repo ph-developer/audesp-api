@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/database/models/user.dart';
 import '../../core/database/models/pncp_compra.dart';
 import '../../core/database/models/pncp_contrato.dart';
+import '../../core/database/models/pncp_ata.dart';
 import '../auth/auth_providers.dart';
 import '../pncp/pncp_providers.dart';
 import '../processo/processo_providers.dart';
@@ -23,7 +24,8 @@ final pendenciasModulosProvider = FutureProvider.autoDispose<PendenciasModulos>(
       return const PendenciasModulos();
     }
     final podeAjuste = user.hasPermission(AppPermissions.ajuste);
-    final (documentos, envios, compras, contratos, config) = await (
+    final podeAta = user.hasPermission(AppPermissions.ata);
+    final (documentos, envios, compras, contratos, atas, config) = await (
       ref.watch(documentosProcessoProvider.future),
       ref.watch(enviosProcessoProvider.future),
       user.hasPermission(AppPermissions.edital)
@@ -32,6 +34,9 @@ final pendenciasModulosProvider = FutureProvider.autoDispose<PendenciasModulos>(
       podeAjuste
           ? ref.watch(pncpContratosProvider.future)
           : Future.value(const <PncpContrato>[]),
+      podeAta
+          ? ref.watch(pncpAtasProvider.future)
+          : Future.value(const <PncpAta>[]),
       podeAjuste
           ? ref.watch(pncpConfigProvider.future)
           : Future.value(const PncpConfig()),
@@ -42,12 +47,13 @@ final pendenciasModulosProvider = FutureProvider.autoDispose<PendenciasModulos>(
       envios: envios,
       compras: compras,
       contratos: contratos,
+      atasPncp: atas,
       cnpj: config.cnpj,
     );
   },
 );
 
-/// Contagens sem busca, filtros, dispensas ou contratos bloqueados.
+/// Contagens sem busca, filtros, dispensas ou atas/contratos bloqueados.
 final pendenciasContagemProvider = FutureProvider.autoDispose<Map<String, int>>(
   (ref) async => (await ref.watch(pendenciasModulosProvider.future)).contagens,
 );
