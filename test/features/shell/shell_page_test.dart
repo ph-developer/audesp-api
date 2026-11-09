@@ -6,6 +6,7 @@ import 'package:audesp_api/features/documentacao/documentacao_providers.dart';
 import 'package:audesp_api/features/logs/envios_providers.dart';
 import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/shell/shell_page.dart';
+import 'package:audesp_api/features/pendencias/pendencias_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,7 @@ Future<GoRouter> _pumpShell(
   final container = ProviderContainer(
     overrides: [
       environmentProvider.overrideWith(_TestEnvironmentNotifier.new),
+      pendenciasContagemProvider.overrideWith((ref) async => {}),
       // Sem banco, PNCP nem AUDESP nos testes do shell.
       pncpMonitorProvider.overrideWith((ref) {}),
       documentacaoMonitorProvider.overrideWith((ref) {}),
@@ -47,7 +49,7 @@ Future<GoRouter> _pumpShell(
       );
 
   final router = GoRouter(
-    initialLocation: '/processos',
+    initialLocation: '/edital',
     routes: [
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
@@ -112,7 +114,7 @@ void main() {
       );
 
       expect(logs, findsOneWidget);
-      expect(find.byTooltip('Processos'), findsOneWidget);
+      expect(find.byTooltip('Processos'), findsNothing);
       expect(tester.widget<IconButton>(logs).isSelected, isFalse);
       expect(
         tester.getCenter(logs).dy,
@@ -132,7 +134,7 @@ void main() {
       final colors = Theme.of(tester.element(selectedLogs)).colorScheme;
       expect(style.backgroundColor!.resolve({}), colors.secondaryContainer);
 
-      router.go('/processos');
+      router.go('/edital');
       await tester.pumpAndSettle();
 
       expect(tester.widget<IconButton>(logs).isSelected, isFalse);

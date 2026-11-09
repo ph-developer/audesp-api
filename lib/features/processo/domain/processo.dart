@@ -3,6 +3,24 @@ import '../../estimativa/models/estimativa_model.dart';
 import '../../logs/domain/conclusao_envio.dart';
 import '../../logs/domain/ultimo_envio.dart';
 
+/// Documentos locais, inclusive ajustes de adesão sem edital vinculado.
+class DocumentosProcesso {
+  final List<Edital> editais;
+  final List<Licitacao> licitacoes;
+  final List<Ata> atas;
+  final List<Ajuste> ajustes;
+
+  DocumentosProcesso({
+    Iterable<Edital> editais = const [],
+    Iterable<Licitacao> licitacoes = const [],
+    Iterable<Ata> atas = const [],
+    Iterable<Ajuste> ajustes = const [],
+  }) : editais = List.unmodifiable(editais),
+       licitacoes = List.unmodifiable(licitacoes),
+       atas = List.unmodifiable(atas),
+       ajustes = List.unmodifiable(ajustes);
+}
+
 /// Envios registrados de cada tipo de documento e o ambiente ativo, para
 /// saber quais fases estão concluídas (protocolo armazenado).
 class EnviosProcesso {

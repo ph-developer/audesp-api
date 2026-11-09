@@ -13,12 +13,14 @@ import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/barra_filtros.dart';
 import '../../../core/utils/ordenacao_documentos.dart';
+import '../../../shared/formatters/documento_rotulo.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/ordenacao_selector.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/filtro_modalidade_dropdown.dart';
+import '../../pendencias/widgets/pendencias_modulo_list.dart';
 import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
 import '../../logs/widgets/filtro_envio_dropdown.dart';
@@ -36,7 +38,7 @@ class AjustePage extends ConsumerStatefulWidget {
 }
 
 class _AjustePageState extends ConsumerState<AjustePage> {
-  String _statusFilter = 'draft';
+  String _statusFilter = 'pendencias';
   FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
@@ -61,9 +63,14 @@ class _AjustePageState extends ConsumerState<AjustePage> {
               child: BarraFiltros(
                 children: [
                   AudespSegmentedButton<String>(
-                    width: 260,
-                    segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviados',
+                    },
                     icons: const {
+                      'pendencias': Icons.pending_actions,
                       'draft': Icons.edit_note,
                       'sent': Icons.check_circle_outline,
                     },
@@ -91,20 +98,23 @@ class _AjustePageState extends ConsumerState<AjustePage> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  FiltroModalidadeDropdown(
-                    value: _modalidadeId,
-                    onChanged: (v) => setState(() => _modalidadeId = v),
-                  ),
-                  FiltroEnvioDropdown(
-                    value: _filtroEnvio,
-                    onChanged: (v) => setState(() => _filtroEnvio = v),
-                  ),
-                  OrdenacaoSelector(
-                    value: _ordenarPor,
-                    decrescente: _decrescente,
-                    onChanged: (v) => setState(() => _ordenarPor = v),
-                    onSentidoChanged: (v) => setState(() => _decrescente = v),
-                  ),
+                  if (_statusFilter != 'pendencias')
+                    FiltroModalidadeDropdown(
+                      value: _modalidadeId,
+                      onChanged: (v) => setState(() => _modalidadeId = v),
+                    ),
+                  if (_statusFilter != 'pendencias')
+                    FiltroEnvioDropdown(
+                      value: _filtroEnvio,
+                      onChanged: (v) => setState(() => _filtroEnvio = v),
+                    ),
+                  if (_statusFilter != 'pendencias')
+                    OrdenacaoSelector(
+                      value: _ordenarPor,
+                      decrescente: _decrescente,
+                      onChanged: (v) => setState(() => _ordenarPor = v),
+                      onSentidoChanged: (v) => setState(() => _decrescente = v),
+                    ),
                   AudespIconButton(
                     icon: Icons.refresh,
                     tooltip: 'Atualizar',
@@ -112,7 +122,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
                       ref.invalidate(ajustesDraftProvider);
                       ref.invalidate(ajustesEnviadosProvider);
                       ref.invalidate(enviosProvider(EnviosEndpoint.ajuste));
-                      ref.invalidate(processosProvider);
+                      ref.invalidate(documentosProcessoProvider);
                       ref.invalidate(
                         unlinkedEditaisProvider(UnlinkedEditaisTarget.ajuste),
                       );
@@ -144,14 +154,16 @@ class _AjustePageState extends ConsumerState<AjustePage> {
           ),
         ],
       ),
-      body: _AjusteList(
-        status: _statusFilter,
-        search: _searchCtrl.text,
-        filtroEnvio: _filtroEnvio,
-        modalidadeId: _modalidadeId,
-        ordenarPor: _ordenarPor,
-        decrescente: _decrescente,
-      ),
+      body: _statusFilter == 'pendencias'
+          ? PendenciasModuloList(modulo: '/ajuste', search: _searchCtrl.text)
+          : _AjusteList(
+              status: _statusFilter,
+              search: _searchCtrl.text,
+              filtroEnvio: _filtroEnvio,
+              modalidadeId: _modalidadeId,
+              ordenarPor: _ordenarPor,
+              decrescente: _decrescente,
+            ),
     );
   }
 }
@@ -310,12 +322,7 @@ class _AjusteList extends ConsumerWidget {
                       iconColor: isSent
                           ? colorScheme.onPrimaryContainer
                           : colorScheme.onSurfaceVariant,
-                      title: [
-                        PcnpInputFormatter.applyMask(ajuste.codigoContrato),
-                        if (ajuste.numeroContratoEmpenho.isNotEmpty &&
-                            ajuste.anoContrato != 0)
-                          'Ajuste ${ajuste.numeroContratoEmpenho}/${ajuste.anoContrato}',
-                      ].join(' - '),
+                      title: tituloAjuste(ajuste),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -437,6 +444,7 @@ Future<void> _confirmDelete(
   if (confirmed == true) {
     try {
       await ref.read(ajustesDaoProvider).deleteById(ajuste.id);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(ajustesDraftProvider);
       ref.invalidate(ajustesEnviadosProvider);
     } catch (e) {

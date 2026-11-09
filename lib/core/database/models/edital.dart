@@ -16,7 +16,7 @@ class Edital {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Oculto em Processos (ex.: já lançado na AUDESP por outro sistema).
+  /// Oculto no sistema (ex.: já lançado no AUDESP por outro sistema).
   final DateTime? ocultoEm;
   final int? ocultoPor;
   final String? motivoOcultacao;

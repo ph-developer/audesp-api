@@ -451,7 +451,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       }
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
 
       if (mounted) {
@@ -525,7 +525,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         );
 
         if (!mounted) return;
-        ref.invalidate(processosProvider);
+        ref.invalidate(documentosProcessoProvider);
         ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
@@ -622,6 +622,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     try {
       // Envios recarregados: o protocolo pode ter sido armazenado.
       ref.invalidate(enviosProvider);
+      ref.invalidate(documentosProcessoProvider);
       final processos = await ref.refresh(processosProvider.future);
       if (!mounted) return;
       final processo = processos
@@ -670,7 +671,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       if (!mounted) return;
       ref.invalidate(licitacoesDraftProvider);
       ref.invalidate(licitacoesEnviadasProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {

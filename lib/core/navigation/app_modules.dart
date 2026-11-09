@@ -31,16 +31,8 @@ class AppModule {
       location == route || location.startsWith('$route/');
 }
 
-// A ordem também define o módulo inicial. Módulos sem grupo podem ser
-// acrescentados no topo sem mudar as regras de navegação ou o rail.
+// A ordem dos módulos de envio também define a prioridade das pendências.
 final List<AppModule> kAppModules = List.unmodifiable([
-  AppModule(
-    route: '/processos',
-    label: 'Processos',
-    icon: Icons.account_tree_outlined,
-    activeIcon: Icons.account_tree,
-    podeAcessar: (user) => user.hasAnyPermission(_permissoesEnvio),
-  ),
   AppModule(
     route: '/estimativa',
     label: 'Estimativa',
@@ -97,10 +89,25 @@ List<AppModule> modulosPara(User user) => [
 ];
 
 String homeLocationFor(User user) {
+  for (final module in _modulosEnvioPara(user)) {
+    return module.route;
+  }
   for (final module in kAppModules) {
     if (module.podeAcessar(user)) return module.route;
   }
   return kLogsModule.podeAcessar(user) ? kLogsModule.route : '/profile';
+}
+
+Iterable<AppModule> _modulosEnvioPara(User user) => kAppModules.where(
+  (module) =>
+      module.group != AppModuleGroup.planejamento && module.podeAcessar(user),
+);
+
+String homeLocationComPendencias(User user, Map<String, int> contagens) {
+  for (final module in _modulosEnvioPara(user)) {
+    if ((contagens[module.route] ?? 0) > 0) return module.route;
+  }
+  return homeLocationFor(user);
 }
 
 bool canAccessLocation(User user, String location) {

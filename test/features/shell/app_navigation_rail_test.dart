@@ -18,6 +18,7 @@ Future<GoRouter> _pumpRail(
   WidgetTester tester,
   List<AppModule> modules, {
   String initialLocation = '/edital',
+  Map<String, int> pendencias = const {},
 }) async {
   final router = GoRouter(
     initialLocation: initialLocation,
@@ -28,6 +29,7 @@ Future<GoRouter> _pumpRail(
             children: [
               AppNavigationRail(
                 modules: modules,
+                pendencias: pendencias,
                 leading: const SizedBox.shrink(),
                 trailing: const SizedBox.shrink(),
               ),
@@ -65,35 +67,27 @@ Semantics _destinationSemantics(WidgetTester tester, String label) =>
     );
 
 void main() {
-  testWidgets('admin vê Processos no topo e três divisórias curtas', (
+  testWidgets('admin vê Estimativa no topo e duas divisórias curtas', (
     tester,
   ) async {
     await _pumpRail(tester, modulosPara(_user(isAdmin: true)));
 
-    expect(find.byType(Divider), findsNWidgets(3));
+    expect(find.byType(Divider), findsNWidgets(2));
     final dividers = find.byType(Divider);
     expect(
       tester.getCenter(dividers.at(0)).dy,
-      greaterThan(tester.getCenter(find.text('Processos')).dy),
-    );
-    expect(
-      tester.getCenter(dividers.at(0)).dy,
-      lessThan(tester.getCenter(find.text('Estimativa')).dy),
-    );
-    expect(
-      tester.getCenter(dividers.at(1)).dy,
       greaterThan(tester.getCenter(find.text('Estimativa')).dy),
     );
     expect(
-      tester.getCenter(dividers.at(1)).dy,
+      tester.getCenter(dividers.at(0)).dy,
       lessThan(tester.getCenter(find.text('Edital')).dy),
     );
     expect(
-      tester.getCenter(dividers.at(2)).dy,
-      greaterThan(tester.getCenter(find.text('Licitação')).dy),
+      tester.getCenter(dividers.at(1)).dy,
+      greaterThan(tester.getCenter(find.text('Licita\u00e7\u00e3o')).dy),
     );
     expect(
-      tester.getCenter(dividers.at(2)).dy,
+      tester.getCenter(dividers.at(1)).dy,
       lessThan(tester.getCenter(find.text('Ata')).dy),
     );
     for (final divider in tester.widgetList<Divider>(dividers)) {
@@ -110,19 +104,13 @@ void main() {
     AppPermissions.ata | AppPermissions.ajuste,
     AppPermissions.none,
   ]) {
-    testWidgets('separa Processos do único grupo visível ($permissions)', (
+    testWidgets('um unico grupo visivel dispensa divisorias ($permissions)', (
       tester,
     ) async {
       final modules = modulosPara(_user(permissions: permissions));
       await _pumpRail(tester, modules);
 
-      expect(
-        find.byType(Divider),
-        permissions == AppPermissions.none ||
-                permissions == AppPermissions.estimativa
-            ? findsNothing
-            : findsOneWidget,
-      );
+      expect(find.byType(Divider), findsNothing);
       for (final module in kAppModules) {
         expect(
           find.byTooltip(module.label),
@@ -143,8 +131,8 @@ void main() {
       ),
     );
 
-    expect(find.byType(Divider), findsNWidgets(2));
-    expect(find.byTooltip('Processos'), findsOneWidget);
+    expect(find.byType(Divider), findsOneWidget);
+    expect(find.byTooltip('Processos'), findsNothing);
     expect(find.byTooltip('Estimativa'), findsOneWidget);
     expect(find.byTooltip('Ajuste'), findsOneWidget);
     expect(find.byTooltip('Edital'), findsNothing);
@@ -201,14 +189,33 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/ajuste');
     expect(_destinationSemantics(tester, 'Ajuste').properties.selected, isTrue);
 
-    await tester.tap(find.byTooltip('Processos'));
+    await tester.tap(find.byTooltip('Edital'));
     await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/processos');
-    expect(find.byIcon(Icons.account_tree), findsOneWidget);
+    expect(router.routeInformationProvider.value.uri.path, '/edital');
+    expect(find.byIcon(Icons.description), findsOneWidget);
+    expect(_destinationSemantics(tester, 'Edital').properties.selected, isTrue);
+  });
+  testWidgets('badges exibem contagens positivas apenas nos modulos de envio', (
+    tester,
+  ) async {
+    await _pumpRail(
+      tester,
+      kAppModules,
+      pendencias: {
+        '/edital': 3,
+        '/licitacao': 0,
+        '/ajuste': 12,
+        '/estimativa': 4,
+      },
+    );
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+    expect(find.text('4'), findsNothing);
     expect(
-      _destinationSemantics(tester, 'Processos').properties.selected,
-      isTrue,
+      _destinationSemantics(tester, 'Edital').properties.value,
+      '3 pend\u00eancias',
     );
   });
 }

@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/navigation/app_modules.dart';
+import 'core/database/models/user.dart';
+import 'core/navigation/home_navigation.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/pages/admin_page.dart';
 import 'features/ajuste/pages/ajuste_page.dart';
@@ -20,7 +24,7 @@ import 'features/licitacao/pages/licitacao_page.dart';
 import 'features/estimativa/pages/estimativas_list_page.dart';
 import 'features/estimativa/pages/estimativa_form_page.dart';
 import 'features/logs/pages/logs_page.dart';
-import 'features/processo/pages/processos_page.dart';
+import 'features/pendencias/pendencias_providers.dart';
 import 'features/shell/shell_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,8 +34,11 @@ import 'features/shell/shell_page.dart';
 final _routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
 
-  return GoRouter(
-    initialLocation: '/processos',
+  final userInicial = ref.read(localSessionProvider);
+  final router = GoRouter(
+    initialLocation: userInicial == null
+        ? '/login'
+        : homeLocationFor(userInicial),
     refreshListenable: notifier,
     redirect: (context, state) {
       final user = ref.read(localSessionProvider);
@@ -75,10 +82,6 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
         routes: [
-          GoRoute(
-            path: '/processos',
-            builder: (context, _) => const ProcessosPage(),
-          ),
           GoRoute(
             path: '/edital',
             builder: (context, _) => const EditalPage(),
@@ -188,6 +191,33 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  var sessao = 0;
+  ref.listen<User?>(localSessionProvider, (previous, next) {
+    if (next != null && previous?.id == next.id) return;
+    final atual = ++sessao;
+    if (next == null) return;
+    // O redirect leva primeiro ao fallback. A consulta não bloqueia o router.
+    scheduleMicrotask(() {
+      if (!ref.mounted || atual != sessao) return;
+      unawaited(
+        navegarParaPendencias(
+          router: router,
+          user: next,
+          contagens: ref.read(pendenciasContagemProvider.future),
+          sessaoAtual: () =>
+              ref.mounted &&
+              atual == sessao &&
+              ref.read(localSessionProvider)?.id == next.id,
+        ),
+      );
+    });
+  }, fireImmediately: true);
+  ref.onDispose(() {
+    sessao++;
+    router.dispose();
+    notifier.dispose();
+  });
+  return router;
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -8,12 +8,14 @@ class AppNavigationRail extends StatelessWidget {
   final List<AppModule> modules;
   final Widget leading;
   final Widget trailing;
+  final Map<String, int> pendencias;
 
   const AppNavigationRail({
     super.key,
     required this.modules,
     required this.leading,
     required this.trailing,
+    this.pendencias = const {},
   });
 
   @override
@@ -46,6 +48,7 @@ class AppNavigationRail extends StatelessWidget {
                         _ModuleDestination(
                           module: modules[i],
                           selected: modules[i].matchesLocation(currentPath),
+                          pendencias: pendencias[modules[i].route] ?? 0,
                         ),
                       ],
                     ],
@@ -64,8 +67,13 @@ class AppNavigationRail extends StatelessWidget {
 class _ModuleDestination extends StatelessWidget {
   final AppModule module;
   final bool selected;
+  final int pendencias;
 
-  const _ModuleDestination({required this.module, required this.selected});
+  const _ModuleDestination({
+    required this.module,
+    required this.selected,
+    required this.pendencias,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +83,7 @@ class _ModuleDestination extends StatelessWidget {
     return Semantics(
       container: true,
       label: module.label,
+      value: pendencias > 0 ? '$pendencias pendências' : null,
       button: true,
       selected: selected,
       child: Tooltip(
@@ -101,12 +110,20 @@ class _ModuleDestination extends StatelessWidget {
                             : Colors.transparent,
                         shape: const StadiumBorder(),
                       ),
-                      child: Icon(
-                        selected ? module.activeIcon : module.icon,
-                        size: 24,
-                        color: selected
-                            ? colors.onSecondaryContainer
-                            : colors.onSurfaceVariant,
+                      child: Center(
+                        child: Badge.count(
+                          count: pendencias,
+                          isLabelVisible:
+                              pendencias > 0 &&
+                              module.group != AppModuleGroup.planejamento,
+                          child: Icon(
+                            selected ? module.activeIcon : module.icon,
+                            size: 24,
+                            color: selected
+                                ? colors.onSecondaryContainer
+                                : colors.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),

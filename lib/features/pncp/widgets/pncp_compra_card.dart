@@ -11,10 +11,10 @@ import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
+import '../../../shared/widgets/ufesp_indicador.dart';
 import '../../auth/auth_providers.dart';
 import '../../edital/domain/edital_domain.dart';
 import '../../processo/domain/ufesp_rules.dart';
-import '../../processo/widgets/ufesp_indicador.dart';
 import '../pncp_providers.dart';
 
 /// Compra do PNCP sem edital no sistema, com as ações de iniciar o edital
@@ -161,7 +161,7 @@ class _DispensarDialogState extends State<_DispensarDialog> {
         children: [
           const Text(
             'A compra deixa de aparecer nas pendências. Ela pode ser '
-            'restaurada na visão "Todos".',
+            'restaurada usando "Mostrar dispensadas" na aba Pendências.',
           ),
           const SizedBox(height: 12),
           AudespTextField(

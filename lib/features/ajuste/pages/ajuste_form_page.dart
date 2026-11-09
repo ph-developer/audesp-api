@@ -299,6 +299,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     final adesao = _adesaoParticipacao;
     // Envios recarregados: o protocolo pode ter sido armazenado.
     ref.invalidate(enviosProvider);
+    ref.invalidate(documentosProcessoProvider);
     final processos = await ref.refresh(processosProvider.future);
     if (!mounted || adesao != _adesaoParticipacao) return processos;
     final opcoes = ProcessoRules.opcoesAjuste(
@@ -723,7 +724,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       }
       ref.invalidate(ajustesDraftProvider);
       ref.invalidate(ajustesEnviadosProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
 
       if (mounted) {
@@ -851,7 +852,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           userId: user?.id,
         );
         if (!mounted) return;
-        ref.invalidate(processosProvider);
+        ref.invalidate(documentosProcessoProvider);
         ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
@@ -970,7 +971,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (!mounted) return;
       ref.invalidate(ajustesDraftProvider);
       ref.invalidate(ajustesEnviadosProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {

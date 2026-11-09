@@ -10,6 +10,7 @@ import '../documentacao/documentacao_providers.dart';
 import '../documentacao/widgets/documentacao_alerta_button.dart';
 import '../logs/envios_providers.dart';
 import '../pncp/pncp_providers.dart';
+import '../pendencias/pendencias_providers.dart';
 import 'widgets/app_navigation_rail.dart';
 import 'widgets/environment_dialog.dart';
 
@@ -42,6 +43,7 @@ class ShellPage extends ConsumerWidget {
         children: [
           AppNavigationRail(
             modules: modules,
+            pendencias: ref.watch(pendenciasContagemProvider).value ?? const {},
             leading: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Image.asset(

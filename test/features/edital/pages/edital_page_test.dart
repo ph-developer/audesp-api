@@ -6,6 +6,8 @@ import 'package:audesp_api/features/edital/edital_providers.dart';
 import 'package:audesp_api/features/edital/pages/edital_page.dart';
 import 'package:audesp_api/features/logs/domain/ultimo_envio.dart';
 import 'package:audesp_api/features/logs/envios_providers.dart';
+import 'package:audesp_api/features/pncp/pncp_providers.dart';
+import 'package:audesp_api/features/processo/domain/ufesp_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,6 +36,7 @@ Future<void> _pump(WidgetTester tester, List<Edital> editais, Size size) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
         editaisDraftProvider.overrideWith((ref) async => editais),
         editaisEnviadosProvider.overrideWith((ref) async => const []),
         enviosProvider.overrideWith((ref, _) async => EnviosIndex.vazio),
@@ -44,6 +47,8 @@ Future<void> _pump(WidgetTester tester, List<Edital> editais, Size size) async {
       ),
     ),
   );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Rascunhos'));
   await tester.pumpAndSettle();
 }
 

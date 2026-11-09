@@ -26,6 +26,7 @@ Processo processoFixture({
   List<Licitacao> licitacoes = const [],
   List<Ata> atas = const [],
   List<Ajuste> ajustes = const [],
+  EnviosProcesso? envios,
 }) => Processo(
   edital: Edital(
     id: id,
@@ -56,6 +57,7 @@ Processo processoFixture({
   estimativa: estimativa,
   atas: atas,
   ajustes: ajustes,
+  envios: envios,
 );
 
 Licitacao licitacaoFixture(
@@ -98,7 +100,7 @@ Ata ataFixture(
 
 Ajuste ajusteFixture(
   int id, {
-  int editalId = 1,
+  int? editalId = 1,
   int? ataId,
   String status = 'draft',
   String? codigo,

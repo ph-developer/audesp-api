@@ -76,16 +76,6 @@ Ajuste _ajuste(
   updatedAt: DateTime(2026, 10, 27),
 );
 
-User _user({int permissions = AppPermissions.none, bool isAdmin = false}) =>
-    User(
-      id: 1,
-      nome: 'Usuário de teste',
-      email: 'teste@example.com',
-      permissions: permissions,
-      isAdmin: isAdmin,
-      createdAt: DateTime(2026),
-    );
-
 Processo _processo({
   Edital? edital,
   EstimativaModel? estimativa,
@@ -123,23 +113,6 @@ EnvioResumo _envio(
 
 void main() {
   group('edital oculto', () {
-    test('não gera pendências', () {
-      expect(
-        ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-          _processo(edital: _edital(1, oculto: true)),
-          _processo(
-            edital: _edital(2, oculto: true),
-            licitacoes: [_licitacao(2, editalId: 2)],
-          ),
-          _processo(
-            edital: _edital(3, srp: true, oculto: true),
-            licitacoes: [_licitacao(3, editalId: 3, status: 'sent')],
-          ),
-        ]),
-        isEmpty,
-      );
-    });
-
     test('bloqueia ata e ajuste, inclusive na adesão', () {
       final srp = _processo(
         edital: _edital(1, srp: true, oculto: true),
@@ -333,7 +306,6 @@ void main() {
       codigoEdital: 'edital-1',
       retificacao: false,
     );
-    final user = _user(isAdmin: true);
 
     EnviosProcesso envios({
       List<EnvioResumo> editais = const [],
@@ -344,7 +316,7 @@ void main() {
       baseUrl: _oficial,
     );
 
-    test('edital em análise bloqueia licitação e não cobra pendência', () {
+    test('edital em análise bloqueia licitação', () {
       final processo = _processo(
         envios: envios(
           editais: [_envio(1, edital, statusProtocolo: 'Recebido')],
@@ -360,7 +332,6 @@ void main() {
         ProcessoRules.motivoBloqueioAjuste(processo),
         ProcessoRules.motivoBloqueioLicitacao(processo),
       );
-      expect(ProcessoRules.pendenciasPara(user, [processo]), isEmpty);
     });
 
     test('edital armazenado libera a licitação', () {
@@ -371,10 +342,6 @@ void main() {
       );
 
       expect(ProcessoRules.motivoBloqueioLicitacao(processo), isNull);
-      expect(
-        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
-        TipoPendencia.criarLicitacao,
-      );
     });
 
     test('armazenado no Piloto não conclui no Oficial', () {
@@ -420,13 +387,9 @@ void main() {
         'O protocolo da licitação do edital foi rejeitado pelo AUDESP. '
         'Corrija e reenvie.',
       );
-      expect(
-        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
-        TipoPendencia.enviarLicitacao,
-      );
     });
 
-    test('licitação em análise bloqueia o ajuste sem pendência', () {
+    test('licitação em análise bloqueia o ajuste', () {
       final processo = _processo(
         licitacoes: [_licitacao(1, status: 'sent')],
         envios: envios(
@@ -435,7 +398,6 @@ void main() {
       );
 
       expect(ProcessoRules.podeCriarAjuste(processo), isFalse);
-      expect(ProcessoRules.pendenciasPara(user, [processo]), isEmpty);
     });
 
     test('licitação armazenada libera o ajuste', () {
@@ -447,10 +409,6 @@ void main() {
       );
 
       expect(ProcessoRules.podeCriarAjuste(processo), isTrue);
-      expect(
-        ProcessoRules.pendenciasPara(user, [processo]).single.tipo,
-        TipoPendencia.criarAjuste,
-      );
     });
 
     test('uma licitação armazenada basta entre várias', () {
@@ -737,219 +695,6 @@ void main() {
 
     test('processo sem dependentes tem contagens zeradas', () {
       expect(ProcessoRules.dependentesDe(_processo()), (atas: 0, ajustes: 0));
-    });
-  });
-
-  group('pendenciasPara', () {
-    List<Processo> processosPendentes() => [
-      _processo(edital: _edital(1)),
-      _processo(edital: _edital(2), licitacoes: [_licitacao(2, editalId: 2)]),
-      _processo(
-        edital: _edital(3, srp: true),
-        licitacoes: [_licitacao(3, editalId: 3, status: 'sent')],
-      ),
-      _processo(
-        edital: _edital(4, srp: true),
-        licitacoes: [_licitacao(4, editalId: 4, status: 'sent')],
-        atas: [_ata(4, editalId: 4, status: 'sent')],
-      ),
-      _processo(
-        edital: _edital(5),
-        licitacoes: [_licitacao(5, editalId: 5, status: 'sent')],
-      ),
-    ];
-
-    test('edital enviado sem licitação pede criar licitação', () {
-      final processo = _processo();
-      final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.licitacao),
-        [processo],
-      ).single;
-
-      expect(pendencia.processo, same(processo));
-      expect(pendencia.tipo, TipoPendencia.criarLicitacao);
-    });
-
-    test('edital enviado com licitações em rascunho pede um único envio', () {
-      final processo = _processo(licitacoes: [_licitacao(1), _licitacao(2)]);
-      final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.licitacao),
-        [processo],
-      ).single;
-
-      expect(pendencia.processo, same(processo));
-      expect(pendencia.tipo, TipoPendencia.enviarLicitacao);
-    });
-
-    test('edital em rascunho não pede criar ou enviar licitação', () {
-      expect(
-        ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-          _processo(edital: _edital(1, status: 'draft')),
-          _processo(
-            edital: _edital(2, status: 'draft'),
-            licitacoes: [_licitacao(2, editalId: 2)],
-          ),
-        ]),
-        isEmpty,
-      );
-    });
-
-    test('licitação enviada de edital SRP sem ata pede criar ata', () {
-      final processo = _processo(
-        edital: _edital(1, srp: true),
-        licitacoes: [
-          _licitacao(1),
-          _licitacao(2, status: 'sent'),
-        ],
-      );
-      final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.ata | AppPermissions.ajuste),
-        [processo],
-      ).single;
-
-      expect(pendencia.processo, same(processo));
-      expect(pendencia.tipo, TipoPendencia.criarAta);
-    });
-
-    test('ata existente em qualquer status dispensa criar ata', () {
-      for (final status in ['draft', 'sent']) {
-        expect(
-          ProcessoRules.pendenciasPara(_user(permissions: AppPermissions.ata), [
-            _processo(
-              edital: _edital(1, srp: true),
-              licitacoes: [_licitacao(1, status: 'sent')],
-              atas: [_ata(1, status: status)],
-            ),
-          ]),
-          isEmpty,
-        );
-      }
-    });
-
-    test('sem licitação enviada não pede criar ata ou ajuste', () {
-      for (final srp in [false, true]) {
-        for (final licitacoes in <List<Licitacao>>[
-          [],
-          [_licitacao(1)],
-        ]) {
-          expect(
-            ProcessoRules.pendenciasPara(
-              _user(permissions: AppPermissions.ata | AppPermissions.ajuste),
-              [
-                _processo(
-                  edital: _edital(1, srp: srp),
-                  licitacoes: licitacoes,
-                ),
-              ],
-            ),
-            isEmpty,
-          );
-        }
-      }
-    });
-
-    test(
-      'ata SRP nunca gera pendência de ajuste, com ou sem ajustes antigos',
-      () {
-        for (final status in ['draft', 'sent']) {
-          for (final ajustes in <List<Ajuste>>[
-            [],
-            [_ajuste(1, ataId: 1, status: status)],
-          ]) {
-            expect(
-              ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-                _processo(
-                  edital: _edital(1, srp: true),
-                  licitacoes: [_licitacao(1, status: 'sent')],
-                  atas: [
-                    _ata(1, status: status),
-                    _ata(2, status: 'sent'),
-                  ],
-                  ajustes: ajustes,
-                ),
-              ]),
-              isEmpty,
-            );
-          }
-        }
-      },
-    );
-
-    test('licitação enviada não SRP sem ajuste pede só criar ajuste', () {
-      final processo = _processo(licitacoes: [_licitacao(1, status: 'sent')]);
-      final pendencia = ProcessoRules.pendenciasPara(
-        _user(permissions: AppPermissions.ata | AppPermissions.ajuste),
-        [processo],
-      ).single;
-
-      expect(pendencia.processo, same(processo));
-      expect(pendencia.tipo, TipoPendencia.criarAjuste);
-    });
-
-    test('edital não SRP com ajuste em qualquer status não pede ajuste', () {
-      for (final status in ['draft', 'sent']) {
-        expect(
-          ProcessoRules.pendenciasPara(_user(isAdmin: true), [
-            _processo(
-              licitacoes: [_licitacao(1, status: 'sent')],
-              ajustes: [_ajuste(1, status: status)],
-            ),
-          ]),
-          isEmpty,
-        );
-      }
-    });
-
-    test('filtra cada tipo pela permissão do módulo', () {
-      final processos = processosPendentes();
-      final tiposPorPermissao = {
-        AppPermissions.none: <TipoPendencia>[],
-        AppPermissions.edital: <TipoPendencia>[],
-        AppPermissions.estimativa: <TipoPendencia>[],
-        AppPermissions.licitacao: [
-          TipoPendencia.criarLicitacao,
-          TipoPendencia.enviarLicitacao,
-        ],
-        AppPermissions.ata: [TipoPendencia.criarAta],
-        AppPermissions.ajuste: [TipoPendencia.criarAjuste],
-        AppPermissions.ata | AppPermissions.ajuste: [
-          TipoPendencia.criarAta,
-          TipoPendencia.criarAjuste,
-        ],
-      };
-
-      for (final entry in tiposPorPermissao.entries) {
-        final pendencias = ProcessoRules.pendenciasPara(
-          _user(permissions: entry.key),
-          processos,
-        );
-        expect(
-          pendencias.map((p) => p.tipo),
-          entry.value,
-          reason: 'Permissões: ${entry.key}',
-        );
-      }
-    });
-
-    test('admin vê todas as pendências mesmo sem permissões explícitas', () {
-      final processos = processosPendentes();
-      final pendencias = ProcessoRules.pendenciasPara(
-        _user(isAdmin: true),
-        processos,
-      );
-
-      expect(pendencias.map((p) => p.processo), [
-        processos[0],
-        processos[1],
-        processos[2],
-        processos[4],
-      ]);
-      expect(pendencias.map((p) => p.tipo), [
-        TipoPendencia.criarLicitacao,
-        TipoPendencia.enviarLicitacao,
-        TipoPendencia.criarAta,
-        TipoPendencia.criarAjuste,
-      ]);
     });
   });
 }

@@ -375,7 +375,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       }
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
 
       if (mounted) {
@@ -492,7 +492,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         );
 
         if (!mounted) return;
-        ref.invalidate(processosProvider);
+        ref.invalidate(documentosProcessoProvider);
         ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
@@ -823,6 +823,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     try {
       // Envios recarregados: o protocolo pode ter sido armazenado.
       ref.invalidate(enviosProvider);
+      ref.invalidate(documentosProcessoProvider);
       final processos = await ref.refresh(processosProvider.future);
       if (!mounted) return;
       final processo = processos
@@ -871,7 +872,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       if (!mounted) return;
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {

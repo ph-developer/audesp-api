@@ -72,19 +72,6 @@ final pncpComprasProvider = FutureProvider.autoDispose<List<PncpCompra>>((
   return compras.where((c) => c.cnpj == config.cnpj).toList();
 });
 
-/// Seção "No PNCP, sem edital no sistema" recolhida em Processos. Começa
-/// recolhida; a escolha vale enquanto o sistema estiver aberto.
-class PncpSecaoOcultaNotifier extends Notifier<bool> {
-  @override
-  bool build() => true;
-
-  void alternar() => state = !state;
-}
-
-final pncpSecaoOcultaProvider = NotifierProvider<PncpSecaoOcultaNotifier, bool>(
-  PncpSecaoOcultaNotifier.new,
-);
-
 class PncpConsultaState {
   final bool executando;
   final String? erro;

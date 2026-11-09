@@ -13,19 +13,27 @@ import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/barra_filtros.dart';
 import '../../../core/utils/ordenacao_documentos.dart';
+import '../../../shared/formatters/documento_rotulo.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/hover_expand_fab.dart';
 import '../../../shared/widgets/ordenacao_selector.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../widgets/filtro_modalidade_dropdown.dart';
+import '../../pendencias/widgets/pendencias_modulo_list.dart';
 import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
 import '../../logs/widgets/filtro_envio_dropdown.dart';
 import '../../logs/widgets/ultimo_envio_chip.dart';
 import '../edital_providers.dart'
     show editaisDraftProvider, editaisEnviadosProvider;
-import '../widgets/pcnp_input_formatter.dart';
+import '../../../core/navigation/app_modules.dart';
+import '../../../shared/widgets/ufesp_indicador.dart';
+import '../../auth/auth_providers.dart';
+import '../../pncp/pncp_providers.dart';
+import '../../pncp/widgets/consultar_pncp_button.dart';
+import '../../processo/domain/ufesp_rules.dart';
+import '../../processo/processo_providers.dart';
 
 class EditalPage extends ConsumerStatefulWidget {
   const EditalPage({super.key});
@@ -35,7 +43,8 @@ class EditalPage extends ConsumerStatefulWidget {
 }
 
 class _EditalPageState extends ConsumerState<EditalPage> {
-  String _statusFilter = 'draft';
+  String _statusFilter = 'pendencias';
+  bool _mostrarDispensadas = false;
   FiltroEnvio _filtroEnvio = FiltroEnvio.todos;
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
@@ -50,6 +59,8 @@ class _EditalPageState extends ConsumerState<EditalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(localSessionProvider);
+    final podeCriar = user != null && canAccessLocation(user, '/edital/new');
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -60,9 +71,14 @@ class _EditalPageState extends ConsumerState<EditalPage> {
               child: BarraFiltros(
                 children: [
                   AudespSegmentedButton<String>(
-                    width: 260,
-                    segments: const {'draft': 'Rascunhos', 'sent': 'Enviados'},
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviados',
+                    },
                     icons: const {
+                      'pendencias': Icons.pending_actions,
                       'draft': Icons.edit_note,
                       'sent': Icons.check_circle_outline,
                     },
@@ -90,24 +106,42 @@ class _EditalPageState extends ConsumerState<EditalPage> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  FiltroModalidadeDropdown(
-                    value: _modalidadeId,
-                    onChanged: (v) => setState(() => _modalidadeId = v),
-                  ),
-                  FiltroEnvioDropdown(
-                    value: _filtroEnvio,
-                    onChanged: (v) => setState(() => _filtroEnvio = v),
-                  ),
-                  OrdenacaoSelector(
-                    value: _ordenarPor,
-                    decrescente: _decrescente,
-                    onChanged: (v) => setState(() => _ordenarPor = v),
-                    onSentidoChanged: (v) => setState(() => _decrescente = v),
-                  ),
+                  if (_statusFilter != 'pendencias')
+                    FiltroModalidadeDropdown(
+                      value: _modalidadeId,
+                      onChanged: (v) => setState(() => _modalidadeId = v),
+                    ),
+                  if (_statusFilter != 'pendencias')
+                    FiltroEnvioDropdown(
+                      value: _filtroEnvio,
+                      onChanged: (v) => setState(() => _filtroEnvio = v),
+                    ),
+                  if (_statusFilter != 'pendencias')
+                    OrdenacaoSelector(
+                      value: _ordenarPor,
+                      decrescente: _decrescente,
+                      onChanged: (v) => setState(() => _ordenarPor = v),
+                      onSentidoChanged: (v) => setState(() => _decrescente = v),
+                    ),
+                  if (_statusFilter == 'pendencias' && podeCriar)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Switch(
+                          value: _mostrarDispensadas,
+                          onChanged: (v) =>
+                              setState(() => _mostrarDispensadas = v),
+                        ),
+                        const Text('Mostrar dispensadas'),
+                      ],
+                    ),
+                  const ConsultarPncpButton(),
                   AudespIconButton(
                     icon: Icons.refresh,
                     tooltip: 'Atualizar',
                     onPressed: () {
+                      ref.invalidate(documentosProcessoProvider);
+                      ref.invalidate(pncpComprasProvider);
                       ref.invalidate(editaisDraftProvider);
                       ref.invalidate(editaisEnviadosProvider);
                       ref.invalidate(enviosProvider(EnviosEndpoint.edital));
@@ -120,20 +154,28 @@ class _EditalPageState extends ConsumerState<EditalPage> {
         ),
         actions: const [SizedBox(width: 8)],
       ),
-      floatingActionButton: HoverExpandFab(
-        heroTag: 'novoEdital',
-        onPressed: () => context.go('/edital/new'),
-        icon: Icons.add,
-        tooltip: 'Novo Edital',
-      ),
-      body: _EditalList(
-        status: _statusFilter,
-        search: _searchCtrl.text,
-        filtroEnvio: _filtroEnvio,
-        modalidadeId: _modalidadeId,
-        ordenarPor: _ordenarPor,
-        decrescente: _decrescente,
-      ),
+      floatingActionButton: !podeCriar
+          ? null
+          : HoverExpandFab(
+              heroTag: 'novoEdital',
+              onPressed: () => context.go('/edital/new'),
+              icon: Icons.add,
+              tooltip: 'Novo Edital',
+            ),
+      body: _statusFilter == 'pendencias'
+          ? PendenciasModuloList(
+              modulo: '/edital',
+              search: _searchCtrl.text,
+              mostrarDispensadas: _mostrarDispensadas,
+            )
+          : _EditalList(
+              status: _statusFilter,
+              search: _searchCtrl.text,
+              filtroEnvio: _filtroEnvio,
+              modalidadeId: _modalidadeId,
+              ordenarPor: _ordenarPor,
+              decrescente: _decrescente,
+            ),
     );
   }
 }
@@ -156,6 +198,7 @@ class _EditalList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ufesp = ref.watch(ufespConfigProvider).value ?? const UfespConfig();
     final stream = status == 'draft'
         ? ref.watch(editaisDraftProvider)
         : ref.watch(editaisEnviadosProvider);
@@ -246,13 +289,7 @@ class _EditalList extends ConsumerWidget {
               iconColor: isSent
                   ? colorScheme.onPrimaryContainer
                   : colorScheme.onSurfaceVariant,
-              title: [
-                PcnpInputFormatter.applyMask(edital.idContratacaoPNCP),
-                if (edital.modalidadeLabel.isNotEmpty &&
-                    edital.numeroCompra.isNotEmpty &&
-                    edital.anoCompra != 0)
-                  '${edital.modalidadeLabel} ${edital.numeroCompra}/${edital.anoCompra}',
-              ].join(' - '),
+              title: tituloEdital(edital),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -281,6 +318,10 @@ class _EditalList extends ConsumerWidget {
                 ],
               ),
               chips: [
+                UfespIndicador(
+                  valorEstimado: edital.valorTotalEstimado,
+                  config: ufesp,
+                ),
                 if (edital.semPncp) StatusChip.semPncp(),
                 if (edital.retificacao) StatusChip.retificacao(),
                 if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
@@ -312,6 +353,7 @@ Future<void> _confirmDelete(
   if (confirmed == true) {
     try {
       await ref.read(editaisDaoProvider).deleteById(edital.id);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(editaisDraftProvider);
       ref.invalidate(editaisEnviadosProvider);
     } catch (e) {

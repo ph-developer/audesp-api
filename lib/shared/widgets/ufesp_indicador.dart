@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/utils/currency_formatter.dart';
-import '../domain/ufesp_rules.dart';
+import '../../core/utils/currency_formatter.dart';
+import '../../features/processo/domain/ufesp_rules.dart';
 
 /// Chip "Envio não obrigatório" para valores abaixo do mínimo em UFESP.
 class UfespIndicador extends StatelessWidget {

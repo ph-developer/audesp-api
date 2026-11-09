@@ -140,6 +140,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   Future<List<Processo>> _carregarOpcoesEdital() async {
     // Envios recarregados: o protocolo pode ter sido armazenado.
     ref.invalidate(enviosProvider);
+    ref.invalidate(documentosProcessoProvider);
     final processos = await ref.refresh(processosProvider.future);
     if (!mounted) return processos;
     final opcoes = ProcessoRules.opcoesAta(processos);
@@ -409,7 +410,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       }
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
 
       if (mounted) {
@@ -495,7 +496,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         );
 
         if (!mounted) return;
-        ref.invalidate(processosProvider);
+        ref.invalidate(documentosProcessoProvider);
         ref.invalidate(enviosProvider);
         setState(() => _isSent = true);
         if (mounted) {
@@ -723,7 +724,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       if (!mounted) return;
       ref.invalidate(atasDraftProvider);
       ref.invalidate(atasEnviadasProvider);
-      ref.invalidate(processosProvider);
+      ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
       if (mounted) {
         setState(() {
