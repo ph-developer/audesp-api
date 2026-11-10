@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/database/database_providers.dart';
@@ -38,7 +39,7 @@ final kAjusteGeminiFields = <GeminiField>[
   GeminiField(
     key: 'niFornecedor',
     label: 'CNPJ/CPF do Fornecedor',
-    hint: 'Apenas números',
+    hint: 'Sem máscara. Preserve as letras do CNPJ alfanumérico.',
   ),
   GeminiField(
     key: 'nomeRazaoSocialFornecedor',
@@ -195,18 +196,7 @@ String _displayValue(String key, String raw) {
           .map((id) => _padFonteLabel(id, kFonteRecursoAjuste[id]!))
           .join(', ');
     case 'niFornecedor':
-      {
-        final digits = raw.replaceAll(RegExp(r'\D'), '');
-        if (digits.length == 11) {
-          return '${digits.substring(0, 3)}.${digits.substring(3, 6)}.'
-              '${digits.substring(6, 9)}-${digits.substring(9)}';
-        } else if (digits.length == 14) {
-          return '${digits.substring(0, 2)}.${digits.substring(2, 5)}.'
-              '${digits.substring(5, 8)}/${digits.substring(8, 12)}-'
-              '${digits.substring(12)}';
-        }
-        return digits;
-      }
+      return AudespCpfCnpjField.formatDocument(raw);
     case 'despesas':
       return raw
           .split(RegExp(r'[,\s]+'))

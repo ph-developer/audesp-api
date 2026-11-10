@@ -58,9 +58,10 @@ void main() {
     expect(doc['descritor'].containsKey('codigoAta'), isFalse);
   });
 
-  test('PF e PJ só têm dígitos; estrangeiro preserva letras', () {
+  test('limpa CPF e CNPJ e preserva o formato do NI estrangeiro', () {
     for (final (tipo, ni, esperado) in [
       ('PF', '123.456.789-09', '12345678909'),
+      ('PJ', '12.abc.345/01de-35', '12ABC34501DE35'),
       ('PE', ' AB-123/XY ', 'AB-123/XY'),
     ]) {
       final doc = PncpAjusteMapper.documento({

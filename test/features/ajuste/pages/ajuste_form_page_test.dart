@@ -263,6 +263,37 @@ void main() {
     expect(find.text('Rascunho salvo com sucesso.'), findsOneWidget);
   });
 
+  for (final (tipo, digitado, esperado) in [
+    ('PJ', ' 00.000.000/e08g-12 ', '00000000E08G12'),
+    ('PJ', ' 14.733.837/0001-54 ', '14733837000154'),
+    ('PE', 'AB-12.34/fg 56', 'AB-12.34/fg 56'),
+  ]) {
+    testWidgets('salva rascunho de fornecedor $tipo com NI $digitado', (
+      tester,
+    ) async {
+      final dao = _AjustesMemoria(
+        ajusteFixture(
+          21,
+          documentoJson: jsonEncode({
+            'tipoPessoaFornecedor': tipo,
+            'niFornecedor': digitado,
+          }),
+        ),
+      );
+      await _pumpPage(tester, dao, processos: [processoFixture()]);
+
+      await tester.tap(find.text('Salvar Rascunho'));
+      await tester.pumpAndSettle();
+
+      final doc = jsonDecode(dao.gravacoes.single.documentoJson) as Map;
+      expect(doc['niFornecedor'], esperado);
+      final campo = tester.widget<TextField>(
+        _campo('NI do Fornecedor (CNPJ/CPF) *'),
+      );
+      expect(campo.controller!.text, esperado);
+    });
+  }
+
   testWidgets('adesão mantém código de ata digitado e dispensa edital local', (
     tester,
   ) async {

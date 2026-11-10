@@ -3,13 +3,19 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('normalizarNiPessoa', () {
-    test('remove máscara e caracteres não numéricos de PJ e PF', () {
+    test('remove a máscara e preserva as letras do CNPJ de PJ', () {
       expect(
         normalizarNiPessoa('PJ', ' 14.733.837/0001-54 '),
         '14733837000154',
       );
+      expect(
+        normalizarNiPessoa('PJ', ' 12.abc.345/01de-35 '),
+        '12ABC34501DE35',
+      );
+    });
+
+    test('mantém apenas os dígitos do CPF de PF', () {
       expect(normalizarNiPessoa('PF', ' 330.206.793-89 '), '33020679389');
-      expect(normalizarNiPessoa('PJ', 'AB123'), '123');
       expect(normalizarNiPessoa('PF', 'AB123'), '123');
     });
 

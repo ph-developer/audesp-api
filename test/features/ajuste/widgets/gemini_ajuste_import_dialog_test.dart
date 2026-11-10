@@ -64,12 +64,14 @@ void main() {
       sugestoes: {
         'valorInicial': '200,00',
         'itens': '1, 2',
+        'niFornecedor': '12ABC34501DE35',
         'nomeRazaoSocialFornecedor': null,
       },
       onResult: (value) => resultado = value,
     );
     expect(find.text('Revisão da Importação'), findsOneWidget);
     expect(find.text('Sugestão Gemini'), findsOneWidget);
+    expect(find.text('12.ABC.345/01DE-35'), findsOneWidget);
     expect(find.text('Tipo de Pessoa do Fornecedor'), findsNothing);
     expect(
       tester
@@ -85,7 +87,7 @@ void main() {
     );
     await tester.tap(find.text('Aplicar Selecionados'));
     await tester.pumpAndSettle();
-    expect(resultado, {'itens': '1, 2'});
+    expect(resultado, {'itens': '1, 2', 'niFornecedor': '12ABC34501DE35'});
     expect(tester.takeException(), isNull);
   });
 

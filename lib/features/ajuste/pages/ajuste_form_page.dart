@@ -30,6 +30,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_warning_message.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
+import '../../licitacao/domain/licitacao_pessoa.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
 import '../../licitacao/domain/licitacao_resultado.dart';
 import '../../pncp/domain/pncp_ajuste_mapper.dart';
@@ -634,6 +635,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
   // ── JSON builder ──────────────────────────────────────────────────────
 
+  String get _niFornecedor => _tipoPessoaFornecedor == 'PJ'
+      ? normalizarNiPessoa('PJ', _niFornecedorCtrl.text)
+      : _niFornecedorCtrl.text.trim();
+
   Map<String, dynamic> _buildJson() {
     final municipio = int.tryParse(ref.read(codigoMunicipioProvider)) ?? 0;
     final entidade = int.tryParse(ref.read(codigoEntidadeProvider)) ?? 0;
@@ -674,7 +679,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       'anoContrato': int.tryParse(_anoContratoCtrl.text.trim()) ?? 0,
       'categoriaProcessoId': _categoriaProcessoId,
       'receita': _receita,
-      'niFornecedor': _niFornecedorCtrl.text.trim(),
+      'niFornecedor': _niFornecedor,
       'tipoPessoaFornecedor': _tipoPessoaFornecedor,
       'nomeRazaoSocialFornecedor': _nomeRazaoSocialFornecedorCtrl.text.trim(),
       'objetoContrato': _objetoContratoCtrl.text.trim(),
@@ -771,6 +776,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     setState(() => _saving = true);
     try {
+      final niFornecedorDigitado = _niFornecedorCtrl.text;
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(ajustesDaoProvider);
@@ -818,6 +824,13 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       ref.invalidate(enviosProvider);
 
       if (mounted) {
+        final niFornecedorSalvo = doc['niFornecedor'] as String;
+        if (doc['tipoPessoaFornecedor'] == 'PJ' &&
+            _tipoPessoaFornecedor == 'PJ' &&
+            niFornecedorSalvo != niFornecedorDigitado &&
+            _niFornecedorCtrl.text == niFornecedorDigitado) {
+          _niFornecedorCtrl.text = niFornecedorSalvo;
+        }
         setState(() {});
         AudespSnackBar.success(context, 'Rascunho salvo com sucesso.');
       }
@@ -1413,14 +1426,15 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (aceitos.containsKey('processo')) {
       _processoCtrl.text = aceitos['processo']!;
     }
-    if (aceitos.containsKey('niFornecedor')) {
-      final ni = aceitos['niFornecedor']!.replaceAll(RegExp(r'\D'), '');
-      _niFornecedorCtrl.text = aceitos['niFornecedor']!;
-      if (ni.length == 11) {
+    final niFornecedor = aceitos['niFornecedor'];
+    if (niFornecedor != null) {
+      _niFornecedorCtrl.text = niFornecedor;
+      final niSemMascara = niFornecedor.replaceAll(RegExp(r'[\s./-]'), '');
+      if (RegExp(r'^\d{11}$').hasMatch(niSemMascara)) {
         _tipoPessoaFornecedor = 'PF';
-      } else if (ni.length == 14) {
+      } else if (RegExp(r'^[A-Za-z0-9]{12}\d{2}$').hasMatch(niSemMascara)) {
         _tipoPessoaFornecedor = 'PJ';
-      } else if (ni.isNotEmpty) {
+      } else if (niSemMascara.isNotEmpty) {
         _tipoPessoaFornecedor = 'PE';
       }
     }
@@ -2197,7 +2211,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           controller: _niFornecedorCtrl,
                           readOnly: readOnly,
                           maxLength: 50,
-                          validator: (v) => (v == null || v.trim().isEmpty)
+                          validator: (v) => _niFornecedor.isEmpty
                               ? 'Obrigatório'
                               : validarTamanhoMaximo(v, 50),
                         ),
