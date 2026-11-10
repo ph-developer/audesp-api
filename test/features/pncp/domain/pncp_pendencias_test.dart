@@ -58,4 +58,28 @@ void main() {
     ];
     expect(PncpPendencias.dispensadas(compras, comEdital), isEmpty);
   });
+
+  test('compras publicadas antes de 02/02/2026 nunca aparecem', () {
+    PncpCompra compra(int seq, DateTime publicacao, {bool dispensada = false}) {
+      final base = _compra(seq, dispensada: dispensada);
+      return PncpCompra(
+        id: base.id,
+        cnpj: base.cnpj,
+        ano: base.ano,
+        sequencial: base.sequencial,
+        numeroControle: base.numeroControle,
+        dadosJson: base.dadosJson,
+        dataPublicacao: publicacao,
+        dispensadaEm: base.dispensadaEm,
+      );
+    }
+
+    final compras = [
+      compra(1, DateTime(2026, 2, 1)),
+      compra(2, DateTime(2026, 2, 2)),
+      compra(3, DateTime(2026, 1, 10), dispensada: true),
+    ];
+    expect(PncpPendencias.semEdital(compras, const []).map((c) => c.id), [2]);
+    expect(PncpPendencias.dispensadas(compras, const []), isEmpty);
+  });
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/widgets/erros_retornados_dialog.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -28,7 +29,6 @@ import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_warning_message.dart';
 import '../../../shared/widgets/section_card.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
 import '../../licitacao/domain/licitacao_resultado.dart';
@@ -38,7 +38,9 @@ import '../../pncp/pncp_providers.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
+import '../domain/ajuste_documento.dart';
 import '../domain/ajuste_domain.dart';
 import '../domain/ajuste_rules.dart';
 import '../ajuste_providers.dart';
@@ -327,11 +329,14 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       if (!mounted) return;
       final documentos = await ref.read(documentosProcessoProvider.future);
       if (!mounted) return;
+      final compras = await ref.read(pncpComprasProvider.future);
+      if (!mounted) return;
       final pendencia = PncpContratosPendencias.classificar(
         contratos: [contrato],
         processos: processos,
         ajustes: documentos.ajustes,
         cnpj: config.cnpj,
+        compras: compras,
       ).firstOrNull;
       if (pendencia == null || contrato.dispensado) {
         _showError(
@@ -616,7 +621,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     final assinatura = doc['dataAssinatura'] as String?;
     if (assinatura != null) _dataAssinatura = DateTime.tryParse(assinatura);
-    final vigInicio = doc['dataVigenciaInicio'] as String?;
+    final vigInicio = AjusteDocumento.vigenciaInicio(doc);
     if (vigInicio != null) {
       _dataVigenciaInicio = DateTime.tryParse(vigInicio);
     }
@@ -683,7 +688,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     };
 
     if (_dataVigenciaInicio != null) {
-      map['dataVigenciaInicio'] = isoFmt.format(_dataVigenciaInicio!);
+      map[AjusteDocumento.campoVigenciaInicio] = isoFmt.format(
+        _dataVigenciaInicio!,
+      );
     }
     if (_dataVigenciaFim != null) {
       map['dataVigenciaFim'] = isoFmt.format(_dataVigenciaFim!);
@@ -1023,6 +1030,64 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     );
   }
 
+  /// Reenvia o documento já enviado quando o protocolo ficou parado em
+  /// "Recebido" no AUDESP. Gera um novo protocolo; o anterior fica nos logs.
+  Future<void> _reenviar() async {
+    final id = _loadedId;
+    final protocolo = _lastSendLog?.protocolo;
+    if (id == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Reenviar ajuste?'),
+        content: Text(
+          'O protocolo $protocolo continua como Recebido e não avançou para '
+          'Armazenado. O mesmo documento será enviado de novo ao AUDESP e '
+          'receberá um novo protocolo. O protocolo anterior continua nos logs.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            icon: const Icon(Icons.send),
+            label: const Text('Reenviar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ajuste = await ref.read(ajustesDaoProvider).findById(id);
+    if (!mounted) return;
+    if (ajuste == null || ajuste.status != 'sent') {
+      _showError('O ajuste não está mais como enviado.');
+      return;
+    }
+    final user = ref.read(localSessionProvider);
+    await showAudespAuthDialog(
+      context,
+      ref,
+      actionLabel: 'Autenticar e Reenviar',
+      onConfirm: (token) async {
+        final msg = await ref
+            .read(ajusteServiceProvider)
+            .enviarAjuste(
+              ajusteId: id,
+              documentoJson: ajuste.documentoJson,
+              userId: user?.id,
+            );
+        if (!mounted) return;
+        ref.invalidate(documentosProcessoProvider);
+        ref.invalidate(enviosProvider);
+        await _reloadLatestSendLog();
+        if (mounted) AudespSnackBar.success(context, msg);
+      },
+    );
+  }
+
   Future<void> _returnToDraft() async {
     if (_loadedId == null) return;
 
@@ -1071,7 +1136,6 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   Widget _buildSentHeaderActions() {
     final status = _lastSendLog?.statusProtocolo;
     final rejected = _isRejectedStatus(status);
-    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1099,13 +1163,20 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           ),
           const SizedBox(width: 8),
         ],
+        if (_lastSendLog?.protocolo != null &&
+            protocoloPodeSerReenviado(status)) ...[
+          TextButton.icon(
+            onPressed: _updatingStatus ? null : _reenviar,
+            icon: const Icon(Icons.send),
+            label: const Text('Reenviar'),
+          ),
+          const SizedBox(width: 8),
+        ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: StatusChip(
-            label: status?.isNotEmpty == true ? status! : 'Enviado',
-            color: rejected ? scheme.error : null,
-            backgroundColor: rejected ? scheme.errorContainer : null,
-            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          child: ProtocoloStatusChip(
+            status: status,
+            retornoStatus: _lastSendLog?.retornoStatus,
           ),
         ),
       ],

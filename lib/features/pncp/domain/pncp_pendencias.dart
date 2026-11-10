@@ -1,8 +1,10 @@
 import '../../../core/database/app_database.dart';
+import 'pncp_vigencia.dart';
 
 /// Compras do PNCP comparadas aos editais cadastrados.
 abstract final class PncpPendencias {
   /// Compras não dispensadas que nenhum edital (rascunho ou enviado) usa.
+  /// Publicadas antes de [PncpVigencia.inicio] ficam de fora.
   static List<PncpCompra> semEdital(
     Iterable<PncpCompra> compras,
     Iterable<Edital> editais,
@@ -10,7 +12,9 @@ abstract final class PncpPendencias {
     final usados = _codigosPncp(editais);
     return [
       for (final compra in compras)
-        if (!compra.dispensada && !usados.contains(compra.numeroControle))
+        if (!compra.dispensada &&
+            PncpVigencia.compra(compra) &&
+            !usados.contains(compra.numeroControle))
           compra,
     ];
   }
@@ -23,7 +27,9 @@ abstract final class PncpPendencias {
     final usados = _codigosPncp(editais);
     return [
       for (final compra in compras)
-        if (compra.dispensada && !usados.contains(compra.numeroControle))
+        if (compra.dispensada &&
+            PncpVigencia.compra(compra) &&
+            !usados.contains(compra.numeroControle))
           compra,
     ];
   }

@@ -244,4 +244,42 @@ void main() {
       expect(semPermissao.atasDispensadas, isEmpty);
     },
   );
+
+  group('editais publicados antes de 02/02/2026', () {
+    for (final dispensada in [false, true]) {
+      test('ata de compra de 2025 nunca aparece (dispensada: $dispensada)', () {
+        expect(
+          _classificar(
+            ata: ataPncpSalva(
+              PncpAta.fromApi(ataPncpJson(anoCompra: 2025)),
+              dispensada: dispensada,
+            ),
+          ),
+          isEmpty,
+        );
+      });
+    }
+
+    test('usa a publicação da compra conhecida', () {
+      expect(
+        PncpAtasPendencias.classificar(
+          atasPncp: [ataPncpFixture()],
+          processos: [_processo()],
+          atas: const [],
+          compras: [
+            PncpCompra(
+              id: 1,
+              cnpj: '49576416000141',
+              ano: 2026,
+              sequencial: 1,
+              numeroControle: '4957641600014110000012026',
+              dataPublicacao: DateTime(2026, 1, 20),
+              dadosJson: '{}',
+            ),
+          ],
+        ),
+        isEmpty,
+      );
+    });
+  });
 }

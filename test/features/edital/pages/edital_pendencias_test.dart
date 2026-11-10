@@ -19,7 +19,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../processo/processo_fixtures.dart';
 
-PncpCompra _compra({bool dispensada = false, String? motivo}) => PncpCompra(
+PncpCompra _compra({
+  bool dispensada = false,
+  String? motivo,
+  double valor = 50000,
+}) => PncpCompra(
   id: 9,
   cnpj: '46395000000139',
   ano: 2026,
@@ -28,7 +32,7 @@ PncpCompra _compra({bool dispensada = false, String? motivo}) => PncpCompra(
   modalidadeId: 6,
   numeroCompra: '3',
   objeto: 'Material de escritório',
-  valorTotalEstimado: 50000,
+  valorTotalEstimado: valor,
   dadosJson: '{}',
   dispensadaEm: dispensada ? DateTime(2026, 11, 9) : null,
   motivoDispensa: motivo,
@@ -177,7 +181,7 @@ void main() {
       0,
     );
 
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.byTooltip('Mostrar dispensadas'));
     await tester.pumpAndSettle();
     expect(find.text('Restaurar'), findsOneWidget);
     expect(
@@ -192,6 +196,16 @@ void main() {
       (await container.read(pendenciasContagemProvider.future))['/edital'],
       1,
     );
+  });
+
+  testWidgets('compra com envio obrigatório não pode ser dispensada', (
+    tester,
+  ) async {
+    // 200 mil passa do mínimo de 2.500 UFESP (R$ 96.050,00).
+    await _pumpPage(tester, compras: [_compra(valor: 200000)]);
+    expect(find.text('Iniciar edital'), findsOneWidget);
+    expect(find.text('Dispensar'), findsNothing);
+    expect(find.text('Envio não obrigatório'), findsNothing);
   });
 
   testWidgets('edital oculto continua casando com PNCP e não aparece', (
@@ -243,7 +257,7 @@ void main() {
         permissions: AppPermissions.ajuste,
       );
       expect(find.text('Iniciar edital'), findsNothing);
-      expect(find.text('Mostrar dispensadas'), findsNothing);
+      expect(find.byTooltip('Mostrar dispensadas'), findsNothing);
       expect(find.byTooltip('Consultar PNCP'), findsNothing);
       expect(find.byTooltip('Novo Edital'), findsNothing);
     },

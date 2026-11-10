@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../../ajuste/domain/ajuste_documento.dart';
+
 import '../../ajuste/domain/ajuste_domain.dart';
 import '../../licitacao/domain/licitacao_pessoa.dart';
 
@@ -64,14 +66,14 @@ abstract final class PncpAjusteMapper {
       final valor = contrato[campo];
       if (valor is num && valor.isFinite) documento[campo] = valor;
     }
-    for (final campo in [
-      'dataAssinatura',
-      'dataVigenciaInicio',
-      'dataVigenciaFim',
+    for (final (campo, destino) in [
+      ('dataAssinatura', 'dataAssinatura'),
+      ('dataVigenciaInicio', AjusteDocumento.campoVigenciaInicio),
+      ('dataVigenciaFim', 'dataVigenciaFim'),
     ]) {
       final data = DateTime.tryParse(_texto(contrato[campo]));
       if (data != null) {
-        documento[campo] = DateFormat('yyyy-MM-dd').format(data);
+        documento[destino] = DateFormat('yyyy-MM-dd').format(data);
       }
     }
     // Não deduz tipoObjetoContrato, fontes, despesas, unidade, vigência em

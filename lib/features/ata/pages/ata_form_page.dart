@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/widgets/erros_retornados_dialog.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/text_validation.dart';
@@ -26,7 +27,6 @@ import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/audesp_warning_message.dart';
 import '../../../shared/widgets/section_card.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../licitacao/domain/licitacao_referencia.dart';
 import '../../licitacao/domain/licitacao_resultado.dart';
@@ -200,10 +200,13 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       if (!mounted) return;
       final documentos = await ref.read(documentosProcessoProvider.future);
       if (!mounted) return;
+      final compras = await ref.read(pncpComprasProvider.future);
+      if (!mounted) return;
       final pendencia = PncpAtasPendencias.classificar(
         atasPncp: [ata],
         processos: processos,
         atas: documentos.atas,
+        compras: compras,
       ).firstOrNull;
       if (ata.cancelada) {
         _showError('A ata foi cancelada no PNCP.');
@@ -848,7 +851,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   Widget _buildSentHeaderActions() {
     final status = _lastSendLog?.statusProtocolo;
     final rejected = _isRejectedStatus(status);
-    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -878,11 +880,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: StatusChip(
-            label: status?.isNotEmpty == true ? status! : 'Enviado',
-            color: rejected ? scheme.error : null,
-            backgroundColor: rejected ? scheme.errorContainer : null,
-            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          child: ProtocoloStatusChip(
+            status: status,
+            retornoStatus: _lastSendLog?.retornoStatus,
           ),
         ),
       ],

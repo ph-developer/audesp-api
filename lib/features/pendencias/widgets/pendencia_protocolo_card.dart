@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/environments.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../auth/auth_providers.dart';
@@ -101,54 +102,47 @@ class _PendenciaProtocoloCardState
   Widget build(BuildContext context) {
     final envio = widget.conclusao.envio;
     final colors = Theme.of(context).colorScheme;
+    final motivo = widget.conclusao.motivo(
+      widget.nome,
+      feminino: widget.feminino,
+    );
+    final erro = switch (widget.conclusao.situacao) {
+      SituacaoConclusao.rejeitado || SituacaoConclusao.excluido => true,
+      _ => false,
+    };
     return DocumentCard(
-      icon: Icons.pending_actions,
-      iconBackgroundColor: colors.surfaceContainerHighest,
-      iconColor: colors.onSurfaceVariant,
+      icon: erro ? Icons.error_outline : Icons.hourglass_top,
+      iconBackgroundColor: erro
+          ? colors.errorContainer
+          : colors.surfaceContainerHighest,
+      iconColor: erro ? colors.onErrorContainer : colors.onSurfaceVariant,
       title: widget.titulo,
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.descricao.isNotEmpty) Text(widget.descricao),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              if (envio != null) UltimoEnvioChip(envio),
-              ...widget.indicadores,
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            widget.conclusao.motivo(widget.nome, feminino: widget.feminino)!,
-          ),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            children: [
-              TextButton.icon(
-                onPressed: () => context.go(widget.rota),
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Abrir'),
-              ),
-              TextButton.icon(
-                onPressed: _ocupado || (envio?.protocolo ?? '').isEmpty
-                    ? null
-                    : _atualizar,
-                icon: _atualizando
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.sync),
-                label: const Text('Atualizar situação'),
-              ),
-            ],
-          ),
-        ],
+      subtitle: DocumentCardSubtitle(
+        descricao: widget.descricao,
+        detalhes: [if (!erro && motivo != null) motivo],
+        alerta: erro ? motivo : null,
       ),
+      chips: [...widget.indicadores, if (envio != null) UltimoEnvioChip(envio)],
+      actions: [
+        if (_atualizando)
+          const SizedBox(
+            width: 30,
+            height: 30,
+            child: Padding(
+              padding: EdgeInsets.all(7),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else
+          AudespIconButton(
+            icon: Icons.sync,
+            tooltip: 'Atualizar situação',
+            onPressed: _ocupado || (envio?.protocolo ?? '').isEmpty
+                ? null
+                : _atualizar,
+          ),
+      ],
+      onNavigate: () => context.go(widget.rota),
       onTap: () => context.go(widget.rota),
     );
   }

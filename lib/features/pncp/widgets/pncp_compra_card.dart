@@ -17,8 +17,8 @@ import '../../edital/domain/edital_domain.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../pncp_providers.dart';
 
-/// Compra do PNCP sem edital no sistema, com as ações de iniciar o edital
-/// ou dispensar (restaurar, quando já dispensada).
+/// Compra do PNCP sem edital no sistema, com as ações de iniciar o edital,
+/// dispensar (só sem envio obrigatório pela UFESP) ou restaurar.
 class PncpCompraCard extends ConsumerWidget {
   final PncpCompra compra;
   final UfespConfig ufesp;
@@ -54,7 +54,6 @@ class PncpCompraCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final titulo = tituloPncpCompra(compra);
     final detalhes = [
       if (compra.valorTotalEstimado != null)
@@ -66,7 +65,7 @@ class PncpCompraCard extends ConsumerWidget {
             '${compra.motivoDispensa == null ? '' : ': ${compra.motivoDispensa}'}',
     ];
 
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
     return DocumentCard(
       icon: compra.dispensada ? Icons.block : Icons.travel_explore,
       iconBackgroundColor: compra.dispensada
@@ -76,25 +75,9 @@ class PncpCompraCard extends ConsumerWidget {
           ? colors.onSurfaceVariant
           : colors.onPrimaryContainer,
       title: titulo,
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (compra.objeto.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              compra.objeto,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurface.withAlpha(140),
-              ),
-            ),
-          ],
-          if (detalhes.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(detalhes.join('  |  '), style: theme.textTheme.bodySmall),
-          ],
-        ],
+      subtitle: DocumentCardSubtitle(
+        descricao: compra.objeto,
+        detalhes: detalhes,
       ),
       chips: [
         UfespIndicador(valorEstimado: compra.valorTotalEstimado, config: ufesp),
@@ -108,12 +91,15 @@ class PncpCompraCard extends ConsumerWidget {
             label: const Text('Restaurar'),
           )
         else ...[
-          TextButton.icon(
-            onPressed: () => _dispensar(context, ref),
-            icon: const Icon(Icons.block),
-            label: const Text('Dispensar'),
-          ),
-          const SizedBox(width: 8),
+          // Com envio obrigatório (UFESP), a dispensa só é feita no banco.
+          if (!ufesp.envioObrigatorio(compra.valorTotalEstimado)) ...[
+            TextButton.icon(
+              onPressed: () => _dispensar(context, ref),
+              icon: const Icon(Icons.block),
+              label: const Text('Dispensar'),
+            ),
+            const SizedBox(width: 8),
+          ],
           FilledButton.tonalIcon(
             onPressed: () =>
                 context.go('/edital/new?pncpCompraId=${compra.id}'),

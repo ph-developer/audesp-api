@@ -104,6 +104,7 @@ abstract final class PendenciasRules {
             atasPncp: atasPncp,
             processos: processos,
             atas: documentos.atas,
+            compras: compras,
           )
         : const <PendenciaAtaPncp>[];
     final contratosPendentes = podeAjuste
@@ -112,6 +113,7 @@ abstract final class PendenciasRules {
             processos: processos,
             ajustes: documentos.ajustes,
             cnpj: cnpj,
+            compras: compras,
           )
         : const <PendenciaContratoPncp>[];
     return PendenciasModulos(

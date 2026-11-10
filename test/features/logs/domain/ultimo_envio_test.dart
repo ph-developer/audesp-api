@@ -173,4 +173,37 @@ void main() {
       expect(FiltroEnvio.todos.aceita(null), isTrue);
     });
   });
+
+  test('só protocolo Recebido pode ser reenviado', () {
+    expect(protocoloPodeSerReenviado('Recebido'), isTrue);
+    expect(protocoloPodeSerReenviado(' recebido '), isTrue);
+    for (final status in [
+      null,
+      'Pendente',
+      'Armazenado',
+      'Rejeitado',
+      'Substituído',
+      'Excluído',
+    ]) {
+      expect(protocoloPodeSerReenviado(status), isFalse, reason: status);
+    }
+  });
+
+  test('códigos de erro vêm do array extraído do retorno do protocolo', () {
+    EnvioResumo envio(Object? codigos) => EnvioResumo.fromMap({
+      'id': 1,
+      'status_code': 200,
+      'protocolo': 'P1',
+      'status_protocolo': 'Rejeitado',
+      'timestamp': 0,
+      'descritor': null,
+      'codigos_erro': codigos,
+    });
+    expect(envio('["RN012_AJUSTE", "RN020_AJUSTE"]').codigosErro, [
+      'RN012_AJUSTE',
+      'RN020_AJUSTE',
+    ]);
+    expect(envio(null).codigosErro, isEmpty);
+    expect(envio('inválido').codigosErro, isEmpty);
+  });
 }

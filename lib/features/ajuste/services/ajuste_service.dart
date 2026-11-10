@@ -8,6 +8,7 @@ import '../../../core/database/database_providers.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/log_service.dart';
 import '../../../core/constants/environments.dart';
+import '../domain/ajuste_documento.dart';
 
 final ajusteServiceProvider = Provider<AjusteService>((ref) {
   return AjusteService(
@@ -42,6 +43,8 @@ class AjusteService {
   }) async {
     final endpoint = '${_currentEnv.baseUrl}/recepcao-fase-4/f4/enviar-ajuste';
 
+    // Reenvios usam o documento salvo, que pode ter o nome documentado.
+    documentoJson = AjusteDocumento.paraEnvioJson(documentoJson);
     final formData = FormData.fromMap({
       'documentoJSON': MultipartFile.fromString(
         documentoJson,

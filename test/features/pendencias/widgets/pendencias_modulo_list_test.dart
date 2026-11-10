@@ -161,7 +161,7 @@ void main() {
         find.textContaining('ainda não foi armazenado pelo AUDESP'),
         findsOneWidget,
       );
-      expect(find.text('Atualizar situação'), findsOneWidget);
+      expect(find.byTooltip('Atualizar situação'), findsOneWidget);
       expect(find.text('Nova licitação'), findsNothing);
       if (modulo == '/edital') {
         expect(find.text('Envio não obrigatório'), findsOneWidget);
@@ -173,7 +173,7 @@ void main() {
       await tester.tap(find.byTooltip('Limpar filtro'));
       await tester.pumpAndSettle();
       expect(find.byType(PendenciaProtocoloCard), findsOneWidget);
-      await tester.tap(find.text('Abrir'));
+      await tester.tap(find.byTooltip('Abrir'));
       await tester.pumpAndSettle();
       final id = switch (modulo) {
         '/edital' => 1,
@@ -244,7 +244,7 @@ void main() {
           logs: logs,
           auth: auth,
         );
-        await tester.tap(find.text('Atualizar situação'));
+        await tester.tap(find.byTooltip('Atualizar situação'));
         await tester.pumpAndSettle();
         if (!token) {
           expect(find.text('Senha AUDESP'), findsOneWidget);
@@ -277,7 +277,7 @@ void main() {
         consulta: consulta,
         logs: logs,
       );
-      await tester.tap(find.text('Atualizar situação'));
+      await tester.tap(find.byTooltip('Atualizar situação'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
@@ -314,7 +314,7 @@ void main() {
       logs: logs,
       auth: auth,
     );
-    await tester.tap(find.text('Atualizar situação'));
+    await tester.tap(find.byTooltip('Atualizar situação'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Erro ao atualizar:'), findsOneWidget);
     expect(logs.atualizacoes, isEmpty);
@@ -353,7 +353,7 @@ void main() {
           logs: _Logs(),
           auth: auth,
         );
-        await tester.tap(find.text('Atualizar situação'));
+        await tester.tap(find.byTooltip('Atualizar situação'));
         await tester.pumpAndSettle();
         expect(find.text('Senha AUDESP'), findsOneWidget);
         expect(consulta.protocolos, isEmpty);

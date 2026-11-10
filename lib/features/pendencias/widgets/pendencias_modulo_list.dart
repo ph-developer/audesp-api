@@ -34,6 +34,7 @@ class PendenciasModuloList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ufesp = ref.watch(ufespConfigProvider).value ?? const UfespConfig();
+    final colors = Theme.of(context).colorScheme;
     return ref
         .watch(pendenciasModulosProvider)
         .when(
@@ -62,36 +63,33 @@ class PendenciasModuloList extends ConsumerWidget {
                 if (!busca(_buscaEdital(edital))) continue;
                 itens.add(
                   DocumentCard(
+                    key: ValueKey('criarLicitacao-${edital.id}'),
                     icon: Icons.playlist_add,
+                    iconBackgroundColor: colors.primaryContainer,
+                    iconColor: colors.onPrimaryContainer,
                     title: tituloEdital(edital),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (edital.objetoCompra.isNotEmpty)
-                          Text(edital.objetoCompra),
-                        const Text(
-                          'O edital está concluído e ainda não tem licitação.',
-                        ),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            UfespIndicador(
-                              valorEstimado: edital.valorTotalEstimado,
-                              config: ufesp,
-                            ),
-                            if (edital.semPncp) StatusChip.semPncp(),
-                            TextButton.icon(
-                              onPressed: () => context.go(
-                                '/licitacao/new?editalId=${edital.id}',
-                              ),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Nova licitação'),
-                            ),
-                          ],
-                        ),
+                    subtitle: DocumentCardSubtitle(
+                      descricao: edital.objetoCompra,
+                      detalhes: const [
+                        'O edital está concluído e ainda não tem licitação.',
                       ],
                     ),
+                    chips: [
+                      UfespIndicador(
+                        valorEstimado: edital.valorTotalEstimado,
+                        config: ufesp,
+                      ),
+                      if (edital.semPncp) StatusChip.semPncp(),
+                    ],
+                    actions: [
+                      const SizedBox(width: 4),
+                      FilledButton.tonalIcon(
+                        onPressed: () =>
+                            context.go('/licitacao/new?editalId=${edital.id}'),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Nova licitação'),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -187,7 +185,6 @@ class PendenciasModuloList extends ConsumerWidget {
               for (final pendencia in [
                 ...pendencias.atasPncp,
                 ...pendencias.atasBloqueadas,
-                if (mostrarDispensadas) ...pendencias.atasDispensadas,
               ]) {
                 final ata = pendencia.ata;
                 if (!busca(
@@ -218,7 +215,6 @@ class PendenciasModuloList extends ConsumerWidget {
               for (final pendencia in [
                 ...pendencias.contratosAjuste,
                 ...pendencias.contratosBloqueados,
-                if (mostrarDispensadas) ...pendencias.contratosDispensados,
               ]) {
                 final contrato = pendencia.contrato;
                 if (!busca(

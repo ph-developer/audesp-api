@@ -17,6 +17,11 @@ class PncpService {
   /// Espera quando o 429 vem sem Retry-After.
   static const esperaPadrao = Duration(seconds: 10);
 
+  /// A consulta por data do PNCP oscila muito (de menos de 1 s a mais de
+  /// 18 s na mesma janela); páginas menores e mais tempo evitam o timeout.
+  static const tamanhoPaginaAtualizacoes = 100;
+  static const tempoAtualizacoes = Duration(seconds: 90);
+
   final Dio _dio;
   final Future<void> Function(Duration) _esperar;
 
@@ -109,11 +114,17 @@ class PncpService {
             'A próxima consulta continua de onde esta parou.',
           );
       }
-      throw PncpException(
-        e.response == null
-            ? 'Não foi possível conectar ao PNCP ($sequencia): ${e.message}'
-            : 'O PNCP respondeu com erro $status na $sequencia.',
-      );
+      if (_tempoEsgotado(e) && novaTentativa) {
+        await _esperar(esperaPadrao);
+        return _consultar(
+          cnpj,
+          ano,
+          sequencial,
+          contrato: contrato,
+          novaTentativa: false,
+        );
+      }
+      throw PncpException(_falha(e, 'na $sequencia'));
     }
   }
 
@@ -146,8 +157,9 @@ class PncpService {
         'dataInicial': _dataConsulta(inicio),
         'dataFinal': _dataConsulta(fim),
         'pagina': pagina,
-        'tamanhoPagina': 500,
+        'tamanhoPagina': tamanhoPaginaAtualizacoes,
       },
+      tempoLimite: tempoAtualizacoes,
     ),
   );
 
@@ -174,6 +186,7 @@ class PncpService {
     required String contexto,
     Map<String, dynamic>? parametros,
     bool ausenciaPermitida = false,
+    Duration? tempoLimite,
     bool novaTentativa = true,
   }) async {
     try {
@@ -181,6 +194,9 @@ class PncpService {
       final resposta = await _dio.get<dynamic>(
         url,
         queryParameters: parametros,
+        options: tempoLimite == null
+            ? null
+            : Options(receiveTimeout: tempoLimite),
       );
       if (resposta.statusCode == 204) return null;
       if (resposta.data is! Map<String, dynamic>) {
@@ -201,6 +217,7 @@ class PncpService {
             contexto: contexto,
             parametros: parametros,
             ausenciaPermitida: ausenciaPermitida,
+            tempoLimite: tempoLimite,
             novaTentativa: false,
           );
         }
@@ -209,12 +226,37 @@ class PncpService {
           'A próxima consulta continua de onde esta parou.',
         );
       }
-      throw PncpException(
-        e.response == null
-            ? 'Não foi possível conectar ao PNCP ($contexto): ${e.message}'
-            : 'O PNCP respondeu com erro $status em $contexto.',
-      );
+      if (_tempoEsgotado(e) && novaTentativa) {
+        await _esperar(esperaPadrao);
+        return _consultarAta(
+          url,
+          contexto: contexto,
+          parametros: parametros,
+          ausenciaPermitida: ausenciaPermitida,
+          tempoLimite: tempoLimite,
+          novaTentativa: false,
+        );
+      }
+      throw PncpException(_falha(e, 'em $contexto'));
     }
+  }
+
+  static bool _tempoEsgotado(DioException e) => switch (e.type) {
+    DioExceptionType.connectionTimeout ||
+    DioExceptionType.sendTimeout ||
+    DioExceptionType.receiveTimeout => true,
+    _ => false,
+  };
+
+  static String _falha(DioException e, String onde) {
+    if (_tempoEsgotado(e)) {
+      return 'O PNCP demorou demais para responder $onde, mesmo após uma '
+          'nova tentativa. A próxima consulta continua de onde esta parou.';
+    }
+    final status = e.response?.statusCode;
+    return e.response == null
+        ? 'Não foi possível conectar ao PNCP $onde: ${e.message}'
+        : 'O PNCP respondeu com erro $status $onde.';
   }
 
   static PaginaAtasPncp _paginaAtas(Map<String, dynamic>? resposta) {

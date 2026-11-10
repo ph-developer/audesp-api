@@ -28,7 +28,10 @@ final pendenciasModulosProvider = FutureProvider.autoDispose<PendenciasModulos>(
     final (documentos, envios, compras, contratos, atas, config) = await (
       ref.watch(documentosProcessoProvider.future),
       ref.watch(enviosProcessoProvider.future),
-      user.hasPermission(AppPermissions.edital)
+      // As compras também dão a data de publicação de atas e contratos.
+      user.hasAnyPermission(
+            AppPermissions.edital | AppPermissions.ata | AppPermissions.ajuste,
+          )
           ? ref.watch(pncpComprasProvider.future)
           : Future.value(const <PncpCompra>[]),
       podeAjuste

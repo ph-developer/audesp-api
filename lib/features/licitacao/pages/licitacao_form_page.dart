@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../logs/widgets/erros_retornados_dialog.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/database/database_providers.dart';
@@ -21,7 +22,6 @@ import '../../../shared/widgets/audesp_field_row.dart';
 import '../../../shared/widgets/audesp_number_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
@@ -688,7 +688,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   Widget _buildSentHeaderActions() {
     final status = _lastSendLog?.statusProtocolo;
     final rejected = _isRejectedStatus(status);
-    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -718,11 +717,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: StatusChip(
-            label: status?.isNotEmpty == true ? status! : 'Enviado',
-            color: rejected ? scheme.error : null,
-            backgroundColor: rejected ? scheme.errorContainer : null,
-            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          child: ProtocoloStatusChip(
+            status: status,
+            retornoStatus: _lastSendLog?.retornoStatus,
           ),
         ),
       ],

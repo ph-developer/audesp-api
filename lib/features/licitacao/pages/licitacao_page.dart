@@ -61,23 +61,6 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
             Expanded(
               child: BarraFiltros(
                 children: [
-                  AudespSegmentedButton<String>(
-                    width: 400,
-                    segments: const {
-                      'pendencias': 'Pendências',
-                      'draft': 'Rascunhos',
-                      'sent': 'Enviadas',
-                    },
-                    icons: const {
-                      'pendencias': Icons.pending_actions,
-                      'draft': Icons.edit_note,
-                      'sent': Icons.check_circle_outline,
-                    },
-                    selected: {_statusFilter},
-                    onSelectionChanged: (v) {
-                      setState(() => _statusFilter = v.first);
-                    },
-                  ),
                   SizedBox(
                     width: 200,
                     child: AudespTextField(
@@ -114,6 +97,23 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
                       onChanged: (v) => setState(() => _ordenarPor = v),
                       onSentidoChanged: (v) => setState(() => _decrescente = v),
                     ),
+                  AudespSegmentedButton<String>(
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviadas',
+                    },
+                    icons: const {
+                      'pendencias': Icons.pending_actions,
+                      'draft': Icons.edit_note,
+                      'sent': Icons.check_circle_outline,
+                    },
+                    selected: {_statusFilter},
+                    onSelectionChanged: (v) {
+                      setState(() => _statusFilter = v.first);
+                    },
+                  ),
                   AudespIconButton(
                     icon: Icons.refresh,
                     tooltip: 'Atualizar',

@@ -141,7 +141,8 @@ class ApiLogsDao {
   Future<EnviosIndex> listEnvios(String endpointContains) async {
     final result = await _db.executePrepared(
       'SELECT id, endpoint, status_code, protocolo, status_protocolo, timestamp, '
-      "CASE WHEN JSON_VALID(request) THEN CAST(JSON_EXTRACT(request, '\$.descritor') AS CHAR) END AS descritor "
+      "CASE WHEN JSON_VALID(request) THEN CAST(JSON_EXTRACT(request, '\$.descritor') AS CHAR) END AS descritor, "
+      "CASE WHEN JSON_VALID(retorno_status) THEN CAST(JSON_EXTRACT(retorno_status, '\$.erros[*].codigoErro') AS CHAR) END AS codigos_erro "
       'FROM api_logs WHERE endpoint LIKE ?',
       ['%$endpointContains%'],
     );

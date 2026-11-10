@@ -59,9 +59,7 @@ void main() {
             ]),
           ),
           pncpAtasProvider.overrideWith((ref) async => [ata]),
-          pncpComprasProvider.overrideWith(
-            (ref) => throw StateError('Sem permissão de Edital'),
-          ),
+          pncpComprasProvider.overrideWith((ref) async => const []),
           pncpContratosProvider.overrideWith(
             (ref) => throw StateError('Sem permissão de Ajuste'),
           ),
@@ -121,7 +119,7 @@ void main() {
     'contrato liberado reage ao ambiente, à dispensa e ao ajuste salvo',
     () async {
       final processo = processoFixture(
-        codigo: '46395000000139-1-000352/2025',
+        codigo: '46395000000139-1-000352/2026',
         semPncp: false,
         licitacoes: [licitacaoFixture(1, status: 'sent')],
       );
@@ -152,9 +150,7 @@ void main() {
             (ref) async => const PncpConfig(cnpj: '46395000000139'),
           ),
           pncpContratosProvider.overrideWith((ref) async => [contrato]),
-          pncpComprasProvider.overrideWith(
-            (ref) => throw StateError('Sem permissão de Edital'),
-          ),
+          pncpComprasProvider.overrideWith((ref) async => const []),
         ],
       );
       addTearDown(container.dispose);
@@ -214,10 +210,8 @@ void main() {
                 envioFixture(ajuste, situacao: situacao),
             ]),
           ),
-          // Sem permissão para Edital, o PNCP nem é consultado.
-          pncpComprasProvider.overrideWith(
-            (ref) => throw StateError('PNCP indevido'),
-          ),
+          // Compras dão a data de publicação de atas e contratos.
+          pncpComprasProvider.overrideWith((ref) async => const []),
           pncpContratosProvider.overrideWith((ref) async => []),
           pncpConfigProvider.overrideWith((ref) async => const PncpConfig()),
         ],

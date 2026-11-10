@@ -20,6 +20,13 @@ class _Respostas implements HttpClientAdapter {
   ) async {
     final (status, corpo, retry) = respostas[requests.length];
     requests.add(options);
+    // Status 0 simula o PNCP sem responder dentro do tempo limite.
+    if (status == 0) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.receiveTimeout,
+      );
+    }
     return ResponseBody.fromString(
       corpo == null ? '' : jsonEncode(corpo),
       status,
@@ -80,7 +87,7 @@ void main() {
   }
 
   test(
-    'atualizações usam /api/consulta, datas AAAAMMDD e 500 registros',
+    'atualizações usam /api/consulta, datas AAAAMMDD e páginas menores',
     () async {
       final adapter = _Respostas([
         (
@@ -106,8 +113,9 @@ void main() {
         'dataInicial': '20260102',
         'dataFinal': '20261109',
         'pagina': 2,
-        'tamanhoPagina': 500,
+        'tamanhoPagina': PncpService.tamanhoPaginaAtualizacoes,
       });
+      expect(req.receiveTimeout, PncpService.tempoAtualizacoes);
     },
   );
 
@@ -193,4 +201,36 @@ void main() {
       }
     },
   );
+
+  test('tempo esgotado tenta a mesma página mais uma vez', () async {
+    final adapter = _Respostas([
+      (0, null, null),
+      (200, {'data': [], 'totalPaginas': 1}, null),
+    ]);
+    await servico(
+      adapter,
+    ).consultarAtasAtualizadas(cnpj, DateTime(2026), DateTime(2026, 11, 9), 1);
+    expect(esperas, [PncpService.esperaPadrao]);
+    expect(adapter.requests[0].uri, adapter.requests[1].uri);
+  });
+
+  test('tempo esgotado duas vezes vira mensagem clara', () async {
+    await expectLater(
+      servico(
+        _Respostas([(0, null, null), (0, null, null)]),
+      ).consultarAtasAtualizadas(
+        cnpj,
+        DateTime(2026),
+        DateTime(2026, 11, 9),
+        1,
+      ),
+      throwsA(
+        isA<PncpException>().having(
+          (e) => e.toString(),
+          'mensagem',
+          contains('demorou demais para responder'),
+        ),
+      ),
+    );
+  });
 }

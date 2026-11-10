@@ -1,6 +1,7 @@
 import '../../../core/database/app_database.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
+import 'pncp_vigencia.dart';
 
 class PendenciaAtaPncp {
   final PncpAta ata;
@@ -19,8 +20,10 @@ abstract final class PncpAtasPendencias {
     required Iterable<PncpAta> atasPncp,
     required Iterable<Processo> processos,
     required Iterable<Ata> atas,
+    Iterable<PncpCompra> compras = const [],
   }) {
     final usadas = atas.map((a) => _digitos(a.codigoAta)).toSet();
+    final publicacoes = PncpVigencia.publicacoes(compras);
     final porCompra = <String, List<Processo>>{};
     for (final processo in processos) {
       for (final codigo in {
@@ -33,6 +36,13 @@ abstract final class PncpAtasPendencias {
     final pendencias = <PendenciaAtaPncp>[];
     for (final ata in atasPncp) {
       if (usadas.contains(_digitos(ata.numeroControle))) continue;
+      if (!PncpVigencia.derivado(
+        numeroControleCompra: ata.numeroControleCompra,
+        publicacoes: publicacoes,
+        assinatura: ata.dataAssinatura,
+      )) {
+        continue;
+      }
       final vinculados =
           porCompra[_digitos(ata.numeroControleCompra)] ?? const <Processo>[];
       if (vinculados.any((p) => p.edital.oculto)) continue;

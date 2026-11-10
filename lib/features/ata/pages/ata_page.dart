@@ -45,7 +45,6 @@ class _AtaPageState extends ConsumerState<AtaPage> {
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
   bool _decrescente = true;
-  bool _mostrarDispensadas = false;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -65,23 +64,6 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             Expanded(
               child: BarraFiltros(
                 children: [
-                  AudespSegmentedButton<String>(
-                    width: 400,
-                    segments: const {
-                      'pendencias': 'Pendências',
-                      'draft': 'Rascunhos',
-                      'sent': 'Enviadas',
-                    },
-                    icons: const {
-                      'pendencias': Icons.pending_actions,
-                      'draft': Icons.edit_note,
-                      'sent': Icons.check_circle_outline,
-                    },
-                    selected: {_statusFilter},
-                    onSelectionChanged: (v) {
-                      setState(() => _statusFilter = v.first);
-                    },
-                  ),
                   SizedBox(
                     width: 200,
                     child: AudespTextField(
@@ -101,18 +83,6 @@ class _AtaPageState extends ConsumerState<AtaPage> {
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  if (_statusFilter == 'pendencias')
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Checkbox(
-                          value: _mostrarDispensadas,
-                          onChanged: (v) =>
-                              setState(() => _mostrarDispensadas = v ?? false),
-                        ),
-                        const Text('Mostrar dispensadas'),
-                      ],
-                    ),
                   if (_statusFilter != 'pendencias')
                     FiltroModalidadeDropdown(
                       value: _modalidadeId,
@@ -130,6 +100,24 @@ class _AtaPageState extends ConsumerState<AtaPage> {
                       onChanged: (v) => setState(() => _ordenarPor = v),
                       onSentidoChanged: (v) => setState(() => _decrescente = v),
                     ),
+                  AudespSegmentedButton<String>(
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviadas',
+                    },
+                    icons: const {
+                      'pendencias': Icons.pending_actions,
+                      'draft': Icons.edit_note,
+                      'sent': Icons.check_circle_outline,
+                    },
+                    selected: {_statusFilter},
+                    onSelectionChanged: (v) {
+                      setState(() => _statusFilter = v.first);
+                    },
+                  ),
+                  const ConsultarPncpButton(modulo: '/ata'),
                   AudespIconButton(
                     icon: Icons.refresh,
                     tooltip: 'Atualizar',
@@ -149,10 +137,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
             ),
           ],
         ),
-        actions: const [
-          ConsultarPncpButton(modulo: '/ata'),
-          SizedBox(width: 8),
-        ],
+        actions: const [SizedBox(width: 8)],
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -174,11 +159,7 @@ class _AtaPageState extends ConsumerState<AtaPage> {
         ],
       ),
       body: _statusFilter == 'pendencias'
-          ? PendenciasModuloList(
-              modulo: '/ata',
-              search: _searchCtrl.text,
-              mostrarDispensadas: _mostrarDispensadas,
-            )
+          ? PendenciasModuloList(modulo: '/ata', search: _searchCtrl.text)
           : _AtaList(
               status: _statusFilter,
               search: _searchCtrl.text,

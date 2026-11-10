@@ -28,9 +28,10 @@ void main() {
     expect(doc['niFornecedor'], '24195949000152');
     expect(doc['nomeRazaoSocialFornecedor'], 'Fornecedor de teste LTDA');
     expect(doc['objetoContrato'], 'Prestação de serviços de manutenção');
-    expect(doc['dataAssinatura'], '2026-01-09');
-    expect(doc['dataVigenciaInicio'], '2026-01-09');
-    expect(doc['dataVigenciaFim'], '2027-01-09');
+    expect(doc['dataAssinatura'], '2026-03-09');
+    expect(doc['datavigenciaInicio'], '2026-03-09');
+    expect(doc.containsKey('dataVigenciaInicio'), isFalse);
+    expect(doc['dataVigenciaFim'], '2027-03-09');
     expect(doc['valorInicial'], 16200);
     expect(doc['valorGlobal'], 16200);
     expect(doc['valorParcela'], 16200);
@@ -46,13 +47,13 @@ void main() {
     final doc = PncpAjusteMapper.documento(
       {
         ...contratoPncpJson(),
-        'numeroControlePncpCompra': '49576416000141-1-000352/2025',
+        'numeroControlePncpCompra': '49576416000141-1-000352/2026',
       },
       adesaoParticipacao: true,
       codigoEdital: 'edital-local',
     );
     expect(doc['descritor']['adesaoParticipacao'], isTrue);
-    expect(doc['descritor']['codigoEdital'], '4957641600014110003522025');
+    expect(doc['descritor']['codigoEdital'], '4957641600014110003522026');
     expect(doc['descritor'].containsKey('gerenciadoraJurisdicionada'), isFalse);
     expect(doc['descritor'].containsKey('codigoAta'), isFalse);
   });

@@ -14,6 +14,10 @@ class EnvioResumo {
   /// URL completa do envio; começa pela base do ambiente (Piloto/Oficial).
   final String endpoint;
 
+  /// `codigoErro` dos erros da última consulta do protocolo (ex.:
+  /// RN012_AJUSTE), quando ele foi rejeitado.
+  final List<String> codigosErro;
+
   const EnvioResumo({
     required this.id,
     required this.statusCode,
@@ -22,6 +26,7 @@ class EnvioResumo {
     required this.timestamp,
     required this.descritor,
     this.endpoint = '',
+    this.codigosErro = const [],
   });
 
   /// `row['descritor']` é o texto de `request.descritor`; nulo ou inválido
@@ -45,7 +50,23 @@ class EnvioResumo {
       ),
       descritor: descritor,
       endpoint: row['endpoint'] as String? ?? '',
+      codigosErro: _codigosErro(row['codigos_erro']),
     );
+  }
+
+  /// `row['codigos_erro']` é o texto do array `retorno_status.erros[*].codigoErro`.
+  static List<String> _codigosErro(Object? texto) {
+    if (texto is! String || texto.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(texto);
+      if (decoded is List) {
+        return [
+          for (final c in decoded)
+            if (c != null) c.toString(),
+        ];
+      }
+    } catch (_) {}
+    return const [];
   }
 
   bool get sucesso {
@@ -253,3 +274,8 @@ bool protocoloEmAndamento(String? status) {
       s.contains('armazenado') ||
       s.contains('substitu'));
 }
+
+/// Protocolo parado em "Recebido": por um problema do AUDESP alguns não
+/// avançam para Armazenado, e o mesmo documento pode ser reenviado.
+bool protocoloPodeSerReenviado(String? status) =>
+    status?.trim().toLowerCase() == 'recebido';

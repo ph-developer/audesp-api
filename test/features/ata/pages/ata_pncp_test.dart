@@ -296,10 +296,15 @@ void main() {
       );
       expect(find.text('Lançar ata'), findsOneWidget);
       expect(
-        find.byTooltip('https://pncp.gov.br/app/atas/49576416000141/2026/1/1'),
+        find.byTooltip(
+          'Abrir no PNCP\nhttps://pncp.gov.br/app/atas/49576416000141/2026/1/1',
+        ),
         findsOneWidget,
       );
-      expect(find.text('Compra: 49576416000141-1-000001/2026'), findsOneWidget);
+      expect(
+        find.textContaining('Compra: 49576416000141-1-000001/2026'),
+        findsOneWidget,
+      );
       expect(
         (await app.container.read(pendenciasContagemProvider.future))['/ata'],
         1,
@@ -325,64 +330,37 @@ void main() {
     },
   );
 
-  testWidgets(
-    'dispensa com motivo e restaura, sem contar dispensadas no badge',
-    (tester) async {
-      final app = await _pump(tester);
-      await tester.tap(find.text('Dispensar'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        _campo('Motivo (opcional)'),
-        'Enviada anteriormente',
-      );
-      await tester.tap(find.widgetWithText(FilledButton, 'Dispensar'));
-      await tester.pumpAndSettle();
-      expect(app.pncp.dispensadaPor, 1);
-      expect(app.pncp.motivo, 'Enviada anteriormente');
-      expect(find.byType(PncpAtaCard), findsNothing);
-      expect(
-        (await app.container.read(pendenciasContagemProvider.future))['/ata'],
-        0,
-      );
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      expect(find.byType(PncpAtaCard), findsOneWidget);
-      expect(find.text('Lançar ata'), findsNothing);
-      await tester.tap(find.text('Restaurar'));
-      await tester.pumpAndSettle();
-      expect(
-        (await app.container.read(pendenciasContagemProvider.future))['/ata'],
-        1,
-      );
-      expect(find.text('Lançar ata'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets(
-    'cancelada dispensada continua restaurável e desaparece ao restaurar',
-    (tester) async {
-      final app = await _pump(
-        tester,
-        atas: [
-          ataPncpFixture(dispensada: true, alteracoes: {'cancelado': true}),
-        ],
-      );
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      expect(
-        find.text('Bloqueada: A ata foi cancelada no PNCP.'),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Restaurar'));
-      await tester.pumpAndSettle();
-      expect(find.byType(PncpAtaCard), findsNothing);
-      expect(
-        (await app.container.read(pendenciasContagemProvider.future))['/ata'],
-        0,
-      );
-    },
-  );
+  testWidgets('ata não é dispensada pela interface; dispensada no banco some', (
+    tester,
+  ) async {
+    final app = await _pump(
+      tester,
+      atas: [
+        ataPncpFixture(),
+        ataPncpFixture(
+          id: 2,
+          dispensada: true,
+          alteracoes: {
+            'sequencialAta': 2,
+            'numeroControlePNCP': '49576416000141-1-000001/2026-000002',
+          },
+        ),
+      ],
+    );
+    expect(
+      tester
+          .widgetList<PncpAtaCard>(find.byType(PncpAtaCard))
+          .map((w) => w.pendencia.ata.id),
+      [1],
+    );
+    expect(find.text('Dispensar'), findsNothing);
+    expect(find.text('Restaurar'), findsNothing);
+    expect(find.byTooltip('Mostrar dispensadas'), findsNothing);
+    expect(
+      (await app.container.read(pendenciasContagemProvider.future))['/ata'],
+      1,
+    );
+  });
 
   testWidgets(
     'formulário atualiza detalhe, vincula edital e salva cabeçalho sem itens',

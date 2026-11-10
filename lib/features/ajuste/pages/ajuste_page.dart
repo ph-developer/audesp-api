@@ -31,6 +31,7 @@ import '../../edital/widgets/pcnp_input_formatter.dart';
 import '../../edital/widgets/unlinked_editais_dialog.dart';
 import '../../processo/processo_providers.dart';
 import '../ajuste_providers.dart';
+import '../widgets/reenviar_recebidos_button.dart';
 
 class AjustePage extends ConsumerStatefulWidget {
   const AjustePage({super.key});
@@ -45,7 +46,6 @@ class _AjustePageState extends ConsumerState<AjustePage> {
   int? _modalidadeId;
   OrdenarPor _ordenarPor = OrdenarPor.data;
   bool _decrescente = true;
-  bool _mostrarDispensados = false;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -65,23 +65,6 @@ class _AjustePageState extends ConsumerState<AjustePage> {
             Expanded(
               child: BarraFiltros(
                 children: [
-                  AudespSegmentedButton<String>(
-                    width: 400,
-                    segments: const {
-                      'pendencias': 'Pendências',
-                      'draft': 'Rascunhos',
-                      'sent': 'Enviados',
-                    },
-                    icons: const {
-                      'pendencias': Icons.pending_actions,
-                      'draft': Icons.edit_note,
-                      'sent': Icons.check_circle_outline,
-                    },
-                    selected: {_statusFilter},
-                    onSelectionChanged: (v) {
-                      setState(() => _statusFilter = v.first);
-                    },
-                  ),
                   SizedBox(
                     width: 200,
                     child: AudespTextField(
@@ -118,18 +101,24 @@ class _AjustePageState extends ConsumerState<AjustePage> {
                       onChanged: (v) => setState(() => _ordenarPor = v),
                       onSentidoChanged: (v) => setState(() => _decrescente = v),
                     ),
-                  if (_statusFilter == 'pendencias')
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Switch(
-                          value: _mostrarDispensados,
-                          onChanged: (v) =>
-                              setState(() => _mostrarDispensados = v),
-                        ),
-                        const Text('Mostrar dispensados'),
-                      ],
-                    ),
+                  const ReenviarRecebidosButton(),
+                  AudespSegmentedButton<String>(
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviados',
+                    },
+                    icons: const {
+                      'pendencias': Icons.pending_actions,
+                      'draft': Icons.edit_note,
+                      'sent': Icons.check_circle_outline,
+                    },
+                    selected: {_statusFilter},
+                    onSelectionChanged: (v) {
+                      setState(() => _statusFilter = v.first);
+                    },
+                  ),
                   const ConsultarPncpButton(modulo: '/ajuste'),
                   AudespIconButton(
                     icon: Icons.refresh,
@@ -172,11 +161,7 @@ class _AjustePageState extends ConsumerState<AjustePage> {
         ],
       ),
       body: _statusFilter == 'pendencias'
-          ? PendenciasModuloList(
-              modulo: '/ajuste',
-              search: _searchCtrl.text,
-              mostrarDispensadas: _mostrarDispensados,
-            )
+          ? PendenciasModuloList(modulo: '/ajuste', search: _searchCtrl.text)
           : _AjusteList(
               status: _statusFilter,
               search: _searchCtrl.text,

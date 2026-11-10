@@ -10,7 +10,7 @@ import '../../processo/processo_fixtures.dart';
 import '../pncp_fixtures.dart';
 
 const _cnpj = '46395000000139';
-const _compra = '46395000000139-1-000352/2025';
+const _compra = '46395000000139-1-000352/2026';
 
 Processo _processo({
   bool srp = false,
@@ -37,7 +37,7 @@ List<PendenciaContratoPncp> _classificar({
 );
 
 void main() {
-  test('compra de outro ano casa com edital e licitação concluídos', () {
+  test('compra casa com edital e licitação concluídos', () {
     final p = _classificar().single;
     expect(p.liberado, isTrue);
     expect(p.edital?.id, 1);
@@ -103,7 +103,7 @@ void main() {
             contrato: contratoPncpFixture(
               dispensado: dispensado,
               alteracoes: {
-                'numeroControlePncpAta': '46395000000139-1-000352/2025-000001',
+                'numeroControlePncpAta': '46395000000139-1-000352/2026-000001',
                 'frutoAdesao': true,
               },
             ),
@@ -145,7 +145,7 @@ void main() {
     final p = _classificar(
       contrato: contratoPncpFixture(
         alteracoes: {
-          'numeroControlePncpCompra': '49576416000141-1-000352/2025',
+          'numeroControlePncpCompra': '49576416000141-1-000352/2026',
         },
       ),
       processos: [],
@@ -265,4 +265,53 @@ void main() {
       expect(semPermissao.contratosDispensados, isEmpty);
     },
   );
+
+  group('editais publicados antes de 02/02/2026', () {
+    for (final dispensado in [false, true]) {
+      test('compra de 2025 nunca aparece (dispensado: $dispensado)', () {
+        expect(
+          _classificar(
+            contrato: contratoPncpFixture(
+              dispensado: dispensado,
+              alteracoes: {'numeroControlePncpCompra': '$_cnpj-1-000352/2025'},
+            ),
+          ),
+          isEmpty,
+        );
+      });
+    }
+
+    test('usa a publicação da compra conhecida', () {
+      final compra = PncpCompra(
+        id: 1,
+        cnpj: _cnpj,
+        ano: 2026,
+        sequencial: 352,
+        numeroControle: '4639500000013910003522026',
+        dataPublicacao: DateTime(2026, 1, 15),
+        dadosJson: '{}',
+      );
+      expect(
+        PncpContratosPendencias.classificar(
+          contratos: [contratoPncpFixture()],
+          processos: [_processo()],
+          ajustes: const [],
+          cnpj: _cnpj,
+          compras: [compra],
+        ),
+        isEmpty,
+      );
+    });
+
+    test('contrato assinado antes do corte sem compra conhecida', () {
+      expect(
+        _classificar(
+          contrato: contratoPncpFixture(
+            alteracoes: {'dataAssinatura': '2026-01-09'},
+          ),
+        ),
+        isEmpty,
+      );
+    });
+  });
 }

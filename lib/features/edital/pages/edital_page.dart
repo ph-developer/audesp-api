@@ -11,6 +11,7 @@ import '../../../shared/widgets/audesp_icon_button.dart';
 import '../../../shared/widgets/audesp_segmented_button.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
+import '../../../shared/widgets/mostrar_dispensadas_button.dart';
 import '../../../shared/widgets/barra_filtros.dart';
 import '../../../core/utils/ordenacao_documentos.dart';
 import '../../../shared/formatters/documento_rotulo.dart';
@@ -70,23 +71,6 @@ class _EditalPageState extends ConsumerState<EditalPage> {
             Expanded(
               child: BarraFiltros(
                 children: [
-                  AudespSegmentedButton<String>(
-                    width: 400,
-                    segments: const {
-                      'pendencias': 'Pendências',
-                      'draft': 'Rascunhos',
-                      'sent': 'Enviados',
-                    },
-                    icons: const {
-                      'pendencias': Icons.pending_actions,
-                      'draft': Icons.edit_note,
-                      'sent': Icons.check_circle_outline,
-                    },
-                    selected: {_statusFilter},
-                    onSelectionChanged: (v) {
-                      setState(() => _statusFilter = v.first);
-                    },
-                  ),
                   SizedBox(
                     width: 200,
                     child: AudespTextField(
@@ -124,17 +108,27 @@ class _EditalPageState extends ConsumerState<EditalPage> {
                       onSentidoChanged: (v) => setState(() => _decrescente = v),
                     ),
                   if (_statusFilter == 'pendencias' && podeCriar)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Switch(
-                          value: _mostrarDispensadas,
-                          onChanged: (v) =>
-                              setState(() => _mostrarDispensadas = v),
-                        ),
-                        const Text('Mostrar dispensadas'),
-                      ],
+                    MostrarDispensadasButton(
+                      value: _mostrarDispensadas,
+                      onChanged: (v) => setState(() => _mostrarDispensadas = v),
                     ),
+                  AudespSegmentedButton<String>(
+                    width: 400,
+                    segments: const {
+                      'pendencias': 'Pendências',
+                      'draft': 'Rascunhos',
+                      'sent': 'Enviados',
+                    },
+                    icons: const {
+                      'pendencias': Icons.pending_actions,
+                      'draft': Icons.edit_note,
+                      'sent': Icons.check_circle_outline,
+                    },
+                    selected: {_statusFilter},
+                    onSelectionChanged: (v) {
+                      setState(() => _statusFilter = v.first);
+                    },
+                  ),
                   const ConsultarPncpButton(),
                   AudespIconButton(
                     icon: Icons.refresh,

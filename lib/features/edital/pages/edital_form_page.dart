@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/widgets/erros_retornados_dialog.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -28,7 +29,6 @@ import '../../../shared/widgets/audesp_pncp_field.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_spacing.dart';
 import '../../../shared/widgets/section_card.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../estimativa/estimativa_providers.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
@@ -889,7 +889,6 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   Widget _buildSentHeaderActions() {
     final status = _lastSendLog?.statusProtocolo;
     final rejected = _isRejectedStatus(status);
-    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -919,11 +918,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: StatusChip(
-            label: status?.isNotEmpty == true ? status! : 'Enviado',
-            color: rejected ? scheme.error : null,
-            backgroundColor: rejected ? scheme.errorContainer : null,
-            borderColor: rejected ? scheme.error.withAlpha(80) : null,
+          child: ProtocoloStatusChip(
+            status: status,
+            retornoStatus: _lastSendLog?.retornoStatus,
           ),
         ),
       ],

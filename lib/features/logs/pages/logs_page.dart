@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../widgets/erros_retornados_dialog.dart';
 import '../envios_providers.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
@@ -360,41 +361,8 @@ class _LogsPageState extends ConsumerState<LogsPage> {
   }
 
   void _showErrors(ApiLog log) {
-    if (log.retornoStatus == null) return;
-    try {
-      final json = jsonDecode(log.retornoStatus!);
-      final erros = json['erros'] as List<dynamic>? ?? [];
-      if (erros.isEmpty) return;
-
-      showDialog(
-        context: context,
-        builder: (dialogCtx) => AlertDialog(
-          title: const Text('Erros Retornados'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: erros.length,
-              itemBuilder: (itemCtx, i) {
-                final erro = erros[i];
-                return ListTile(
-                  title: Text(erro['mensagem']?.toString() ?? 'Erro'),
-                  subtitle: Text(
-                    'Campo: ${erro['campo']} | Código: ${erro['codigoErro']}',
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Fechar'),
-            ),
-          ],
-        ),
-      );
-    } catch (_) {}
+    final erros = errosRetornados(log.retornoStatus);
+    if (erros.isNotEmpty) showErrosRetornadosDialog(context, erros);
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -669,16 +637,7 @@ class _LogCard extends ConsumerWidget {
     required this.onShowErrors,
   });
 
-  bool _hasErrors() {
-    if (log.retornoStatus == null) return false;
-    try {
-      final json = jsonDecode(log.retornoStatus!);
-      final erros = json['erros'] as List<dynamic>?;
-      return erros != null && erros.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
+  bool _hasErrors() => errosRetornados(log.retornoStatus).isNotEmpty;
 
   Color _statusColor(BuildContext context) {
     final code = log.statusCode;

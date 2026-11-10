@@ -10,6 +10,7 @@ EnvioResumo envioFixture(
   String situacao = 'Recebido',
   String ambiente = ambientePendencias,
   bool? retificacao,
+  List<String> codigosErro = const [],
 }) {
   final descritor = switch (documento) {
     Edital e => DescritorEnvio.edital(
@@ -49,6 +50,7 @@ EnvioResumo envioFixture(
     timestamp: DateTime(2026, 11, 9).add(Duration(seconds: id)),
     descritor: {...descritor, 'retificacao': ?retificacao},
     endpoint: '$ambiente/f4/enviar',
+    codigosErro: codigosErro,
   );
 }
 

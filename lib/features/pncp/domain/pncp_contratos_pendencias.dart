@@ -1,6 +1,7 @@
 import '../../../core/database/app_database.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
+import 'pncp_vigencia.dart';
 
 class PendenciaContratoPncp {
   final PncpContrato contrato;
@@ -25,8 +26,10 @@ abstract final class PncpContratosPendencias {
     required Iterable<Processo> processos,
     required Iterable<Ajuste> ajustes,
     required String cnpj,
+    Iterable<PncpCompra> compras = const [],
   }) {
     final usados = ajustes.map((a) => _digitos(a.codigoContrato)).toSet();
+    final publicacoes = PncpVigencia.publicacoes(compras);
     final porCompra = <String, List<Processo>>{};
     for (final processo in processos) {
       for (final codigo in {
@@ -40,6 +43,13 @@ abstract final class PncpContratosPendencias {
     final pendencias = <PendenciaContratoPncp>[];
     for (final contrato in contratos) {
       if (usados.contains(_digitos(contrato.numeroControle))) continue;
+      if (!PncpVigencia.derivado(
+        numeroControleCompra: contrato.numeroControleCompra,
+        publicacoes: publicacoes,
+        assinatura: contrato.dataAssinatura,
+      )) {
+        continue;
+      }
       final compra = _digitos(contrato.numeroControleCompra ?? '');
       final vinculados = porCompra[compra] ?? const <Processo>[];
       // Mesmo nas dispensas e adesões, a prefeitura não lança Ajuste de Ata.

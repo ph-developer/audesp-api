@@ -96,3 +96,51 @@ class DocumentCard extends StatelessWidget {
       onEdit != null ||
       onNavigate != null;
 }
+
+/// Subtítulo padrão do [DocumentCard]: descrição (objeto) em uma linha
+/// esmaecida, detalhes separados por "|" e, opcionalmente, um alerta.
+class DocumentCardSubtitle extends StatelessWidget {
+  final String? descricao;
+  final List<String> detalhes;
+  final String? alerta;
+
+  const DocumentCardSubtitle({
+    super.key,
+    this.descricao,
+    this.detalhes = const [],
+    this.alerta,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (descricao != null && descricao!.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            descricao!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurface.withAlpha(140),
+            ),
+          ),
+        ],
+        if (detalhes.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(detalhes.join('  |  '), style: theme.textTheme.bodySmall),
+        ],
+        if (alerta != null && alerta!.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            alerta!,
+            style: theme.textTheme.bodySmall?.copyWith(color: colors.error),
+          ),
+        ],
+      ],
+    );
+  }
+}

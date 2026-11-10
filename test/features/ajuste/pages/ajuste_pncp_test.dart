@@ -146,7 +146,7 @@ _pump(
       processos ??
       [
         processoFixture(
-          codigo: '46395000000139-1-000352/2025',
+          codigo: '46395000000139-1-000352/2026',
           semPncp: false,
           licitacoes: [licitacaoFixture(1, status: 'sent')],
         ),
@@ -181,6 +181,7 @@ _pump(
       pncpConfigProvider.overrideWith(
         (ref) async => const PncpConfig(cnpj: '46395000000139'),
       ),
+      pncpComprasProvider.overrideWith((ref) async => const []),
       ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
       enviosProvider.overrideWith((ref, endpoint) async => EnviosIndex.vazio),
     ],
@@ -261,7 +262,7 @@ void main() {
       expect(find.text('Lançar ajuste'), findsOneWidget);
       expect(
         find.byTooltip(
-          'https://pncp.gov.br/app/contratos/46395000000139/2026/2',
+          'Abrir no PNCP\nhttps://pncp.gov.br/app/contratos/46395000000139/2026/2',
         ),
         findsOneWidget,
       );
@@ -300,7 +301,7 @@ void main() {
       expect(salvo.codigoContrato, '4639500000013920000022026');
       expect(doc['niFornecedor'], '24195949000152');
       expect(doc['valorGlobal'], 16200);
-      expect(doc['dataVigenciaFim'], '2027-01-09');
+      expect(doc['dataVigenciaFim'], '2027-03-09');
       expect(doc['itens'], isEmpty);
       expect(doc['tipoObjetoContrato'], isNull);
       expect(
@@ -313,52 +314,40 @@ void main() {
     },
   );
 
-  for (final bloqueado in [false, true]) {
-    testWidgets(
-      'dispensa e restaura contrato, inclusive bloqueado ($bloqueado)',
-      (tester) async {
-        final contrato = contratoPncpFixture(
-          alteracoes: {if (bloqueado) 'numeroControlePncpCompra': null},
-        );
-        final app = await _pump(tester, contratos: [contrato]);
-        await tester.tap(find.text('Dispensar'));
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          _campo('Motivo (opcional)'),
-          '  Já lançado em outro sistema  ',
-        );
-        await tester.tap(find.widgetWithText(FilledButton, 'Dispensar'));
-        await tester.pumpAndSettle();
-        expect(app.contratos.dispensadoPor, 1);
-        expect(app.contratos.motivo, 'Já lançado em outro sistema');
-        expect(find.byType(PncpContratoCard), findsNothing);
-        expect(
-          (await app.container.read(
-            pendenciasContagemProvider.future,
-          ))['/ajuste'],
-          0,
-        );
-        await tester.tap(find.byType(Switch));
-        await tester.pumpAndSettle();
-        expect(find.text('Restaurar'), findsOneWidget);
-        expect(find.text('Lançar ajuste'), findsNothing);
-        await tester.tap(find.text('Restaurar'));
-        await tester.pumpAndSettle();
-        expect(app.contratos.contratos.single.dispensado, isFalse);
-        expect(
-          (await app.container.read(
-            pendenciasContagemProvider.future,
-          ))['/ajuste'],
-          bloqueado ? 0 : 1,
-        );
-        expect(
-          find.text('Lançar ajuste'),
-          bloqueado ? findsNothing : findsOneWidget,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
-  }
+  testWidgets(
+    'contrato não é dispensado pela interface; dispensado no banco some',
+    (tester) async {
+      final app = await _pump(
+        tester,
+        contratos: [
+          contratoPncpFixture(),
+          contratoPncpFixture(
+            id: 2,
+            dispensado: true,
+            alteracoes: {
+              'sequencialContrato': 3,
+              'numeroControlePNCP': '46395000000139-2-000003/2026',
+            },
+          ),
+        ],
+      );
+      expect(
+        tester
+            .widgetList<PncpContratoCard>(find.byType(PncpContratoCard))
+            .map((w) => w.pendencia.contrato.id),
+        [1],
+      );
+      expect(find.text('Dispensar'), findsNothing);
+      expect(find.text('Restaurar'), findsNothing);
+      expect(find.byTooltip('Mostrar dispensados'), findsNothing);
+      expect(
+        (await app.container.read(
+          pendenciasContagemProvider.future,
+        ))['/ajuste'],
+        1,
+      );
+    },
+  );
 
   testWidgets('compra de outro órgão abre adesão e salva sem edital local', (
     tester,
@@ -369,7 +358,7 @@ void main() {
       contratos: [
         contratoPncpFixture(
           alteracoes: {
-            'numeroControlePncpCompra': '49576416000141-1-000352/2025',
+            'numeroControlePncpCompra': '49576416000141-1-000352/2026',
           },
         ),
       ],
@@ -379,7 +368,7 @@ void main() {
     await tester.pumpAndSettle();
     final salvo = app.ajustes.ajustes.single;
     expect(salvo.editalId, isNull);
-    expect(salvo.codigoEdital, '4957641600014110003522025');
+    expect(salvo.codigoEdital, '4957641600014110003522026');
     expect(
       jsonDecode(salvo.documentoJson)['descritor']['adesaoParticipacao'],
       isTrue,
