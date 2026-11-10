@@ -53,6 +53,7 @@ class EnviosProcesso {
       codigoEdital: edital.codigoEdital,
       retificacao: edital.retificacao,
     ),
+    edital.retificacaoDescartadaEm,
   );
 
   ConclusaoEnvio licitacao(Licitacao licitacao) => _conclusao(
@@ -64,6 +65,7 @@ class EnviosProcesso {
       codigoEdital: licitacao.codigoEdital,
       retificacao: licitacao.retificacao,
     ),
+    licitacao.retificacaoDescartadaEm,
   );
 
   ConclusaoEnvio ata(Ata ata) => _conclusao(
@@ -76,6 +78,7 @@ class EnviosProcesso {
       codigoAta: ata.codigoAta,
       retificacao: ata.retificacao,
     ),
+    ata.retificacaoDescartadaEm,
   );
 
   ConclusaoEnvio ajuste(Ajuste ajuste) => _conclusao(
@@ -89,6 +92,7 @@ class EnviosProcesso {
       codigoContrato: ajuste.codigoContrato,
       retificacao: ajuste.retificacao,
     ),
+    ajuste.retificacaoDescartadaEm,
   );
 
   // Original e retificações são o mesmo documento: qualquer um deles
@@ -96,11 +100,32 @@ class EnviosProcesso {
   ConclusaoEnvio _conclusao(
     String status,
     EnviosIndex index,
-    Map<String, Object?> descritor,
-  ) => ConclusaoEnvio.de(
+    Map<String, Object?> descritor, [
+    DateTime? retificacaoDescartadaEm,
+  ]) => ConclusaoEnvio.de(
     status: status,
     envios: index.todos(Map.of(descritor)..remove('retificacao')),
     baseUrl: baseUrl,
+    retificacaoDescartadaEm: retificacaoDescartadaEm,
+  );
+
+  /// Conclusão pelo descritor ([DescritorEnvio]) de um formulário, que pode
+  /// ter códigos ainda não salvos. [endpoint] é um dos [EnviosEndpoint].
+  ConclusaoEnvio porDescritor(
+    String endpoint, {
+    required String status,
+    required Map<String, Object?> descritor,
+    DateTime? retificacaoDescartadaEm,
+  }) => _conclusao(
+    status,
+    switch (endpoint) {
+      EnviosEndpoint.edital => editais,
+      EnviosEndpoint.licitacao => licitacoes,
+      EnviosEndpoint.ata => atas,
+      _ => ajustes,
+    },
+    descritor,
+    retificacaoDescartadaEm,
   );
 }
 

@@ -48,7 +48,7 @@ class _PendenciaProtocoloCardState
   bool _atualizando = false;
 
   Future<void> _atualizar() async {
-    final envio = widget.conclusao.envio;
+    final envio = widget.conclusao.envioPendente;
     final user = ref.read(localSessionProvider);
     if (envio?.protocolo == null || user == null) return;
     final baseUrl = ref.read(environmentProvider).baseUrl;
@@ -100,15 +100,15 @@ class _PendenciaProtocoloCardState
 
   @override
   Widget build(BuildContext context) {
-    final envio = widget.conclusao.envio;
+    final envio = widget.conclusao.envioPendente;
     final colors = Theme.of(context).colorScheme;
-    final motivo = widget.conclusao.motivo(
+    final motivo = widget.conclusao.motivoPendencia(
       widget.nome,
       feminino: widget.feminino,
     );
     final erro = switch (widget.conclusao.situacao) {
       SituacaoConclusao.rejeitado || SituacaoConclusao.excluido => true,
-      _ => false,
+      _ => widget.conclusao.retificacaoRejeitada,
     };
     return DocumentCard(
       icon: erro ? Icons.error_outline : Icons.hourglass_top,

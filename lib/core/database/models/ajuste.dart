@@ -15,6 +15,10 @@ class Ajuste {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Quando a última retificação foi descartada: envios até esse momento
+  /// deixam de contar como retificação pendente.
+  final DateTime? retificacaoDescartadaEm;
+
   const Ajuste({
     required this.id,
     required this.editalId,
@@ -29,6 +33,7 @@ class Ajuste {
     required this.documentoJson,
     required this.createdAt,
     required this.updatedAt,
+    this.retificacaoDescartadaEm,
   });
 
   factory Ajuste.fromMap(Map<String, dynamic> row) => Ajuste(
@@ -49,6 +54,11 @@ class Ajuste {
     updatedAt: DateTime.fromMillisecondsSinceEpoch(
       (row['updated_at'] as int) * 1000,
     ),
+    retificacaoDescartadaEm: row['retificacao_descartada_em'] == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(
+            (row['retificacao_descartada_em'] as int) * 1000,
+          ),
   );
 
   Map<String, dynamic> get _doc {
@@ -78,5 +88,8 @@ class Ajuste {
     'documento_json': documentoJson,
     'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
     'updated_at': updatedAt.millisecondsSinceEpoch ~/ 1000,
+    'retificacao_descartada_em': retificacaoDescartadaEm == null
+        ? null
+        : retificacaoDescartadaEm!.millisecondsSinceEpoch ~/ 1000,
   };
 }

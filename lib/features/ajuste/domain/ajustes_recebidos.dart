@@ -10,8 +10,8 @@ enum MotivoReenvio {
   /// Protocolo parado em "Recebido" por um problema do AUDESP.
   recebido,
 
-  /// Rejeitado só pela RN012_AJUSTE porque o documento usa o nome de campo
-  /// documentado (`dataVigenciaInicio`); o envio agora troca o nome.
+  /// Rejeitado só pela RN012_AJUSTE com o documento salvo usando apenas
+  /// `dataVigenciaInicio`. O reenvio inclui as duas grafias.
   vigenciaRejeitada,
 }
 

@@ -16,6 +16,10 @@ class Edital {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Quando a última retificação foi descartada: envios até esse momento
+  /// deixam de contar como retificação pendente.
+  final DateTime? retificacaoDescartadaEm;
+
   /// Oculto no sistema (ex.: já lançado no AUDESP por outro sistema).
   final DateTime? ocultoEm;
   final int? ocultoPor;
@@ -34,6 +38,7 @@ class Edital {
     required this.documentoJson,
     required this.createdAt,
     required this.updatedAt,
+    this.retificacaoDescartadaEm,
     this.ocultoEm,
     this.ocultoPor,
     this.motivoOcultacao,
@@ -56,6 +61,11 @@ class Edital {
     updatedAt: DateTime.fromMillisecondsSinceEpoch(
       (row['updated_at'] as int) * 1000,
     ),
+    retificacaoDescartadaEm: row['retificacao_descartada_em'] == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(
+            (row['retificacao_descartada_em'] as int) * 1000,
+          ),
     ocultoEm: row['oculto_em'] == null
         ? null
         : DateTime.fromMillisecondsSinceEpoch((row['oculto_em'] as int) * 1000),
@@ -140,6 +150,9 @@ class Edital {
     'documento_json': documentoJson,
     'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
     'updated_at': updatedAt.millisecondsSinceEpoch ~/ 1000,
+    'retificacao_descartada_em': retificacaoDescartadaEm == null
+        ? null
+        : retificacaoDescartadaEm!.millisecondsSinceEpoch ~/ 1000,
     'oculto_em': ocultoEm == null
         ? null
         : ocultoEm!.millisecondsSinceEpoch ~/ 1000,

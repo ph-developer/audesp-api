@@ -48,11 +48,9 @@ class _ReenviarRecebidosButtonState
             children: [
               const Text(
                 'Estes ajustes ficaram parados em Recebido ou foram rejeitados '
-                'só pela RN012_AJUSTE, porque o AUDESP espera o campo '
-                '"datavigenciaInicio" e não o nome da documentação. O '
-                'documento de cada um será enviado de novo, já com o nome '
-                'correto, e receberá um novo protocolo. Os protocolos '
-                'anteriores continuam nos logs.',
+                'só pela RN012_AJUSTE. No reenvio, a data de início da vigência '
+                'será enviada nas duas grafias do campo, quando informada. '
+                'Cada envio aceito recebe um novo protocolo.',
               ),
               const SizedBox(height: 12),
               Flexible(

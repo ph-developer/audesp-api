@@ -320,7 +320,7 @@ class _EditalList extends ConsumerWidget {
                 if (edital.retificacao) StatusChip.retificacao(),
                 if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
               ],
-              onDelete: isSent
+              onDelete: isSent || edital.retificacao
                   ? null
                   : () => _confirmDelete(context, ref, edital),
               onNavigate: () => context.go('/edital/${edital.id}'),

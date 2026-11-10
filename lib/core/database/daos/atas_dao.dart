@@ -118,6 +118,31 @@ class AtasDao {
     );
   }
 
+  /// Documento armazenado volta a rascunho como retificação;
+  /// [documentoJson] já vem com `descritor.retificacao = true`.
+  Future<void> iniciarRetificacao(int id, String documentoJson) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _db.executePrepared(
+      'UPDATE atas SET status = ?, retificacao = 1, documento_json = ?, updated_at = ? WHERE id = ?',
+      ['draft', documentoJson, now, id],
+    );
+  }
+
+  /// Descarta a retificação: volta a "enviado" com o documento do envio
+  /// armazenado e marca o momento, para os envios da retificação
+  /// descartada deixarem de ser pendência.
+  Future<void> descartarRetificacao(
+    int id, {
+    required String documentoJson,
+    required bool retificacao,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _db.executePrepared(
+      'UPDATE atas SET status = ?, retificacao = ?, documento_json = ?, retificacao_descartada_em = ?, updated_at = ? WHERE id = ?',
+      ['sent', retificacao ? 1 : 0, documentoJson, now, now, id],
+    );
+  }
+
   Future<void> markAsDraft(int id) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await _db.executePrepared(

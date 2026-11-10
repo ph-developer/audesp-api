@@ -54,12 +54,15 @@ class PendenciasModulos {
 }
 
 abstract final class PendenciasRules {
+  /// Também a retificação em análise ou rejeitada de um documento já
+  /// armazenado, até ser armazenada ou descartada.
   static bool protocoloPendente(ConclusaoEnvio conclusao) =>
       switch (conclusao.situacao) {
         SituacaoConclusao.emAnalise ||
         SituacaoConclusao.rejeitado ||
         SituacaoConclusao.excluido => true,
-        SituacaoConclusao.naoEnviado || SituacaoConclusao.concluida => false,
+        SituacaoConclusao.concluida => conclusao.retificacao != null,
+        SituacaoConclusao.naoEnviado => false,
       };
 
   static List<Edital> editaisSemLicitacao(

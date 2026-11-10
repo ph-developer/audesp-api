@@ -6,14 +6,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/domain/conclusao_envio.dart';
+import '../../logs/domain/retificacao.dart';
+import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/widgets/erros_retornados_dialog.dart';
+import '../../logs/widgets/retificacao_acoes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/text_validation.dart';
 import '../../../features/auth/auth_providers.dart';
 import '../../../features/auth/widgets/audesp_auth_dialog.dart';
 import '../../../features/logs/services/consulta_service.dart';
-import '../../../shared/widgets/audesp_checkbox.dart';
 import '../../../shared/widgets/audesp_cpf_cnpj_field.dart';
 import '../../../shared/widgets/audesp_date_picker_field.dart';
 import '../../../shared/widgets/audesp_dialog.dart';
@@ -70,6 +73,21 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
   bool _importandoItens = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
+
+  // ── Retificação ──────────────────────────────────────────────────────────
+  ConclusaoEnvio? _conclusao;
+  DateTime? _retificacaoDescartadaEm;
+
+  // Município e entidade gravados no documento; os das configurações podem
+  // ainda não ter sido carregados quando o formulário abre.
+  String? _municipioSalvo;
+  String? _entidadeSalvo;
+
+  ModoRetificacao get _modoRetificacao => RetificacaoRules.modo(_conclusao);
+
+  /// Rascunho de documento já armazenado: os códigos não podem mudar.
+  bool get _emRetificacao =>
+      !_isSent && _modoRetificacao == ModoRetificacao.retificacao;
 
   // ── Vínculo com Edital ─────────────────────────────────────────────────
   int? _editalId;
@@ -145,6 +163,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       await _selectPreselectedEdital(widget.preselectedEditalId);
     }
     if (!mounted) return;
+    if (widget.ataId == null) await _carregarConclusao();
     await _carregarItensLicitacao();
     if (mounted) setState(() => _loading = false);
   }
@@ -336,7 +355,6 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     final edital = opcao.processo.edital;
     _editalId = edital.id;
     _codigoEditalCtrl.text = edital.codigoEdital;
-    _retificacao = edital.retificacao;
     _anoCompra = edital.anoCompra;
   }
 
@@ -349,6 +367,9 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     }
     _loadedId = ata.id;
     _isSent = ata.status == 'sent';
+    _retificacaoDescartadaEm = ata.retificacaoDescartadaEm;
+    _municipioSalvo = ata.municipio;
+    _entidadeSalvo = ata.entidade;
     _editalId = ata.editalId;
     await _carregarOpcoesEdital();
     if (!mounted) return;
@@ -388,17 +409,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
         .map((e) => (e as num).toInt())
         .toList();
 
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestAtaSendLog(
-            municipio: ata.municipio,
-            entidade: ata.entidade,
-            codigoEdital: ata.codigoEdital,
-            codigoAta: ata.codigoAta,
-            retificacao: ata.retificacao,
-          );
-    }
+    await _carregarConclusao();
+    if (_isSent) _lastSendLog = await _buscarLogDoCabecalho(ata);
   }
 
   // ── JSON builder ──────────────────────────────────────────────────────
@@ -482,6 +494,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
 
     setState(() => _saving = true);
     try {
+      await _atualizarConclusao();
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(atasDaoProvider);
@@ -586,6 +599,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       return;
     }
 
+    // Envios recarregados: definem se o documento segue como retificação.
+    ref.invalidate(enviosProvider);
     await _saveDraft();
     if (!mounted || _loadedId == null) return;
 
@@ -753,15 +768,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
     if (_loadedId == null) return;
     final ata = await ref.read(atasDaoProvider).findById(_loadedId!);
     if (ata == null) return;
-    final log = await ref
-        .read(apiLogsDaoProvider)
-        .findLatestAtaSendLog(
-          municipio: ata.municipio,
-          entidade: ata.entidade,
-          codigoEdital: ata.codigoEdital,
-          codigoAta: ata.codigoAta,
-          retificacao: ata.retificacao,
-        );
+    await _atualizarConclusao(recarregar: true);
+    final log = await _buscarLogDoCabecalho(ata);
     if (mounted) setState(() => _lastSendLog = log);
   }
 
@@ -811,7 +819,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
         content: const Text(
-          'A ata voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+          'A ata voltará para edição local. Os logs e o protocolo AUDESP serão mantidos.',
         ),
         actions: [
           TextButton(
@@ -836,15 +844,150 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
       ref.invalidate(atasEnviadasProvider);
       ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
+      _isSent = false;
+      _lastSendLog = null;
+      await _carregarConclusao();
       if (mounted) {
-        setState(() {
-          _isSent = false;
-          _lastSendLog = null;
-        });
         AudespSnackBar.success(context, 'Ata retornada para rascunho.');
       }
     } catch (e) {
       _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  /// Situação dos envios deste documento no ambiente ativo. No rascunho,
+  /// impõe o valor de `retificacao` quando o ambiente já tem envio dele.
+  Future<void> _atualizarConclusao({bool recarregar = false}) async {
+    if (recarregar) ref.invalidate(enviosProvider);
+    final envios = await ref.refresh(enviosProcessoProvider.future);
+    _conclusao = envios.porDescritor(
+      EnviosEndpoint.ata,
+      status: _isSent ? 'sent' : 'draft',
+      descritor: DescritorEnvio.ata(
+        municipio: _municipioSalvo ?? ref.read(codigoMunicipioProvider),
+        entidade: _entidadeSalvo ?? ref.read(codigoEntidadeProvider),
+        codigoEdital: _codigoEditalCtrl.text.trim(),
+        codigoAta: _editalSemPncp
+            ? _codigoAtaCtrl.text.trim()
+            : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text),
+        retificacao: false,
+      ),
+      retificacaoDescartadaEm: _retificacaoDescartadaEm,
+    );
+    final imposto = _isSent ? null : _modoRetificacao.valor;
+    if (imposto != null) _retificacao = imposto;
+  }
+
+  /// Como [_atualizarConclusao], sem interromper o formulário quando os
+  /// envios não podem ser lidos (a caixa de retificação fica livre).
+  Future<void> _carregarConclusao() async {
+    try {
+      await _atualizarConclusao();
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<ApiLog?> _buscarLogDoCabecalho(Ata documento) {
+    final logs = ref.read(apiLogsDaoProvider);
+    return logDoCabecalho(
+      logs,
+      _conclusao,
+      () => logs.findLatestAtaSendLog(
+        municipio: documento.municipio,
+        entidade: documento.entidade,
+        codigoEdital: documento.codigoEdital,
+        codigoAta: documento.codigoAta,
+        retificacao: documento.retificacao,
+      ),
+    );
+  }
+
+  void _invalidarListas() {
+    ref.invalidate(atasDraftProvider);
+    ref.invalidate(atasEnviadasProvider);
+    ref.invalidate(documentosProcessoProvider);
+    ref.invalidate(enviosProvider);
+  }
+
+  /// Documento armazenado volta a rascunho para ser enviado como retificação.
+  Future<void> _retificar() async {
+    final id = _loadedId;
+    if (id == null) return;
+    try {
+      await _atualizarConclusao(recarregar: true);
+      if (!mounted) return;
+      final conclusao = _conclusao;
+      if (conclusao == null ||
+          !RetificacaoRules.podeRetificar(conclusao, enviado: _isSent)) {
+        setState(() {});
+        _showError('A ata não pode ser retificada na situação atual.');
+        return;
+      }
+      if (!await confirmarRetificacao(
+            context,
+            nome: 'ata',
+            feminino: true,
+            conclusao: conclusao,
+          ) ||
+          !mounted) {
+        return;
+      }
+      final dao = ref.read(atasDaoProvider);
+      final documento = await dao.findById(id);
+      if (documento == null) return;
+      await dao.iniciarRetificacao(
+        id,
+        RetificacaoRules.marcar(documento.documentoJson, retificacao: true),
+      );
+      _invalidarListas();
+      _isSent = false;
+      _retificacao = true;
+      _lastSendLog = null;
+      await _carregarConclusao();
+      if (mounted) {
+        AudespSnackBar.success(
+          context,
+          'Ata em retificação. Corrija e envie à AUDESP.',
+        );
+      }
+    } catch (e) {
+      _showError('Erro ao iniciar a retificação: $e');
+    }
+  }
+
+  /// Volta à versão armazenada no AUDESP, do log do envio.
+  Future<void> _descartarRetificacao() async {
+    final id = _loadedId;
+    final conclusao = _conclusao;
+    if (id == null || conclusao == null) return;
+    if (!await confirmarDescarteRetificacao(
+          context,
+          nome: 'ata',
+          feminino: true,
+          conclusao: conclusao,
+        ) ||
+        !mounted) {
+      return;
+    }
+    try {
+      final versao = await versaoArmazenada(
+        ref.read(apiLogsDaoProvider),
+        conclusao,
+      );
+      await ref
+          .read(atasDaoProvider)
+          .descartarRetificacao(
+            id,
+            documentoJson: versao.documentoJson,
+            retificacao: versao.retificacao,
+          );
+      _invalidarListas();
+      if (mounted) {
+        AudespSnackBar.success(context, 'Retificação descartada.');
+        context.go('/ata');
+      }
+    } catch (e) {
+      _showError('Erro ao descartar a retificação: $e');
     }
   }
 
@@ -870,6 +1013,11 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
           ),
           const SizedBox(width: 4),
         ],
+        RetificacaoHeaderActions(
+          conclusao: _conclusao,
+          onRetificar: _retificar,
+          onDescartar: _descartarRetificacao,
+        ),
         if (rejected) ...[
           TextButton.icon(
             onPressed: _returnToDraft,
@@ -943,6 +1091,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
               ? 'Nova Ata'
               : _isSent
               ? 'Ata'
+              : _modoRetificacao == ModoRetificacao.retificacao
+              ? 'Retificar Ata'
               : 'Editar Ata',
         ),
         actions: [
@@ -957,6 +1107,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                 ),
               )
             else ...[
+              if (RetificacaoRules.podeDescartar(_conclusao, enviado: false))
+                DescartarRetificacaoButton(onPressed: _descartarRetificacao),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
@@ -1004,7 +1156,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                                 ),
                               ),
                           ],
-                          readOnly: readOnly,
+                          readOnly: readOnly || _emRetificacao,
                           onChanged: (v) async {
                             setState(() {
                               _editalId = v;
@@ -1019,8 +1171,8 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                       ),
                       AudespFieldRowItem(
                         width: 200,
-                        child: AudespCheckbox(
-                          label: 'Retificação',
+                        child: RetificacaoCheckbox(
+                          modo: _modoRetificacao,
                           value: _retificacao,
                           readOnly: readOnly,
                           onChanged: (v) => setState(() => _retificacao = v),
@@ -1074,7 +1226,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             ? AudespTextField(
                                 label: 'Código da Ata (Sem PNCP) *',
                                 controller: _codigoAtaCtrl,
-                                readOnly: readOnly,
+                                readOnly: readOnly || _emRetificacao,
                                 maxLength: 31,
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
@@ -1089,7 +1241,7 @@ class _AtaFormPageState extends ConsumerState<AtaFormPage> {
                             : AudespPncpField(
                                 label: 'ID da Ata PNCP *',
                                 controller: _codigoAtaCtrl,
-                                readOnly: readOnly,
+                                readOnly: readOnly || _emRetificacao,
                                 isAta: true,
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {

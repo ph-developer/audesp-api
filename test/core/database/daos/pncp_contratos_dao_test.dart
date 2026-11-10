@@ -125,7 +125,7 @@ void main() {
   });
 
   test(
-    'migração v16 cria a tabela e avança para v18 sem recriar compras',
+    'migração v16 cria a tabela e avança para v19 sem recriar compras',
     () async {
       var versao = 16;
       server.responder = (sql, params) {
@@ -153,10 +153,23 @@ void main() {
             ],
           );
         }
+        if (sql.contains('information_schema.columns')) {
+          return const FakeMySqlResult(
+            rows: [
+              {'c': 0},
+            ],
+          );
+        }
         return const FakeMySqlResult();
       };
       await db.initialize();
-      expect(await db.schemaVersion, 18);
+      expect(await db.schemaVersion, 19);
+      expect(
+        server.consultas
+            .where((c) => c.sql.contains('retificacao_descartada_em BIGINT'))
+            .map((c) => c.sql.split('`')[1]),
+        ['editais', 'licitacoes', 'atas', 'ajustes'],
+      );
       expect(
         server.consultas.where(
           (c) => c.sql.contains('CREATE TABLE IF NOT EXISTS pncp_contratos'),

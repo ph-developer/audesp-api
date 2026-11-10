@@ -96,20 +96,66 @@ void main() {
     });
   }
 
-  test('retificação rejeitada não desfaz conclusão armazenada', () {
-    final docs = documentosFixture();
-    EnviosIndex index(Object doc) => EnviosIndex([
-      envioFixture(doc, id: 2, situacao: 'Rejeitado', retificacao: true),
-      envioFixture(doc, id: 1, situacao: 'Armazenado'),
-    ]);
-    final envios = EnviosProcesso(
-      baseUrl: ambientePendencias,
-      editais: index(docs.editais.single),
-      licitacoes: index(docs.licitacoes.single),
-      atas: index(docs.atas.single),
-      ajustes: index(docs.ajustes.single),
-    );
-    expect(pendencias(docs, envios: envios).contagens.values, everyElement(0));
+  group('retificação depois do armazenamento', () {
+    EnviosProcesso enviosCom(DocumentosProcesso docs, String situacao) {
+      EnviosIndex index(Object doc) => EnviosIndex([
+        envioFixture(doc, id: 2, situacao: situacao, retificacao: true),
+        envioFixture(doc, id: 1, situacao: 'Armazenado'),
+      ]);
+      return EnviosProcesso(
+        baseUrl: ambientePendencias,
+        editais: index(docs.editais.single),
+        licitacoes: index(docs.licitacoes.single),
+        atas: index(docs.atas.single),
+        ajustes: index(docs.ajustes.single),
+      );
+    }
+
+    for (final situacao in ['Rejeitado', 'Recebido']) {
+      test('$situacao é pendência sem desfazer a conclusão', () {
+        final docs = documentosFixture();
+        final envios = enviosCom(docs, situacao);
+        final resultado = pendencias(docs, envios: envios);
+        expect(resultado.contagens.values, everyElement(1));
+        final edital = resultado.editais.single.conclusao;
+        expect(edital.concluida, isTrue);
+        expect(edital.envioPendente?.id, 2);
+        expect(envios.licitacao(docs.licitacoes.single).concluida, isTrue);
+        expect(resultado.criarLicitacao, isEmpty);
+      });
+    }
+
+    test('armazenada ou descartada deixa de ser pendência', () {
+      final docs = documentosFixture();
+      expect(
+        pendencias(
+          docs,
+          envios: enviosCom(docs, 'Armazenado'),
+        ).contagens.values,
+        everyElement(0),
+      );
+
+      final descartadaEm = DateTime.now().add(const Duration(days: 1));
+      final edital = docs.editais.single;
+      final descartados = DocumentosProcesso(
+        editais: [
+          Edital.fromMap({
+            ...edital.toMap(),
+            'retificacao_descartada_em':
+                descartadaEm.millisecondsSinceEpoch ~/ 1000,
+          }),
+        ],
+        licitacoes: docs.licitacoes,
+        atas: docs.atas,
+        ajustes: docs.ajustes,
+      );
+      final resultado = pendencias(
+        descartados,
+        envios: enviosCom(descartados, 'Rejeitado'),
+      );
+      expect(resultado.contagens['/edital'], 0);
+      expect(resultado.contagens['/licitacao'], 1);
+    });
   });
 
   test(

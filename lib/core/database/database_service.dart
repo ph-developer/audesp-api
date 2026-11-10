@@ -516,6 +516,24 @@ class DatabaseService {
       ''');
       await setSchemaVersion(18);
     }
+    if (version < 19) {
+      // Momento em que a última retificação do documento foi descartada.
+      for (final table in const ['editais', 'licitacoes', 'atas', 'ajustes']) {
+        final found = await execute(
+          "SELECT COUNT(*) AS c FROM information_schema.columns "
+          "WHERE table_schema = (SELECT DATABASE()) "
+          "AND table_name = :table "
+          "AND column_name = 'retificacao_descartada_em'",
+          {'table': table},
+        );
+        if (found.rows.first.typedAssoc()['c'] == 0) {
+          await execute(
+            'ALTER TABLE `$table` ADD COLUMN retificacao_descartada_em BIGINT NULL',
+          );
+        }
+      }
+      await setSchemaVersion(19);
+    }
   }
 
   Future<void> _ensureUniqueIndexes() async {

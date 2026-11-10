@@ -1,30 +1,31 @@
 import 'dart:convert';
 
-/// Nomes de campo do documento de Ajuste que divergem da documentação.
+/// Compatibilidade com as grafias do início da vigência do Ajuste.
 ///
-/// O schema e a planilha do TCE (15/10/2026) chamam o início da vigência de
-/// `dataVigenciaInicio`, mas o AUDESP só reconhece `datavigenciaInicio`: com
-/// o nome documentado ele rejeita o ajuste pela RN012_AJUSTE ("deve ser
-/// informada a data de início da vigência ... ou a quantidade de meses").
-/// Documentos salvos antes desta correção usam o nome documentado.
+/// A RN010_AJUSTE cita `dataVigenciaInicio`, como o schema do TCE, e a
+/// RN012_AJUSTE cita `datavigenciaInicio`. O envio inclui ambas as grafias.
 abstract final class AjusteDocumento {
   static const campoVigenciaInicio = 'datavigenciaInicio';
   static const campoVigenciaInicioDocumentado = 'dataVigenciaInicio';
 
-  static String? vigenciaInicio(Map<String, dynamic> doc) =>
-      (doc[campoVigenciaInicio] ?? doc[campoVigenciaInicioDocumentado])
-          as String?;
+  static String? vigenciaInicio(Map<String, dynamic> doc) {
+    final inicio =
+        doc[campoVigenciaInicio] ?? doc[campoVigenciaInicioDocumentado];
+    return inicio is String ? inicio : null;
+  }
 
-  /// Troca o nome documentado pelo aceito, mantendo a ordem dos campos.
+  /// Inclui as duas grafias com a data informada no documento.
   static Map<String, dynamic> paraEnvio(Map<String, dynamic> doc) {
-    if (!doc.containsKey(campoVigenciaInicioDocumentado)) return doc;
-    final temAceito = doc.containsKey(campoVigenciaInicio);
+    final inicio = vigenciaInicio(doc);
+    if (inicio == null || inicio.trim().isEmpty) return doc;
+    if (doc[campoVigenciaInicio] == inicio &&
+        doc[campoVigenciaInicioDocumentado] == inicio) {
+      return doc;
+    }
     return {
-      for (final MapEntry(:key, :value) in doc.entries)
-        if (key != campoVigenciaInicioDocumentado)
-          key: value
-        else if (!temAceito)
-          campoVigenciaInicio: value,
+      ...doc,
+      campoVigenciaInicio: inicio,
+      campoVigenciaInicioDocumentado: inicio,
     };
   }
 
@@ -33,11 +34,9 @@ abstract final class AjusteDocumento {
   static String paraEnvioJson(String json) {
     try {
       final doc = jsonDecode(json);
-      if (doc is! Map<String, dynamic> ||
-          !doc.containsKey(campoVigenciaInicioDocumentado)) {
-        return json;
-      }
-      return jsonEncode(paraEnvio(doc));
+      if (doc is! Map<String, dynamic>) return json;
+      final documento = paraEnvio(doc);
+      return identical(documento, doc) ? json : jsonEncode(documento);
     } on FormatException {
       return json;
     }

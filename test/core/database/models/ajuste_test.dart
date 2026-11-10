@@ -19,6 +19,7 @@ void main() {
             '{"descritor":{"adesaoParticipacao":true,"codigoEdital":"1234567800019510000012026","codigoAta":"1234567800019510000012026000001"}}',
         'created_at': 1700000000,
         'updated_at': 1700000001,
+        'retificacao_descartada_em': null,
       };
 
       final ajuste = Ajuste.fromMap(map);
@@ -45,6 +46,7 @@ void main() {
         'documento_json': '{}',
         'created_at': 1700000000,
         'updated_at': 1700000001,
+        'retificacao_descartada_em': null,
       };
 
       final ajuste = Ajuste.fromMap(map);

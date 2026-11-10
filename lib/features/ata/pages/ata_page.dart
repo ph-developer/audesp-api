@@ -344,7 +344,7 @@ class _AtaList extends ConsumerWidget {
                     if (ata.retificacao) StatusChip.retificacao(),
                     if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
                   ],
-                  onDelete: isSent
+                  onDelete: isSent || ata.retificacao
                       ? null
                       : () => _confirmDelete(context, ref, ata),
                   onNavigate: () => context.go('/ata/${ata.id}'),

@@ -394,7 +394,7 @@ class _AjusteList extends ConsumerWidget {
                         if (ajuste.retificacao) StatusChip.retificacao(),
                         if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
                       ],
-                      onDelete: isSent
+                      onDelete: isSent || ajuste.retificacao
                           ? null
                           : () => _confirmDelete(context, ref, ajuste),
                       onNavigate: () => context.go('/ajuste/${ajuste.id}'),

@@ -130,6 +130,9 @@ Future<void> _pumpPage(
         licitacoesDaoProvider.overrideWithValue(_LicitacoesMemoria(processos)),
         appSettingsDaoProvider.overrideWithValue(_SettingsMemoria()),
         processosProvider.overrideWith((ref) async => processos),
+        enviosProcessoProvider.overrideWith(
+          (ref) async => EnviosProcesso.vazio,
+        ),
       ],
       child: MaterialApp(
         home: AjusteFormPage(

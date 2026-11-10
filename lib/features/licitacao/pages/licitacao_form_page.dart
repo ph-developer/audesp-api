@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../logs/domain/conclusao_envio.dart';
+import '../../logs/domain/retificacao.dart';
 import '../../logs/widgets/erros_retornados_dialog.dart';
+import '../../logs/widgets/retificacao_acoes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/database/database_providers.dart';
@@ -25,6 +28,7 @@ import '../../../shared/widgets/audesp_spacing.dart';
 import '../../processo/domain/processo.dart';
 import '../../processo/domain/processo_rules.dart';
 import '../../processo/processo_providers.dart';
+import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/envios_providers.dart';
 import '../csv/csv.dart';
 import '../domain/licitacao_condutor.dart';
@@ -70,6 +74,21 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
   bool _updatingStatus = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
+
+  // ── Retificação ──────────────────────────────────────────────────────────
+  ConclusaoEnvio? _conclusao;
+  DateTime? _retificacaoDescartadaEm;
+
+  // Município e entidade gravados no documento; os das configurações podem
+  // ainda não ter sido carregados quando o formulário abre.
+  String? _municipioSalvo;
+  String? _entidadeSalvo;
+
+  ModoRetificacao get _modoRetificacao => RetificacaoRules.modo(_conclusao);
+
+  /// Rascunho de documento já armazenado: os códigos não podem mudar.
+  bool get _emRetificacao =>
+      !_isSent && _modoRetificacao == ModoRetificacao.retificacao;
 
   // ── Vínculo com Edital ─────────────────────────────────────────────────
   int? _editalId;
@@ -146,6 +165,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     if (widget.licitacaoId != null) {
       await _loadExisting(widget.licitacaoId!);
     } else {
+      await _carregarConclusao();
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -155,7 +175,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     final edital = _editais.where((e) => e.id == _editalId).firstOrNull;
     if (edital != null && _codigoEditalCtrl.text.isEmpty) {
       _codigoEditalCtrl.text = edital.codigoEdital;
-      _retificacao = edital.retificacao;
     }
   }
 
@@ -172,7 +191,6 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     if (edital == null) return;
     _editalId = edital.id;
     _codigoEditalCtrl.text = edital.codigoEdital;
-    _retificacao = edital.retificacao;
   }
 
   /// Por que a licitação ainda não pode ser enviada: o edital precisa estar
@@ -211,6 +229,9 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
     }
     _loadedId = licitacao.id;
     _isSent = licitacao.status == 'sent';
+    _retificacaoDescartadaEm = licitacao.retificacaoDescartadaEm;
+    _municipioSalvo = licitacao.municipio;
+    _entidadeSalvo = licitacao.entidade;
     _editalId = licitacao.editalId;
     if (!_isSelectedEditalAvailable) {
       final vinculado = await ref
@@ -280,16 +301,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         .toList();
     _ordenarItens();
 
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestLicitacaoSendLog(
-            municipio: licitacao.municipio,
-            entidade: licitacao.entidade,
-            codigoEdital: licitacao.codigoEdital,
-            retificacao: licitacao.retificacao,
-          );
-    }
+    await _carregarConclusao();
+    if (_isSent) _lastSendLog = await _buscarLogDoCabecalho(licitacao);
 
     if (mounted) setState(() => _loading = false);
   }
@@ -418,6 +431,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
 
     setState(() => _saving = true);
     try {
+      await _atualizarConclusao();
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(licitacoesDaoProvider);
@@ -495,6 +509,14 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       return;
     }
 
+    // Envios recarregados: definem se o documento segue como retificação.
+    try {
+      await _atualizarConclusao(recarregar: true);
+    } catch (e) {
+      _showError('Não foi possível conferir os envios anteriores: $e');
+      return;
+    }
+    if (!mounted) return;
     final doc = _buildJson();
     final erroEnvio = LicitacaoRules.validarEnvio(
       doc,
@@ -566,14 +588,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         .read(licitacoesDaoProvider)
         .findById(_loadedId!);
     if (licitacao == null) return;
-    final log = await ref
-        .read(apiLogsDaoProvider)
-        .findLatestLicitacaoSendLog(
-          municipio: licitacao.municipio,
-          entidade: licitacao.entidade,
-          codigoEdital: licitacao.codigoEdital,
-          retificacao: licitacao.retificacao,
-        );
+    await _atualizarConclusao(recarregar: true);
+    final log = await _buscarLogDoCabecalho(licitacao);
     if (mounted) setState(() => _lastSendLog = log);
   }
 
@@ -635,9 +651,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
         if (dependentes.atas > 0) '${dependentes.atas} ata(s)',
         if (dependentes.ajustes > 0) '${dependentes.ajustes} ajuste(s)',
       ].join(' e ');
-      avisoDependentes = vinculos.isEmpty
+      // Com uma versão armazenada, os vinculados continuam liberados.
+      final armazenada =
+          processo != null &&
+          ProcessoRules.conclusaoLicitacao(processo)?.concluida == true;
+      avisoDependentes = vinculos.isEmpty || armazenada
           ? ''
-          : '\n\nHá $vinculos vinculados a este edital. Enquanto o documento estiver em rascunho, eles não poderão ser enviados.';
+          : '\n\nHá $vinculos vinculados a este edital. Enquanto a licitação não for armazenada pelo AUDESP, eles não poderão ser enviados.';
     } catch (e) {
       _showError('Não foi possível conferir os documentos vinculados: $e');
       return;
@@ -648,7 +668,7 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
         content: Text(
-          'A licitacao voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.$avisoDependentes',
+          'A licitação voltará para edição local. Os logs e o protocolo AUDESP serão mantidos.$avisoDependentes',
         ),
         actions: [
           TextButton(
@@ -673,15 +693,146 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
       ref.invalidate(licitacoesEnviadasProvider);
       ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
+      _isSent = false;
+      _lastSendLog = null;
+      await _carregarConclusao();
       if (mounted) {
-        setState(() {
-          _isSent = false;
-          _lastSendLog = null;
-        });
         AudespSnackBar.success(context, 'Licitação retornada para rascunho.');
       }
     } catch (e) {
       _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  /// Situação dos envios deste documento no ambiente ativo. No rascunho,
+  /// impõe o valor de `retificacao` quando o ambiente já tem envio dele.
+  Future<void> _atualizarConclusao({bool recarregar = false}) async {
+    if (recarregar) ref.invalidate(enviosProvider);
+    final envios = await ref.refresh(enviosProcessoProvider.future);
+    _conclusao = envios.porDescritor(
+      EnviosEndpoint.licitacao,
+      status: _isSent ? 'sent' : 'draft',
+      descritor: DescritorEnvio.licitacao(
+        municipio: _municipioSalvo ?? ref.read(codigoMunicipioProvider),
+        entidade: _entidadeSalvo ?? ref.read(codigoEntidadeProvider),
+        codigoEdital: _codigoEditalCtrl.text.trim(),
+        retificacao: false,
+      ),
+      retificacaoDescartadaEm: _retificacaoDescartadaEm,
+    );
+    final imposto = _isSent ? null : _modoRetificacao.valor;
+    if (imposto != null) _retificacao = imposto;
+  }
+
+  /// Como [_atualizarConclusao], sem interromper o formulário quando os
+  /// envios não podem ser lidos (a caixa de retificação fica livre).
+  Future<void> _carregarConclusao() async {
+    try {
+      await _atualizarConclusao();
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<ApiLog?> _buscarLogDoCabecalho(Licitacao documento) {
+    final logs = ref.read(apiLogsDaoProvider);
+    return logDoCabecalho(
+      logs,
+      _conclusao,
+      () => logs.findLatestLicitacaoSendLog(
+        municipio: documento.municipio,
+        entidade: documento.entidade,
+        codigoEdital: documento.codigoEdital,
+        retificacao: documento.retificacao,
+      ),
+    );
+  }
+
+  void _invalidarListas() {
+    ref.invalidate(licitacoesDraftProvider);
+    ref.invalidate(licitacoesEnviadasProvider);
+    ref.invalidate(documentosProcessoProvider);
+    ref.invalidate(enviosProvider);
+  }
+
+  /// Documento armazenado volta a rascunho para ser enviado como retificação.
+  Future<void> _retificar() async {
+    final id = _loadedId;
+    if (id == null) return;
+    try {
+      await _atualizarConclusao(recarregar: true);
+      if (!mounted) return;
+      final conclusao = _conclusao;
+      if (conclusao == null ||
+          !RetificacaoRules.podeRetificar(conclusao, enviado: _isSent)) {
+        setState(() {});
+        _showError('A licitação não pode ser retificada na situação atual.');
+        return;
+      }
+      if (!await confirmarRetificacao(
+            context,
+            nome: 'licitação',
+            feminino: true,
+            conclusao: conclusao,
+          ) ||
+          !mounted) {
+        return;
+      }
+      final dao = ref.read(licitacoesDaoProvider);
+      final documento = await dao.findById(id);
+      if (documento == null) return;
+      await dao.iniciarRetificacao(
+        id,
+        RetificacaoRules.marcar(documento.documentoJson, retificacao: true),
+      );
+      _invalidarListas();
+      _isSent = false;
+      _retificacao = true;
+      _lastSendLog = null;
+      await _carregarConclusao();
+      if (mounted) {
+        AudespSnackBar.success(
+          context,
+          'Licitação em retificação. Corrija e envie à AUDESP.',
+        );
+      }
+    } catch (e) {
+      _showError('Erro ao iniciar a retificação: $e');
+    }
+  }
+
+  /// Volta à versão armazenada no AUDESP, do log do envio.
+  Future<void> _descartarRetificacao() async {
+    final id = _loadedId;
+    final conclusao = _conclusao;
+    if (id == null || conclusao == null) return;
+    if (!await confirmarDescarteRetificacao(
+          context,
+          nome: 'licitação',
+          feminino: true,
+          conclusao: conclusao,
+        ) ||
+        !mounted) {
+      return;
+    }
+    try {
+      final versao = await versaoArmazenada(
+        ref.read(apiLogsDaoProvider),
+        conclusao,
+      );
+      await ref
+          .read(licitacoesDaoProvider)
+          .descartarRetificacao(
+            id,
+            documentoJson: versao.documentoJson,
+            retificacao: versao.retificacao,
+          );
+      _invalidarListas();
+      if (mounted) {
+        AudespSnackBar.success(context, 'Retificação descartada.');
+        context.go('/licitacao');
+      }
+    } catch (e) {
+      _showError('Erro ao descartar a retificação: $e');
     }
   }
 
@@ -707,6 +858,11 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
           ),
           const SizedBox(width: 4),
         ],
+        RetificacaoHeaderActions(
+          conclusao: _conclusao,
+          onRetificar: _retificar,
+          onDescartar: _descartarRetificacao,
+        ),
         if (rejected) ...[
           TextButton.icon(
             onPressed: _returnToDraft,
@@ -1163,6 +1319,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
               ? 'Nova Licitação'
               : _isSent
               ? 'Licitação'
+              : _modoRetificacao == ModoRetificacao.retificacao
+              ? 'Retificar Licitação'
               : 'Editar Licitação',
         ),
         actions: [
@@ -1192,6 +1350,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 8),
+              if (RetificacaoRules.podeDescartar(_conclusao, enviado: false))
+                DescartarRetificacaoButton(onPressed: _descartarRetificacao),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
@@ -1262,12 +1422,13 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
                 label: 'Edital *',
                 value: _editalId,
                 items: {for (final e in _editais) e.id: e.dropdownLabel},
-                readOnly: readOnly,
+                readOnly: readOnly || _emRetificacao,
                 onChanged: (v) {
                   setState(() {
                     _editalId = v;
                     _fillEditalDescriptor();
                   });
+                  _carregarConclusao();
                 },
                 validator: (v) =>
                     v == null ? 'Selecione o edital vinculado' : null,
@@ -1275,8 +1436,8 @@ class _LicitacaoFormPageState extends ConsumerState<LicitacaoFormPage> {
             ),
             AudespFieldRowItem(
               width: 200,
-              child: AudespCheckbox(
-                label: 'Retificação',
+              child: RetificacaoCheckbox(
+                modo: _modoRetificacao,
                 value: _retificacao,
                 readOnly: readOnly,
                 onChanged: (v) => setState(() => _retificacao = v),

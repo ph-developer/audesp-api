@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/domain/conclusao_envio.dart';
+import '../../logs/domain/retificacao.dart';
 import '../../logs/widgets/erros_retornados_dialog.dart';
+import '../../logs/widgets/retificacao_acoes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -81,6 +84,21 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   int? _loadedId;
   ApiLog? _lastSendLog;
 
+  // ── Retificação ──────────────────────────────────────────────────────────
+  ConclusaoEnvio? _conclusao;
+  DateTime? _retificacaoDescartadaEm;
+
+  // Município e entidade gravados no documento; os das configurações podem
+  // ainda não ter sido carregados quando o formulário abre.
+  String? _municipioSalvo;
+  String? _entidadeSalvo;
+
+  ModoRetificacao get _modoRetificacao => RetificacaoRules.modo(_conclusao);
+
+  /// Rascunho de documento já armazenado: os códigos não podem mudar.
+  bool get _emRetificacao =>
+      !_isSent && _modoRetificacao == ModoRetificacao.retificacao;
+
   // ── Vínculo com Edital ────────────────────────────────────────────────
   int? _editalId;
   // Vínculo legado: preservado ao salvar, sem seleção de ata local.
@@ -133,6 +151,10 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
   String get _codigoAta => _referenciasSemPncp
       ? _codigoAtaCtrl.text.trim()
       : PcnpInputFormatter.stripMask(_codigoAtaCtrl.text);
+
+  String get _codigoContrato => _editalSemPncp
+      ? _codigoContratoCtrl.text.trim()
+      : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text);
 
   Map<int, String> get _objetosPermitidos => {
     for (final objeto in kTipoObjetoContrato.entries)
@@ -306,6 +328,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       await _selectPreselectedEdital(widget.preselectedEditalId);
     }
     if (!mounted) return;
+    if (widget.ajusteId == null) await _carregarConclusao();
     await _carregarItensLicitacao();
     if (mounted) setState(() => _loading = false);
   }
@@ -516,6 +539,9 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     }
     _loadedId = ajuste.id;
     _isSent = ajuste.status == 'sent';
+    _retificacaoDescartadaEm = ajuste.retificacaoDescartadaEm;
+    _municipioSalvo = ajuste.municipio;
+    _entidadeSalvo = ajuste.entidade;
     _editalId = ajuste.editalId;
     _ataIdOriginal = ajuste.ataId;
 
@@ -535,18 +561,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       codigoContrato: ajuste.codigoContrato,
       retificacao: ajuste.retificacao,
     );
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestAjusteSendLog(
-            municipio: ajuste.municipio,
-            entidade: ajuste.entidade,
-            codigoEdital: ajuste.codigoEdital,
-            codigoAta: ajuste.codigoAta,
-            codigoContrato: ajuste.codigoContrato,
-            retificacao: ajuste.retificacao,
-          );
-    }
+    await _carregarConclusao();
+    if (_isSent) _lastSendLog = await _buscarLogDoCabecalho(ajuste);
   }
 
   void _aplicarDocumento(
@@ -776,6 +792,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
 
     setState(() => _saving = true);
     try {
+      await _atualizarConclusao();
       final niFornecedorDigitado = _niFornecedorCtrl.text;
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
@@ -783,9 +800,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
       final codigoAta = _codigoAta;
-      final codigoContrato = _editalSemPncp
-          ? _codigoContratoCtrl.text.trim()
-          : PcnpInputFormatter.stripMask(_codigoContratoCtrl.text);
+      final codigoContrato = _codigoContrato;
 
       if (_loadedId == null) {
         final id = await dao.insertAjuste(
@@ -937,6 +952,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       return;
     }
 
+    // Envios recarregados: definem se o documento segue como retificação.
+    ref.invalidate(enviosProvider);
     await _saveDraft();
     if (!mounted || _loadedId == null) return;
 
@@ -992,16 +1009,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
     if (_loadedId == null) return;
     final ajuste = await ref.read(ajustesDaoProvider).findById(_loadedId!);
     if (ajuste == null) return;
-    final log = await ref
-        .read(apiLogsDaoProvider)
-        .findLatestAjusteSendLog(
-          municipio: ajuste.municipio,
-          entidade: ajuste.entidade,
-          codigoEdital: ajuste.codigoEdital,
-          codigoAta: ajuste.codigoAta,
-          codigoContrato: ajuste.codigoContrato,
-          retificacao: ajuste.retificacao,
-        );
+    await _atualizarConclusao(recarregar: true);
+    final log = await _buscarLogDoCabecalho(ajuste);
     if (mounted) setState(() => _lastSendLog = log);
   }
 
@@ -1109,7 +1118,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
         content: const Text(
-          'O ajuste voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.',
+          'O ajuste voltará para edição local. Os logs e o protocolo AUDESP serão mantidos.',
         ),
         actions: [
           TextButton(
@@ -1134,15 +1143,148 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
       ref.invalidate(ajustesEnviadosProvider);
       ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
+      _isSent = false;
+      _lastSendLog = null;
+      await _carregarConclusao();
       if (mounted) {
-        setState(() {
-          _isSent = false;
-          _lastSendLog = null;
-        });
         AudespSnackBar.success(context, 'Ajuste retornado para rascunho.');
       }
     } catch (e) {
       _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  /// Situação dos envios deste documento no ambiente ativo. No rascunho,
+  /// impõe o valor de `retificacao` quando o ambiente já tem envio dele.
+  Future<void> _atualizarConclusao({bool recarregar = false}) async {
+    if (recarregar) ref.invalidate(enviosProvider);
+    final envios = await ref.refresh(enviosProcessoProvider.future);
+    _conclusao = envios.porDescritor(
+      EnviosEndpoint.ajuste,
+      status: _isSent ? 'sent' : 'draft',
+      descritor: DescritorEnvio.ajuste(
+        municipio: _municipioSalvo ?? ref.read(codigoMunicipioProvider),
+        entidade: _entidadeSalvo ?? ref.read(codigoEntidadeProvider),
+        codigoEdital: _codigoEdital,
+        codigoAta: _codigoAta,
+        codigoContrato: _codigoContrato,
+        retificacao: false,
+      ),
+      retificacaoDescartadaEm: _retificacaoDescartadaEm,
+    );
+    final imposto = _isSent ? null : _modoRetificacao.valor;
+    if (imposto != null) _retificacao = imposto;
+  }
+
+  /// Como [_atualizarConclusao], sem interromper o formulário quando os
+  /// envios não podem ser lidos (a caixa de retificação fica livre).
+  Future<void> _carregarConclusao() async {
+    try {
+      await _atualizarConclusao();
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<ApiLog?> _buscarLogDoCabecalho(Ajuste documento) {
+    final logs = ref.read(apiLogsDaoProvider);
+    return logDoCabecalho(
+      logs,
+      _conclusao,
+      () => logs.findLatestAjusteSendLog(
+        municipio: documento.municipio,
+        entidade: documento.entidade,
+        codigoEdital: documento.codigoEdital,
+        codigoAta: documento.codigoAta,
+        codigoContrato: documento.codigoContrato,
+        retificacao: documento.retificacao,
+      ),
+    );
+  }
+
+  void _invalidarListas() {
+    ref.invalidate(ajustesDraftProvider);
+    ref.invalidate(ajustesEnviadosProvider);
+    ref.invalidate(documentosProcessoProvider);
+    ref.invalidate(enviosProvider);
+  }
+
+  /// Documento armazenado volta a rascunho para ser enviado como retificação.
+  Future<void> _retificar() async {
+    final id = _loadedId;
+    if (id == null) return;
+    try {
+      await _atualizarConclusao(recarregar: true);
+      if (!mounted) return;
+      final conclusao = _conclusao;
+      if (conclusao == null ||
+          !RetificacaoRules.podeRetificar(conclusao, enviado: _isSent)) {
+        setState(() {});
+        _showError('O ajuste não pode ser retificado na situação atual.');
+        return;
+      }
+      if (!await confirmarRetificacao(
+            context,
+            nome: 'ajuste',
+            conclusao: conclusao,
+          ) ||
+          !mounted) {
+        return;
+      }
+      final dao = ref.read(ajustesDaoProvider);
+      final documento = await dao.findById(id);
+      if (documento == null) return;
+      await dao.iniciarRetificacao(
+        id,
+        RetificacaoRules.marcar(documento.documentoJson, retificacao: true),
+      );
+      _invalidarListas();
+      _isSent = false;
+      _retificacao = true;
+      _lastSendLog = null;
+      await _carregarConclusao();
+      if (mounted) {
+        AudespSnackBar.success(
+          context,
+          'Ajuste em retificação. Corrija e envie à AUDESP.',
+        );
+      }
+    } catch (e) {
+      _showError('Erro ao iniciar a retificação: $e');
+    }
+  }
+
+  /// Volta à versão armazenada no AUDESP, do log do envio.
+  Future<void> _descartarRetificacao() async {
+    final id = _loadedId;
+    final conclusao = _conclusao;
+    if (id == null || conclusao == null) return;
+    if (!await confirmarDescarteRetificacao(
+          context,
+          nome: 'ajuste',
+          conclusao: conclusao,
+        ) ||
+        !mounted) {
+      return;
+    }
+    try {
+      final versao = await versaoArmazenada(
+        ref.read(apiLogsDaoProvider),
+        conclusao,
+      );
+      await ref
+          .read(ajustesDaoProvider)
+          .descartarRetificacao(
+            id,
+            documentoJson: versao.documentoJson,
+            retificacao: versao.retificacao,
+          );
+      _invalidarListas();
+      if (mounted) {
+        AudespSnackBar.success(context, 'Retificação descartada.');
+        context.go('/ajuste');
+      }
+    } catch (e) {
+      _showError('Erro ao descartar a retificação: $e');
     }
   }
 
@@ -1168,6 +1310,11 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
           ),
           const SizedBox(width: 4),
         ],
+        RetificacaoHeaderActions(
+          conclusao: _conclusao,
+          onRetificar: _retificar,
+          onDescartar: _descartarRetificacao,
+        ),
         if (rejected) ...[
           TextButton.icon(
             onPressed: _returnToDraft,
@@ -1658,6 +1805,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
               ? 'Novo Ajuste'
               : _isSent
               ? 'Ajuste'
+              : _modoRetificacao == ModoRetificacao.retificacao
+              ? 'Retificar Ajuste'
               : 'Editar Ajuste',
         ),
         actions: [
@@ -1686,6 +1835,8 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                 label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 4),
+              if (RetificacaoRules.podeDescartar(_conclusao, enviado: false))
+                DescartarRetificacaoButton(onPressed: _descartarRetificacao),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
@@ -1737,7 +1888,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                           ),
                         ),
                     ],
-                    readOnly: readOnly,
+                    readOnly: readOnly || _emRetificacao,
                     onChanged: (v) async {
                       setState(() {
                         _editalId = v;
@@ -1814,7 +1965,7 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             ? AudespTextField(
                                 label: 'Código do Contrato (Sem PNCP) *',
                                 controller: _codigoContratoCtrl,
-                                readOnly: readOnly,
+                                readOnly: readOnly || _emRetificacao,
                                 maxLength: 25,
                                 validator:
                                     AjusteRules.validarCodigoContratoSemPncp,
@@ -1822,19 +1973,18 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                             : AudespPncpField(
                                 label: 'ID do Contrato PNCP *',
                                 controller: _codigoContratoCtrl,
-                                readOnly: readOnly,
+                                readOnly: readOnly || _emRetificacao,
                                 validator: AjusteRules.validarCodigoContrato,
                               ),
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 200,
-                        child: AudespCheckbox(
-                          label: 'Retificação',
+                        child: RetificacaoCheckbox(
+                          modo: _modoRetificacao,
                           value: _retificacao,
-                          onChanged: readOnly
-                              ? null
-                              : (v) => setState(() => _retificacao = v),
+                          readOnly: readOnly,
+                          onChanged: (v) => setState(() => _retificacao = v),
                         ),
                       ),
                     ],
@@ -1850,21 +2000,23 @@ class _AjusteFormPageState extends ConsumerState<AjusteFormPage> {
                   AudespCheckbox(
                     label: 'Adesão / Participação',
                     value: _adesaoParticipacao,
-                    onChanged: readOnly ? null : _alterarAdesao,
+                    onChanged: readOnly || _emRetificacao
+                        ? null
+                        : _alterarAdesao,
                   ),
                   if (_adesaoParticipacao) ...[
                     const SizedBox(height: 12),
                     AudespPncpField(
                       label: 'ID de Contratação PNCP da Adesão *',
                       controller: _codigoEditalCtrl,
-                      readOnly: readOnly,
+                      readOnly: readOnly || _emRetificacao,
                       validator: AjusteRules.validarCodigoEditalAdesao,
                     ),
                     const SizedBox(height: 12),
                     AudespPncpField(
                       label: 'ID da Ata PNCP da Adesão (opcional)',
                       controller: _codigoAtaCtrl,
-                      readOnly: readOnly,
+                      readOnly: readOnly || _emRetificacao,
                       isAta: true,
                       validator: AjusteRules.validarCodigoAtaAdesao,
                     ),

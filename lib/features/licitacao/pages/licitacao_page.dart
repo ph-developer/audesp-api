@@ -325,7 +325,7 @@ class _LicitacaoList extends ConsumerWidget {
                     if (licitacao.retificacao) StatusChip.retificacao(),
                     if (ultimoEnvio != null) UltimoEnvioChip(ultimoEnvio),
                   ],
-                  onDelete: isSent
+                  onDelete: isSent || licitacao.retificacao
                       ? null
                       : () => _confirmDelete(context, ref, licitacao),
                   onNavigate: () => context.go('/licitacao/${licitacao.id}'),

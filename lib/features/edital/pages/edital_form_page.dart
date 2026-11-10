@@ -7,7 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../logs/domain/conclusao_envio.dart';
+import '../../logs/domain/retificacao.dart';
+import '../../logs/domain/ultimo_envio.dart';
 import '../../logs/widgets/erros_retornados_dialog.dart';
+import '../../logs/widgets/retificacao_acoes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -72,6 +76,17 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
   bool _updatingStatus = false;
   int? _loadedId;
   ApiLog? _lastSendLog;
+
+  // ── Retificação ──────────────────────────────────────────────────────────
+  ConclusaoEnvio? _conclusao;
+  DateTime? _retificacaoDescartadaEm;
+
+  // Município e entidade gravados no documento; os das configurações podem
+  // ainda não ter sido carregados quando o formulário abre.
+  String? _municipioSalvo;
+  String? _entidadeSalvo;
+
+  ModoRetificacao get _modoRetificacao => RetificacaoRules.modo(_conclusao);
 
   // ── Descritor ────────────────────────────────────────────────────────────
   final _codigoEditalCtrl = TextEditingController();
@@ -145,6 +160,9 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     }
     _loadedId = edital.id;
     _isSent = edital.status == 'sent';
+    _retificacaoDescartadaEm = edital.retificacaoDescartadaEm;
+    _municipioSalvo = edital.municipio;
+    _entidadeSalvo = edital.entidade;
     _pdfPath = edital.pdfPath;
     _estimativaId = edital.estimativaId;
 
@@ -161,18 +179,57 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       retificacao: edital.retificacao,
     );
 
-    if (_isSent) {
-      _lastSendLog = await ref
-          .read(apiLogsDaoProvider)
-          .findLatestEditalSendLog(
-            municipio: edital.municipio,
-            entidade: edital.entidade,
-            codigoEdital: edital.codigoEdital,
-            retificacao: edital.retificacao,
-          );
-    }
+    await _carregarConclusao();
+    if (_isSent) _lastSendLog = await _buscarLogDoCabecalho(edital);
 
     if (mounted) setState(() => _loading = false);
+  }
+
+  String get _codigoEdital => _semPncp
+      ? _codigoEditalCtrl.text.trim()
+      : AudespPncpField.stripMask(_codigoEditalCtrl.text);
+
+  /// Situação dos envios deste edital no ambiente ativo. No rascunho, impõe
+  /// o valor de `retificacao` quando o ambiente já tem envio do documento.
+  Future<void> _atualizarConclusao({bool recarregar = false}) async {
+    if (recarregar) ref.invalidate(enviosProvider);
+    final envios = await ref.refresh(enviosProcessoProvider.future);
+    _conclusao = envios.porDescritor(
+      EnviosEndpoint.edital,
+      status: _isSent ? 'sent' : 'draft',
+      descritor: DescritorEnvio.edital(
+        municipio: _municipioSalvo ?? ref.read(codigoMunicipioProvider),
+        entidade: _entidadeSalvo ?? ref.read(codigoEntidadeProvider),
+        codigoEdital: _codigoEdital,
+        retificacao: false,
+      ),
+      retificacaoDescartadaEm: _retificacaoDescartadaEm,
+    );
+    final imposto = _isSent ? null : _modoRetificacao.valor;
+    if (imposto != null) _retificacao = imposto;
+  }
+
+  /// Como [_atualizarConclusao], sem interromper o formulário quando os
+  /// envios não podem ser lidos (a caixa de retificação fica livre).
+  Future<void> _carregarConclusao() async {
+    try {
+      await _atualizarConclusao();
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<ApiLog?> _buscarLogDoCabecalho(Edital edital) {
+    final logs = ref.read(apiLogsDaoProvider);
+    return logDoCabecalho(
+      logs,
+      _conclusao,
+      () => logs.findLatestEditalSendLog(
+        municipio: edital.municipio,
+        entidade: edital.entidade,
+        codigoEdital: edital.codigoEdital,
+        retificacao: edital.retificacao,
+      ),
+    );
   }
 
   /// Novo edital com o cabeçalho da compra do PNCP, sem itens. Reconsulta o
@@ -334,15 +391,14 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (!_validateDraft()) return;
     setState(() => _saving = true);
     try {
+      await _atualizarConclusao();
       final doc = _buildJson();
       final jsonStr = jsonEncode(doc);
       final dao = ref.read(editaisDaoProvider);
       final municipio = ref.read(codigoMunicipioProvider);
       final entidade = ref.read(codigoEntidadeProvider);
 
-      final codigoSalvar = _semPncp
-          ? _codigoEditalCtrl.text.trim()
-          : AudespPncpField.stripMask(_codigoEditalCtrl.text);
+      final codigoSalvar = _codigoEdital;
 
       if (_loadedId == null) {
         final id = await dao.insertEdital(
@@ -458,6 +514,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       if (confirmado != true || !mounted) return;
     }
 
+    // Envios recarregados: definem se o documento segue como retificação.
+    ref.invalidate(enviosProvider);
     // Garante que o rascunho mais recente está salvo
     await _saveDraft();
     if (!mounted || _loadedId == null) return;
@@ -767,14 +825,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
     if (_loadedId == null) return;
     final edital = await ref.read(editaisDaoProvider).findById(_loadedId!);
     if (edital == null) return;
-    final log = await ref
-        .read(apiLogsDaoProvider)
-        .findLatestEditalSendLog(
-          municipio: edital.municipio,
-          entidade: edital.entidade,
-          codigoEdital: edital.codigoEdital,
-          retificacao: edital.retificacao,
-        );
+    await _atualizarConclusao(recarregar: true);
+    final log = await _buscarLogDoCabecalho(edital);
     if (mounted) setState(() => _lastSendLog = log);
   }
 
@@ -836,9 +888,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
         if (dependentes.atas > 0) '${dependentes.atas} ata(s)',
         if (dependentes.ajustes > 0) '${dependentes.ajustes} ajuste(s)',
       ].join(' e ');
-      avisoDependentes = vinculos.isEmpty
+      // Com uma versão armazenada, os vinculados continuam liberados.
+      avisoDependentes =
+          vinculos.isEmpty || processo?.conclusaoEdital.concluida == true
           ? ''
-          : '\n\nHá $vinculos vinculados a este edital. Enquanto o documento estiver em rascunho, eles não poderão ser enviados.';
+          : '\n\nHá $vinculos vinculados a este edital. Enquanto o edital não for armazenado pelo AUDESP, eles não poderão ser enviados.';
     } catch (e) {
       _showError('Não foi possível conferir os documentos vinculados: $e');
       return;
@@ -849,7 +903,7 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Retornar para rascunho?'),
         content: Text(
-          'O edital voltara para edicao local. Os logs e o protocolo AUDESP serao mantidos.$avisoDependentes',
+          'O edital voltará para edição local. Os logs e o protocolo AUDESP serão mantidos.$avisoDependentes',
         ),
         actions: [
           TextButton(
@@ -874,15 +928,102 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
       ref.invalidate(editaisEnviadosProvider);
       ref.invalidate(documentosProcessoProvider);
       ref.invalidate(enviosProvider);
+      _isSent = false;
+      _lastSendLog = null;
+      await _carregarConclusao();
       if (mounted) {
-        setState(() {
-          _isSent = false;
-          _lastSendLog = null;
-        });
         AudespSnackBar.success(context, 'Edital retornado para rascunho.');
       }
     } catch (e) {
       _showError('Erro ao retornar para rascunho: $e');
+    }
+  }
+
+  void _invalidarListas() {
+    ref.invalidate(editaisDraftProvider);
+    ref.invalidate(editaisEnviadosProvider);
+    ref.invalidate(documentosProcessoProvider);
+    ref.invalidate(enviosProvider);
+  }
+
+  /// Documento armazenado volta a rascunho para ser enviado como retificação.
+  Future<void> _retificar() async {
+    final id = _loadedId;
+    if (id == null) return;
+    try {
+      await _atualizarConclusao(recarregar: true);
+      if (!mounted) return;
+      final conclusao = _conclusao;
+      if (conclusao == null ||
+          !RetificacaoRules.podeRetificar(conclusao, enviado: _isSent)) {
+        setState(() {});
+        _showError('O edital não pode ser retificado na situação atual.');
+        return;
+      }
+      if (!await confirmarRetificacao(
+            context,
+            nome: 'edital',
+            conclusao: conclusao,
+          ) ||
+          !mounted) {
+        return;
+      }
+      final dao = ref.read(editaisDaoProvider);
+      final edital = await dao.findById(id);
+      if (edital == null) return;
+      await dao.iniciarRetificacao(
+        id,
+        RetificacaoRules.marcar(edital.documentoJson, retificacao: true),
+      );
+      _invalidarListas();
+      _isSent = false;
+      _retificacao = true;
+      _lastSendLog = null;
+      await _carregarConclusao();
+      if (mounted) {
+        AudespSnackBar.success(
+          context,
+          'Edital em retificação. Corrija e envie à AUDESP.',
+        );
+      }
+    } catch (e) {
+      _showError('Erro ao iniciar a retificação: $e');
+    }
+  }
+
+  /// Volta à versão armazenada no AUDESP, do log do envio.
+  Future<void> _descartarRetificacao() async {
+    final id = _loadedId;
+    final conclusao = _conclusao;
+    if (id == null || conclusao == null) return;
+    if (!await confirmarDescarteRetificacao(
+          context,
+          nome: 'edital',
+          conclusao: conclusao,
+          aviso: 'O arquivo PDF selecionado não é restaurado.',
+        ) ||
+        !mounted) {
+      return;
+    }
+    try {
+      final versao = await versaoArmazenada(
+        ref.read(apiLogsDaoProvider),
+        conclusao,
+      );
+      await ref
+          .read(editaisDaoProvider)
+          .descartarRetificacao(
+            id,
+            documentoJson: versao.documentoJson,
+            retificacao: versao.retificacao,
+          );
+      _invalidarListas();
+      if (mounted) {
+        AudespSnackBar.success(context, 'Retificação descartada.');
+        context.go('/edital');
+      }
+    } catch (e) {
+      _showError('Erro ao descartar a retificação: $e');
     }
   }
 
@@ -908,6 +1049,11 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
           ),
           const SizedBox(width: 4),
         ],
+        RetificacaoHeaderActions(
+          conclusao: _conclusao,
+          onRetificar: _retificar,
+          onDescartar: _descartarRetificacao,
+        ),
         if (rejected) ...[
           TextButton.icon(
             onPressed: _returnToDraft,
@@ -947,6 +1093,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
               ? 'Novo Edital'
               : _isSent
               ? 'Edital'
+              : _modoRetificacao == ModoRetificacao.retificacao
+              ? 'Retificar Edital'
               : 'Editar Edital',
         ),
         actions: [
@@ -973,6 +1121,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
                 label: const Text('Importar via IA'),
               ),
               const SizedBox(width: 4),
+              if (RetificacaoRules.podeDescartar(_conclusao, enviado: false))
+                DescartarRetificacaoButton(onPressed: _descartarRetificacao),
               TextButton.icon(
                 onPressed: _saveDraft,
                 icon: const Icon(Icons.save_outlined),
@@ -1126,8 +1276,8 @@ class _EditalFormPageState extends ConsumerState<EditalFormPage> {
             const SizedBox(width: 12),
             SizedBox(
               width: 160,
-              child: AudespCheckbox(
-                label: 'Retificação',
+              child: RetificacaoCheckbox(
+                modo: _modoRetificacao,
                 value: _retificacao,
                 readOnly: readOnly,
                 onChanged: (v) => setState(() => _retificacao = v),
