@@ -136,25 +136,28 @@ class _LicitacaoPageState extends ConsumerState<LicitacaoPage> {
         ),
         actions: const [SizedBox(width: 8)],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          HoverExpandFab(
-            heroTag: 'criarPorEdital',
-            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
-            icon: Icons.playlist_add,
-            tooltip: 'Criar por Edital',
-          ),
-          const SizedBox(height: 12),
-          HoverExpandFab(
-            heroTag: 'novaLicitacao',
-            onPressed: () => context.go('/licitacao/new'),
-            icon: Icons.add,
-            tooltip: 'Nova Licitação',
-          ),
-        ],
-      ),
+      // Criação só a partir de Rascunhos.
+      floatingActionButton: _statusFilter != 'draft'
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                HoverExpandFab(
+                  heroTag: 'criarPorEdital',
+                  onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+                  icon: Icons.playlist_add,
+                  tooltip: 'Criar por Edital',
+                ),
+                const SizedBox(height: 12),
+                HoverExpandFab(
+                  heroTag: 'novaLicitacao',
+                  onPressed: () => context.go('/licitacao/new'),
+                  icon: Icons.add,
+                  tooltip: 'Nova Licitação',
+                ),
+              ],
+            ),
       body: _statusFilter == 'pendencias'
           ? PendenciasModuloList(modulo: '/licitacao', search: _searchCtrl.text)
           : _LicitacaoList(

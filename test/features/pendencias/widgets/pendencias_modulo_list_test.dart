@@ -4,7 +4,11 @@ import 'package:audesp_api/core/database/daos/api_logs_dao.dart';
 import 'package:audesp_api/core/database/database_providers.dart';
 import 'package:audesp_api/core/services/auth_service.dart';
 import 'package:audesp_api/core/theme/app_theme.dart';
+import 'package:audesp_api/features/ajuste/ajuste_providers.dart';
 import 'package:audesp_api/features/ajuste/pages/ajuste_page.dart';
+import 'package:audesp_api/features/ata/ata_providers.dart';
+import 'package:audesp_api/features/edital/edital_providers.dart';
+import 'package:audesp_api/features/licitacao/licitacao_providers.dart';
 import 'package:audesp_api/features/ata/pages/ata_page.dart';
 import 'package:audesp_api/features/auth/auth_providers.dart';
 import 'package:audesp_api/features/edital/pages/edital_page.dart';
@@ -19,11 +23,15 @@ import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
 import 'package:audesp_api/features/processo/domain/ufesp_rules.dart';
 import 'package:audesp_api/features/processo/processo_providers.dart';
+import 'package:audesp_api/shared/widgets/hover_expand_fab.dart';
+import 'package:audesp_api/shared/widgets/indicador_icone.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../helpers/indicador_finder.dart';
 
 import '../../../helpers/json_http_adapter.dart';
 import '../../processo/processo_fixtures.dart';
@@ -113,6 +121,14 @@ Future<GoRouter> _pump(
       }),
       pncpComprasProvider.overrideWith((ref) async => compras),
       prazoEnvioConfigProvider.overrideWith((ref) async => PrazoEnvioConfig()),
+      editaisDraftProvider.overrideWith((ref) async => const []),
+      editaisEnviadosProvider.overrideWith((ref) async => const []),
+      licitacoesDraftProvider.overrideWith((ref) async => const []),
+      licitacoesEnviadasProvider.overrideWith((ref) async => const []),
+      atasDraftProvider.overrideWith((ref) async => const []),
+      atasEnviadasProvider.overrideWith((ref) async => const []),
+      ajustesDraftProvider.overrideWith((ref) async => const []),
+      ajustesEnviadosProvider.overrideWith((ref) async => const []),
       pncpConfigProvider.overrideWith((ref) async => const PncpConfig()),
       ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
       if (consulta != null) consultaServiceProvider.overrideWithValue(consulta),
@@ -166,9 +182,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.byTooltip('Atualizar situação'), findsOneWidget);
-      expect(find.text('Nova licitação'), findsNothing);
+      expect(find.text('Lançar licitação'), findsNothing);
       if (modulo == '/edital') {
-        expect(find.text('Envio não obrigatório'), findsOneWidget);
+        expect(findIndicador('Envio não obrigatório'), findsOneWidget);
       }
 
       await tester.enterText(find.byType(TextField), 'inexistente');
@@ -201,12 +217,12 @@ void main() {
         documentos: docs,
         situacaoEdital: 'Armazenado',
       );
-      expect(find.text('Nova licitação'), findsOneWidget);
-      expect(find.text('Envio não obrigatório'), findsOneWidget);
+      expect(find.text('Lançar licitação'), findsOneWidget);
+      expect(findIndicador('Envio não obrigatório'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'pregao%1/2026');
       await tester.pumpAndSettle();
-      expect(find.text('Nova licitação'), findsOneWidget);
-      await tester.tap(find.text('Nova licitação'));
+      expect(find.text('Lançar licitação'), findsOneWidget);
+      await tester.tap(find.text('Lançar licitação'));
       await tester.pumpAndSettle();
       expect(
         router.routeInformationProvider.value.uri.toString(),
@@ -392,10 +408,30 @@ void main() {
       ],
     );
     // Publicada antes do corte: prazo fixo da transição.
-    expect(find.textContaining('01/02/2027'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is IndicadorIcone && w.titulo.contains('01/02/2027'),
+      ),
+      findsOneWidget,
+    );
     expect(
       tester.getTopLeft(find.text('Compra de outubro')).dy,
       lessThan(tester.getTopLeft(find.text('Compra sem data')).dy),
     );
   });
+
+  for (final modulo in ['/edital', '/licitacao', '/ata', '/ajuste']) {
+    testWidgets('$modulo só mostra os botões de criação em Rascunhos', (
+      tester,
+    ) async {
+      await _pump(tester, modulo: modulo, documentos: DocumentosProcesso());
+      expect(find.byType(HoverExpandFab), findsNothing);
+      await tester.tap(find.text('Rascunhos'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HoverExpandFab), findsWidgets);
+      await tester.tap(find.textContaining('Enviad'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HoverExpandFab), findsNothing);
+    });
+  }
 }

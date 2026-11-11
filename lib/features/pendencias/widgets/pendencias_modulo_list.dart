@@ -100,8 +100,8 @@ class PendenciasModuloList extends ConsumerWidget {
                       FilledButton.tonalIcon(
                         onPressed: () =>
                             context.go('/licitacao/new?editalId=${edital.id}'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Nova licitação'),
+                        icon: const Icon(Icons.post_add),
+                        label: const Text('Lançar licitação'),
                       ),
                     ],
                   ),

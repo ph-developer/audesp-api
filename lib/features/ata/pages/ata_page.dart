@@ -139,25 +139,28 @@ class _AtaPageState extends ConsumerState<AtaPage> {
         ),
         actions: const [SizedBox(width: 8)],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          HoverExpandFab(
-            heroTag: 'criarPorEdital',
-            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
-            icon: Icons.playlist_add,
-            tooltip: 'Criar por Edital',
-          ),
-          const SizedBox(height: 12),
-          HoverExpandFab(
-            heroTag: 'novaAta',
-            onPressed: () => context.go('/ata/new'),
-            icon: Icons.add,
-            tooltip: 'Nova Ata',
-          ),
-        ],
-      ),
+      // Criação só a partir de Rascunhos.
+      floatingActionButton: _statusFilter != 'draft'
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                HoverExpandFab(
+                  heroTag: 'criarPorEdital',
+                  onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+                  icon: Icons.playlist_add,
+                  tooltip: 'Criar por Edital',
+                ),
+                const SizedBox(height: 12),
+                HoverExpandFab(
+                  heroTag: 'novaAta',
+                  onPressed: () => context.go('/ata/new'),
+                  icon: Icons.add,
+                  tooltip: 'Nova Ata',
+                ),
+              ],
+            ),
       body: _statusFilter == 'pendencias'
           ? PendenciasModuloList(modulo: '/ata', search: _searchCtrl.text)
           : _AtaList(

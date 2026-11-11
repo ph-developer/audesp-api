@@ -141,25 +141,28 @@ class _AjustePageState extends ConsumerState<AjustePage> {
         ),
         actions: const [SizedBox(width: 8)],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          HoverExpandFab(
-            heroTag: 'criarPorEdital',
-            onPressed: () => _openUnlinkedEditaisDialog(context, ref),
-            icon: Icons.playlist_add,
-            tooltip: 'Criar por Licitação',
-          ),
-          const SizedBox(height: 12),
-          HoverExpandFab(
-            heroTag: 'novoAjuste',
-            onPressed: () => context.go('/ajuste/new'),
-            icon: Icons.add,
-            tooltip: 'Novo Ajuste',
-          ),
-        ],
-      ),
+      // Criação só a partir de Rascunhos.
+      floatingActionButton: _statusFilter != 'draft'
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                HoverExpandFab(
+                  heroTag: 'criarPorEdital',
+                  onPressed: () => _openUnlinkedEditaisDialog(context, ref),
+                  icon: Icons.playlist_add,
+                  tooltip: 'Criar por Licitação',
+                ),
+                const SizedBox(height: 12),
+                HoverExpandFab(
+                  heroTag: 'novoAjuste',
+                  onPressed: () => context.go('/ajuste/new'),
+                  icon: Icons.add,
+                  tooltip: 'Novo Ajuste',
+                ),
+              ],
+            ),
       body: _statusFilter == 'pendencias'
           ? PendenciasModuloList(modulo: '/ajuste', search: _searchCtrl.text)
           : _AjusteList(

@@ -148,7 +148,8 @@ class _EditalPageState extends ConsumerState<EditalPage> {
         ),
         actions: const [SizedBox(width: 8)],
       ),
-      floatingActionButton: !podeCriar
+      // Criação só a partir de Rascunhos.
+      floatingActionButton: !podeCriar || _statusFilter != 'draft'
           ? null
           : HoverExpandFab(
               heroTag: 'novoEdital',

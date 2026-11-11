@@ -18,6 +18,7 @@ import '../../edital/domain/edital_domain.dart';
 import '../../pendencias/domain/prazo_envio.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../pncp_providers.dart';
+import 'abrir_pncp_button.dart';
 
 /// Compra do PNCP sem edital no sistema, com as ações de iniciar o edital,
 /// dispensar (só sem envio obrigatório pela UFESP) ou restaurar.
@@ -92,6 +93,10 @@ class PncpCompraCard extends ConsumerWidget {
         UfespIndicador(valorEstimado: compra.valorTotalEstimado, config: ufesp),
       ],
       actions: [
+        AbrirPncpButton(
+          url:
+              'https://pncp.gov.br/app/editais/${compra.cnpj}/${compra.ano}/${compra.sequencial}',
+        ),
         const SizedBox(width: 4),
         if (compra.dispensada)
           TextButton.icon(

@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../helpers/indicador_finder.dart';
 import '../../processo/processo_fixtures.dart';
 
 PncpCompra _compra({
@@ -134,9 +135,15 @@ void main() {
       segmented.segments.first.label,
       isA<Text>().having((t) => t.data, 'label', 'Pendências'),
     );
-    expect(find.text('Envio não obrigatório'), findsOneWidget);
+    expect(findIndicador('Envio não obrigatório'), findsOneWidget);
     expect(find.byTooltip('Consultar PNCP'), findsOneWidget);
     expect(find.text('Iniciar edital'), findsOneWidget);
+    expect(
+      find.byTooltip(
+        'Abrir no PNCP\nhttps://pncp.gov.br/app/editais/46395000000139/2026/3',
+      ),
+      findsOneWidget,
+    );
 
     await tester.enterText(find.byType(TextField), 'veiculos');
     await tester.pumpAndSettle();
@@ -205,7 +212,7 @@ void main() {
     await _pumpPage(tester, compras: [_compra(valor: 200000)]);
     expect(find.text('Iniciar edital'), findsOneWidget);
     expect(find.text('Dispensar'), findsNothing);
-    expect(find.text('Envio não obrigatório'), findsNothing);
+    expect(findIndicador('Envio não obrigatório'), findsNothing);
   });
 
   testWidgets('edital oculto continua casando com PNCP e não aparece', (
@@ -241,7 +248,7 @@ void main() {
     );
     await tester.tap(find.text('Enviados'));
     await tester.pumpAndSettle();
-    expect(find.text('Envio não obrigatório'), findsOneWidget);
+    expect(findIndicador('Envio não obrigatório'), findsOneWidget);
     expect(
       find.text('1234567800019010000012026 - Pregão Eletrônico 1/2026'),
       findsOneWidget,
