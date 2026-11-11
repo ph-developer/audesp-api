@@ -12,6 +12,8 @@ import 'package:audesp_api/features/licitacao/pages/licitacao_page.dart';
 import 'package:audesp_api/features/logs/domain/ultimo_envio.dart';
 import 'package:audesp_api/features/logs/envios_providers.dart';
 import 'package:audesp_api/features/logs/services/consulta_service.dart';
+import 'package:audesp_api/features/pendencias/domain/prazo_envio.dart';
+import 'package:audesp_api/features/pendencias/pendencias_providers.dart';
 import 'package:audesp_api/features/pendencias/widgets/pendencia_protocolo_card.dart';
 import 'package:audesp_api/features/pncp/pncp_providers.dart';
 import 'package:audesp_api/features/processo/domain/processo.dart';
@@ -67,6 +69,7 @@ Future<GoRouter> _pump(
   _Logs? logs,
   AuthService? auth,
   String? situacaoEdital,
+  List<PncpCompra> compras = const [],
 }) async {
   await tester.binding.setSurfaceSize(const Size(1400, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -108,7 +111,8 @@ Future<GoRouter> _pump(
             ),
         ]);
       }),
-      pncpComprasProvider.overrideWith((ref) async => const []),
+      pncpComprasProvider.overrideWith((ref) async => compras),
+      prazoEnvioConfigProvider.overrideWith((ref) async => PrazoEnvioConfig()),
       pncpConfigProvider.overrideWith((ref) async => const PncpConfig()),
       ufespConfigProvider.overrideWith((ref) async => const UfespConfig()),
       if (consulta != null) consultaServiceProvider.overrideWithValue(consulta),
@@ -362,4 +366,36 @@ void main() {
       },
     );
   }
+
+  testWidgets('compras do PNCP mostram o prazo AUDESP e vêm por prazo', (
+    tester,
+  ) async {
+    PncpCompra compra(int sequencial, String objeto, DateTime? publicacao) =>
+        PncpCompra(
+          id: sequencial,
+          cnpj: '49576416000141',
+          ano: 2026,
+          sequencial: sequencial,
+          numeroControle:
+              '4957641600014110000${sequencial.toString().padLeft(2, '0')}2026',
+          objeto: objeto,
+          dataPublicacao: publicacao,
+          dadosJson: '{}',
+        );
+    await _pump(
+      tester,
+      modulo: '/edital',
+      documentos: DocumentosProcesso(),
+      compras: [
+        compra(1, 'Compra sem data', null),
+        compra(2, 'Compra de outubro', DateTime(2026, 10, 10)),
+      ],
+    );
+    // Publicada antes do corte: prazo fixo da transição.
+    expect(find.textContaining('01/02/2027'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Compra de outubro')).dy,
+      lessThan(tester.getTopLeft(find.text('Compra sem data')).dy),
+    );
+  });
 }

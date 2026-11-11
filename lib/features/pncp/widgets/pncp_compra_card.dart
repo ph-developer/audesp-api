@@ -11,9 +11,11 @@ import '../../../shared/widgets/audesp_dialog.dart';
 import '../../../shared/widgets/audesp_snack_bar.dart';
 import '../../../shared/widgets/audesp_text_field.dart';
 import '../../../shared/widgets/document_card.dart';
+import '../../../shared/widgets/prazo_envio_indicador.dart';
 import '../../../shared/widgets/ufesp_indicador.dart';
 import '../../auth/auth_providers.dart';
 import '../../edital/domain/edital_domain.dart';
+import '../../pendencias/domain/prazo_envio.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../pncp_providers.dart';
 
@@ -22,8 +24,14 @@ import '../pncp_providers.dart';
 class PncpCompraCard extends ConsumerWidget {
   final PncpCompra compra;
   final UfespConfig ufesp;
+  final PrazoEnvio? prazo;
 
-  const PncpCompraCard({super.key, required this.compra, required this.ufesp});
+  const PncpCompraCard({
+    super.key,
+    required this.compra,
+    required this.ufesp,
+    this.prazo,
+  });
 
   Future<void> _dispensar(BuildContext context, WidgetRef ref) async {
     final motivo = await showAudespDialog<String>(
@@ -80,6 +88,7 @@ class PncpCompraCard extends ConsumerWidget {
         detalhes: detalhes,
       ),
       chips: [
+        PrazoEnvioIndicador(prazo: prazo),
         UfespIndicador(valorEstimado: compra.valorTotalEstimado, config: ufesp),
       ],
       actions: [

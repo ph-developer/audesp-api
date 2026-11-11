@@ -7,13 +7,16 @@ import '../../../core/database/app_database.dart';
 import '../../../shared/formatters/documento_rotulo.dart';
 import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../../../shared/widgets/document_card.dart';
+import '../../../shared/widgets/prazo_envio_indicador.dart';
+import '../../pendencias/domain/prazo_envio.dart';
 import '../domain/pncp_atas_pendencias.dart';
 import 'abrir_pncp_button.dart';
 
 class PncpAtaCard extends ConsumerWidget {
   final PendenciaAtaPncp pendencia;
+  final PrazoEnvio? prazo;
 
-  const PncpAtaCard({super.key, required this.pendencia});
+  const PncpAtaCard({super.key, required this.pendencia, this.prazo});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,6 +55,7 @@ class PncpAtaCard extends ConsumerWidget {
             ? null
             : 'Bloqueada: ${pendencia.motivoBloqueio}',
       ),
+      chips: [PrazoEnvioIndicador(prazo: prazo)],
       actions: [
         AbrirPncpButton(
           url:

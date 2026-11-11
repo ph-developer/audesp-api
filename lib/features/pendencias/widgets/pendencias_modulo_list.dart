@@ -8,14 +8,18 @@ import '../../../shared/formatters/documento_rotulo.dart';
 import '../../../shared/formatters/pcnp_input_formatter.dart';
 import '../../../shared/widgets/document_card.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/prazo_envio_indicador.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../../shared/widgets/ufesp_indicador.dart';
+import '../../pncp/domain/pncp_atas_pendencias.dart';
+import '../../pncp/domain/pncp_contratos_pendencias.dart';
 import '../../pncp/pncp_providers.dart';
 import '../../pncp/widgets/pncp_compra_card.dart';
 import '../../pncp/widgets/pncp_contrato_card.dart';
 import '../../pncp/widgets/pncp_ata_card.dart';
 import '../../processo/domain/ufesp_rules.dart';
 import '../domain/pendencias_modulos.dart';
+import '../domain/prazo_envio.dart';
 import '../pendencias_providers.dart';
 import 'pendencia_protocolo_card.dart';
 
@@ -34,6 +38,10 @@ class PendenciasModuloList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ufesp = ref.watch(ufespConfigProvider).value ?? const UfespConfig();
+    // Sem os prazos (carregando ou erro), a lista aparece sem o alerta.
+    final prazos =
+        ref.watch(prazosEnvioProvider).value ??
+        PrazosEnvio(config: PrazoEnvioConfig());
     final colors = Theme.of(context).colorScheme;
     return ref
         .watch(pendenciasModulosProvider)
@@ -47,14 +55,20 @@ class PendenciasModuloList extends ConsumerWidget {
 
             if (modulo == '/edital') {
               for (final compra in [
-                ...pendencias.comprasEdital,
+                ...PrazosEnvio.ordenar(pendencias.comprasEdital, prazos.compra),
                 if (mostrarDispensadas) ...pendencias.comprasDispensadas,
               ]) {
                 if (busca(
                   '${tituloPncpCompra(compra)} ${compra.numeroControle} '
                   '${compra.objeto} ${compra.motivoDispensa ?? ''}',
                 )) {
-                  itens.add(PncpCompraCard(compra: compra, ufesp: ufesp));
+                  itens.add(
+                    PncpCompraCard(
+                      compra: compra,
+                      ufesp: ufesp,
+                      prazo: prazos.compra(compra),
+                    ),
+                  );
                 }
               }
             }
@@ -170,6 +184,14 @@ class PendenciasModuloList extends ConsumerWidget {
                   rota: rota,
                   conclusao: pendencia.conclusao,
                   indicadores: [
+                    PrazoEnvioIndicador(
+                      prazo: switch (documento) {
+                        Edital e => prazos.edital(e),
+                        Ata a => prazos.ata(a),
+                        Ajuste a => prazos.ajuste(a),
+                        _ => null,
+                      },
+                    ),
                     if (documento is Edital)
                       UfespIndicador(
                         valorEstimado: documento.valorTotalEstimado,
@@ -182,9 +204,10 @@ class PendenciasModuloList extends ConsumerWidget {
               );
             }
             if (modulo == '/ata') {
+              PrazoEnvio? prazo(PendenciaAtaPncp p) => prazos.ataPncp(p.ata);
               for (final pendencia in [
-                ...pendencias.atasPncp,
-                ...pendencias.atasBloqueadas,
+                ...PrazosEnvio.ordenar(pendencias.atasPncp, prazo),
+                ...PrazosEnvio.ordenar(pendencias.atasBloqueadas, prazo),
               ]) {
                 final ata = pendencia.ata;
                 if (!busca(
@@ -207,14 +230,17 @@ class PendenciasModuloList extends ConsumerWidget {
                   PncpAtaCard(
                     key: ValueKey('pncpAta-${ata.id}'),
                     pendencia: pendencia,
+                    prazo: prazo(pendencia),
                   ),
                 );
               }
             }
             if (modulo == '/ajuste') {
+              PrazoEnvio? prazo(PendenciaContratoPncp p) =>
+                  prazos.contratoPncp(p.contrato);
               for (final pendencia in [
-                ...pendencias.contratosAjuste,
-                ...pendencias.contratosBloqueados,
+                ...PrazosEnvio.ordenar(pendencias.contratosAjuste, prazo),
+                ...PrazosEnvio.ordenar(pendencias.contratosBloqueados, prazo),
               ]) {
                 final contrato = pendencia.contrato;
                 if (!busca(
@@ -236,6 +262,7 @@ class PendenciasModuloList extends ConsumerWidget {
                   PncpContratoCard(
                     key: ValueKey('pncpContrato-${contrato.id}'),
                     pendencia: pendencia,
+                    prazo: prazo(pendencia),
                   ),
                 );
               }

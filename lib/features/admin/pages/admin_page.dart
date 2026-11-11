@@ -16,6 +16,7 @@ import '../../../shared/widgets/audesp_text_field.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/widgets/user_form_dialog.dart';
 import '../widgets/pncp_ufesp_tab.dart';
+import '../widgets/prazos_envio_tab.dart';
 
 /// Painel de administração: Usuários · Ambiente · Registros.
 /// Acessível apenas por usuários com [User.isAdmin == true].
@@ -33,7 +34,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -55,6 +56,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
             Tab(icon: Icon(Icons.cloud_outlined), text: 'Ambiente'),
             Tab(icon: Icon(Icons.auto_fix_high_outlined), text: 'IA / Gemini'),
             Tab(icon: Icon(Icons.travel_explore), text: 'PNCP / UFESP'),
+            Tab(icon: Icon(Icons.event_available), text: 'Prazos AUDESP'),
           ],
         ),
       ),
@@ -65,6 +67,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
           _EnvironmentTab(),
           _GeminiTab(),
           PncpUfespTab(),
+          PrazosEnvioTab(),
         ],
       ),
     );
