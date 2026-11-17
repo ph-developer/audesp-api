@@ -4,13 +4,17 @@ double arredondarParaCima(double valor, int casasDecimais) {
   final fator = math.pow(10, casasDecimais);
   final scaled = valor * fator;
 
-  // Se o valor escalado estiver dentro de epsilon de um inteiro,
-  // ancora nele antes de aplicar o ceil — isso absorve resíduos de
-  // ponto flutuante (ex: 2865.6000000000001 * 100 = 286560.0000000001)
-  // sem afetar valores genuinamente acima do inteiro.
-  const epsilon = 1e-9;
+  // O erro de representação cresce com a magnitude do valor escalado.
+  // Dois epsilons de double cobrem as multiplicações do total e do fator
+  // decimal; a tolerância absoluta preserva o tratamento de valores menores.
+  const epsilonAbsoluto = 1e-9;
+  const epsilonDouble = 2.220446049250313e-16;
+  final tolerancia = math.max(
+    epsilonAbsoluto,
+    scaled.abs() * epsilonDouble * 2,
+  );
   final nearest = scaled.roundToDouble();
-  if ((scaled - nearest).abs() < epsilon) return nearest / fator;
+  if ((scaled - nearest).abs() <= tolerancia) return nearest / fator;
 
   return scaled.ceilToDouble() / fator;
 }
